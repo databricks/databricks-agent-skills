@@ -1,6 +1,6 @@
 ---
 name: "Databricks CLI"
-description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to discover table schemas, execute SQL, or work with any Databricks resource."
+description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Project Scaffolding (creating new apps/jobs/pipelines), Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to create new projects, discover table schemas, execute SQL, or work with any Databricks resource."
 ---
 
 # Databricks CLI
@@ -9,6 +9,7 @@ This skill provides comprehensive guidance for working with Databricks CLI acros
 
 ## Quick Navigation
 
+- **[Project Scaffolding](projects.md)** - Create new Databricks projects with AI-friendly templates
 - **[Databricks Apps](apps.md)** - Build and deploy data/AI applications
 - **[Unity Catalog](unity-catalog.md)** - Catalogs, schemas, tables, volumes, and governance
 - **[Data Exploration](data-exploration.md)** - Table schema discovery and SQL query execution
@@ -28,6 +29,11 @@ This skill provides comprehensive guidance for working with Databricks CLI acros
 ## Task-Based Navigation
 
 **IMPORTANT**: When the user asks about specific tasks, immediately read the relevant guide first before executing commands:
+
+### Project Creation Tasks
+- **"Create new project"** → Read [Project Scaffolding](projects.md)
+- **"Initialize app/job/pipeline"** → Read [Project Scaffolding](projects.md)
+- **"Start new Databricks project"** → Read [Project Scaffolding](projects.md)
 
 ### Data & Analysis Tasks
 - **"Summarize dataset X"** → Read [Data Exploration](data-exploration.md) and use `discover-schema` command
