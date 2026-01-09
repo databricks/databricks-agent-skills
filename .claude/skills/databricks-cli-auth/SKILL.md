@@ -16,6 +16,49 @@ description: "Authenticate with Databricks CLI using OAuth (never PAT). Covers a
 2. You need access to a Databricks workspace
 3. You need the workspace URL (e.g., `https://adb-1111111111111111.10.azuredatabricks.net`)
 
+## Handling Authentication Failures
+
+When a Databricks CLI command fails with authentication error:
+```
+Error: default auth: cannot configure default credentials
+```
+
+**CRITICAL - Always follow this workflow:**
+
+1. **Check for existing profiles first:**
+   ```bash
+   databricks auth profiles
+   ```
+
+2. **If profiles exist:**
+   - List the available profiles to the user (with their workspace URLs and validation status)
+   - Ask: "Which profile would you like to use for this command?"
+   - Offer option to create a new profile if needed
+   - Retry the command with `--profile <selected-profile-name>`
+
+3. **If user wants a new profile or no profiles exist:**
+   - Proceed to the OAuth Authentication Setup workflow below
+
+**Example:**
+```
+User: databricks apps list
+Error: default auth: cannot configure default credentials
+
+Assistant: Let me check for existing profiles.
+[Runs: databricks auth profiles]
+
+You have two configured profiles:
+1. aws-dev - https://company-workspace.cloud.databricks.com (Valid)
+2. azure-prod - https://adb-1111111111111111.10.azuredatabricks.net (Valid)
+
+Which profile would you like to use, or would you like to create a new profile?
+
+User: dais
+
+Assistant: [Retries: databricks apps list --profile dais]
+[Success - apps listed]
+```
+
 ## OAuth Authentication Setup
 
 ### Standard Authentication Command
