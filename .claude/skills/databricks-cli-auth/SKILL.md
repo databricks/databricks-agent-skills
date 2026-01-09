@@ -1,6 +1,6 @@
 ---
 name: "Databricks CLI Authentication"
-description: "Authenticate with Databricks CLI using OAuth (never PAT). Covers authentication setup with OAuth2, working with multiple Databricks hosts and workspaces, managing profiles for different environments, switching between workspaces, and troubleshooting authentication issues."
+description: "Configure Databricks CLI workspace/profile selection and authentication. Covers switching profiles, using --profile flags, setting DATABRICKS_CONFIG_PROFILE environment variable (with Claude Code-specific guidance), OAuth2 authentication (never PAT), and troubleshooting authentication issues."
 ---
 
 # Databricks CLI Authentication
@@ -15,6 +15,42 @@ description: "Authenticate with Databricks CLI using OAuth (never PAT). Covers a
    - Verify: `databricks --version`
 2. You need access to a Databricks workspace
 3. You need the workspace URL (e.g., `https://adb-1111111111111111.10.azuredatabricks.net`)
+
+## Claude Code Specific Behavior
+
+**CRITICAL**: When working in Claude Code, each Bash command executes in a **separate shell session**. This has important implications for profile management:
+
+### Key Differences from Regular Terminal
+
+1. **Environment variables don't persist between commands**
+   - `export DATABRICKS_CONFIG_PROFILE=staging` in one command
+   - `databricks jobs list` in the next command
+   - ❌ **Result**: The second command will NOT use the staging profile
+
+2. **Recommended Approach: Use --profile flag**
+   - Always specify `--profile <profile-name>` with each command
+   - Example: `databricks jobs list --profile staging`
+   - ✅ **Result**: Reliable and predictable behavior
+
+3. **Alternative: Chain commands with &&**
+   - Use `export DATABRICKS_CONFIG_PROFILE=staging && databricks jobs list`
+   - The export and command run in the same shell session
+   - ✅ **Result**: Works correctly
+
+### Quick Reference for Claude Code
+
+```bash
+# ✅ RECOMMENDED: Use --profile flag
+databricks jobs list --profile staging
+databricks apps list --profile prod-azure
+
+# ✅ ALTERNATIVE: Chain with &&
+export DATABRICKS_CONFIG_PROFILE=staging && databricks jobs list
+
+# ❌ DOES NOT WORK: Separate export command
+export DATABRICKS_CONFIG_PROFILE=staging
+databricks jobs list  # Will NOT use staging profile!
+```
 
 ## Handling Authentication Failures
 
@@ -35,6 +71,7 @@ Error: default auth: cannot configure default credentials
    - Ask: "Which profile would you like to use for this command?"
    - Offer option to create a new profile if needed
    - Retry the command with `--profile <selected-profile-name>`
+   - **In Claude Code, always use the `--profile` flag** rather than setting environment variables
 
 3. **If user wants a new profile or no profiles exist:**
    - Proceed to the OAuth Authentication Setup workflow below
@@ -143,9 +180,11 @@ staging     https://company-workspace.cloud.databricks.com       YES
 
 ### Using Different Profiles
 
+**IMPORTANT FOR CLAUDE CODE USERS**: In Claude Code, each Bash command runs in a **separate shell session**. This means environment variables set with `export` in one command do NOT persist to the next command. See the Claude Code-specific guidance below.
+
 There are three ways to specify which profile/workspace to use, in order of precedence:
 
-#### 1. CLI Flag (Highest Priority)
+#### 1. CLI Flag (Highest Priority) - RECOMMENDED FOR CLAUDE CODE
 
 Use the `--profile` flag with any command:
 
@@ -154,6 +193,8 @@ databricks jobs list --profile staging
 databricks clusters list --profile prod-azure
 databricks workspace list / --profile dev-aws
 ```
+
+**In Claude Code, this is the most reliable method** because it doesn't depend on persistent environment variables.
 
 #### 2. Environment Variables
 
@@ -171,8 +212,36 @@ export DATABRICKS_HOST=https://company-workspace.cloud.databricks.com
 databricks jobs list  # Uses this host directly
 ```
 
-**Combined Example**:
+**CRITICAL - Claude Code Users:**
+
+Since each Bash command in Claude Code runs in a separate shell, you **CANNOT** do this:
+
 ```bash
+# ❌ DOES NOT WORK in Claude Code
+export DATABRICKS_CONFIG_PROFILE=staging
+databricks jobs list  # ERROR: Will not use staging profile!
+```
+
+Instead, you **MUST** use one of these approaches:
+
+**Option 1: Use --profile flag (RECOMMENDED)**
+```bash
+# ✅ WORKS in Claude Code
+databricks jobs list --profile staging
+databricks clusters list --profile staging
+```
+
+**Option 2: Chain commands with &&**
+```bash
+# ✅ WORKS in Claude Code - export and command run in same shell
+export DATABRICKS_CONFIG_PROFILE=staging && databricks jobs list
+export DATABRICKS_CONFIG_PROFILE=staging && databricks clusters list
+```
+
+**Traditional Terminal Session (for reference only)**:
+```bash
+# This example shows how it works in a regular terminal session
+# DO NOT use this pattern in Claude Code
 # Set profile for entire terminal session
 export DATABRICKS_CONFIG_PROFILE=staging
 
@@ -250,12 +319,29 @@ Best practices for managing multiple workspaces:
 databricks auth login --host https://adb-1111111111111111.10.azuredatabricks.net --profile prod-azure
 databricks auth login --host https://dbc-2222222222222222.cloud.databricks.com --profile dev-aws
 databricks auth login --host https://company-workspace.cloud.databricks.com --profile staging
+```
 
+**In Claude Code, use --profile flag with each command (RECOMMENDED):**
+```bash
 # Use profiles explicitly in commands
 databricks jobs list --profile prod-azure
 databricks jobs list --profile dev-aws
+databricks clusters list --profile staging
+```
 
-# Or set for a session
+**Alternatively in Claude Code, chain commands with &&:**
+```bash
+# Set profile and run command in same shell
+export DATABRICKS_CONFIG_PROFILE=prod-azure && databricks jobs list
+export DATABRICKS_CONFIG_PROFILE=prod-azure && databricks clusters list
+
+# Switch to different workspace
+export DATABRICKS_CONFIG_PROFILE=dev-aws && databricks jobs list
+```
+
+**Traditional Terminal Session (for reference only - NOT for Claude Code):**
+```bash
+# This pattern works in regular terminals but NOT in Claude Code
 export DATABRICKS_CONFIG_PROFILE=prod-azure
 databricks jobs list
 databricks clusters list
@@ -274,7 +360,7 @@ When running a command, the Databricks CLI determines which workspace to use in 
 3. **`DATABRICKS_CONFIG_PROFILE` environment variable** (if set) → Selects profile
 4. **`DEFAULT` profile** in `~/.databrickscfg` → Fallback
 
-Example demonstrating precedence:
+**Example for traditional terminal session** (demonstrating precedence):
 ```bash
 # Setup
 export DATABRICKS_CONFIG_PROFILE=staging
@@ -288,6 +374,18 @@ databricks jobs list --profile prod-azure
 # This uses the specified host directly (DATABRICKS_HOST overrides profile)
 export DATABRICKS_HOST=https://custom-workspace.cloud.databricks.com
 databricks jobs list  # Uses custom-workspace.cloud.databricks.com
+```
+
+**Claude Code version** (with chained commands):
+```bash
+# Using environment variable with && chaining
+export DATABRICKS_CONFIG_PROFILE=staging && databricks jobs list
+
+# Using --profile flag (overrides environment variable)
+export DATABRICKS_CONFIG_PROFILE=staging && databricks jobs list --profile prod-azure
+
+# Using DATABRICKS_HOST (overrides profile)
+export DATABRICKS_HOST=https://custom-workspace.cloud.databricks.com && databricks jobs list
 ```
 
 ## Verification
