@@ -32,6 +32,17 @@ To troubleshoot deployed apps, view their logs:
 databricks apps logs <app-name> --tail-lines 100 --profile my-workspace
 ```
 
+## Working with SQL Warehouses
+
+Many apps need to query data from SQL warehouses. To get the default warehouse:
+
+```bash
+# Get the default SQL warehouse that the workspace uses
+databricks experimental aitools tools get-default-warehouse --profile my-workspace
+```
+
+This is useful when configuring apps that need to connect to a warehouse for data access.
+
 ## Local Development vs Deployed Apps
 
 ### During Development

@@ -93,6 +93,12 @@ The command **auto-detects** an available warehouse unless:
 - `DATABRICKS_WAREHOUSE_ID` environment variable is set
 - You specify a warehouse using other configuration methods
 
+To check which warehouse will be used:
+```bash
+# Get the default warehouse that would be auto-detected
+databricks experimental aitools tools get-default-warehouse --profile my-workspace
+```
+
 ### Output
 
 Returns:
@@ -240,15 +246,19 @@ Both commands support:
 **Symptom**: `Error: No available SQL warehouse found`
 
 **Solution**:
-1. List available warehouses:
+1. Check for default warehouse:
+   ```bash
+   databricks experimental aitools tools get-default-warehouse --profile my-workspace
+   ```
+2. List available warehouses:
    ```bash
    databricks sql-warehouses list --profile my-workspace
    ```
-2. Set specific warehouse:
+3. Set specific warehouse:
    ```bash
    DATABRICKS_WAREHOUSE_ID=<warehouse-id> databricks experimental aitools tools query "SELECT 1" --profile my-workspace
    ```
-3. Start a stopped warehouse:
+4. Start a stopped warehouse:
    ```bash
    databricks sql-warehouses start --id <warehouse-id> --profile my-workspace
    ```

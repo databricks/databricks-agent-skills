@@ -189,6 +189,9 @@ databricks experimental aitools tools discover-schema samples.nyctaxi.trips --pr
 
 # Execute SQL queries
 databricks experimental aitools tools query "SELECT * FROM samples.nyctaxi.trips LIMIT 10" --profile my-workspace
+
+# Get the default SQL warehouse
+databricks experimental aitools tools get-default-warehouse --profile my-workspace
 ```
 
 See [Data Exploration](data-exploration.md) for complete documentation.
