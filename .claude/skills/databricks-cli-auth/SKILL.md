@@ -1,6 +1,6 @@
 ---
 name: "Databricks CLI Authentication"
-description: "Authenticate with Databricks using OAuth2. This skill covers the recommended OAuth authentication method for the Databricks CLI, including setup, verification, and troubleshooting."
+description: "Authenticate with Databricks CLI using OAuth (never PAT). Covers authentication setup with OAuth2, working with multiple Databricks hosts and workspaces, managing profiles for different environments, switching between workspaces, and troubleshooting authentication issues."
 ---
 
 # Databricks CLI Authentication
@@ -11,7 +11,7 @@ description: "Authenticate with Databricks using OAuth2. This skill covers the r
 
 ## Prerequisites
 
-1. Databricks CLI must be installed (version >= 0.205.0)
+1. Databricks CLI must be installed
    - Verify: `databricks --version`
 2. You need access to a Databricks workspace
 3. You need the workspace URL (e.g., `https://adb-1111111111111111.10.azuredatabricks.net`)

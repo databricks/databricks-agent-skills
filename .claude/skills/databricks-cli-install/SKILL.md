@@ -1,9 +1,9 @@
 ---
 name: "Install Databricks CLI"
-description: "Install or update the Databricks CLI (v0.205+) on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery."
+description: "Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery."
 ---
 
-# Install Databricks CLI (v0.205+)
+# Install Databricks CLI
 
 ## Preconditions (always do first)
 1. Determine OS and shell:
@@ -11,7 +11,7 @@ description: "Install or update the Databricks CLI (v0.205+) on macOS, Windows, 
    - Windows: Command Prompt / PowerShell; optionally WSL for Linux shell
 2. Detect whether `databricks` is already installed:
    - Run: `databricks -v` (or `databricks version`)
-   - If version is >= 0.205.0, installation is already OK.
+   - If already installed with a recent version, installation is already OK.
 3. Avoid the legacy Python package `databricks-cli` (PyPI). This skill installs the modern Databricks CLI binary.
 
 ## Preferred installation paths (by OS)
@@ -22,7 +22,7 @@ Run:
 - `brew install databricks`
 
 Verify:
-- `databricks -v` (or `databricks version`) => expect >= 0.205.0
+- `databricks -v` (or `databricks version`)
 
 If macOS blocks the binary (Gatekeeper), follow Apple’s “open app from unidentified developer” flow.
 
@@ -43,7 +43,7 @@ Run:
 - `brew install databricks`
 
 Verify:
-- `databricks -v` (>= 0.205.0)
+- `databricks -v`
 
 #### Linux fallback: curl installer
 Run:
@@ -80,7 +80,7 @@ Steps:
    export PATH="$HOME/.local/bin:$PATH"
    ```
 5. Verify:
-   - `databricks -v` (>= 0.205.0)
+   - `databricks -v`
 
 Notes:
 - The download files are `.tar.gz` archives (not `.zip`) with naming pattern: `databricks_cli_<version>_linux_<arch>.tar.gz`
@@ -93,7 +93,7 @@ Run in Command Prompt (then restart the terminal session):
 - `winget install Databricks.DatabricksCLI`
 
 Verify:
-- `databricks -v` (>= 0.205.0)
+- `databricks -v`
 
 #### Windows alternative: Chocolatey (Experimental)
 Run:
@@ -131,7 +131,7 @@ Steps:
    - Common architectures: `amd64` (x86_64), `arm64` (aarch64/Apple Silicon)
 3. Extract the archive.
 4. Ensure the extracted `databricks` executable is on PATH, or run it from its folder.
-5. Verify with `databricks -v` (>= 0.205.0).
+5. Verify with `databricks -v`.
 
 ## Update / repair procedures
 
