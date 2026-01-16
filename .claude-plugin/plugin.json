@@ -1,0 +1,6 @@
+{
+  "name": "databricks-skills",
+  "description": "Comprehensive Databricks skills for working with Databricks CLI, Apps, Unity Catalog, Model Serving, Asset Bundles, and more. Includes installation and authentication support.",
+  "version": "1.0.0",
+  "author": "Databricks"
+}

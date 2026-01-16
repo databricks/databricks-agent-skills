@@ -1,2 +1,8 @@
-.claude/skills/skill-creator/
+# Local development configuration
+.claude/
+
+# Development-only skills (not part of plugin)
+skills/skill-creator/
+
+# Temporary files
 /*taxi*/

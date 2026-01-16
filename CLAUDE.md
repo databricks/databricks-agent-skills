@@ -1,16 +1,22 @@
-# Databricks Skills Development
+# Databricks Skills Plugin
 
-This folder is for developing skills for working with Databricks and Databricks apps.
+This is a Claude Code plugin that provides comprehensive skills for working with Databricks services, CLI tools, and development workflows.
 
-## Structure
+## Plugin Structure
 
-- `.claude/skills/` - Contains all skill definitions locally
+- `.claude-plugin/plugin.json` - Plugin manifest with metadata
+- `skills/` - All skill definitions for the plugin
+- `.claude/` - Local development configuration (not included when plugin is distributed)
+- `README.md` - Plugin documentation and usage guide
+- `CLAUDE.md` - Development guidelines and security practices
 
-## Workflow
+## Development Workflow
 
 1. Perform tasks using the Claude agent to explore Databricks capabilities
 2. Document findings and successful approaches
-3. Create skills from these learnings in the `.claude/skills/` directory
+3. Create or update skills in the `skills/` directory
+4. Test the plugin locally with: `claude --plugin-dir .`
+5. Update version in `.claude-plugin/plugin.json` when ready to release
 
 ## Documentation Guidelines
 
