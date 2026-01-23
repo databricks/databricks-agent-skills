@@ -29,10 +29,10 @@ skill-name/
 Generate manifest after adding/updating skills:
 
 ```bash
-python3 scripts/generate_manifest.py generate
+python3 scripts/generate_manifest.py
 ```
 
-Validate that manifest is up to date:
+Validate that manifest is up to date (for CI):
 
 ```bash
 python3 scripts/generate_manifest.py validate

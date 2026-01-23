@@ -126,8 +126,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate or validate manifest.json")
     parser.add_argument(
         "mode",
+        nargs="?",
+        default="generate",
         choices=["generate", "validate"],
-        help="Mode: generate (creates manifest.json) or validate (checks if up to date)",
+        help="Mode: generate (creates manifest.json, default) or validate (checks if up to date)",
     )
 
     args = parser.parse_args()
