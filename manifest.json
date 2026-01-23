@@ -1,14 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-01-23T14:52:03Z",
+  "updated_at": "2026-01-23T14:54:09Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.0",
       "updated_at": "2026-01-23T14:50:28Z"
-    },
-    "ugly-databricks-apps": {
-      "version": "0.1.0",
-      "updated_at": "2026-01-23T14:51:57Z"
     }
   }
 }
