@@ -29,7 +29,13 @@ skill-name/
 Generate manifest after adding/updating skills:
 
 ```bash
-python3 scripts/generate_manifest.py
+python3 scripts/generate_manifest.py generate
+```
+
+Validate that manifest is up to date:
+
+```bash
+python3 scripts/generate_manifest.py validate
 ```
 
 The manifest is used by the CLI to discover available skills.
