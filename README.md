@@ -26,6 +26,33 @@ skill-name/
 
 ## Development
 
+### Adding New Skills
+
+When experimenting with new skill variations, create a "subskill" that references the main skill and adds specific guidance:
+
+```markdown
+---
+name: "my-custom-databricks-apps"
+description: "Databricks apps with custom patterns"
+---
+
+# Custom Databricks Apps
+
+First, load the base databricks-apps skill for foundational guidance.
+
+Then apply these additional patterns:
+- Custom pattern 1
+- Custom pattern 2
+```
+
+This approach:
+- Keeps the main skill stable and focused
+- Allows experimentation without modifying core skills
+- Makes it easy to test variations and compare results
+- Can be promoted to the main skill if proven valuable
+
+### Manifest Management
+
 Generate manifest after adding/updating skills:
 
 ```bash
