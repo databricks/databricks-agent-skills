@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Generate manifest.json from skill directories."""
+"""Generate or validate manifest.json from skill directories."""
 
+import argparse
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -54,7 +56,9 @@ def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
     skills = {}
 
-    for item in sorted(repo_root.iterdir()):
+    skills_dir = repo_root / "skills"
+
+    for item in sorted(skills_dir.iterdir()):
         if not item.is_dir():
             continue
         if item.name.startswith(".") or item.name == "scripts":
@@ -76,15 +80,72 @@ def generate_manifest(repo_root: Path) -> dict:
     }
 
 
-def main() -> None:
-    repo_root = Path(__file__).parent.parent
-    manifest = generate_manifest(repo_root)
+def normalize_manifest(manifest: dict) -> dict:
+    """Normalize manifest for comparison by excluding updated_at timestamps."""
+    normalized = manifest.copy()
+    normalized.pop("updated_at", None)
 
+    skills = {}
+    for name, skill in manifest.get("skills", {}).items():
+        skill_copy = skill.copy()
+        skill_copy.pop("updated_at", None)
+        skills[name] = skill_copy
+
+    normalized["skills"] = skills
+    return normalized
+
+
+def validate_manifest(repo_root: Path) -> bool:
+    """Validate that manifest.json is up to date. Returns True if valid."""
     manifest_path = repo_root / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
 
-    print(f"Generated {manifest_path}")
-    print(f"Found {len(manifest['skills'])} skill(s): {', '.join(manifest['skills'].keys())}")
+    if not manifest_path.exists():
+        print("ERROR: manifest.json does not exist", file=sys.stderr)
+        return False
+
+    current_manifest = json.loads(manifest_path.read_text())
+    expected_manifest = generate_manifest(repo_root)
+
+    # compare without timestamps
+    current_normalized = normalize_manifest(current_manifest)
+    expected_normalized = normalize_manifest(expected_manifest)
+
+    if current_normalized != expected_normalized:
+        print("ERROR: manifest.json is out of date", file=sys.stderr)
+        print("\nExpected:", file=sys.stderr)
+        print(json.dumps(expected_normalized, indent=2), file=sys.stderr)
+        print("\nActual:", file=sys.stderr)
+        print(json.dumps(current_normalized, indent=2), file=sys.stderr)
+        return False
+
+    print("manifest.json is up to date")
+    return True
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate or validate manifest.json")
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        default="generate",
+        choices=["generate", "validate"],
+        help="Mode: generate (creates manifest.json, default) or validate (checks if up to date)",
+    )
+
+    args = parser.parse_args()
+    repo_root = Path(__file__).parent.parent
+
+    match args.mode:
+        case "generate":
+            manifest = generate_manifest(repo_root)
+            manifest_path = repo_root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+            print(f"Generated {manifest_path}")
+            print(f"Found {len(manifest['skills'])} skill(s): {', '.join(manifest['skills'].keys())}")
+
+        case "validate":
+            is_valid = validate_manifest(repo_root)
+            sys.exit(0 if is_valid else 1)
 
 
 if __name__ == "__main__":
