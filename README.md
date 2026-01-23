@@ -32,11 +32,11 @@ When experimenting with new skill variations, create a "subskill" that reference
 
 ```markdown
 ---
-name: "my-custom-databricks-apps"
-description: "Databricks apps with custom patterns"
+name: "ai-databricks-apps"
+description: "Databricks apps with AI features"
 ---
 
-# Custom Databricks Apps
+# AI powered Databricks Apps
 
 First, load the base databricks-apps skill for foundational guidance.
 
@@ -48,8 +48,7 @@ Then apply these additional patterns:
 This approach:
 - Keeps the main skill stable and focused
 - Allows experimentation without modifying core skills
-- Makes it easy to test variations and compare results
-- Can be promoted to the main skill if proven valuable
+- Makes it easy to follow the changes in the main skill
 
 ### Manifest Management
 
