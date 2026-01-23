@@ -1,9 +1,6 @@
----
-name: "Install Databricks CLI"
-description: "Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery."
----
+# Databricks CLI Installation
 
-# Install Databricks CLI
+Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery.
 
 ## Preconditions (always do first)
 1. Determine OS and shell:

@@ -1,11 +1,11 @@
 ---
-name: "Databricks CLI"
+name: "databricks"
 description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Project Scaffolding (creating new apps/jobs/pipelines), Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to create new projects, discover table schemas, execute SQL, or work with any Databricks resource."
 ---
 
-# Databricks CLI
+# Databricks
 
-This skill provides comprehensive guidance for working with Databricks CLI across all services and use cases.
+This skill provides comprehensive guidance for working with Databricks across all services and use cases.
 
 ## Quick Navigation
 
@@ -64,11 +64,11 @@ This skill provides comprehensive guidance for working with Databricks CLI acros
 
 1. **Databricks CLI must be installed**
    - Verify: `databricks --version`
-   - If not installed, use the `databricks-cli-install` skill
+   - If not installed, see [CLI Installation Guide](databricks-cli-install.md) - Install or update the Databricks CLI on macOS, Windows, or Linux using Homebrew, WinGet, curl install script, or manual download
 
 2. **Authentication must be configured**
    - Verify: `databricks auth profiles`
-   - If not authenticated, use the `databricks-cli-auth` skill
+   - If not authenticated, see [CLI Authentication Guide](databricks-cli-auth.md) - Configure workspace/profile selection and authentication using OAuth2 (never PAT), with guidance for switching profiles and troubleshooting
 
 3. **Know your workspace URL and profile name**
    - Example workspace URLs:
@@ -94,7 +94,7 @@ When a Databricks command is needed and a profile is not already configured, you
 
 3. **Always offer the option to create a new profile**:
    - "Would you like to create a new profile instead?"
-   - If yes, use the `databricks-cli-auth` skill
+   - If yes, see [CLI Authentication Guide](databricks-cli-auth.md) for OAuth2 setup instructions
 
 4. **Never assume or automatically select a profile** - even if:
    - There's only one profile available
@@ -250,7 +250,7 @@ databricks catalogs get <catalog-name> --profile my-workspace
 2. If profiles exist, use `--profile` flag
 3. If no profiles exist, authenticate: `databricks auth login --host <workspace-url> --profile <profile-name>`
 
-See the `databricks-cli-auth` skill for detailed authentication troubleshooting.
+See the [CLI Authentication Guide](databricks-cli-auth.md) for detailed authentication troubleshooting including OAuth2 setup, profile switching, and Claude Code-specific guidance.
 
 ### Permission Errors
 

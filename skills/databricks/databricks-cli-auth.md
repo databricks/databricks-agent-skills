@@ -1,9 +1,6 @@
----
-name: "Databricks CLI Authentication"
-description: "Configure Databricks CLI workspace/profile selection and authentication. Covers switching profiles, using --profile flags, setting DATABRICKS_CONFIG_PROFILE environment variable (with Claude Code-specific guidance), OAuth2 authentication (never PAT), and troubleshooting authentication issues."
----
-
 # Databricks CLI Authentication
+
+Configure Databricks CLI workspace/profile selection and authentication. Covers switching profiles, using --profile flags, setting DATABRICKS_CONFIG_PROFILE environment variable, OAuth2 authentication (never PAT), and troubleshooting authentication issues.
 
 ## Important: Always Use OAuth
 
