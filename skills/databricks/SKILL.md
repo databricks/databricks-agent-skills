@@ -1,6 +1,9 @@
 ---
 name: "databricks"
 description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Project Scaffolding (creating new apps/jobs/pipelines), Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to create new projects, discover table schemas, execute SQL, or work with any Databricks resource."
+compatibility: Requires databricks CLI (>= 0.250.0)
+metadata:
+  version: "0.1.0"
 ---
 
 # Databricks
@@ -10,7 +13,7 @@ This skill provides comprehensive guidance for working with Databricks across al
 ## Quick Navigation
 
 - **[Project Scaffolding](projects.md)** - Create new Databricks projects with AI-friendly templates
-- **[Databricks Apps](apps.md)** - Build and deploy data/AI applications
+- **Databricks Apps** - Build and deploy full-stack TypeScript data/AI applications (use `databricks-apps` skill)
 - **[Unity Catalog](unity-catalog.md)** - Catalogs, schemas, tables, volumes, and governance
 - **[Data Exploration](data-exploration.md)** - Table schema discovery and SQL query execution
 - **[Asset Bundles (DABs)](asset-bundles.md)** - Infrastructure-as-Code for Databricks projects
@@ -43,8 +46,8 @@ This skill provides comprehensive guidance for working with Databricks across al
 - **"Analyze with natural language"** → Read [Databricks Genie](genie.md) for AI-powered analysis
 
 ### Application Tasks
-- **"Deploy app"** → Read [Databricks Apps](apps.md)
-- **"Create/manage app"** → Read [Databricks Apps](apps.md)
+- **"Deploy app"** → Use the `databricks-apps` skill
+- **"Create/manage app"** → Use the `databricks-apps` skill
 
 ### Data Management Tasks
 - **"Create/manage tables"** → Read [Unity Catalog](unity-catalog.md)

@@ -6,16 +6,19 @@ metadata:
   version: "0.1.0"
 ---
 
+ALWAYS refer to the `databricks` skill when using this skill.
+
 # Databricks Apps Development
 
 Build TypeScript apps that query Databricks SQL warehouses and deploy to Databricks Apps.
 
 ## Workflow
 
-1. **Verify auth**: `databricks auth profiles`
-2. **Find warehouse**: `databricks sql warehouses list`
-3. **Explore data**: `databricks experimental aitools tools discover-schema CATALOG.SCHEMA.TABLE`
-4. **Scaffold project**: `databricks experimental aitools tools init-template --name my-app --description "..."`
+1. **Verify auth**: See `databricks` skill
+2. **Find warehouse**: See `databricks` skill
+3. **Explore data**: See `databricks` skill
+4. **Scaffold project**: `apps init --description "<APP_DESCRIPTION>" --features analytics --warehouse-id <WAREHOUSE_ID> --name <APP_NAME>
+ --run none --profile <PROFILE>`
 5. **Develop**: `cd my-app && npm install && npm run dev`
 6. **Validate**: `databricks experimental aitools tools validate ./`
 7. **Deploy**: `databricks experimental aitools tools deploy` (requires user permission)

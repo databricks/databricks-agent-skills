@@ -573,5 +573,5 @@ targets:
 
 - [Jobs](jobs.md) - Define job resources
 - [LakeFlow](lakeflow.md) - Define pipeline resources
-- [Apps](apps.md) - Define app resources
+- Apps - Define app resources (use `databricks-apps` skill for full app development)
 - [Workflows](workflows.md) - Complete bundle workflows
