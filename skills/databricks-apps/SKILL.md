@@ -9,15 +9,17 @@ parent: databricks
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands. 
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
 
 Build TypeScript apps that query Databricks SQL warehouses and deploy to Databricks Apps.
 
+**AppKit is the recommended way** to develop Databricks Apps - it provides type-safe SQL queries, React components, and seamless deployment.
+
 ## Workflow
 
-1. **Scaffold**: `databricks experimental aitools tools apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>`
+1. **Scaffold**: `databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>`
 2. **Develop**: `cd <NAME> && npm install && npm run dev`
-3. **Validate**: `databricks experimental aitools tools validate ./`
+3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
 
 ## Project Structure
@@ -66,7 +68,7 @@ Load these when implementing specific features:
 2. **Numeric types**: All SQL numbers return as strings in JSON. Always convert: `Number(row.amount).toFixed(2)`
 3. **Type imports**: Use `import type { ... }` for type-only imports (verbatimModuleSyntax is enabled).
 4. **App name**: Must be ≤26 characters (dev- prefix adds 4 chars, max 30 total).
-5. **Validate before deploy**: Always run `databricks experimental aitools tools validate ./` first.
+5. **Validate before deploy**: Always run `databricks apps validate` first.
 
 ## Decision Tree
 
