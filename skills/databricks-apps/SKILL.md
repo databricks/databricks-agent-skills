@@ -6,36 +6,32 @@ metadata:
   version: "0.1.0"
 ---
 
+**CRITICAL**: Before proceeding with ANY databricks-apps task, you MUST first invoke the `databricks` skill using the Skill tool. The databricks skill provides essential context for:
+- Authentication and profile selection (NEVER auto-select profiles)
+- Data exploration commands (`discover-schema`, `query`)
+- SQL warehouse identification
+- CLI usage patterns specific to Claude Code
+
+**Action Required**: If you haven't already invoked the `databricks` skill in this conversation, invoke it now with: `Skill(command: "databricks")`
+
 # Databricks Apps Development
 
 Build TypeScript apps that query Databricks SQL warehouses and deploy to Databricks Apps.
 
 ## Workflow
 
-1. **Verify auth**: `databricks auth profiles`
-2. **Find warehouse**: `databricks sql warehouses list`
-3. **Explore data**: `databricks experimental aitools tools discover-schema CATALOG.SCHEMA.TABLE`
-4. **Scaffold project**: `databricks experimental aitools tools init-template --name my-app --description "..."`
-5. **Develop**: `cd my-app && npm install && npm run dev`
-6. **Validate**: `databricks experimental aitools tools validate ./`
-7. **Deploy**: `databricks experimental aitools tools deploy` (requires user permission)
+1. **Verify auth**: See `databricks` skill
+2. **Find warehouse**: See `databricks` skill
+3. **Explore data**: See `databricks` skill
+4. **Scaffold project**: `apps init --description "<APP_DESCRIPTION>" --features analytics --warehouse-id <WAREHOUSE_ID> --name <APP_NAME>
+ --run none --profile `
+5. **Develop**: `cd <APP_NAME> && npm install && npm run dev`
+6. **Validate**: `databricks apps validate`
+7. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED: Only deploy with explicit user permission.)
 
 ## Data Exploration
 
-```bash
-# list catalogs/schemas/tables
-databricks catalogs list
-databricks schemas list <catalog>
-databricks tables list <catalog> <schema>
-
-# discover table schema (columns, types, sample data)
-databricks experimental aitools tools discover-schema CATALOG.SCHEMA.TABLE
-
-# test queries
-databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 10"
-```
-
-Note: Use separate arguments for `catalogs/schemas/tables` commands. Dot notation only works in `discover-schema` and `query`.
+See `databricks` skill
 
 ## Project Structure
 
