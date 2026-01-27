@@ -9,7 +9,7 @@ parent: databricks
 
 # Databricks Apps Development
 
-**Parent skill**: `databricks` - provides CLI basics, authentication, profile selection, data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands. 
 
 Build TypeScript apps that query Databricks SQL warehouses and deploy to Databricks Apps.
 
