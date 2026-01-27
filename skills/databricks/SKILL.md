@@ -1,0 +1,120 @@
+---
+name: "databricks"
+description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Project Scaffolding (creating new apps/jobs/pipelines), Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to create new projects, discover table schemas, execute SQL, or work with any Databricks resource."
+compatibility: Requires databricks CLI (>= 0.250.0)
+metadata:
+  version: "0.1.0"
+---
+
+# Databricks
+
+Core skill for Databricks CLI, authentication, and data exploration.
+
+## Product Skills
+
+For specific products, use dedicated skills:
+- **databricks-apps** - Full-stack TypeScript app development and deployment
+
+## Prerequisites
+
+1. **CLI installed**: `databricks --version`
+   - If not: see [CLI Installation](databricks-cli-install.md)
+
+2. **Authenticated**: `databricks auth profiles`
+   - If not: see [CLI Authentication](databricks-cli-auth.md)
+
+## Profile Selection - CRITICAL
+
+**NEVER auto-select a profile.**
+
+1. List profiles: `databricks auth profiles`
+2. Present ALL profiles to user with workspace URLs
+3. Let user choose (even if only one exists)
+4. Offer to create new profile if needed
+
+## Claude Code - IMPORTANT
+
+Each Bash command runs in a **separate shell session**.
+
+```bash
+# WORKS: --profile flag
+databricks apps list --profile my-workspace
+
+# WORKS: chained with &&
+export DATABRICKS_CONFIG_PROFILE=my-workspace && databricks apps list
+
+# DOES NOT WORK: separate commands
+export DATABRICKS_CONFIG_PROFILE=my-workspace
+databricks apps list  # profile not set!
+```
+
+## AI Tools (preferred)
+
+`databricks experimental aitools` provides agent-friendly commands. Prefer these over raw CLI when available.
+
+```bash
+# data exploration
+databricks experimental aitools tools discover-schema catalog.schema.table --profile <profile>
+databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <profile>
+databricks experimental aitools tools get-default-warehouse --profile <profile>
+
+# validation
+databricks experimental aitools tools validate ./ --profile <profile>
+```
+
+See [Data Exploration](data-exploration.md) for details.
+
+## Quick Reference
+
+```bash
+# current user
+databricks current-user me --profile <profile>
+
+# list resources
+databricks apps list --profile <profile>
+databricks jobs list --profile <profile>
+databricks clusters list --profile <profile>
+databricks catalogs list --profile <profile>
+databricks schemas list --catalog-name <catalog> --profile <profile>
+databricks tables list --catalog-name <catalog> --schema-name <schema> --profile <profile>
+databricks pipelines list --profile <profile>
+databricks serving-endpoints list --profile <profile>
+databricks sql-warehouses list --profile <profile>
+
+# get details
+databricks apps get <name> --profile <profile>
+databricks jobs get --job-id <id> --profile <profile>
+databricks clusters get --cluster-id <id> --profile <profile>
+
+# bundles
+databricks bundle init --profile <profile>
+databricks bundle validate --profile <profile>
+databricks bundle deploy -t <target> --profile <profile>
+databricks bundle run <resource> -t <target> --profile <profile>
+```
+
+## Troubleshooting
+
+| Error | Solution |
+|-------|----------|
+| `cannot configure default credentials` | Use `--profile` flag or authenticate first |
+| `PERMISSION_DENIED` | Check workspace/UC permissions |
+| `RESOURCE_DOES_NOT_EXIST` | Verify resource name/id and profile |
+
+## Reference Guides
+
+- [CLI Installation](databricks-cli-install.md)
+- [CLI Authentication](databricks-cli-auth.md)
+- [Data Exploration](data-exploration.md)
+- [Unity Catalog](unity-catalog.md)
+- [Asset Bundles](asset-bundles.md)
+- [Jobs](jobs.md)
+- [LakeFlow](lakeflow.md)
+- [Model Serving](model-serving.md)
+- [DBSQL](dbsql.md)
+- [Clusters](clusters.md)
+- [Workspace](workspace.md)
+- [Secrets](secrets.md)
+- [DBFS](dbfs.md) (legacy - prefer UC Volumes)
+- [AI/BI Dashboards](ai-bi-dashboards.md)
+- [Genie](genie.md)
