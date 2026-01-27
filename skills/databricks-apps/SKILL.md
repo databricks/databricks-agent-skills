@@ -4,34 +4,21 @@ description: Build full-stack TypeScript apps on Databricks. Use when asked to c
 compatibility: Requires databricks CLI (>= 0.250.0)
 metadata:
   version: "0.1.0"
+parent: databricks
 ---
 
-**CRITICAL**: Before proceeding with ANY databricks-apps task, you MUST first invoke the `databricks` skill using the Skill tool. The databricks skill provides essential context for:
-- Authentication and profile selection (NEVER auto-select profiles)
-- Data exploration commands (`discover-schema`, `query`)
-- SQL warehouse identification
-- CLI usage patterns specific to Claude Code
-
-**Action Required**: If you haven't already invoked the `databricks` skill in this conversation, invoke it now with: `Skill(command: "databricks")`
-
 # Databricks Apps Development
+
+**Parent skill**: `databricks` - provides CLI basics, authentication, profile selection, data exploration commands.
 
 Build TypeScript apps that query Databricks SQL warehouses and deploy to Databricks Apps.
 
 ## Workflow
 
-1. **Verify auth**: See `databricks` skill
-2. **Find warehouse**: See `databricks` skill
-3. **Explore data**: See `databricks` skill
-4. **Scaffold project**: `apps init --description "<APP_DESCRIPTION>" --features analytics --warehouse-id <WAREHOUSE_ID> --name <APP_NAME>
- --run none --profile `
-5. **Develop**: `cd <APP_NAME> && npm install && npm run dev`
-6. **Validate**: `databricks apps validate`
-7. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED: Only deploy with explicit user permission.)
-
-## Data Exploration
-
-See `databricks` skill
+1. **Scaffold**: `databricks experimental aitools tools apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>`
+2. **Develop**: `cd <NAME> && npm install && npm run dev`
+3. **Validate**: `databricks experimental aitools tools validate ./`
+4. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
 
 ## Project Structure
 
