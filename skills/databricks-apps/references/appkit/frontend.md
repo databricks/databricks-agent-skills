@@ -1,5 +1,15 @@
 # Frontend Guidelines
 
+## ⚠️ INVALID PROPS - Read First
+
+These props DO NOT exist on AppKit components:
+
+| Component | Invalid Props | Use Instead |
+|-----------|--------------|-------------|
+| DataTable | `data`, `columns` | `queryKey` + `parameters` (fetches automatically) |
+| All Charts | `seriesKey`, `nameKey`, `valueKey`, `dataKey` | `xKey`, `yKey` |
+| All Charts | `<XAxis>`, `<YAxis>`, `<CartesianGrid>` children | Props only (ECharts, not Recharts) |
+
 ## Visualization Components
 
 Components from `@databricks/appkit-ui/react` handle data fetching, loading states, and error handling internally.
@@ -44,6 +54,8 @@ Available: `AreaChart`, `BarChart`, `LineChart`, `PieChart`, `RadarChart`, `Data
 | `orientation` | "vertical" \| "horizontal" | Chart orientation (BarChart) |
 | `smooth` | boolean | Smooth line curves (LineChart, AreaChart) |
 | `showSymbol` | boolean | Show data point markers (LineChart) |
+| `nameKey` | string | Label field (PieChart only) |
+| `valueKey` | string | Value field (PieChart only) |
 
 **Basic Usage:**
 
