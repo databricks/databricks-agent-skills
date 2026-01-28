@@ -8,48 +8,56 @@
 - App Kit automatically executes queries against configured Databricks warehouse
 - Benefits: Built-in caching, proper connection pooling, better performance
 
-## Query Schemas
+## Type Generation
 
-Define the shape of QUERY RESULTS (not input parameters) in `config/queries/schema.ts` using Zod schemas.
+**Types are AUTO-GENERATED** from SQL files - no manual schema required!
 
-- **These schemas validate the COLUMNS RETURNED by SQL queries**
-- Input parameters are passed separately to `useAnalyticsQuery()` as the second argument
-- Schema field names must match your SQL SELECT column names/aliases
+1. Add/modify SQL files in `config/queries/`
+2. Run `npm run dev` (auto-regenerates on changes) or `npm run typegen`
+3. Types appear in `client/src/appKitTypes.d.ts`
 
-Example:
+**DO NOT** manually edit `client/src/appKitTypes.d.ts`.
+
+## Query Schemas (Optional)
+
+Create `config/queries/schema.ts` only if you need **runtime validation** with Zod.
 
 ```typescript
 import { z } from 'zod';
 
 export const querySchemas = {
-  mocked_sales: z.array(
+  my_query: z.array(
     z.object({
-      max_month_num: z.number().min(1).max(12),
-    })
-  ),
-
-  hello_world: z.array(
-    z.object({
-      value: z.string(),
+      category: z.string(),
+      // Use z.coerce.number() - handles both string and number from SQL
+      amount: z.coerce.number(),
     })
   ),
 };
 ```
 
-**IMPORTANT: Refreshing Type Definitions**
-
-After adding or modifying query schemas in `config/queries/schema.ts`:
-
-1. **DO NOT** manually edit `client/src/appKitTypes.d.ts` - this file is auto-generated
-2. Run `npm run dev` to automatically regenerate the TypeScript type definitions
-3. The dev server will scan your SQL files and schema definitions and update `appKitTypes.d.ts` accordingly
+**Why `z.coerce.number()`?**
+- Auto-generated types use `number` based on SQL column types
+- But some SQL types (DECIMAL, large BIGINT) return as strings at runtime
+- `z.coerce.number()` handles both cases safely
 
 ## SQL Type Handling (Critical)
 
-**ALL numeric values from Databricks SQL are returned as STRINGS in JSON responses.** This includes results from `ROUND()`, `AVG()`, `SUM()`, `COUNT()`, etc. Always convert before using numeric methods:
+**Understanding Type Generation vs Runtime:**
+
+1. **Auto-generated types** (`appKitTypes.d.ts`): Based on SQL column types
+   - `BIGINT`, `INT`, `DECIMAL` → TypeScript `number`
+   - These are the types you'll see in IntelliSense
+
+2. **Runtime JSON values**: Some numeric types arrive as strings
+   - `DECIMAL` often returns as string (e.g., `"123.45"`)
+   - Large `BIGINT` values return as string
+   - `ROUND()`, `AVG()`, `SUM()` results may be strings
+
+**Best Practice - Always convert before numeric operations:**
 
 ```typescript
-// ❌ WRONG - fails at runtime
+// ❌ WRONG - may fail if value is string at runtime
 <span>{row.total_amount.toFixed(2)}</span>
 
 // ✅ CORRECT - convert to number first

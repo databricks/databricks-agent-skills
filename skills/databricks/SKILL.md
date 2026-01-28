@@ -66,6 +66,8 @@ See [Data Exploration](data-exploration.md) for details.
 
 ## Quick Reference
 
+**⚠️ CRITICAL: Some commands use positional arguments, not flags**
+
 ```bash
 # current user
 databricks current-user me --profile <profile>
@@ -74,12 +76,19 @@ databricks current-user me --profile <profile>
 databricks apps list --profile <profile>
 databricks jobs list --profile <profile>
 databricks clusters list --profile <profile>
-databricks catalogs list --profile <profile>
-databricks schemas list --catalog-name <catalog> --profile <profile>
-databricks tables list --catalog-name <catalog> --schema-name <schema> --profile <profile>
+databricks sql-warehouses list --profile <profile>
 databricks pipelines list --profile <profile>
 databricks serving-endpoints list --profile <profile>
-databricks sql-warehouses list --profile <profile>
+
+# Unity Catalog - use POSITIONAL arguments (not flags!)
+databricks catalogs list --profile <profile>
+databricks schemas list <catalog> --profile <profile>                    # ✅ Positional
+# databricks schemas list --catalog-name <catalog> --profile <profile>  # ❌ Wrong
+databricks tables list <catalog> <schema> --profile <profile>            # ✅ Positional
+databricks tables get <catalog>.<schema>.<table> --profile <profile>     # Full name
+
+# When in doubt, check help:
+# databricks schemas list --help
 
 # get details
 databricks apps get <name> --profile <profile>

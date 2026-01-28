@@ -44,6 +44,43 @@ Use cases:
 - Conditional rendering based on data values
 - Data that needs transformation before display
 
+**⚠️ CRITICAL: This is NOT React Query**
+
+| React Query Pattern | AppKit Pattern |
+|---------------------|----------------|
+| `{ enabled: !!id }` | ❌ NOT SUPPORTED - Use conditional rendering |
+| `refetch()` | ❌ NOT SUPPORTED - Change parameters or re-mount |
+| `onSuccess` callback | ❌ NOT SUPPORTED - Use useEffect on data |
+
+**Conditional Query Pattern:**
+
+```typescript
+// ❌ WRONG - enabled option doesn't exist
+const { data } = useAnalyticsQuery('details', params, { enabled: !!selectedId });
+
+// ✅ CORRECT - Use conditional rendering
+function ParentComponent() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  return (
+    <div>
+      <SelectList onSelect={setSelectedId} />
+      {selectedId && <DetailsComponent id={selectedId} />}
+    </div>
+  );
+}
+
+function DetailsComponent({ id }: { id: string }) {
+  // Query only runs when component is mounted (when id exists)
+  const { data, loading, error } = useAnalyticsQuery('details', {
+    id: sql.string(id)
+  });
+  // ...
+}
+```
+
+**Basic Usage:**
+
 ```typescript
 import { useAnalyticsQuery, Skeleton } from '@databricks/app-kit-ui/react';
 
@@ -80,7 +117,3 @@ const { data, loading, error } = useAnalyticsQuery<T>(
 );
 // Returns: { data: T | null, loading: boolean, error: string | null }
 ```
-
-**NOT supported:**
-- `enabled` - Query always executes on mount. Use conditional rendering: `{selectedId && <MyComponent id={selectedId} />}`
-- `refetch` - Not available. Re-mount component to re-query.

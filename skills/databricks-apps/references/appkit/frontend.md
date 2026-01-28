@@ -6,6 +6,45 @@ Components from `@databricks/appkit-ui/react` handle data fetching, loading stat
 
 Available: `AreaChart`, `BarChart`, `LineChart`, `PieChart`, `RadarChart`, `DataTable`
 
+**⚠️ CRITICAL: AppKit charts are ECharts-based, NOT Recharts wrappers**
+
+```typescript
+// ❌ WRONG - Charts do NOT accept Recharts children
+<BarChart queryKey="data" parameters={{}}>
+  <CartesianGrid />  // Not supported
+  <XAxis dataKey="x" />  // Not supported
+</BarChart>
+
+// ✅ CORRECT - Use props for customization
+<BarChart
+  queryKey="data"
+  parameters={{}}
+  xKey="region"                    // X-axis field
+  yKey={["revenue", "expenses"]}   // Y-axis field(s) - string or string[]
+  colors={['#40d1f5', '#4462c9']}  // Custom colors
+  stacked                          // Stack bars
+  orientation="horizontal"         // "vertical" (default) | "horizontal"
+  showLegend                       // Show legend
+  height={400}                     // Height in pixels (default: 300)
+/>
+```
+
+**Chart Props Reference:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `queryKey` | string | Query file name (without .sql) |
+| `parameters` | Record<string, SQLTypeMarker> | Query parameters |
+| `xKey` | string | X-axis field (auto-detected if not provided) |
+| `yKey` | string \| string[] | Y-axis field(s) (auto-detected if not provided) |
+| `colors` | string[] | Custom color palette |
+| `height` | number | Chart height in pixels (default: 300) |
+| `showLegend` | boolean | Show legend |
+| `stacked` | boolean | Stack bars/areas (BarChart, AreaChart) |
+| `orientation` | "vertical" \| "horizontal" | Chart orientation (BarChart) |
+| `smooth` | boolean | Smooth line curves (LineChart, AreaChart) |
+| `showSymbol` | boolean | Show data point markers (LineChart) |
+
 **Basic Usage:**
 
 ```typescript
@@ -25,7 +64,14 @@ function MyDashboard() {
       <Card>
         <CardHeader><CardTitle>Revenue Trend</CardTitle></CardHeader>
         <CardContent>
-          <LineChart queryKey="revenue_over_time" parameters={{ months: sql.number(12) }} />
+          <LineChart
+            queryKey="revenue_over_time"
+            parameters={{ months: sql.number(12) }}
+            xKey="month"
+            yKey={["revenue", "expenses"]}
+            colors={['#40d1f5', '#4462c9']}
+            showLegend
+          />
         </CardContent>
       </Card>
     </div>
@@ -34,23 +80,6 @@ function MyDashboard() {
 ```
 
 Components automatically fetch data, show loading states, display errors, and render with sensible defaults.
-
-**Custom Visualization (Recharts):**
-
-```typescript
-import { BarChart } from '@databricks/appkit-ui/react';
-import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-
-<BarChart queryKey="sales_by_region" parameters={{}}>
-  <CartesianGrid strokeDasharray="3 3" />
-  <XAxis dataKey="region" />
-  <YAxis />
-  <Tooltip />
-  <Legend />
-  <Bar dataKey="revenue" fill="#40d1f5" />
-  <Bar dataKey="expenses" fill="#4462c9" />
-</BarChart>
-```
 
 Databricks brand colors: `['#40d1f5', '#4462c9', '#EB1600', '#0B2026', '#4A4A4A', '#353a4a']`
 
@@ -63,6 +92,41 @@ return <BarChart queryKey="sales_data" parameters={{}} />;
 
 // CORRECT - let component handle it
 return <BarChart queryKey="sales_data" parameters={{}} />;
+```
+
+## DataTable Component
+
+**DataTable fetches data automatically** - you don't pass `data` or `columns` props!
+
+```typescript
+// ❌ WRONG - DataTable doesn't accept data/columns props
+<DataTable
+  data={myData}
+  columns={[{ header: 'Name', accessor: 'name' }]}
+/>
+
+// ✅ CORRECT - DataTable fetches from query
+<DataTable
+  queryKey="users_list"
+  parameters={{}}
+  filterColumn="email"              // Column to filter by
+  filterPlaceholder="Search..."     // Filter input placeholder
+  pageSize={25}                     // Rows per page
+  pageSizeOptions={[10, 25, 50]}    // Page size options
+/>
+```
+
+**Custom column rendering** - use the `transform` prop:
+
+```typescript
+<DataTable
+  queryKey="products"
+  parameters={{}}
+  transform={(data) => data.map(row => ({
+    ...row,
+    price: `$${Number(row.price).toFixed(2)}`,
+  }))}
+/>
 ```
 
 ## Layout Structure
