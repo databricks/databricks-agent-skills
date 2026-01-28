@@ -29,7 +29,10 @@ These apply regardless of framework:
 
 TypeScript/React framework with type-safe SQL queries and built-in components.
 
-**Scaffold**: `databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>`
+**Scaffold** (requires `--warehouse-id`, see parent skill for discovery):
+```bash
+databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
+```
 
 See [AppKit Overview](references/appkit/overview.md) for project structure, workflow, and detailed guidance.
 

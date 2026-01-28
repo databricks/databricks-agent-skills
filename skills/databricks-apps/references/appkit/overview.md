@@ -9,6 +9,18 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
 
+## Pre-Implementation Checklist
+
+Before writing App.tsx, complete these steps:
+
+1. ✅ Create SQL files in `config/queries/`
+2. ✅ Run `npm run typegen` to generate query types
+3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
+4. ✅ Verify component props in [Frontend Guide](frontend.md)
+5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
+
+**DO NOT** write UI code until types are generated and verified.
+
 ## Project Structure
 
 ```

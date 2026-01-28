@@ -81,6 +81,23 @@ const formatted = formatCurrency(row.amount);  // "123.45" → "$123.45"
 const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 ```
 
+## Available sql.* Helpers
+
+```typescript
+import { sql } from "@databricks/appkit-ui/js";
+
+sql.string(value)   // For string parameters
+sql.number(value)   // For numeric parameters
+sql.date(value)     // For date parameters (YYYY-MM-DD format)
+
+// ❌ These DO NOT exist:
+// sql.null()
+// sql.boolean()
+// sql.array()
+```
+
+**For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.
+
 ## Query Parameterization
 
 SQL queries can accept parameters to make them dynamic and reusable.
