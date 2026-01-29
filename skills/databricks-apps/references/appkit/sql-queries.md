@@ -86,14 +86,19 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";
 
-sql.string(value)   // For string parameters
-sql.number(value)   // For numeric parameters
-sql.date(value)     // For date parameters (YYYY-MM-DD format)
+// ✅ These exist:
+sql.string(value)      // For STRING parameters
+sql.number(value)      // For NUMERIC parameters (INT, BIGINT, DOUBLE, DECIMAL)
+sql.date(value)        // For DATE parameters (YYYY-MM-DD format)
+sql.timestamp(value)   // For TIMESTAMP parameters
+sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 
 // ❌ These DO NOT exist:
-// sql.null()
-// sql.boolean()
-// sql.array()
+// sql.null()     - use sentinel values instead
+// sql.boolean()  - use sql.number(1/0) or sql.string("true"/"false")
+// sql.array()    - use comma-separated sql.string() and split in SQL
+// sql.int()      - use sql.number()
+// sql.float()    - use sql.number()
 ```
 
 **For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.

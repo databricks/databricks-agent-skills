@@ -79,6 +79,21 @@ function DetailsComponent({ id }: { id: string }) {
 }
 ```
 
+**⚠️ Memoize Parameters to Prevent Infinite Loops:**
+
+```typescript
+// ❌ WRONG - creates new object every render → infinite refetch loop
+function MyComponent() {
+  const { data } = useAnalyticsQuery('query', { id: sql.string(selectedId) });
+}
+
+// ✅ CORRECT - memoize parameters
+function MyComponent() {
+  const params = useMemo(() => ({ id: sql.string(selectedId) }), [selectedId]);
+  const { data } = useAnalyticsQuery('query', params);
+}
+```
+
 **Basic Usage:**
 
 ```typescript
