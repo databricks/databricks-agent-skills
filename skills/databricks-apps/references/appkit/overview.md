@@ -4,7 +4,7 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 
 ## Workflow
 
-1. **Scaffold**: `databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>`
+1. **Scaffold**: See parent SKILL.md for `databricks apps init` command
 2. **Develop**: `cd <NAME> && npm install && npm run dev`
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
@@ -83,12 +83,14 @@ import { BarChart } from '@databricks/appkit-ui/react';
 <BarChart queryKey="my_data" parameters={{}} />
 ```
 
-## References
+## References - READ BEFORE Writing Code
 
-- [SQL Queries](sql-queries.md) - query files, parameterization, sql.* helpers
-- [AppKit SDK](appkit-sdk.md) - imports, useAnalyticsQuery hook
-- [Frontend](frontend.md) - visualization components, charts, DataTable
-- [tRPC](trpc.md) - custom endpoints for mutations, Databricks APIs
+| Before doing... | READ |
+|-----------------|------|
+| Creating SQL files | [SQL Queries](sql-queries.md) - parameterization, sql.* helpers |
+| Using `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) - memoization, conditional queries |
+| Adding charts/tables | [Frontend](frontend.md) - component props, invalid patterns |
+| Adding API endpoints | [tRPC](trpc.md) - mutations, Databricks API calls |
 
 ## Critical Rules
 

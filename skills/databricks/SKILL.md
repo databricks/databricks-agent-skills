@@ -58,8 +58,6 @@ databricks experimental aitools tools discover-schema catalog.schema.table --pro
 databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <profile>
 databricks experimental aitools tools get-default-warehouse --profile <profile>
 
-# validation
-databricks experimental aitools tools validate ./ --profile <profile>
 ```
 
 See [Data Exploration](data-exploration.md) for details.
@@ -109,6 +107,16 @@ databricks bundle run <resource> -t <target> --profile <profile>
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace/UC permissions |
 | `RESOURCE_DOES_NOT_EXIST` | Verify resource name/id and profile |
+
+## Required Reading by Task
+
+| Task | READ BEFORE proceeding |
+|------|------------------------|
+| First time setup | [CLI Installation](databricks-cli-install.md) |
+| Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
+| Exploring tables/schemas | [Data Exploration](data-exploration.md) |
+| UC permissions/volumes | [Unity Catalog](unity-catalog.md) |
+| Deploying jobs/pipelines | [Asset Bundles](asset-bundles.md) |
 
 ## Reference Guides
 

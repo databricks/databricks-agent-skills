@@ -31,8 +31,8 @@ databricks catalogs delete <catalog-name> --profile my-workspace
 Schemas (also called databases) organize tables and views within a catalog.
 
 ```bash
-# List schemas in a catalog
-databricks schemas list --catalog-name <catalog-name> --profile my-workspace
+# List schemas in a catalog (positional argument!)
+databricks schemas list <catalog-name> --profile my-workspace
 
 # Get schema details
 databricks schemas get <catalog-name>.<schema-name> --profile my-workspace
@@ -55,8 +55,8 @@ databricks schemas delete <catalog-name>.<schema-name> --profile my-workspace
 Tables store structured data in Unity Catalog.
 
 ```bash
-# List tables in a schema
-databricks tables list --catalog-name <catalog-name> --schema-name <schema-name> --profile my-workspace
+# List tables in a schema (positional arguments!)
+databricks tables list <catalog-name> <schema-name> --profile my-workspace
 
 # Get table details
 databricks tables get <catalog-name>.<schema-name>.<table-name> --profile my-workspace
@@ -74,8 +74,8 @@ Unity Catalog Volumes provide managed storage for non-tabular data (files, image
 ### Volume Commands
 
 ```bash
-# List volumes in a schema
-databricks volumes list --catalog-name <catalog-name> --schema-name <schema-name> --profile my-workspace
+# List volumes in a schema (positional arguments!)
+databricks volumes list <catalog-name> <schema-name> --profile my-workspace
 
 # Get volume details
 databricks volumes get <catalog-name>.<schema-name>.<volume-name> --profile my-workspace

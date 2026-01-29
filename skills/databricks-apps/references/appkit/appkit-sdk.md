@@ -44,6 +44,21 @@ Use cases:
 - Conditional rendering based on data values
 - Data that needs transformation before display
 
+**⚠️ Memoize Parameters to Prevent Infinite Loops:**
+
+```typescript
+// ❌ WRONG - creates new object every render → infinite refetch loop
+function MyComponent() {
+  const { data } = useAnalyticsQuery('query', { id: sql.string(selectedId) });
+}
+
+// ✅ CORRECT - memoize parameters
+function MyComponent() {
+  const params = useMemo(() => ({ id: sql.string(selectedId) }), [selectedId]);
+  const { data } = useAnalyticsQuery('query', params);
+}
+```
+
 **⚠️ CRITICAL: This is NOT React Query**
 
 | React Query Pattern | AppKit Pattern |
@@ -79,33 +94,22 @@ function DetailsComponent({ id }: { id: string }) {
 }
 ```
 
-**⚠️ Memoize Parameters to Prevent Infinite Loops:**
-
-```typescript
-// ❌ WRONG - creates new object every render → infinite refetch loop
-function MyComponent() {
-  const { data } = useAnalyticsQuery('query', { id: sql.string(selectedId) });
-}
-
-// ✅ CORRECT - memoize parameters
-function MyComponent() {
-  const params = useMemo(() => ({ id: sql.string(selectedId) }), [selectedId]);
-  const { data } = useAnalyticsQuery('query', params);
-}
-```
-
 **Basic Usage:**
 
 ```typescript
-import { useAnalyticsQuery, Skeleton } from '@databricks/app-kit-ui/react';
+import { useAnalyticsQuery, Skeleton } from '@databricks/appkit-ui/react';
+import { sql } from '@databricks/appkit-ui/js';
+import { useMemo } from 'react';
 
 interface QueryResult { column_name: string; value: number; }
 
 function CustomDisplay() {
-  const { data, loading, error } = useAnalyticsQuery<QueryResult[]>('query_name', {
-    start_date: sql.date(Date.now()),
+  const params = useMemo(() => ({
+    start_date: sql.date('2024-01-01'),
     category: sql.string("tools")
-  });
+  }), []);
+
+  const { data, loading, error } = useAnalyticsQuery<QueryResult[]>('query_name', params);
 
   if (loading) return <Skeleton className="h-4 w-3/4" />;
   if (error) return <div className="text-destructive">Error: {error}</div>;
