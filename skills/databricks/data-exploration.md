@@ -238,7 +238,7 @@ Both commands support:
 2. Check if you have read permissions on the table
 3. List available tables:
    ```bash
-   databricks tables list --catalog-name <catalog> --schema-name <schema> --profile my-workspace
+   databricks tables list <catalog> <schema> --profile my-workspace
    ```
 
 ### Warehouse Not Available

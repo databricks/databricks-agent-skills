@@ -17,6 +17,7 @@ Use tRPC ONLY for:
 import { initTRPC } from '@trpc/server';
 import { getRequestContext } from '@databricks/appkit';
 import { z } from 'zod';
+import superjson from 'superjson';
 
 const t = initTRPC.create({ transformer: superjson });
 const publicProcedure = t.procedure;

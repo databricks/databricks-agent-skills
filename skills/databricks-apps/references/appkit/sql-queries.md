@@ -176,14 +176,14 @@ WHERE DATE(tpep_pickup_datetime) >= :start_date
 **Date Helper Functions:**
 
 ```typescript
-// Helper to get dates relative to today
-const daysAgo = (n: number) => {
+// Helper to get YYYY-MM-DD string for dates relative to today
+const daysAgo = (n: number): string => {
   const date = new Date(Date.now() - n * 86400000);
-  return sql.date(date)
+  return date.toISOString().split('T')[0];  // "2024-01-15"
 };
 
 const params = {
-  start_date: daysAgo(7),             // 7 days ago
+  start_date: sql.date(daysAgo(7)),   // 7 days ago
   end_date: sql.date(daysAgo(0)),     // Today
 };
 ```

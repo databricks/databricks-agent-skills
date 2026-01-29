@@ -54,8 +54,9 @@ Available: `AreaChart`, `BarChart`, `LineChart`, `PieChart`, `RadarChart`, `Data
 | `orientation` | "vertical" \| "horizontal" | Chart orientation (BarChart) |
 | `smooth` | boolean | Smooth line curves (LineChart, AreaChart) |
 | `showSymbol` | boolean | Show data point markers (LineChart) |
-| `nameKey` | string | Label field (PieChart only) |
-| `valueKey` | string | Value field (PieChart only) |
+| `innerRadius` | number | Inner radius for donut effect (PieChart, 0-100%) |
+| `showLabels` | boolean | Show labels on slices (PieChart, default: true) |
+| `labelPosition` | "outside" \| "inside" \| "center" | Label position (PieChart) |
 
 **Basic Usage:**
 
@@ -128,9 +129,10 @@ return <BarChart queryKey="sales_data" parameters={{}} />;
 />
 ```
 
-**Custom column rendering** - use the `transform` prop:
+**Custom column formatting** - use the `transform` prop or format in SQL:
 
 ```typescript
+// Option 1: Use transform prop
 <DataTable
   queryKey="products"
   parameters={{}}
@@ -139,6 +141,9 @@ return <BarChart queryKey="sales_data" parameters={{}} />;
     price: `$${Number(row.price).toFixed(2)}`,
   }))}
 />
+
+// Option 2: Format in SQL query
+// SELECT name, CONCAT('$', FORMAT_NUMBER(price, 2)) as price FROM products
 ```
 
 ## Layout Structure

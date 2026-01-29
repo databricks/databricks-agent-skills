@@ -13,6 +13,16 @@ parent: databricks
 
 Build apps that deploy to Databricks Apps platform.
 
+## Required Reading by Phase
+
+| Phase | READ BEFORE proceeding |
+|-------|------------------------|
+| Scaffolding | Parent `databricks` skill (auth, warehouse discovery) |
+| Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
+| Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
+| Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
+| Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
+
 ## Generic Guidelines
 
 These apply regardless of framework:
@@ -34,7 +44,7 @@ TypeScript/React framework with type-safe SQL queries and built-in components.
 databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
 ```
 
-See [AppKit Overview](references/appkit/overview.md) for project structure, workflow, and detailed guidance.
+**READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
 ### Other Frameworks
 
