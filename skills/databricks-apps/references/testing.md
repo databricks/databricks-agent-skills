@@ -33,18 +33,26 @@ describe('Feature Name', () => {
 
 The template includes a smoke test at `tests/smoke.spec.ts` that verifies the app loads correctly.
 
+**⚠️ MUST UPDATE after customizing the app** - the default test checks for template-specific content ('Minimal Databricks App', 'hello world') which won't exist in your app.
+
+```typescript
+// tests/smoke.spec.ts - update these selectors:
+
+// ❌ Template default - will fail after customization
+await expect(page.getByRole('heading', { name: 'Minimal Databricks App' })).toBeVisible();
+await expect(page.getByText('hello world')).toBeVisible();
+
+// ✅ Update to match YOUR app
+await expect(page.getByRole('heading', { name: 'Your App Title' })).toBeVisible();
+await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });  // Or just check any h1
+```
+
 **What the smoke test does:**
 - Opens the app
 - Waits for data to load (SQL query results)
 - Verifies key UI elements are visible
 - Captures screenshots and console logs to `.smoke-test/` directory
 - Always captures artifacts, even on test failure
-
-**When customizing the app**, update `tests/smoke.spec.ts` to match your UI:
-- Change heading selector to match your app title (replace 'Minimal Databricks App')
-- Update data assertions to match your query results (replace 'hello world' check)
-- Keep the test simple - just verify app loads and displays data
-- The default test expects specific template content; update these expectations after customization
 
 **Keep smoke tests simple:**
 - Only verify that the app loads and displays initial data
