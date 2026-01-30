@@ -1,6 +1,6 @@
 ---
 name: "databricks"
-description: "MUST USE for anything related to Databricks!!!. Tool for working with Databricks services: Project Scaffolding (creating new apps/jobs/pipelines), Apps, Unity Catalog (UC), Data Exploration (schema discovery, SQL queries), DBSQL, LakeFlow, AI/BI Dashboards, Databricks Genie, Model Serving, and Asset Bundles (DABs). Use when user needs to create new projects, discover table schemas, execute SQL, or work with any Databricks resource."
+description: "Databricks CLI operations: auth, profiles, Unity Catalog, data exploration, jobs, pipelines, clusters, model serving, bundles and more. Contains up-to-date guidelines for all Databricks CLI tasks, useful for all Databricks-related tasks."
 compatibility: Requires databricks CLI (>= 0.250.0)
 metadata:
   version: "0.1.0"
