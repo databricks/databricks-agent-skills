@@ -23,25 +23,7 @@ Before writing App.tsx, complete these steps:
 
 ## Project Structure
 
-```
-my-app/
-├── client/                    # React frontend
-│   ├── src/
-│   │   ├── App.tsx           # ← Main app component (start here)
-│   │   ├── appKitTypes.d.ts  # AUTO-GENERATED query types
-│   │   └── main.tsx          # Entry point
-│   └── vite.config.ts
-├── server/
-│   └── server.ts             # AppKit server + tRPC routes
-├── config/
-│   └── queries/              # SQL files
-│       └── my_query.sql      # → queryKey: "my_query"
-├── shared/
-│   └── types.ts              # Shared interfaces, helpers
-├── tests/
-│   └── smoke.spec.ts         # ⚠️ Update selectors after customizing!
-└── databricks.yml            # Deployment config
-```
+For full project layout, see official docs: `npx @databricks/appkit docs ./docs/docs/development/project-setup.md`
 
 **Key files to modify:**
 | Task | File |
@@ -54,21 +36,12 @@ my-app/
 
 ## Type Safety
 
-**Types are AUTO-GENERATED** - no manual schema files needed!
+For type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
 
+**Quick workflow:**
 1. Add/modify SQL in `config/queries/`
 2. Run `npm run dev` (watches) or `npm run typegen`
 3. Types appear in `client/src/appKitTypes.d.ts`
-
-**Optional Zod validation** - create `config/queries/schema.ts`:
-```typescript
-import { z } from 'zod';
-export const querySchemas = {
-  my_query: z.array(z.object({
-    amount: z.coerce.number(),  // z.coerce handles string/number from SQL
-  })),
-};
-```
 
 ## Adding Visualizations
 
@@ -98,7 +71,7 @@ import { BarChart } from '@databricks/appkit-ui/react';
 2. **Numeric types**: SQL numbers may return as strings. Always convert: `Number(row.amount)`
 3. **Type imports**: Use `import type { ... }` (verbatimModuleSyntax enabled).
 4. **Charts are ECharts**: No Recharts children - use props (`xKey`, `yKey`, `colors`).
-5. **No `enabled` option**: `useAnalyticsQuery` isn't React Query - use conditional rendering.
+5. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
 
 ## Decision Tree
 

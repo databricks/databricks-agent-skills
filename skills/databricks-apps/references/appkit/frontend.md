@@ -41,22 +41,9 @@ Available: `AreaChart`, `BarChart`, `LineChart`, `PieChart`, `RadarChart`, `Data
 
 **Chart Props Reference:**
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `queryKey` | string | Query file name (without .sql) |
-| `parameters` | Record<string, SQLTypeMarker> | Query parameters |
-| `xKey` | string | X-axis field (auto-detected if not provided) |
-| `yKey` | string \| string[] | Y-axis field(s) (auto-detected if not provided) |
-| `colors` | string[] | Custom color palette |
-| `height` | number | Chart height in pixels (default: 300) |
-| `showLegend` | boolean | Show legend |
-| `stacked` | boolean | Stack bars/areas (BarChart, AreaChart) |
-| `orientation` | "vertical" \| "horizontal" | Chart orientation (BarChart) |
-| `smooth` | boolean | Smooth line curves (LineChart, AreaChart) |
-| `showSymbol` | boolean | Show data point markers (LineChart) |
-| `innerRadius` | number | Inner radius for donut effect (PieChart, 0-100%) |
-| `showLabels` | boolean | Show labels on slices (PieChart, default: true) |
-| `labelPosition` | "outside" \| "inside" \| "center" | Label position (PieChart) |
+For full props API, see: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md`
+
+Common props: `queryKey`, `parameters`, `xKey`, `yKey`, `colors`, `height`, `showLegend`, `stacked`
 
 **Basic Usage:**
 

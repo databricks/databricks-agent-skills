@@ -39,6 +39,19 @@ These apply regardless of framework:
 
 TypeScript/React framework with type-safe SQL queries and built-in components.
 
+**Official Documentation** - Use CLI for up-to-date API reference:
+
+```bash
+npx @databricks/appkit docs <path>
+```
+
+Examples:
+- View main documentation: `npx @databricks/appkit docs`
+- View API reference: `npx @databricks/appkit docs ./docs/docs/api.md`
+- View component docs: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/components/Sidebar.md`
+
+The CLI will display the documentation content directly in the terminal.
+
 **Scaffold** (requires `--warehouse-id`, see parent skill for discovery):
 ```bash
 databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>

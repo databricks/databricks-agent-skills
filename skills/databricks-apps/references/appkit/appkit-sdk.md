@@ -16,23 +16,7 @@ import { MyInterface, MyType } from '../../shared/types';
 
 ## Server Setup
 
-```typescript
-import { createApp, server, analytics } from '@databricks/app-kit';
-
-const app = await createApp({
-  plugins: [
-    server({ autoStart: false }),
-    analytics(),
-  ],
-});
-
-// Extend with custom tRPC endpoints if needed
-app.server.extend((express: Application) => {
-  express.use('/trpc', [appRouterMiddleware()]);
-});
-
-await app.server.start();
-```
+For server configuration, see: `npx @databricks/appkit docs ./docs/docs/plugins.md`
 
 ## useAnalyticsQuery Hook
 
@@ -59,21 +43,22 @@ function MyComponent() {
 }
 ```
 
-**⚠️ CRITICAL: This is NOT React Query**
+**Conditional Query Options:**
 
-| React Query Pattern | AppKit Pattern |
-|---------------------|----------------|
-| `{ enabled: !!id }` | ❌ NOT SUPPORTED - Use conditional rendering |
-| `refetch()` | ❌ NOT SUPPORTED - Change parameters or re-mount |
-| `onSuccess` callback | ❌ NOT SUPPORTED - Use useEffect on data |
+| Approach | When to use |
+|----------|-------------|
+| `{ autoStart: false }` | Prevent query from running on mount, start manually later |
+| Conditional rendering | Only mount component when data is needed |
 
-**Conditional Query Pattern:**
+**Option 1: Use `autoStart: false`**
 
 ```typescript
-// ❌ WRONG - enabled option doesn't exist
-const { data } = useAnalyticsQuery('details', params, { enabled: !!selectedId });
+const { data, loading, error } = useAnalyticsQuery('details', params, { autoStart: false });
+```
 
-// ✅ CORRECT - Use conditional rendering
+**Option 2: Conditional rendering**
+
+```typescript
 function ParentComponent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 

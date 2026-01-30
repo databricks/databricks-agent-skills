@@ -10,13 +10,9 @@
 
 ## Type Generation
 
-**Types are AUTO-GENERATED** from SQL files - no manual schema required!
+For full type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
 
-1. Add/modify SQL files in `config/queries/`
-2. Run `npm run dev` (auto-regenerates on changes) or `npm run typegen`
-3. Types appear in `client/src/appKitTypes.d.ts`
-
-**DO NOT** manually edit `client/src/appKitTypes.d.ts`.
+**Quick workflow:** Add SQL files → Run `npm run dev` or `npm run typegen` → Types appear in `client/src/appKitTypes.d.ts`
 
 ## Query Schemas (Optional)
 
@@ -83,19 +79,21 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 
 ## Available sql.* Helpers
 
+For full API reference, see: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md`
+
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";
 
 // ✅ These exist:
 sql.string(value)      // For STRING parameters
 sql.number(value)      // For NUMERIC parameters (INT, BIGINT, DOUBLE, DECIMAL)
+sql.boolean(value)     // For BOOLEAN parameters
 sql.date(value)        // For DATE parameters (YYYY-MM-DD format)
 sql.timestamp(value)   // For TIMESTAMP parameters
 sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 
 // ❌ These DO NOT exist:
 // sql.null()     - use sentinel values instead
-// sql.boolean()  - use sql.number(1/0) or sql.string("true"/"false")
 // sql.array()    - use comma-separated sql.string() and split in SQL
 // sql.int()      - use sql.number()
 // sql.float()    - use sql.number()
