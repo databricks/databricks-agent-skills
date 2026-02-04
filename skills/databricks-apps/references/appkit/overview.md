@@ -23,7 +23,24 @@ Before writing App.tsx, complete these steps:
 
 ## Project Structure
 
-For full project layout, see official docs: `npx @databricks/appkit docs ./docs/docs/development/project-setup.md`
+```
+my-app/
+├── server/
+│   ├── index.ts              # Backend entry point (AppKit)
+│   └── .env                  # Optional local dev env vars (do not commit)
+├── client/
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── src/
+│       ├── main.tsx
+│       └── App.tsx           # <- Main app component (start here)
+├── config/
+│   └── queries/
+│       └── my_query.sql      # -> queryKey: "my_query"
+├── app.yaml                  # Deployment config
+├── package.json
+└── tsconfig.json
+```
 
 **Key files to modify:**
 | Task | File |
@@ -40,7 +57,7 @@ For type generation details, see: `npx @databricks/appkit docs ./docs/docs/devel
 
 **Quick workflow:**
 1. Add/modify SQL in `config/queries/`
-2. Run `npm run dev` (watches) or `npm run typegen`
+2. Run `npm run typegen`
 3. Types appear in `client/src/appKitTypes.d.ts`
 
 ## Adding Visualizations

@@ -43,8 +43,6 @@ Available: `AreaChart`, `BarChart`, `LineChart`, `PieChart`, `RadarChart`, `Data
 
 For full props API, see: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md`
 
-Common props: `queryKey`, `parameters`, `xKey`, `yKey`, `colors`, `height`, `showLegend`, `stacked`
-
 **Basic Usage:**
 
 ```typescript

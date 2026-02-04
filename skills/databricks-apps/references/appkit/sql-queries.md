@@ -12,7 +12,7 @@
 
 For full type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
 
-**Quick workflow:** Add SQL files → Run `npm run dev` or `npm run typegen` → Types appear in `client/src/appKitTypes.d.ts`
+**Quick workflow:** Add SQL files → Run `npm run typegen` → Types appear in `client/src/appKitTypes.d.ts`
 
 ## Query Schemas (Optional)
 
