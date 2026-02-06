@@ -39,7 +39,21 @@ These apply regardless of framework:
 
 TypeScript/React framework with type-safe SQL queries and built-in components.
 
-**Scaffold** (requires `--warehouse-id`, see parent skill for discovery):
+**Official Documentation** - View API reference (docs only, NOT for scaffolding):
+
+```bash
+# ONLY for viewing documentation - do NOT use for init/scaffold
+npx @databricks/appkit docs <path>
+```
+
+**IMPORTANT**: ALWAYS run `npx @databricks/appkit docs` (no path) FIRST to see available pages. DO NOT guess paths - use the index to find correct paths.
+
+Examples of known paths:
+- Root index: `npx @databricks/appkit docs`
+- API reference: `npx @databricks/appkit docs ./docs/docs/api.md`
+- Component docs: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/components/Sidebar.md`
+
+**Scaffold** (requires `--warehouse-id`, see parent skill; DO NOT use `npx`):
 ```bash
 databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
 ```
