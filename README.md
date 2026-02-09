@@ -65,3 +65,16 @@ python3 scripts/generate_manifest.py validate
 ```
 
 The manifest is used by the CLI to discover available skills.
+
+## Security
+
+Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
+
+## Integrity
+
+All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+
+## Contributing
+
+- All changes require approval from a code owner (see [CODEOWNERS](./.github/CODEOWNERS)).
+- Documentation examples must follow least-privilege defaults — avoid suggesting elevated permissions or broad scopes unless explicitly necessary.

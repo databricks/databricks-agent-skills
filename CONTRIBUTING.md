@@ -1,3 +1,7 @@
+## Security
+
+Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
+
 ## Developer Certificate of Origin
 
 To contribute to this repository, you must sign off your commits to certify 
