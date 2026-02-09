@@ -2,6 +2,15 @@
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
+## Documentation Safety
+
+Examples in skills and references must follow secure defaults:
+
+- Use least-privilege permissions — don't suggest `ALL PRIVILEGES` when a narrower grant suffices
+- If an example requires elevated permissions, state it explicitly (e.g. "requires workspace admin")
+- Prefer scoped tokens over broad credentials
+- Obfuscate sensitive values: use placeholder workspace IDs (`1111111111111111`), URLs (`company-workspace.cloud.databricks.com`), and never include real tokens or passwords
+
 ## Developer Certificate of Origin
 
 To contribute to this repository, you must sign off your commits to certify 
