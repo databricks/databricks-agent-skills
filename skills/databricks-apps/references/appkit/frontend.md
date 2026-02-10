@@ -17,16 +17,28 @@ These mistakes appear frequently — check the official docs for actual prop nam
 
 **Always verify props against docs before using a component.**
 
-## Key Concepts
+## Chart Props Quick Reference
 
-- All visualization components (`BarChart`, `LineChart`, `DataTable`, etc.) handle data fetching, loading states, and error handling internally
-- Charts are **ECharts-based** — configure via props, not children
-- Components support both query mode (`queryKey` + `parameters`) and static data mode (`data` prop)
+All charts accept these core props (verify full list via docs links above):
+
+```tsx
+<BarChart
+  queryKey="sales_by_region"   // SQL query filename without .sql
+  parameters={{}}              // query params — REQUIRED even if empty
+  xKey="region"                // column name for X axis
+  yKey="revenue"               // column name for Y axis (string or string[] for multi-series)
+  colors={['#40d1f5']}         // custom colors
+  height={400}                 // default: 300
+/>
+
+<LineChart queryKey="monthly_trend" parameters={{}} xKey="month" yKey={["revenue", "expenses"]} />
+```
+
+Charts are **ECharts-based** — configure via props, not Recharts-style children. Components handle data fetching, loading, and error states internally.
+
+> ⚠️ **`parameters` is REQUIRED on all data components**, even when the query has no params. Always include `parameters={{}}`.
 
 ```typescript
-// ✅ Typical usage — component handles everything
-<BarChart queryKey="sales_by_region" parameters={{}} />
-
 // ❌ Don't double-fetch
 const { data } = useAnalyticsQuery('sales_data', {});
 return <BarChart queryKey="sales_data" parameters={{}} />;  // fetches again!

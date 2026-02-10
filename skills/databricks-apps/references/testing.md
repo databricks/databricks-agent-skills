@@ -57,6 +57,24 @@ await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });  // Or
 - Captures screenshots and console logs to `.smoke-test/` directory
 - Always captures artifacts, even on test failure
 
+## Playwright Strict Mode
+
+Playwright uses strict mode by default — selectors matching multiple elements WILL FAIL.
+
+```typescript
+// ❌ FAILS if "Revenue" appears in multiple places (heading + card + description)
+await expect(page.getByText('Revenue')).toBeVisible();
+
+// ✅ Use exact matching
+await expect(page.getByText('Revenue', { exact: true })).toBeVisible();
+
+// ✅ Use role-based selectors for headings
+await expect(page.getByRole('heading', { name: 'Revenue Dashboard' })).toBeVisible();
+
+// ✅ Use .first() as last resort
+await expect(page.getByText('Revenue').first()).toBeVisible();
+```
+
 **Keep smoke tests simple:**
 - Only verify that the app loads and displays initial data
 - Wait for key elements to appear (page title, main content)

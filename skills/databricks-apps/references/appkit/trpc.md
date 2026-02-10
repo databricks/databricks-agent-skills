@@ -15,7 +15,7 @@ Use tRPC ONLY for:
 ```typescript
 // server/trpc.ts
 import { initTRPC } from '@trpc/server';
-import { getRequestContext } from '@databricks/appkit';
+import { getExecutionContext } from '@databricks/appkit';
 import { z } from 'zod';
 import superjson from 'superjson';
 
@@ -25,7 +25,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   // Example: Query a serving endpoint
   queryModel: publicProcedure.input(z.object({ prompt: z.string() })).query(async ({ input: { prompt } }) => {
-    const { serviceDatabricksClient: client } = getRequestContext();
+    const { serviceDatabricksClient: client } = getExecutionContext();
     const response = await client.servingEndpoints.query({
       name: 'your-endpoint-name',
       messages: [{ role: 'user', content: prompt }],

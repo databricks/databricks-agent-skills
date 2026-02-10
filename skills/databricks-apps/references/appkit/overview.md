@@ -9,7 +9,20 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
 
-**Data exploration**: Use `databricks experimental aitools tools discover-schema` and `databricks experimental aitools tools query` from the parent `databricks` skill instead of manually navigating catalogs/schemas/tables.
+## Data Discovery (Before Writing SQL)
+
+```bash
+# 1. get warehouse id
+databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+
+# 2. explore table structure
+databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
+
+# 3. test query
+databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 5" --profile <PROFILE>
+```
+
+Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`.
 
 ## Pre-Implementation Checklist
 
@@ -84,13 +97,24 @@ import { BarChart } from '@databricks/appkit-ui/react';
 <BarChart queryKey="my_data" parameters={{}} />
 ```
 
+## AppKit Official Documentation
+
+**Always use AppKit docs as the source of truth for API details:**
+
+```bash
+npx @databricks/appkit docs                                    # full index
+npx @databricks/appkit docs ./docs/docs/development/llm-guide.md  # LLM-specific guardrails
+npx @databricks/appkit docs ./docs/docs/api/appkit-ui.md       # UI components
+npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md  # specific component
+```
+
 ## References - READ BEFORE Writing Code
 
 | Before doing... | READ |
 |-----------------|------|
 | Creating SQL files | [SQL Queries](sql-queries.md) - parameterization, sql.* helpers |
 | Using `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) - memoization, conditional queries |
-| Adding charts/tables | [Frontend](frontend.md) - component props, invalid patterns |
+| Adding charts/tables | [Frontend](frontend.md) - anti-patterns and gotchas |
 | Adding API endpoints | [tRPC](trpc.md) - mutations, Databricks API calls |
 
 ## Critical Rules
