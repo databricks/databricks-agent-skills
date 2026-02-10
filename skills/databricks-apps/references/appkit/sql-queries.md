@@ -79,7 +79,7 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 
 ## Available sql.* Helpers
 
-For full API reference, see: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md`
+**Full API reference**: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
 
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";

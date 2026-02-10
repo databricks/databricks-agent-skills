@@ -29,9 +29,24 @@ These apply regardless of framework:
 
 - **Deployment**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
 - **Validation**: `databricks apps validate` before deploying
-- **App name**: Must be ≤26 characters (dev- prefix adds 4 chars, max 30 total)
-- **Testing**: [smoke tests](references/testing.md)
+- **App name**: Must be ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
+- **Smoke tests**: ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Authentication**: covered by parent `databricks` skill
+
+## Project Structure (after `databricks apps init --features analytics`)
+- `client/src/App.tsx` — main React component (start here)
+- `config/queries/*.sql` — SQL query files (queryKey = filename without .sql)
+- `server/server.ts` — backend entry (tRPC routers)
+- `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
+- `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
+
+## When to Use What
+- **Read data → display in chart/table**: Use visualization components with `queryKey` prop
+- **Read data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
+- **Read data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
+- **Call ML model endpoint**: Use tRPC
+- **Write/update data (INSERT/UPDATE/DELETE)**: Use tRPC
+- **⚠️ NEVER use tRPC to run SELECT queries** — always use SQL files in `config/queries/`
 
 ## Frameworks
 

@@ -33,7 +33,10 @@ describe('Feature Name', () => {
 
 The template includes a smoke test at `tests/smoke.spec.ts` that verifies the app loads correctly.
 
-**⚠️ MUST UPDATE after customizing the app** - the default test checks for template-specific content ('Minimal Databricks App', 'hello world') which won't exist in your app.
+**⚠️ MUST UPDATE after customizing the app:**
+- The heading selector checks for `'Minimal Databricks App'` — change it to match your app's actual title
+- The text assertion checks for `'hello world'` — update or remove it to match your app's content
+- Failing to update these will cause the smoke test to fail on `databricks apps validate`
 
 ```typescript
 // tests/smoke.spec.ts - update these selectors:

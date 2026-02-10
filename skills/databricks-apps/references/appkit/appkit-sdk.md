@@ -20,7 +20,7 @@ For server configuration, see: `npx @databricks/appkit docs ./docs/docs/plugins.
 
 ## useAnalyticsQuery Hook
 
-**ONLY use when displaying data in a custom way that isn't a chart or table.**
+**ONLY use when displaying data in a custom way that isn't a chart or table.** For charts/tables, pass `queryKey` directly to the component — don't double-fetch.
 
 Use cases:
 - Custom HTML layouts (cards, lists, grids)
@@ -28,65 +28,57 @@ Use cases:
 - Conditional rendering based on data values
 - Data that needs transformation before display
 
-**⚠️ Memoize Parameters to Prevent Infinite Loops:**
+### ⚠️ Memoize Parameters to Prevent Infinite Loops
 
 ```typescript
 // ❌ WRONG - creates new object every render → infinite refetch loop
-function MyComponent() {
-  const { data } = useAnalyticsQuery('query', { id: sql.string(selectedId) });
-}
+const { data } = useAnalyticsQuery('query', { id: sql.string(selectedId) });
 
 // ✅ CORRECT - memoize parameters
-function MyComponent() {
-  const params = useMemo(() => ({ id: sql.string(selectedId) }), [selectedId]);
-  const { data } = useAnalyticsQuery('query', params);
-}
+const params = useMemo(() => ({ id: sql.string(selectedId) }), [selectedId]);
+const { data } = useAnalyticsQuery('query', params);
 ```
 
-**Conditional Query Options:**
-
-| Approach | When to use |
-|----------|-------------|
-| `{ autoStart: false }` | Prevent query from running on mount, start manually later |
-| Conditional rendering | Only mount component when data is needed |
-
-**Option 1: Use `autoStart: false`**
+### Conditional Queries
 
 ```typescript
-const { data, loading, error } = useAnalyticsQuery('details', params, { autoStart: false });
+// ❌ WRONG - `enabled` is NOT a valid option (this is a React Query pattern)
+const { data } = useAnalyticsQuery('query', params, { enabled: !!selectedId });
+
+// ✅ CORRECT - use autoStart: false
+const { data } = useAnalyticsQuery('query', params, { autoStart: false });
+
+// ✅ ALSO CORRECT - conditional rendering (component only mounts when data exists)
+{selectedId && <DetailsComponent id={selectedId} />}
 ```
 
-**Option 2: Conditional rendering**
+### Type Inference
 
+When `appKitTypes.d.ts` has been generated (via `npm run typegen`), types are inferred automatically:
 ```typescript
-function ParentComponent() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+// ✅ After typegen - types are automatic, no generic needed
+const { data } = useAnalyticsQuery('my_query', params);
 
-  return (
-    <div>
-      <SelectList onSelect={setSelectedId} />
-      {selectedId && <DetailsComponent id={selectedId} />}
-    </div>
-  );
-}
-
-function DetailsComponent({ id }: { id: string }) {
-  // Query only runs when component is mounted (when id exists)
-  const { data, loading, error } = useAnalyticsQuery('details', {
-    id: sql.string(id)
-  });
-  // ...
-}
+// ⚠️ Before typegen - data is `unknown`, you must provide type manually
+const { data } = useAnalyticsQuery<MyRow[]>('my_query', params);
 ```
 
-**Basic Usage:**
+**Common mistake** — don't define interfaces that duplicate generated types:
+```typescript
+// ❌ WRONG - manual interface may conflict with generated QueryRegistry
+interface MyData { id: string; value: number; }
+const { data } = useAnalyticsQuery<MyData[]>('my_query', params);
+
+// ✅ CORRECT - run `npm run typegen` and let it provide types
+const { data } = useAnalyticsQuery('my_query', params);
+```
+
+### Basic Usage
 
 ```typescript
 import { useAnalyticsQuery, Skeleton } from '@databricks/appkit-ui/react';
 import { sql } from '@databricks/appkit-ui/js';
 import { useMemo } from 'react';
-
-interface QueryResult { column_name: string; value: number; }
 
 function CustomDisplay() {
   const params = useMemo(() => ({
@@ -94,30 +86,21 @@ function CustomDisplay() {
     category: sql.string("tools")
   }), []);
 
-  const { data, loading, error } = useAnalyticsQuery<QueryResult[]>('query_name', params);
+  const { data, loading, error } = useAnalyticsQuery('query_name', params);
 
   if (loading) return <Skeleton className="h-4 w-3/4" />;
   if (error) return <div className="text-destructive">Error: {error}</div>;
+  if (!data) return null;
 
   return (
     <div className="grid gap-4">
-      {data?.map(row => (
+      {data.map(row => (
         <div key={row.column_name} className="p-4 border rounded">
           <h3>{row.column_name}</h3>
-          <p>{row.value}</p>
+          <p>{Number(row.value).toFixed(2)}</p>
         </div>
       ))}
     </div>
   );
 }
-```
-
-**API:**
-
-```typescript
-const { data, loading, error } = useAnalyticsQuery<T>(
-  queryName: string,                        // SQL file name without .sql extension
-  params: Record<string, SQLTypeMarker>     // Query parameters
-);
-// Returns: { data: T | null, loading: boolean, error: string | null }
 ```

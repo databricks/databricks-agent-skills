@@ -48,16 +48,19 @@ export DATABRICKS_CONFIG_PROFILE=my-workspace
 databricks apps list  # profile not set!
 ```
 
-## AI Tools (preferred)
+## Data Exploration — Use AI Tools
 
-`databricks experimental aitools` provides agent-friendly commands. Prefer these over raw CLI when available.
+**Use these instead of manually navigating catalogs/schemas/tables:**
 
 ```bash
-# data exploration
+# discover table structure (columns, types, sample data, stats)
 databricks experimental aitools tools discover-schema catalog.schema.table --profile <profile>
-databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <profile>
-databricks experimental aitools tools get-default-warehouse --profile <profile>
 
+# run ad-hoc SQL queries
+databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <profile>
+
+# find the default warehouse
+databricks experimental aitools tools get-default-warehouse --profile <profile>
 ```
 
 See [Data Exploration](data-exploration.md) for details.
@@ -78,12 +81,17 @@ databricks sql-warehouses list --profile <profile>
 databricks pipelines list --profile <profile>
 databricks serving-endpoints list --profile <profile>
 
-# Unity Catalog - use POSITIONAL arguments (not flags!)
+# ⚠️ Unity Catalog — POSITIONAL arguments (NOT flags!)
 databricks catalogs list --profile <profile>
-databricks schemas list <catalog> --profile <profile>                    # ✅ Positional
-# databricks schemas list --catalog-name <catalog> --profile <profile>  # ❌ Wrong
-databricks tables list <catalog> <schema> --profile <profile>            # ✅ Positional
-databricks tables get <catalog>.<schema>.<table> --profile <profile>     # Full name
+
+# ✅ CORRECT: positional args
+databricks schemas list <catalog> --profile <profile>
+databricks tables list <catalog> <schema> --profile <profile>
+databricks tables get <catalog>.<schema>.<table> --profile <profile>
+
+# ❌ WRONG: these flags DON'T EXIST
+# databricks schemas list --catalog-name <catalog>    ← WILL FAIL
+# databricks tables list --catalog <catalog>           ← WILL FAIL
 
 # When in doubt, check help:
 # databricks schemas list --help
