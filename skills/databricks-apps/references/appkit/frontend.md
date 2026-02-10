@@ -1,6 +1,6 @@
 # Frontend Guidelines
 
-**For full component API**: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui.md`
+**For full component API**: run `npx @databricks/appkit docs` and navigate to the component you need.
 
 ## Common Anti-Patterns
 
@@ -8,8 +8,8 @@ These mistakes appear frequently — check the official docs for actual prop nam
 
 | Mistake | Why it's wrong | What to do |
 |---------|---------------|------------|
-| `xAxisKey`, `dataKey` on charts | Recharts naming, not AppKit | Check docs: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md` |
-| `yAxisKeys`, `yKeys` on charts | Recharts naming | Same as above — look for actual prop names |
+| `xAxisKey`, `dataKey` on charts | Recharts naming, not AppKit | Check docs for correct prop names |
+| `yAxisKeys`, `yKeys` on charts | Recharts naming | Same — use docs |
 | `config` on charts | Not a valid prop | Use `options` for ECharts overrides, or individual props |
 | `<XAxis>`, `<YAxis>` children | AppKit charts are ECharts-based, NOT Recharts wrappers — configure via props only |  |
 | `data`, `columns` on DataTable | DataTable fetches data automatically | Use `queryKey` + `parameters` |
@@ -48,7 +48,7 @@ return <BarChart queryKey="sales_data" parameters={{}} />;  // fetches again!
 
 DataTable fetches data automatically — don't pass `data` or `columns` props.
 
-**For full props**: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/DataTable.md`
+**For full props**: check AppKit docs (DataTable page).
 
 **Custom column formatting** — use the `transform` prop or format in SQL:
 

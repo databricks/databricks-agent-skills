@@ -54,19 +54,14 @@ These apply regardless of framework:
 
 TypeScript/React framework with type-safe SQL queries and built-in components.
 
-**Official Documentation** - View API reference (docs only, NOT for scaffolding):
+**Official Documentation** — the source of truth for all API details:
 
 ```bash
-# ONLY for viewing documentation - do NOT use for init/scaffold
-npx @databricks/appkit docs <path>
+npx @databricks/appkit docs              # ← ALWAYS start here to see available pages
+npx @databricks/appkit docs <path>       # then use paths from the index
 ```
 
-**IMPORTANT**: ALWAYS run `npx @databricks/appkit docs` (no path) FIRST to see available pages. DO NOT guess paths - use the index to find correct paths.
-
-Examples of known paths:
-- Root index: `npx @databricks/appkit docs`
-- API reference: `npx @databricks/appkit docs ./docs/docs/api.md`
-- Component docs: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui/components/Sidebar.md`
+**DO NOT guess doc paths.** Run without args first, pick from the index. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
 
 **Scaffold** (requires `--warehouse-id`, see parent skill; DO NOT use `npx`):
 ```bash

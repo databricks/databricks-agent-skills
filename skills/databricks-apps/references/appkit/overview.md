@@ -31,7 +31,7 @@ Before writing App.tsx, complete these steps:
 1. ✅ Create SQL files in `config/queries/`
 2. ✅ Run `npm run typegen` to generate query types
 3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
-4. ✅ Verify component props: `npx @databricks/appkit docs ./docs/docs/api/appkit-ui.md`
+4. ✅ Verify component props via `npx @databricks/appkit docs` (check the relevant component page)
 5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
 
 **DO NOT** write UI code until types are generated and verified.
@@ -99,14 +99,7 @@ import { BarChart } from '@databricks/appkit-ui/react';
 
 ## AppKit Official Documentation
 
-**Always use AppKit docs as the source of truth for API details:**
-
-```bash
-npx @databricks/appkit docs                                    # full index
-npx @databricks/appkit docs ./docs/docs/development/llm-guide.md  # LLM-specific guardrails
-npx @databricks/appkit docs ./docs/docs/api/appkit-ui.md       # UI components
-npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md  # specific component
-```
+**Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
 
 ## References - READ BEFORE Writing Code
 
