@@ -50,6 +50,17 @@ DataTable fetches data automatically — don't pass `data` or `columns` props.
 
 **For full props**: check AppKit docs (DataTable page).
 
+```tsx
+// ❌ WRONG - missing required `parameters` prop
+<DataTable queryKey="my_query" />
+
+// ❌ WRONG - DataTable fetches its own data
+<DataTable queryKey="my_query" parameters={{}} data={rows} columns={cols} />
+
+// ✅ CORRECT
+<DataTable queryKey="my_query" parameters={{}} />
+```
+
 **Custom column formatting** — use the `transform` prop or format in SQL:
 
 ```typescript
