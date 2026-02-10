@@ -99,16 +99,7 @@ import { BarChart } from '@databricks/appkit-ui/react';
 
 ## AppKit Official Documentation
 
-**Always use AppKit docs as the source of truth for API details:**
-
-```bash
-npx @databricks/appkit docs                                    # full index
-npx @databricks/appkit docs ./docs/docs/development/llm-guide.md  # LLM-specific guardrails
-npx @databricks/appkit docs ./docs/docs/api/appkit-ui.md       # UI components
-npx @databricks/appkit docs ./docs/docs/api/appkit-ui/data/BarChart.md  # specific component
-```
-
-Do not guess paths — run the index command first, then pick from available pages.
+**Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
 
 ## References - READ BEFORE Writing Code
 
