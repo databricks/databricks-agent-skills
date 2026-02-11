@@ -33,7 +33,10 @@ describe('Feature Name', () => {
 
 The template includes a smoke test at `tests/smoke.spec.ts` that verifies the app loads correctly.
 
-**⚠️ MUST UPDATE after customizing the app** - the default test checks for template-specific content ('Minimal Databricks App', 'hello world') which won't exist in your app.
+**⚠️ MUST UPDATE after customizing the app:**
+- The heading selector checks for `'Minimal Databricks App'` — change it to match your app's actual title
+- The text assertion checks for `'hello world'` — update or remove it to match your app's content
+- Failing to update these will cause the smoke test to fail on `databricks apps validate`
 
 ```typescript
 // tests/smoke.spec.ts - update these selectors:
@@ -53,6 +56,24 @@ await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });  // Or
 - Verifies key UI elements are visible
 - Captures screenshots and console logs to `.smoke-test/` directory
 - Always captures artifacts, even on test failure
+
+## Playwright Strict Mode
+
+Playwright uses strict mode by default — selectors matching multiple elements WILL FAIL.
+
+```typescript
+// ❌ FAILS if "Revenue" appears in multiple places (heading + card + description)
+await expect(page.getByText('Revenue')).toBeVisible();
+
+// ✅ Use exact matching
+await expect(page.getByText('Revenue', { exact: true })).toBeVisible();
+
+// ✅ Use role-based selectors for headings
+await expect(page.getByRole('heading', { name: 'Revenue Dashboard' })).toBeVisible();
+
+// ✅ Use .first() as last resort
+await expect(page.getByText('Revenue').first()).toBeVisible();
+```
 
 **Keep smoke tests simple:**
 - Only verify that the app loads and displays initial data

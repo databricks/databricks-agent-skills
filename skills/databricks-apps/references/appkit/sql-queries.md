@@ -79,7 +79,7 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 
 ## Available sql.* Helpers
 
-For full API reference, see: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md`
+**Full API reference**: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
 
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";
@@ -100,6 +100,26 @@ sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 ```
 
 **For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.
+
+## Databricks SQL Dialect
+
+Databricks uses Databricks SQL, NOT PostgreSQL/MySQL. Common mistakes:
+
+| PostgreSQL | Databricks SQL |
+|------------|---------------|
+| `GENERATE_SERIES(1, 10)` | `explode(sequence(1, 10))` |
+| `DATEDIFF(date1, date2)` | `DATEDIFF(DAY, date2, date1)` (3 args!) |
+| `NOW()` | `CURRENT_TIMESTAMP()` |
+| `INTERVAL '7 days'` | `INTERVAL 7 DAY` |
+| `STRING_AGG(col, ',')` | `CONCAT_WS(',', COLLECT_LIST(col))` |
+| `ILIKE` | `LOWER(col) LIKE LOWER(pattern)` |
+
+**Sample data date ranges** — do NOT use `CURRENT_DATE()` on historical datasets:
+- `samples.tpch.*` — historical dates, check with `SELECT MIN(o_orderdate), MAX(o_orderdate) FROM samples.tpch.orders`
+- `samples.nyctaxi.trips` — NYC taxi data with specific date ranges
+- `samples.tpcds.*` — data from 1998-2003
+
+Always check date ranges before writing date-filtered queries.
 
 ## Query Parameterization
 

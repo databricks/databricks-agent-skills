@@ -9,6 +9,21 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
 
+## Data Discovery (Before Writing SQL)
+
+```bash
+# 1. get warehouse id
+databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+
+# 2. explore table structure
+databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
+
+# 3. test query
+databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 5" --profile <PROFILE>
+```
+
+Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`.
+
 ## Pre-Implementation Checklist
 
 Before writing App.tsx, complete these steps:
@@ -16,10 +31,19 @@ Before writing App.tsx, complete these steps:
 1. ✅ Create SQL files in `config/queries/`
 2. ✅ Run `npm run typegen` to generate query types
 3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
-4. ✅ Verify component props in [Frontend Guide](frontend.md)
+4. ✅ Verify component props via `npx @databricks/appkit docs` (check the relevant component page)
 5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
 
 **DO NOT** write UI code until types are generated and verified.
+
+## Post-Implementation Checklist
+
+Before running `databricks apps validate`, complete these steps:
+
+1. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
+2. ✅ Update or remove the 'hello world' text assertion
+3. ✅ Verify `npm run typegen` has been run after all SQL files are finalized
+4. ✅ Ensure all numeric SQL values use `Number()` conversion in display code
 
 ## Project Structure
 
@@ -73,13 +97,17 @@ import { BarChart } from '@databricks/appkit-ui/react';
 <BarChart queryKey="my_data" parameters={{}} />
 ```
 
+## AppKit Official Documentation
+
+**Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
+
 ## References - READ BEFORE Writing Code
 
 | Before doing... | READ |
 |-----------------|------|
 | Creating SQL files | [SQL Queries](sql-queries.md) - parameterization, sql.* helpers |
 | Using `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) - memoization, conditional queries |
-| Adding charts/tables | [Frontend](frontend.md) - component props, invalid patterns |
+| Adding charts/tables | [Frontend](frontend.md) - anti-patterns and gotchas |
 | Adding API endpoints | [tRPC](trpc.md) - mutations, Databricks API calls |
 
 ## Critical Rules
