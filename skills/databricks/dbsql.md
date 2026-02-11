@@ -10,17 +10,17 @@ SQL Warehouses provide compute resources for running SQL queries.
 
 ```bash
 # List SQL warehouses
-databricks sql-warehouses list --profile my-workspace
+databricks warehouses list --profile my-workspace
 
 # Get warehouse details
-databricks sql-warehouses get --id <warehouse-id> --profile my-workspace
+databricks warehouses get --id <warehouse-id> --profile my-workspace
 ```
 
 ### Create SQL Warehouse
 
 ```bash
 # Create a SQL warehouse
-databricks sql-warehouses create \
+databricks warehouses create \
   --name "my-warehouse" \
   --cluster-size "2X-Small" \
   --min-num-clusters 1 \
@@ -28,7 +28,7 @@ databricks sql-warehouses create \
   --profile my-workspace
 
 # Create with auto-stop
-databricks sql-warehouses create \
+databricks warehouses create \
   --name "auto-stop-warehouse" \
   --cluster-size "Small" \
   --min-num-clusters 1 \
@@ -53,17 +53,17 @@ databricks sql-warehouses create \
 
 ```bash
 # Start a warehouse
-databricks sql-warehouses start --id <warehouse-id> --profile my-workspace
+databricks warehouses start --id <warehouse-id> --profile my-workspace
 
 # Stop a warehouse
-databricks sql-warehouses stop --id <warehouse-id> --profile my-workspace
+databricks warehouses stop --id <warehouse-id> --profile my-workspace
 ```
 
 ### Update Warehouse
 
 ```bash
 # Update warehouse configuration
-databricks sql-warehouses edit \
+databricks warehouses edit \
   --id <warehouse-id> \
   --name "updated-name" \
   --cluster-size "Medium" \
@@ -75,7 +75,7 @@ databricks sql-warehouses edit \
 
 ```bash
 # Delete a warehouse
-databricks sql-warehouses delete --id <warehouse-id> --profile my-workspace
+databricks warehouses delete --id <warehouse-id> --profile my-workspace
 ```
 
 ## Queries
@@ -202,7 +202,7 @@ databricks alerts delete --id <alert-id> --profile my-workspace
 ### 1. Create SQL Warehouse
 
 ```bash
-databricks sql-warehouses create \
+databricks warehouses create \
   --name "analytics-warehouse" \
   --cluster-size "Small" \
   --min-num-clusters 1 \
@@ -215,7 +215,7 @@ databricks sql-warehouses create \
 
 ```bash
 # List warehouses to get ID
-databricks sql-warehouses list --profile my-workspace
+databricks warehouses list --profile my-workspace
 ```
 
 ### 3. Create Query
@@ -327,13 +327,13 @@ Use different warehouses for different purposes:
 
 ```bash
 # Development warehouse (small, aggressive auto-stop)
-databricks sql-warehouses create \
+databricks warehouses create \
   --name "dev-warehouse" \
   --cluster-size "X-Small" \
   --auto-stop-mins 5
 
 # Production warehouse (larger, longer running)
-databricks sql-warehouses create \
+databricks warehouses create \
   --name "prod-warehouse" \
   --cluster-size "Large" \
   --auto-stop-mins 30

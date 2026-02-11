@@ -40,6 +40,17 @@ These apply regardless of framework:
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
 
+## Development Workflow (FOLLOW THIS ORDER)
+
+1. Create SQL files in `config/queries/`
+2. Run `npm run typegen` — verify all queries show ✓
+3. Read `client/src/appKitTypes.d.ts` to see generated types
+4. **THEN** write `App.tsx` using the generated types
+5. Update `tests/smoke.spec.ts` selectors
+6. Run `databricks apps validate`
+
+**DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
+
 ## When to Use What
 - **Read data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook

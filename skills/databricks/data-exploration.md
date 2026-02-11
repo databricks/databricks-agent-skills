@@ -252,7 +252,7 @@ Both commands support:
    ```
 2. List available warehouses:
    ```bash
-   databricks sql-warehouses list --profile my-workspace
+   databricks warehouses list --profile my-workspace
    ```
 3. Set specific warehouse:
    ```bash
@@ -260,7 +260,7 @@ Both commands support:
    ```
 4. Start a stopped warehouse:
    ```bash
-   databricks sql-warehouses start --id <warehouse-id> --profile my-workspace
+   databricks warehouses start --id <warehouse-id> --profile my-workspace
    ```
 
 ### Permission Denied
