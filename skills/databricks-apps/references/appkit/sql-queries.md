@@ -103,7 +103,7 @@ sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 
 ## Databricks SQL Dialect
 
-Databricks uses Databricks SQL, NOT PostgreSQL/MySQL. Common mistakes:
+Databricks uses Databricks SQL (based on Spark SQL), NOT PostgreSQL/MySQL. Common mistakes:
 
 | PostgreSQL | Databricks SQL |
 |------------|---------------|

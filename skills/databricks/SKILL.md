@@ -77,7 +77,7 @@ databricks current-user me --profile <profile>
 databricks apps list --profile <profile>
 databricks jobs list --profile <profile>
 databricks clusters list --profile <profile>
-databricks sql-warehouses list --profile <profile>
+databricks warehouses list --profile <profile>
 databricks pipelines list --profile <profile>
 databricks serving-endpoints list --profile <profile>
 
@@ -89,9 +89,12 @@ databricks schemas list <catalog> --profile <profile>
 databricks tables list <catalog> <schema> --profile <profile>
 databricks tables get <catalog>.<schema>.<table> --profile <profile>
 
-# ❌ WRONG: these flags DON'T EXIST
+# ❌ WRONG: these flags/commands DON'T EXIST
 # databricks schemas list --catalog-name <catalog>    ← WILL FAIL
 # databricks tables list --catalog <catalog>           ← WILL FAIL
+# databricks sql-warehouses list                       ← doesn't exist, use `warehouses list`
+# databricks execute-statement                         ← doesn't exist, use `experimental aitools tools query`
+# databricks sql execute                               ← doesn't exist, use `experimental aitools tools query`
 
 # When in doubt, check help:
 # databricks schemas list --help
