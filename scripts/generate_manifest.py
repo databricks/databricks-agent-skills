@@ -68,9 +68,16 @@ def generate_manifest(repo_root: Path) -> dict:
         if not skill_md.exists():
             continue
 
+        files = sorted(
+            str(f.relative_to(item))
+            for f in item.rglob("*")
+            if f.is_file()
+        )
+
         skills[item.name] = {
             "version": extract_version_from_skill(item),
             "updated_at": get_skill_updated_at(item),
+            "files": files,
         }
 
     return {
