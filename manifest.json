@@ -1,14 +1,41 @@
 {
   "version": "1",
-  "updated_at": "2026-01-27T14:12:53Z",
+  "updated_at": "2026-02-13T10:52:05Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-01-27T13:49:12Z"
+      "updated_at": "2026-02-12T16:39:16Z",
+      "files": [
+        "SKILL.md",
+        "ai-bi-dashboards.md",
+        "asset-bundles.md",
+        "clusters.md",
+        "data-exploration.md",
+        "databricks-cli-auth.md",
+        "databricks-cli-install.md",
+        "dbfs.md",
+        "dbsql.md",
+        "genie.md",
+        "jobs.md",
+        "lakeflow.md",
+        "model-serving.md",
+        "secrets.md",
+        "unity-catalog.md",
+        "workspace.md"
+      ]
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-01-27T13:49:12Z"
+      "updated_at": "2026-02-12T16:39:16Z",
+      "files": [
+        "SKILL.md",
+        "references/appkit/appkit-sdk.md",
+        "references/appkit/frontend.md",
+        "references/appkit/overview.md",
+        "references/appkit/sql-queries.md",
+        "references/appkit/trpc.md",
+        "references/testing.md"
+      ]
     }
   }
 }
