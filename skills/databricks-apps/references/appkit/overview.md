@@ -4,25 +4,18 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 
 ## Workflow
 
-1. **Scaffold**: See parent SKILL.md for `databricks apps init` command
+1. **Scaffold**: `databricks apps init --version 0.5.4 --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>` (analytics is the recommended default; see parent SKILL.md for context)
 2. **Develop**: `cd <NAME> && npm install && npm run dev`
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
 
 ## Data Discovery (Before Writing SQL)
 
-```bash
-# 1. get warehouse id
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+Use the parent `databricks` skill for discovery/query commands:
+- `databricks` skill -> **Data Exploration — Use AI Tools**
+- `Data Exploration` reference in the `databricks` skill for detailed guidance
 
-# 2. explore table structure
-databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
-
-# 3. test query
-databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 5" --profile <PROFILE>
-```
-
-Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`.
+Do NOT manually iterate through `catalogs list`, then `schemas list`, then `tables list`.
 
 ## Pre-Implementation Checklist
 
@@ -50,7 +43,7 @@ Before running `databricks apps validate`, complete these steps:
 ```
 my-app/
 ├── server/
-│   ├── index.ts              # Backend entry point (AppKit)
+│   ├── server.ts             # Backend entry point (AppKit)
 │   └── .env                  # Optional local dev env vars (do not commit)
 ├── client/
 │   ├── index.html
@@ -70,9 +63,9 @@ my-app/
 | Task | File |
 |------|------|
 | Build UI | `client/src/App.tsx` |
-| Add SQL query | `config/queries/<name>.sql` |
+| Add SQL query | `config/queries/<NAME>.sql` |
 | Add API endpoint | `server/server.ts` (tRPC) |
-| Add shared types | `shared/types.ts` |
+| Add shared helpers (optional) | create `shared/types.ts` or `client/src/lib/formatters.ts` |
 | Fix smoke test | `tests/smoke.spec.ts` |
 
 ## Type Safety

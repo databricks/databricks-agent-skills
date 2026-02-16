@@ -33,7 +33,7 @@ These apply regardless of framework:
 - **Smoke tests**: ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Authentication**: covered by parent `databricks` skill
 
-## Project Structure (after `databricks apps init --features analytics`)
+## Project Structure (after `databricks apps init --version 0.5.4 --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
 - `config/queries/*.sql` — SQL query files (queryKey = filename without .sql)
 - `server/server.ts` — backend entry (tRPC routers)
@@ -76,7 +76,7 @@ npx @databricks/appkit docs <path>       # then use paths from the index
 
 **Scaffold** (requires `--warehouse-id`, see parent skill; DO NOT use `npx`):
 ```bash
-databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
+databricks apps init --version 0.5.4 --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
 ```
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.

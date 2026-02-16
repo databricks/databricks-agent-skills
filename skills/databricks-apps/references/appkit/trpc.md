@@ -12,8 +12,10 @@ Use tRPC ONLY for:
 
 ## Server-side Pattern
 
+Default scaffold puts server code in `server/server.ts`. You can keep routes there or extract a separate `server/trpc.ts` module as your app grows.
+
 ```typescript
-// server/trpc.ts
+// server/server.ts
 import { initTRPC } from '@trpc/server';
 import { getExecutionContext } from '@databricks/appkit';
 import { z } from 'zod';
