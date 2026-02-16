@@ -1,14 +1,24 @@
 # Databricks Agent Skills
 
-Skills for AI coding assistants (Claude Code, etc.) that provide Databricks-specific guidance.
+Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databricks-specific guidance.
 
 ## Installation
+
+**For Claude Code:**
 
 ```bash
 databricks experimental aitools skills install
 ```
 
 This installs skills to `~/.claude/skills/` for use with Claude Code.
+
+**For Cursor:**
+
+Run this command in chat:
+
+```text
+/add-plugin databricks-skills
+```
 
 ## Available Skills
 
