@@ -24,6 +24,7 @@ For specific products, use dedicated skills:
      - **macOS/Linux (curl fallback)**: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
      - **Windows (WinGet)**: `winget install Databricks.DatabricksCLI` (restart terminal after)
    - Verify: `databricks -v`
+   - **Sandboxed environments (Cursor IDE, containers)**: Install commands write outside the workspace and may be blocked. Present the commands to the user and ask them to run in their own terminal.
    - For edge cases (no sudo, manual install, troubleshooting): Read the [CLI Installation](databricks-cli-install.md) reference file.
 
 2. **Authenticated**: `databricks auth profiles`

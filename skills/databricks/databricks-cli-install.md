@@ -2,6 +2,12 @@
 
 Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery.
 
+## Sandboxed / IDE environments (Cursor, containers)
+
+CLI install commands write to system directories outside the workspace (e.g. `/opt/homebrew/`, `/usr/local/bin/`). In sandboxed environments these writes are blocked.
+
+**Agent behavior**: Do not attempt to run install commands directly. Instead, present the appropriate install command to the user and ask them to run it in their own terminal. After they confirm installation, verify with `databricks -v`.
+
 ## Preconditions (always do first)
 1. Determine OS and shell:
    - macOS/Linux: bash/zsh
@@ -168,3 +174,5 @@ Steps:
 - `databricks: command not found` after installation to `~/.local/bin`:
   - Add to PATH: `export PATH="$HOME/.local/bin:$PATH"`
   - For persistence, add the export command to `~/.bashrc` or `~/.zshrc`.
+- Permission errors in sandboxed IDE (e.g. `/opt/homebrew/Cellar is not writable` in Cursor):
+  - The IDE sandbox blocks writes outside the workspace. Ask the user to run the install command in their own terminal.
