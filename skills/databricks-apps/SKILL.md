@@ -1,7 +1,7 @@
 ---
 name: databricks-apps
 description: Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= 0.250.0)
+compatibility: Requires databricks CLI (>= v0.288.0)
 metadata:
   version: "0.1.0"
 parent: databricks
