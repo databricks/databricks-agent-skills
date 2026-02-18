@@ -18,14 +18,9 @@ For specific products, use dedicated skills:
 ## Prerequisites
 
 1. **CLI installed**: Run `databricks --version` to check.
-   - **If the CLI is missing or outdated (< v0.288.0): STOP. Do not proceed or work around a missing CLI. Guide the user through installation first.**
-   - Quick install:
-     - **macOS/Linux (Homebrew)**: `brew tap databricks/tap && brew install databricks`
-     - **macOS/Linux (curl fallback)**: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
-     - **Windows (WinGet)**: `winget install Databricks.DatabricksCLI` (restart terminal after)
-   - Verify: `databricks -v`
-   - **Sandboxed environments (Cursor IDE, containers)**: Install commands write outside the workspace and may be blocked. Present the commands to the user and ask them to run in their own terminal.
-   - For edge cases (no sudo, manual install, troubleshooting): Read the [CLI Installation](databricks-cli-install.md) reference file.
+   - **If the CLI is missing or outdated (< v0.288.0): STOP. Do not proceed or work around a missing CLI.**
+   - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
+   - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)
