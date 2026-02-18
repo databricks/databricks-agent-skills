@@ -2,6 +2,14 @@
 
 Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery.
 
+## Sandboxed / IDE environments (Cursor, containers)
+
+CLI install commands often write to system directories outside the workspace (e.g. `/opt/homebrew/`, `/usr/local/bin/`) which are blocked in sandboxed environments.
+
+**Agent behavior**: Do not attempt to run install commands directly. Present the appropriate command to the user and ask them to run it in their own terminal. After they confirm, verify with `databricks -v`.
+
+For Linux/macOS containers or Cursor: prefer the **Linux manual install to user directory** method (`~/.local/bin`) — it requires no sudo and no writes outside the workspace.
+
 ## Preconditions (always do first)
 1. Determine OS and shell:
    - macOS/Linux: bash/zsh
@@ -82,7 +90,7 @@ Steps:
 Notes:
 - The download files are `.tar.gz` archives (not `.zip`) with naming pattern: `databricks_cli_<version>_linux_<arch>.tar.gz`
 - Common architectures: `amd64` (x86_64), `arm64` (aarch64)
-- This method works in containerized environments without sudo access
+- This method works in containerized environments and sandboxed IDEs (e.g. Cursor) without sudo access
 
 ### Windows (preferred: WinGet)
 Run in Command Prompt (then restart the terminal session):

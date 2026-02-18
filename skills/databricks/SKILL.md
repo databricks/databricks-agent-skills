@@ -1,7 +1,7 @@
 ---
 name: "databricks"
 description: "Databricks CLI operations: auth, profiles, Unity Catalog, data exploration, jobs, pipelines, clusters, model serving, bundles and more. Contains up-to-date guidelines for all Databricks CLI tasks, useful for all Databricks-related tasks."
-compatibility: Requires databricks CLI (>= 0.250.0)
+compatibility: Requires databricks CLI (>= v0.288.0)
 metadata:
   version: "0.1.0"
 ---
@@ -17,8 +17,10 @@ For specific products, use dedicated skills:
 
 ## Prerequisites
 
-1. **CLI installed**: `databricks --version`
-   - If not: see [CLI Installation](databricks-cli-install.md)
+1. **CLI installed**: Run `databricks --version` to check.
+   - **If the CLI is missing or outdated (< v0.288.0): STOP. Do not proceed or work around a missing CLI.**
+   - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
+   - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)
