@@ -4,9 +4,11 @@ Install or update the Databricks CLI on macOS, Windows, or Linux using doc-valid
 
 ## Sandboxed / IDE environments (Cursor, containers)
 
-CLI install commands write to system directories outside the workspace (e.g. `/opt/homebrew/`, `/usr/local/bin/`). In sandboxed environments these writes are blocked.
+CLI install commands often write to system directories outside the workspace (e.g. `/opt/homebrew/`, `/usr/local/bin/`) which are blocked in sandboxed environments.
 
-**Agent behavior**: Do not attempt to run install commands directly. Instead, present the appropriate install command to the user and ask them to run it in their own terminal. After they confirm installation, verify with `databricks -v`.
+**Agent behavior**: Do not attempt to run install commands directly. Present the appropriate command to the user and ask them to run it in their own terminal. After they confirm, verify with `databricks -v`.
+
+For Linux/macOS containers or Cursor: prefer the **Linux manual install to user directory** method (`~/.local/bin`) — it requires no sudo and no writes outside the workspace.
 
 ## Preconditions (always do first)
 1. Determine OS and shell:
@@ -88,7 +90,7 @@ Steps:
 Notes:
 - The download files are `.tar.gz` archives (not `.zip`) with naming pattern: `databricks_cli_<version>_linux_<arch>.tar.gz`
 - Common architectures: `amd64` (x86_64), `arm64` (aarch64)
-- This method works in containerized environments without sudo access
+- This method works in containerized environments and sandboxed IDEs (e.g. Cursor) without sudo access
 
 ### Windows (preferred: WinGet)
 Run in Command Prompt (then restart the terminal session):
@@ -174,5 +176,3 @@ Steps:
 - `databricks: command not found` after installation to `~/.local/bin`:
   - Add to PATH: `export PATH="$HOME/.local/bin:$PATH"`
   - For persistence, add the export command to `~/.bashrc` or `~/.zshrc`.
-- Permission errors in sandboxed IDE (e.g. `/opt/homebrew/Cellar is not writable` in Cursor):
-  - The IDE sandbox blocks writes outside the workspace. Ask the user to run the install command in their own terminal.
