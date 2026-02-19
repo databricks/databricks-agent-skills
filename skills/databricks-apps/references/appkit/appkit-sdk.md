@@ -8,10 +8,10 @@ Template enforces `noUnusedLocals` - remove unused imports immediately or build 
 
 ```typescript
 // ✅ CORRECT - use import type for types
-import type { MyInterface, MyType } from '../../shared/types';
+import type { MyInterface, MyType } from './types';
 
 // ❌ WRONG - will fail compilation
-import { MyInterface, MyType } from '../../shared/types';
+import { MyInterface, MyType } from './types';
 ```
 
 ## Server Setup

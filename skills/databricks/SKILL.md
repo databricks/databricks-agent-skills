@@ -56,13 +56,13 @@ databricks apps list  # profile not set!
 
 ```bash
 # discover table structure (columns, types, sample data, stats)
-databricks experimental aitools tools discover-schema catalog.schema.table --profile <profile>
+databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
 
 # run ad-hoc SQL queries
-databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <profile>
+databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <PROFILE>
 
 # find the default warehouse
-databricks experimental aitools tools get-default-warehouse --profile <profile>
+databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
 See [Data Exploration](data-exploration.md) for details.
@@ -73,27 +73,27 @@ See [Data Exploration](data-exploration.md) for details.
 
 ```bash
 # current user
-databricks current-user me --profile <profile>
+databricks current-user me --profile <PROFILE>
 
 # list resources
-databricks apps list --profile <profile>
-databricks jobs list --profile <profile>
-databricks clusters list --profile <profile>
-databricks warehouses list --profile <profile>
-databricks pipelines list --profile <profile>
-databricks serving-endpoints list --profile <profile>
+databricks apps list --profile <PROFILE>
+databricks jobs list --profile <PROFILE>
+databricks clusters list --profile <PROFILE>
+databricks warehouses list --profile <PROFILE>
+databricks pipelines list --profile <PROFILE>
+databricks serving-endpoints list --profile <PROFILE>
 
 # ⚠️ Unity Catalog — POSITIONAL arguments (NOT flags!)
-databricks catalogs list --profile <profile>
+databricks catalogs list --profile <PROFILE>
 
 # ✅ CORRECT: positional args
-databricks schemas list <catalog> --profile <profile>
-databricks tables list <catalog> <schema> --profile <profile>
-databricks tables get <catalog>.<schema>.<table> --profile <profile>
+databricks schemas list <CATALOG> --profile <PROFILE>
+databricks tables list <CATALOG> <SCHEMA> --profile <PROFILE>
+databricks tables get <CATALOG>.<SCHEMA>.<TABLE> --profile <PROFILE>
 
 # ❌ WRONG: these flags/commands DON'T EXIST
-# databricks schemas list --catalog-name <catalog>    ← WILL FAIL
-# databricks tables list --catalog <catalog>           ← WILL FAIL
+# databricks schemas list --catalog-name <CATALOG>    ← WILL FAIL
+# databricks tables list --catalog <CATALOG>           ← WILL FAIL
 # databricks sql-warehouses list                       ← doesn't exist, use `warehouses list`
 # databricks execute-statement                         ← doesn't exist, use `experimental aitools tools query`
 # databricks sql execute                               ← doesn't exist, use `experimental aitools tools query`
@@ -102,15 +102,15 @@ databricks tables get <catalog>.<schema>.<table> --profile <profile>
 # databricks schemas list --help
 
 # get details
-databricks apps get <name> --profile <profile>
-databricks jobs get --job-id <id> --profile <profile>
-databricks clusters get --cluster-id <id> --profile <profile>
+databricks apps get <NAME> --profile <PROFILE>
+databricks jobs get --job-id <ID> --profile <PROFILE>
+databricks clusters get --cluster-id <ID> --profile <PROFILE>
 
 # bundles
-databricks bundle init --profile <profile>
-databricks bundle validate --profile <profile>
-databricks bundle deploy -t <target> --profile <profile>
-databricks bundle run <resource> -t <target> --profile <profile>
+databricks bundle init --profile <PROFILE>
+databricks bundle validate --profile <PROFILE>
+databricks bundle deploy -t <TARGET> --profile <PROFILE>
+databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 ```
 
 ## Troubleshooting

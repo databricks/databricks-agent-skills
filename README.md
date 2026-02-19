@@ -22,6 +22,7 @@ Run this command in chat:
 
 ## Available Skills
 
+- **databricks** - Core Databricks CLI guidance (auth, profiles, data exploration, jobs, UC, and more)
 - **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
 
 ## Structure
@@ -42,8 +43,9 @@ When experimenting with new skill variations, create a "subskill" that reference
 
 ```markdown
 ---
-name: "ai-databricks-apps"
+name: "databricks-apps-chatbots"
 description: "Databricks apps with AI features"
+parent: databricks-apps
 ---
 
 # AI powered Databricks Apps

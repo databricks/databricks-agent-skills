@@ -62,10 +62,21 @@ export const querySchemas = {
 
 **Helper Functions:**
 
-Use the helpers from `shared/types.ts` for consistent formatting:
+Create app-specific helpers for consistent numeric formatting (for example in `client/src/lib/formatters.ts`):
 
 ```typescript
-import { toNumber, formatCurrency, formatPercent } from '../../shared/types';
+// client/src/lib/formatters.ts
+export const toNumber = (value: number | string): number => Number(value);
+export const formatCurrency = (value: number | string): string =>
+  `$${Number(value).toFixed(2)}`;
+export const formatPercent = (value: number | string): string =>
+  `${Number(value).toFixed(1)}%`;
+```
+
+Use them wherever you render query results:
+
+```typescript
+import { toNumber, formatCurrency, formatPercent } from './formatters'; // adjust import path to your file layout
 
 // Convert to number
 const amount = toNumber(row.amount);  // "123.45" → 123.45
