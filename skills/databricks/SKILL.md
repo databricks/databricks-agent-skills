@@ -1,6 +1,6 @@
 ---
 name: "databricks"
-description: "Databricks CLI operations: auth, profiles, data exploration, SQL warehouses, secrets, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
+description: "Databricks CLI operations: auth, profiles, data exploration, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v0.288.0)
 metadata:
   version: "0.1.0"
@@ -136,5 +136,3 @@ databricks bundle run <resource> -t <target> --profile <profile>
 - [CLI Authentication](databricks-cli-auth.md)
 - [Data Exploration](data-exploration.md)
 - [Asset Bundles](asset-bundles.md)
-- [DBSQL](dbsql.md)
-- [Secrets](secrets.md)

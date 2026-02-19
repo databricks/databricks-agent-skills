@@ -10,9 +10,7 @@
         "asset-bundles.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
-        "databricks-cli-install.md",
-        "dbsql.md",
-        "secrets.md"
+        "databricks-cli-install.md"
       ]
     },
     "databricks-apps": {

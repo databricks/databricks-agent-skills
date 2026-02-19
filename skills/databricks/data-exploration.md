@@ -311,6 +311,4 @@ Both commands support:
 
 ## Related Commands
 
-- **[DBSQL](dbsql.md)** - SQL warehouses and query management
 - **[Asset Bundles](asset-bundles.md)** - Deploy SQL, pipeline, and app resources as code
-- **[Secrets](secrets.md)** - Secure credentials for data access and integrations
