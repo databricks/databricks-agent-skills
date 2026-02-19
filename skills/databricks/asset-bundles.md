@@ -571,6 +571,6 @@ targets:
 
 ## Related Topics
 
-- [Data Exploration](data-exploration.md) - Validate data exposed by bundle deployments
+- [Data Exploration](../databricks-apps/data-exploration.md) - Validate data exposed by bundle deployments
 - Apps - Define app resources (use `databricks-apps` skill for full app development)
 - [Workflows](workflows.md) - Complete bundle workflows
