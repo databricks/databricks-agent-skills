@@ -413,7 +413,7 @@ GROUP BY date;
 
 ## Related Topics
 
-- [Unity Catalog](unity-catalog.md) - Query UC tables
-- [AI/BI Dashboards](ai-bi-dashboards.md) - Enhanced dashboards with AI
 - [Asset Bundles](asset-bundles.md) - Manage DBSQL resources as code
+- [Data Exploration](data-exploration.md) - Explore and validate data with ad-hoc queries
+- [Secrets](secrets.md) - Store credentials used by external integrations
 - [Workflows](workflows.md) - Complete analytics workflows

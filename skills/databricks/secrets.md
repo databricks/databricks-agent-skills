@@ -474,7 +474,6 @@ databricks secrets create-scope \
 
 ## Related Topics
 
-- [Clusters](clusters.md) - Use secrets in cluster configuration
-- [Jobs](jobs.md) - Use secrets in job configuration
-- [Model Serving](model-serving.md) - Use secrets for external model APIs
-- [DBFS](dbfs.md) - Mount storage using secrets
+- [Data Exploration](data-exploration.md) - Query data that relies on secret-backed access
+- [DBSQL](dbsql.md) - Secure warehouse and query integrations
+- [Asset Bundles](asset-bundles.md) - Define and deploy resources that depend on secrets

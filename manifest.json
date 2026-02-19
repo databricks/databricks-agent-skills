@@ -7,21 +7,12 @@
       "updated_at": "2026-02-12T16:39:16Z",
       "files": [
         "SKILL.md",
-        "ai-bi-dashboards.md",
         "asset-bundles.md",
-        "clusters.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md",
-        "dbfs.md",
         "dbsql.md",
-        "genie.md",
-        "jobs.md",
-        "lakeflow.md",
-        "model-serving.md",
-        "secrets.md",
-        "unity-catalog.md",
-        "workspace.md"
+        "secrets.md"
       ]
     },
     "databricks-apps": {

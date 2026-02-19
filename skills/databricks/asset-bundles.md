@@ -571,7 +571,8 @@ targets:
 
 ## Related Topics
 
-- [Jobs](jobs.md) - Define job resources
-- [LakeFlow](lakeflow.md) - Define pipeline resources
+- [DBSQL](dbsql.md) - Manage SQL resources alongside bundles
+- [Data Exploration](data-exploration.md) - Validate data exposed by bundle deployments
+- [Secrets](secrets.md) - Configure secret-backed credentials for resources
 - Apps - Define app resources (use `databricks-apps` skill for full app development)
 - [Workflows](workflows.md) - Complete bundle workflows

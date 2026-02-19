@@ -311,7 +311,6 @@ Both commands support:
 
 ## Related Commands
 
-- **[Unity Catalog](unity-catalog.md)** - Table and schema management
 - **[DBSQL](dbsql.md)** - SQL warehouses and query management
-- **[Databricks Genie](genie.md)** - AI-powered natural language data analysis
-- **[AI/BI Dashboards](ai-bi-dashboards.md)** - Visual analytics and dashboards
+- **[Asset Bundles](asset-bundles.md)** - Deploy SQL, pipeline, and app resources as code
+- **[Secrets](secrets.md)** - Secure credentials for data access and integrations

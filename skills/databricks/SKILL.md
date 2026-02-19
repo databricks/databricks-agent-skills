@@ -1,6 +1,6 @@
 ---
 name: "databricks"
-description: "Databricks CLI operations: auth, profiles, Unity Catalog, data exploration, jobs, pipelines, clusters, model serving, bundles and more. Contains up-to-date guidelines for all Databricks CLI tasks, useful for all Databricks-related tasks."
+description: "Databricks CLI operations: auth, profiles, data exploration, SQL warehouses, secrets, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v0.288.0)
 metadata:
   version: "0.1.0"
@@ -128,7 +128,6 @@ databricks bundle run <resource> -t <target> --profile <profile>
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
 | Exploring tables/schemas | [Data Exploration](data-exploration.md) |
-| UC permissions/volumes | [Unity Catalog](unity-catalog.md) |
 | Deploying jobs/pipelines | [Asset Bundles](asset-bundles.md) |
 
 ## Reference Guides
@@ -136,15 +135,6 @@ databricks bundle run <resource> -t <target> --profile <profile>
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
 - [Data Exploration](data-exploration.md)
-- [Unity Catalog](unity-catalog.md)
 - [Asset Bundles](asset-bundles.md)
-- [Jobs](jobs.md)
-- [LakeFlow](lakeflow.md)
-- [Model Serving](model-serving.md)
 - [DBSQL](dbsql.md)
-- [Clusters](clusters.md)
-- [Workspace](workspace.md)
 - [Secrets](secrets.md)
-- [DBFS](dbfs.md) (legacy - prefer UC Volumes)
-- [AI/BI Dashboards](ai-bi-dashboards.md)
-- [Genie](genie.md)
