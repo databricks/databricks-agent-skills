@@ -9,7 +9,7 @@ parent: databricks
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
 
 Build apps that deploy to Databricks Apps platform.
 
@@ -18,6 +18,7 @@ Build apps that deploy to Databricks Apps platform.
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
 | Scaffolding | Parent `databricks` skill (auth, warehouse discovery) |
+| Data exploration | [Data Exploration](data-exploration.md) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
