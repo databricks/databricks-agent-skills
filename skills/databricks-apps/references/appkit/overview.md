@@ -4,7 +4,7 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 
 ## Workflow
 
-1. **Scaffold**: See parent SKILL.md for `databricks apps init` command
+1. **Scaffold**: Run `databricks apps manifest`, then `databricks apps init` with `--features` and `--set` as in parent SKILL.md (App Manifest and Scaffolding)
 2. **Develop**: `cd <NAME> && npm install && npm run dev`
 3. **Validate**: `databricks apps validate`
 4. **Deploy**: `databricks apps deploy --profile <PROFILE>`
