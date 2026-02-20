@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | Parent `databricks` skill (auth, warehouse discovery) |
+| Scaffolding | Parent `databricks` skill (auth, warehouse discovery); run `databricks apps manifest` and use its plugins/resources to build `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -74,10 +74,35 @@ npx @databricks/appkit docs <path>       # then use paths from the index
 
 **DO NOT guess doc paths.** Run without args first, pick from the index. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
 
-**Scaffold** (requires `--warehouse-id`, see parent skill; DO NOT use `npx`):
-```bash
-databricks apps init --description "<DESC>" --features analytics --warehouse-id <ID> --name <NAME> --run none --profile <PROFILE>
-```
+**App Manifest and Scaffolding**
+
+**Agent workflow for scaffolding: get the manifest first, then build the init command.**
+
+1. **Get the manifest** (JSON schema describing plugins and their resources):
+   ```bash
+   databricks apps manifest --profile <PROFILE>
+   # Custom template:
+   databricks apps manifest --template <GIT_URL> --profile <PROFILE>
+   ```
+   The output defines:
+   - **Plugins**: each has a key (plugin ID for `--features`), plus `requiredByTemplate`, and `resources`.
+   - **requiredByTemplate**: If **true**, that plugin is **mandatory** for this template — do **not** add it to `--features` (it is included automatically); you must still supply all of its required resources via `--set`. If **false** or absent, the plugin is **optional** — add it to `--features` only when the user's prompt indicates they want that capability (e.g. analytics/SQL), and then supply its required resources via `--set`.
+   - **Resources**: Each plugin has `resources.required` and `resources.optional` (arrays). Each item has `resourceKey` and `fields` (object: field name → description/env). Use `--set <plugin>.<resourceKey>.<field>=<value>` for each required resource field of every plugin you include.
+
+2. **Scaffold** (DO NOT use `npx`; use the CLI only):
+   ```bash
+   databricks apps init --name <NAME> --features <plugin1>,<plugin2> \
+     --set <plugin1>.<resourceKey>.<field>=<value> \
+     --set <plugin2>.<resourceKey>.<field>=<value> \
+     --description "<DESC>" --run none --profile <PROFILE>
+   # With custom template:
+   databricks apps init --template <GIT_URL> --name <NAME> --features ... --set ... --profile <PROFILE>
+   ```
+   - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
+   - **Resources**: Pass `--set` for every required resource (each field in `resources.required`) for (1) all plugins with `requiredByTemplate: true`, and (2) any optional plugins you added to `--features`. Add `--set` for `resources.optional` only when the user requests them.
+   - **Discovery**: Use the parent `databricks` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
+
+**DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
