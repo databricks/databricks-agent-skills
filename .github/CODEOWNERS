@@ -1,4 +1,5 @@
 * @lennartkats-db @databricks/eng-apps-devex
-/skills/ @lennartkats-db
+/skills/ @lennartkats-db # net-new skills must be approved by @lennartkats-db
 /skills/databricks/ @lennartkats-db @databricks/eng-apps-devex
 /skills/databricks-apps/ @databricks/eng-apps-devex
+/.github/CODEOWNERS @lennartkats-db @fjakobs
