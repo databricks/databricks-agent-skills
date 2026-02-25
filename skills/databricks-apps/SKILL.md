@@ -9,7 +9,7 @@ parent: databricks
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
 
 Build apps that deploy to Databricks Apps platform.
 
