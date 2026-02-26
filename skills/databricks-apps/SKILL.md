@@ -28,7 +28,7 @@ Build apps that deploy to Databricks Apps platform.
 These apply regardless of framework:
 
 - **Deployment**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
-- **Validation**: `databricks apps validate` before deploying
+- **Validation**: `databricks apps validate --profile <PROFILE>` before deploying
 - **App name**: Must be ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
 - **Smoke tests**: ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Authentication**: covered by parent `databricks` skill
@@ -51,7 +51,7 @@ Before writing any SQL, use the parent `databricks` skill for data exploration �
 3. Read `client/src/appKitTypes.d.ts` to see generated types
 4. **THEN** write `App.tsx` using the generated types
 5. Update `tests/smoke.spec.ts` selectors
-6. Run `databricks apps validate`
+6. Run `databricks apps validate --profile <PROFILE>`
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
@@ -99,6 +99,7 @@ npx @databricks/appkit docs <path>       # then use paths from the index
      --set <plugin1>.<resourceKey>.<field>=<value> \
      --set <plugin2>.<resourceKey>.<field>=<value> \
      --description "<DESC>" --run none --profile <PROFILE>
+   # --run none: skip auto-run after scaffolding (review code first)
    # With custom template:
    databricks apps init --template <GIT_URL> --name <NAME> --features ... --set ... --profile <PROFILE>
    ```

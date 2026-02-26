@@ -99,7 +99,7 @@ sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 // sql.float()    - use sql.number()
 ```
 
-**For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.
+**For nullable string parameters**, use sentinel values or empty strings. **For nullable date parameters**, use sentinel dates only (empty strings cause validation errors) — see "Optional Date Parameters" section below.
 
 ## Databricks SQL Dialect
 
