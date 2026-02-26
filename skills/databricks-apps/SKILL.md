@@ -106,6 +106,26 @@ npx @databricks/appkit docs <path>       # then use paths from the index
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
+### Common Scaffolding Mistakes
+
+```bash
+# ❌ WRONG: name is NOT a positional argument
+databricks apps init --features analytics my-app-name
+# → "unknown command" error
+
+# ✅ CORRECT: use --name flag
+databricks apps init --name my-app-name --features analytics --set "..." --profile <PROFILE>
+```
+
+### Directory Naming
+
+`databricks apps init` creates directories in kebab-case (e.g., `my-app-name`).
+App names must be lowercase with hyphens only (≤26 chars). If you need a different directory name, rename after scaffolding:
+
+```bash
+mv my-app-name my_app_name
+```
+
 ### Other Frameworks
 
 Databricks Apps supports any framework that can run as a web server (Flask, FastAPI, Streamlit, Gradio, etc.). Use standard framework documentation - this skill focuses on AppKit.

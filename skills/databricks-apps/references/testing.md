@@ -61,15 +61,25 @@ await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });  // Or
 
 Playwright uses strict mode by default — selectors matching multiple elements WILL FAIL.
 
+### Selector Priority (use in this order)
+
+1. ✅ `getByRole('heading', { name: 'Your App Title' })` — headings (most reliable)
+2. ✅ `getByRole('button', { name: 'Submit' })` — interactive elements
+3. ✅ `getByText('Unique text', { exact: true })` — exact match for unique strings
+4. ⚠️ `getByText('Common text').first()` — last resort for repeated text
+5. ❌ `getByText('Revenue')` — NEVER without `exact` or `.first()` (strict mode will fail)
+
+**Common mistake**: text like "Revenue" may appear in a heading, a card, AND a description. Always verify your selector targets exactly ONE element.
+
 ```typescript
 // ❌ FAILS if "Revenue" appears in multiple places (heading + card + description)
 await expect(page.getByText('Revenue')).toBeVisible();
 
-// ✅ Use exact matching
-await expect(page.getByText('Revenue', { exact: true })).toBeVisible();
-
 // ✅ Use role-based selectors for headings
 await expect(page.getByRole('heading', { name: 'Revenue Dashboard' })).toBeVisible();
+
+// ✅ Use exact matching
+await expect(page.getByText('Revenue', { exact: true })).toBeVisible();
 
 // ✅ Use .first() as last resort
 await expect(page.getByText('Revenue').first()).toBeVisible();

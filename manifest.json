@@ -1,23 +1,23 @@
 {
   "version": "1",
-  "updated_at": "2026-02-13T10:52:05Z",
+  "updated_at": "2026-02-26T11:37:31Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-02-12T16:39:16Z",
+      "updated_at": "2026-02-26T11:36:38Z",
       "files": [
         "SKILL.md",
         "asset-bundles.md",
+        "data-exploration.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md"
       ]
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-02-12T16:39:16Z",
+      "updated_at": "2026-02-26T11:36:23Z",
       "files": [
         "SKILL.md",
-        "data-exploration.md",
         "references/appkit/appkit-sdk.md",
         "references/appkit/frontend.md",
         "references/appkit/overview.md",

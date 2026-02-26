@@ -74,6 +74,35 @@ DataTable fetches data automatically — don't pass `data` or `columns` props.
 />
 ```
 
+## Available Components (Quick Reference)
+
+**For full prop details**: `npx @databricks/appkit docs` → navigate to `./docs/docs/api/appkit-ui/data/` for charts/tables, `./docs/docs/api/appkit-ui/ui/` for UI components.
+
+### Data Components (`@databricks/appkit-ui/react`)
+
+| Component | Key Props | Use For |
+|-----------|-----------|---------|
+| `BarChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors`, `height` | Categorical comparisons |
+| `LineChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors` | Time series, trends |
+| `AreaChart` | `queryKey`, `parameters`, `xKey`, `yKey` | Cumulative/stacked trends |
+| `PieChart` | `queryKey`, `parameters`, `nameKey`, `valueKey` | Part-of-whole |
+| `DataTable` | `queryKey`, `parameters`, `transform` | Tabular data display |
+
+### UI Components (`@databricks/appkit-ui/react`)
+
+| Component | Common Props |
+|-----------|-------------|
+| `Card`, `CardHeader`, `CardTitle`, `CardContent` | Standard container |
+| `Badge` | `variant`: "default" \| "secondary" \| "destructive" \| "outline" |
+| `Button` | `variant`, `size`, `onClick` |
+| `Input` | `placeholder`, `value`, `onChange` |
+| `Select`, `SelectTrigger`, `SelectContent`, `SelectItem` | Dropdown; `SelectItem` value cannot be "" |
+| `Skeleton` | `className` — use for loading states |
+| `Separator` | Visual divider |
+| `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` | Tabbed interface |
+
+All data components **require `parameters={{}}`** even when the query has no params.
+
 ## Layout Structure
 
 ```tsx

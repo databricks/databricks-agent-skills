@@ -11,18 +11,9 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 
 ## Data Discovery (Before Writing SQL)
 
-```bash
-# 1. get warehouse id
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+**Use the parent `databricks` skill for all data discovery.** See [Data Exploration](../../../databricks/data-exploration.md) for full details including keyword search, schema discovery, and query execution.
 
-# 2. explore table structure
-databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
-
-# 3. test query
-databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 5" --profile <PROFILE>
-```
-
-Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`.
+Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list` — use `information_schema` keyword search instead (documented in the data exploration guide).
 
 ## Pre-Implementation Checklist
 
@@ -40,10 +31,12 @@ Before writing App.tsx, complete these steps:
 
 Before running `databricks apps validate`, complete these steps:
 
-1. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
-2. ✅ Update or remove the 'hello world' text assertion
-3. ✅ Verify `npm run typegen` has been run after all SQL files are finalized
-4. ✅ Ensure all numeric SQL values use `Number()` conversion in display code
+1. ✅ Run `npx tsc --noEmit` to catch TypeScript errors early
+2. ✅ Run `npm run lint` to catch unused imports/variables
+3. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
+4. ✅ Update or remove the 'hello world' text assertion
+5. ✅ Verify `npm run typegen` has been run after all SQL files are finalized
+6. ✅ Ensure all numeric SQL values use `Number()` conversion in display code
 
 ## Project Structure
 
@@ -101,14 +94,16 @@ import { BarChart } from '@databricks/appkit-ui/react';
 
 **Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
 
-## References - READ BEFORE Writing Code
+## References — Read As Needed (NOT all upfront)
 
-| Before doing... | READ |
-|-----------------|------|
-| Creating SQL files | [SQL Queries](sql-queries.md) - parameterization, sql.* helpers |
-| Using `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) - memoization, conditional queries |
-| Adding charts/tables | [Frontend](frontend.md) - anti-patterns and gotchas |
-| Adding API endpoints | [tRPC](trpc.md) - mutations, Databricks API calls |
+| When you're about to... | Read THIS |
+|-------------------------|-----------|
+| Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
+| Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
+| Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
+| Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
+
+**Do NOT read all docs upfront.** Read this overview first, then reference specific docs as you work.
 
 ## Critical Rules
 

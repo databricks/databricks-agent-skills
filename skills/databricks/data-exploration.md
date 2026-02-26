@@ -2,6 +2,22 @@
 
 Tools for discovering table schemas and executing SQL queries in Databricks.
 
+## Finding Tables by Keyword
+
+**⚠️ START HERE if you don't know which catalog/schema contains your data.**
+
+Use `information_schema` to search for tables by keyword — do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`. Manual enumeration wastes 10+ steps.
+
+```bash
+# Find tables matching a keyword
+databricks experimental aitools tools query \
+  "SELECT table_catalog, table_schema, table_name FROM system.information_schema.tables WHERE table_name LIKE '%keyword%'" \
+  --profile <PROFILE>
+
+# Then discover schema for the tables you found
+databricks experimental aitools tools discover-schema catalog.schema.table1 catalog.schema.table2 --profile <PROFILE>
+```
+
 ## Overview
 
 The `databricks experimental aitools tools` command group provides tools for data discovery and exploration:

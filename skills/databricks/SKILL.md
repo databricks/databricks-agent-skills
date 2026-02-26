@@ -65,7 +65,7 @@ databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --pro
 databricks experimental aitools tools get-default-warehouse --profile <profile>
 ```
 
-See [Data Exploration](../databricks-apps/data-exploration.md) for details.
+See [Data Exploration](data-exploration.md) for details.
 
 ## Quick Reference
 
@@ -127,12 +127,12 @@ databricks bundle run <resource> -t <target> --profile <profile>
 |------|------------------------|
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
-| Exploring tables/schemas | [Data Exploration](../databricks-apps/data-exploration.md) |
+| Exploring tables/schemas | [Data Exploration](data-exploration.md) |
 | Deploying jobs/pipelines | [Asset Bundles](asset-bundles.md) |
 
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
-- [Data Exploration](../databricks-apps/data-exploration.md)
+- [Data Exploration](data-exploration.md)
 - [Asset Bundles](asset-bundles.md)
