@@ -119,12 +119,8 @@ databricks apps init --name my-app-name --features analytics --set "..." --profi
 
 ### Directory Naming
 
-`databricks apps init` creates directories in kebab-case (e.g., `my-app-name`).
-App names must be lowercase with hyphens only (≤26 chars). If you need a different directory name, rename after scaffolding:
-
-```bash
-mv my-app-name my_app_name
-```
+`databricks apps init` creates directories in kebab-case matching the app name.
+App names must be lowercase with hyphens only (≤26 chars).
 
 ### Other Frameworks
 
