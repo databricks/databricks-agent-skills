@@ -85,7 +85,7 @@ DataTable fetches data automatically — don't pass `data` or `columns` props.
 | `BarChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors`, `height` | Categorical comparisons |
 | `LineChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors` | Time series, trends |
 | `AreaChart` | `queryKey`, `parameters`, `xKey`, `yKey` | Cumulative/stacked trends |
-| `PieChart` | `queryKey`, `parameters`, `nameKey`, `valueKey` | Part-of-whole |
+| `PieChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `innerRadius`, `showLabels` | Part-of-whole |
 | `DataTable` | `queryKey`, `parameters`, `transform` | Tabular data display |
 
 ### UI Components (`@databricks/appkit-ui/react`)

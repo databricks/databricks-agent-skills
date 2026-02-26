@@ -40,6 +40,8 @@ The template includes a smoke test at `tests/smoke.spec.ts` that verifies the ap
 
 ```typescript
 // tests/smoke.spec.ts - update these selectors:
+// ⚠️ PLAYWRIGHT STRICT MODE: each selector must match exactly ONE element.
+// Use { exact: true }, .first(), or role-based selectors. See "Playwright Strict Mode" below.
 
 // ❌ Template default - will fail after customization
 await expect(page.getByRole('heading', { name: 'Minimal Databricks App' })).toBeVisible();

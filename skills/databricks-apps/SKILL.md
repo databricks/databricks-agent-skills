@@ -40,6 +40,10 @@ These apply regardless of framework:
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
 
+## Data Discovery
+
+Before writing any SQL, use the parent `databricks` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
+
 ## Development Workflow (FOLLOW THIS ORDER)
 
 1. Create SQL files in `config/queries/`
