@@ -39,7 +39,7 @@ Before running `databricks apps validate`:
 ```
 my-app/
 ├── server/
-│   ├── index.ts              # Backend entry point (AppKit)
+│   ├── server.ts             # Backend entry point (AppKit)
 │   └── .env                  # Optional local dev env vars (do not commit)
 ├── client/
 │   ├── index.html
@@ -59,9 +59,9 @@ my-app/
 | Task | File |
 |------|------|
 | Build UI | `client/src/App.tsx` |
-| Add SQL query | `config/queries/<name>.sql` |
+| Add SQL query | `config/queries/<NAME>.sql` |
 | Add API endpoint | `server/server.ts` (tRPC) |
-| Add shared types | `shared/types.ts` |
+| Add shared helpers (optional) | create `shared/types.ts` or `client/src/lib/formatters.ts` |
 | Fix smoke test | `tests/smoke.spec.ts` |
 
 ## Type Safety
