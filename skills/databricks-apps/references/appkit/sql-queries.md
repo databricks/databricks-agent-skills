@@ -99,7 +99,7 @@ sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 // sql.float()    - use sql.number()
 ```
 
-**For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.
+**For nullable string parameters**, use sentinel values or empty strings. **For nullable date parameters**, use sentinel dates only (empty strings cause validation errors) — see "Optional Date Parameters" section below.
 
 ## Databricks SQL Dialect
 
@@ -120,6 +120,17 @@ Databricks uses Databricks SQL (based on Spark SQL), NOT PostgreSQL/MySQL. Commo
 - `samples.tpcds.*` — data from 1998-2003
 
 Always check date ranges before writing date-filtered queries.
+
+## Before Running `npm run typegen`
+
+Verify each SQL file before running typegen:
+
+- [ ] Uses Databricks SQL syntax (NOT PostgreSQL) — check dialect table above
+- [ ] `DATEDIFF` has 3 arguments: `DATEDIFF(DAY, start, end)`
+- [ ] Uses `LOWER(col) LIKE LOWER(pattern)` instead of `ILIKE`
+- [ ] Column aliases in `ORDER BY` match `SELECT` aliases exactly
+- [ ] Date columns are not passed to numeric functions like `ROUND()`
+- [ ] Date range filters use actual data dates (NOT `CURRENT_DATE()` on historical data — check date ranges first)
 
 ## Query Parameterization
 

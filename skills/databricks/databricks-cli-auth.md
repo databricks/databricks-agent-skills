@@ -506,19 +506,19 @@ For headless containers, use service principal authentication instead.
 
 ```bash
 # List workspaces
-databricks workspace list /
+databricks workspace list / --profile <PROFILE>
 
 # List jobs
-databricks jobs list
+databricks jobs list --profile <PROFILE>
 
 # List clusters
-databricks clusters list
+databricks clusters list --profile <PROFILE>
 
 # Get current user info
-databricks current-user me
+databricks current-user me --profile <PROFILE>
 
 # Test connection
-databricks workspace export /Users/<username> --format SOURCE
+databricks workspace export /Users/<username> --format SOURCE --profile <PROFILE>
 ```
 
 ## References
