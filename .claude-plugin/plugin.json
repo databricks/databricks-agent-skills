@@ -2,5 +2,10 @@
   "name": "databricks-skills",
   "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Asset Bundles, and more.",
   "version": "0.1.0",
-  "author": "Databricks"
+  "author": {
+    "name": "Databricks"
+  },
+  "repository": "https://github.com/databricks/databricks-agent-skills",
+  "keywords": ["databricks", "cli", "apps", "unity-catalog", "model-serving", "asset-bundles", "external"],
+  "skills": "./skills/"
 }
