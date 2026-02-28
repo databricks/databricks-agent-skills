@@ -13,6 +13,8 @@ Core skill for Databricks CLI, authentication, and data exploration.
 ## Product Skills
 
 For specific products, use dedicated skills:
+- **databricks-jobs** - Lakeflow Jobs development and deployment
+- **databricks-pipelines** - Lakeflow Spark Declarative Pipelines (batch and streaming data pipelines)
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 
 ## Prerequisites

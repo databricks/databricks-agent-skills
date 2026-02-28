@@ -1,10 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-02-13T10:52:05Z",
+  "updated_at": "2026-02-28T11:05:23Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-02-12T16:39:16Z",
+      "updated_at": "2026-02-28T11:05:12Z",
       "files": [
         "SKILL.md",
         "ai-bi-dashboards.md",
@@ -26,7 +26,7 @@
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-02-12T16:39:16Z",
+      "updated_at": "2026-02-23T12:29:59Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -35,6 +35,44 @@
         "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
         "references/testing.md"
+      ]
+    },
+    "databricks-jobs": {
+      "version": "0.1.0",
+      "updated_at": "2026-02-28T11:03:28Z",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    "databricks-pipelines": {
+      "version": "0.1.0",
+      "updated_at": "2026-02-28T11:05:03Z",
+      "files": [
+        "SKILL.md",
+        "references/auto-cdc-python.md",
+        "references/auto-cdc-sql.md",
+        "references/auto-loader-python.md",
+        "references/auto-loader-sql.md",
+        "references/expectations-python.md",
+        "references/expectations-sql.md",
+        "references/materialized-view-python.md",
+        "references/materialized-view-sql.md",
+        "references/options-avro.md",
+        "references/options-csv.md",
+        "references/options-json.md",
+        "references/options-orc.md",
+        "references/options-parquet.md",
+        "references/options-text.md",
+        "references/options-xml.md",
+        "references/python-basics.md",
+        "references/sink-python.md",
+        "references/sql-basics.md",
+        "references/streaming-table-python.md",
+        "references/streaming-table-sql.md",
+        "references/temporary-view-python.md",
+        "references/temporary-view-sql.md",
+        "references/view-sql.md",
+        "references/write-spark-declarative-pipelines.md"
       ]
     }
   }
