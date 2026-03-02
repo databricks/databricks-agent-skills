@@ -72,11 +72,14 @@ TypeScript/React framework with type-safe SQL queries and built-in components.
 **Official Documentation** — the source of truth for all API details:
 
 ```bash
-npx @databricks/appkit docs              # ← ALWAYS start here to see available pages
-npx @databricks/appkit docs <path>       # then use paths from the index
+npx @databricks/appkit docs                              # ← ALWAYS start here to see available pages
+npx @databricks/appkit docs <query>                      # view a section by name or doc path
+npx @databricks/appkit docs --full                       # full index with all API entries
+npx @databricks/appkit docs "appkit-ui API reference"    # example: section by name
+npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc file
 ```
 
-**DO NOT guess doc paths.** Run without args first, pick from the index. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
+**DO NOT guess doc paths.** Run without args first, pick from the index. The `<query>` argument accepts both section names (from the index) and file paths. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
 
 **App Manifest and Scaffolding**
 

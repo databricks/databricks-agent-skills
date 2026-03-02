@@ -66,11 +66,11 @@ my-app/
 
 ## Type Safety
 
-For type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
+For type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
 **Quick workflow:**
 1. Add/modify SQL in `config/queries/`
-2. Run `npm run typegen`
+2. Types auto-generate during dev via the Vite plugin (or run `npm run typegen` manually)
 3. Types appear in `client/src/appKitTypes.d.ts`
 
 ## Adding Visualizations
@@ -83,12 +83,23 @@ SELECT category, COUNT(*) as count FROM my_table GROUP BY category
 **Step 2**: Use component (types auto-generated!)
 ```typescript
 import { BarChart } from '@databricks/appkit-ui/react';
+// Query mode: fetches data automatically
 <BarChart queryKey="my_data" parameters={{}} />
+
+// Data mode: pass static data directly (no queryKey/parameters needed)
+<BarChart data={myData} xKey="category" yKey="count" />
 ```
 
 ## AppKit Official Documentation
 
-**Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
+**Always use AppKit docs as the source of truth for API details.**
+
+```bash
+npx @databricks/appkit docs                              # show the docs index (start here)
+npx @databricks/appkit docs <query>                      # look up a section by name or doc path
+```
+
+Do not guess paths — run without args first, then pick from the index.
 
 ## References
 
@@ -104,8 +115,9 @@ import { BarChart } from '@databricks/appkit-ui/react';
 1. **SQL for data retrieval**: Use `config/queries/` + visualization components. Never tRPC for SELECT.
 2. **Numeric types**: SQL numbers may return as strings. Always convert: `Number(row.amount)`
 3. **Type imports**: Use `import type { ... }` (verbatimModuleSyntax enabled).
-4. **Charts are ECharts**: No Recharts children - use props (`xKey`, `yKey`, `colors`).
-5. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
+4. **Charts are ECharts**: No Recharts children — use props (`xKey`, `yKey`, `colors`). `xKey`/`yKey` auto-detect from schema if omitted.
+5. **Two data modes**: Charts/tables support query mode (`queryKey` + `parameters`) and data mode (static `data` prop).
+6. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
 
 ## Decision Tree
 

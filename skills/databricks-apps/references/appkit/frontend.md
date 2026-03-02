@@ -8,30 +8,54 @@ These mistakes appear frequently — check the official docs for actual prop nam
 
 | Mistake | Why it's wrong | What to do |
 |---------|---------------|------------|
-| `xAxisKey`, `dataKey` on charts | Recharts naming, not AppKit | Check docs for correct prop names |
-| `yAxisKeys`, `yKeys` on charts | Recharts naming | Same — use docs |
-| `config` on charts | Not a valid prop | Use `options` for ECharts overrides, or individual props |
+| `xAxisKey`, `dataKey` on charts | Recharts naming, not AppKit | Use `xKey`, `yKey` (auto-detected from schema if omitted) |
+| `yAxisKeys`, `yKeys` on charts | Recharts naming | Use `yKey` (string or string[]) |
+| `config` on charts | Not a valid prop name | Use `options` for ECharts overrides |
 | `<XAxis>`, `<YAxis>` children | AppKit charts are ECharts-based, NOT Recharts wrappers — configure via props only |  |
-| `data`, `columns` on DataTable | DataTable fetches data automatically | Use `queryKey` + `parameters` |
+| `columns` on DataTable | DataTable auto-generates columns from data | Use `queryKey` + `parameters`; use `transform` for formatting |
 | Double-fetching with `useAnalyticsQuery` + chart component | Components handle their own fetching | Just pass `queryKey` to the component |
 
 **Always verify props against docs before using a component.**
 
+## Chart Data Modes
+
+All chart/data components support two modes:
+
+- **Query mode**: pass `queryKey` + `parameters` — component fetches data automatically. `parameters` is REQUIRED even if empty (`parameters={{}}`).
+- **Data mode**: pass static data via `data` prop (JSON array or Arrow Table) — no `queryKey`/`parameters` needed.
+
+```tsx
+// Query mode (recommended for Databricks SQL)
+<BarChart queryKey="sales_by_region" parameters={{}} />
+
+// Data mode (static/pre-fetched data)
+<BarChart data={myData} xKey="category" yKey="count" />
+```
+
 ## Chart Props Quick Reference
 
-All charts accept these core props (verify full list via docs links above):
+All charts accept these core props (verify full list via `npx @databricks/appkit docs`):
 
 ```tsx
 <BarChart
   queryKey="sales_by_region"   // SQL query filename without .sql
-  parameters={{}}              // query params — REQUIRED even if empty
-  xKey="region"                // column name for X axis
-  yKey="revenue"               // column name for Y axis (string or string[] for multi-series)
-  colors={['#40d1f5']}         // custom colors
+  parameters={{}}              // query params — REQUIRED in query mode, even if empty
+  xKey="region"                // X axis field (auto-detected from schema if omitted)
+  yKey="revenue"               // Y axis field(s) — string or string[] (auto-detected if omitted)
+  format="auto"                // "json" | "arrow" | "auto" (default: "auto")
+  transformer={(d) => d}       // transform raw data before rendering
+  colors={['#40d1f5']}         // custom colors (overrides colorPalette)
+  colorPalette="categorical"   // "categorical" | "sequential" | "diverging"
+  title="Sales by Region"      // chart title
+  showLegend                   // show legend
+  options={{}}                 // additional ECharts options to merge
   height={400}                 // default: 300
+  orientation="vertical"       // "vertical" | "horizontal" (BarChart/LineChart/AreaChart)
+  stacked                      // stack bars/areas (BarChart/AreaChart)
 />
 
-<LineChart queryKey="monthly_trend" parameters={{}} xKey="month" yKey={["revenue", "expenses"]} />
+<LineChart queryKey="monthly_trend" parameters={{}} xKey="month" yKey={["revenue", "expenses"]}
+  smooth showSymbol={false} />
 ```
 
 Charts are **ECharts-based** — configure via props, not Recharts-style children. Components handle data fetching, loading, and error states internally.
@@ -46,19 +70,34 @@ return <BarChart queryKey="sales_data" parameters={{}} />;  // fetches again!
 
 ## DataTable
 
-DataTable fetches data automatically — don't pass `data` or `columns` props.
+DataTable auto-generates columns from data and handles fetching, loading, error, and empty states.
 
-**For full props**: check AppKit docs (DataTable page).
+**For full props**: `npx @databricks/appkit docs "DataTable"`.
 
 ```tsx
 // ❌ WRONG - missing required `parameters` prop
 <DataTable queryKey="my_query" />
 
-// ❌ WRONG - DataTable fetches its own data
-<DataTable queryKey="my_query" parameters={{}} data={rows} columns={cols} />
-
-// ✅ CORRECT
+// ✅ CORRECT - minimal
 <DataTable queryKey="my_query" parameters={{}} />
+
+// ✅ CORRECT - with filtering and pagination
+<DataTable
+  queryKey="my_query"
+  parameters={{}}
+  filterColumn="name"
+  filterPlaceholder="Filter by name..."
+  pageSize={10}
+  pageSizeOptions={[10, 25, 50]}
+/>
+
+// ✅ CORRECT - with row selection
+<DataTable
+  queryKey="my_query"
+  parameters={{}}
+  enableRowSelection
+  onRowSelectionChange={(selection) => console.log(selection)}
+/>
 ```
 
 **Custom column formatting** — use the `transform` prop or format in SQL:
@@ -76,17 +115,23 @@ DataTable fetches data automatically — don't pass `data` or `columns` props.
 
 ## Available Components (Quick Reference)
 
-**For full prop details**: `npx @databricks/appkit docs` → navigate to `./docs/docs/api/appkit-ui/data/` for charts/tables, `./docs/docs/api/appkit-ui/ui/` for UI components.
+**For full prop details**: `npx @databricks/appkit docs "appkit-ui API reference"`.
+
+All data components support both query mode (`queryKey` + `parameters`) and data mode (static `data` prop). Common props across all charts: `format`, `transformer`, `colors`, `colorPalette`, `title`, `showLegend`, `height`, `options`, `ariaLabel`, `testId`.
 
 ### Data Components (`@databricks/appkit-ui/react`)
 
-| Component | Key Props | Use For |
-|-----------|-----------|---------|
-| `BarChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors`, `height` | Categorical comparisons |
-| `LineChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `colors` | Time series, trends |
-| `AreaChart` | `queryKey`, `parameters`, `xKey`, `yKey` | Cumulative/stacked trends |
-| `PieChart` | `queryKey`, `parameters`, `xKey`, `yKey`, `innerRadius`, `showLabels` | Part-of-whole |
-| `DataTable` | `queryKey`, `parameters`, `transform` | Tabular data display |
+| Component | Extra Props | Use For |
+|-----------|-------------|---------|
+| `BarChart` | `xKey`, `yKey`, `orientation`, `stacked` | Categorical comparisons |
+| `LineChart` | `xKey`, `yKey`, `smooth`, `showSymbol`, `orientation` | Time series, trends |
+| `AreaChart` | `xKey`, `yKey`, `smooth`, `showSymbol`, `stacked`, `orientation` | Cumulative/stacked trends |
+| `PieChart` | `xKey`, `yKey`, `innerRadius`, `showLabels`, `labelPosition` | Part-of-whole |
+| `DonutChart` | `xKey`, `yKey`, `innerRadius`, `showLabels`, `labelPosition` | Donut (pie with inner radius) |
+| `ScatterChart` | `xKey`, `yKey`, `symbolSize` | Correlation, distribution |
+| `HeatmapChart` | `xKey`, `yKey`, `yAxisKey`, `min`, `max`, `showLabels` | Matrix-style data |
+| `RadarChart` | `xKey`, `yKey`, `showArea` | Multi-dimensional comparison |
+| `DataTable` | `filterColumn`, `filterPlaceholder`, `transform`, `pageSize`, `enableRowSelection`, `children` | Tabular data display |
 
 ### UI Components (`@databricks/appkit-ui/react`)
 

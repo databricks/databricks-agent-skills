@@ -10,9 +10,11 @@
 
 ## Type Generation
 
-For full type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
+For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
-**Quick workflow:** Add SQL files → Run `npm run typegen` → Types appear in `client/src/appKitTypes.d.ts`
+**Type generation:** Types are auto-regenerated during dev whenever SQL files change.
+
+**Quick workflow:** Add SQL files → Types auto-generate during dev → Types appear in `client/src/appKitTypes.d.ts`
 
 ## Query Schemas (Optional)
 
@@ -90,7 +92,7 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 
 ## Available sql.* Helpers
 
-**Full API reference**: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
+**Full API reference**: `npx @databricks/appkit docs ./docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
 
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";
