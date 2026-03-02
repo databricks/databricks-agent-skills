@@ -12,12 +12,9 @@
 
 For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
-**Type generation methods:**
-- **Vite plugin** (recommended): Add `appKitTypesPlugin()` to `client/vite.config.ts` — auto-regenerates types during dev when SQL files change.
-- **CLI**: `npx @databricks/appkit generate-types [rootDir] [outFile] [warehouseId]`
-- **npm script**: `npm run typegen` (if configured in scaffolded project)
+**Type generation:** Types are auto-regenerated during dev whenever SQL files change.
 
-**Quick workflow:** Add SQL files → Types auto-generate in dev (or run `npm run typegen`) → Types appear in `client/src/appKitTypes.d.ts`
+**Quick workflow:** Add SQL files → Types auto-generate during dev → Types appear in `client/src/appKitTypes.d.ts`
 
 ## Query Schemas (Optional)
 

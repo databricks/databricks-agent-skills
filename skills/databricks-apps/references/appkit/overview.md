@@ -70,7 +70,7 @@ For type generation details, see: `npx @databricks/appkit docs ./docs/developmen
 
 **Quick workflow:**
 1. Add/modify SQL in `config/queries/`
-2. Run `npm run typegen`
+2. Types auto-generate during dev via the Vite plugin (or run `npm run typegen` manually)
 3. Types appear in `client/src/appKitTypes.d.ts`
 
 ## Adding Visualizations
@@ -95,11 +95,8 @@ import { BarChart } from '@databricks/appkit-ui/react';
 **Always use AppKit docs as the source of truth for API details.**
 
 ```bash
-npx @databricks/appkit docs                              # index (start here)
-npx @databricks/appkit docs <query>                      # section by name or doc path
-npx @databricks/appkit docs --full                       # full index with all API entries
-npx @databricks/appkit docs "appkit-ui API reference"    # example: section by name
-npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc file
+npx @databricks/appkit docs                              # show the docs index (start here)
+npx @databricks/appkit docs <query>                      # look up a section by name or doc path
 ```
 
 Do not guess paths — run without args first, then pick from the index.
