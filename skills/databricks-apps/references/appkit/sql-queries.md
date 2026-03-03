@@ -10,9 +10,11 @@
 
 ## Type Generation
 
-For full type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
+For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
-**Quick workflow:** Add SQL files → Run `npm run typegen` → Types appear in `client/src/appKitTypes.d.ts`
+**Type generation:** Types are auto-regenerated during dev whenever SQL files change.
+
+**Quick workflow:** Add SQL files → Types auto-generate during dev → Types appear in `client/src/appKitTypes.d.ts`
 
 ## Query Schemas (Optional)
 
@@ -62,10 +64,21 @@ export const querySchemas = {
 
 **Helper Functions:**
 
-Use the helpers from `shared/types.ts` for consistent formatting:
+Create app-specific helpers for consistent numeric formatting (for example in `client/src/lib/formatters.ts`):
 
 ```typescript
-import { toNumber, formatCurrency, formatPercent } from '../../shared/types';
+// client/src/lib/formatters.ts
+export const toNumber = (value: number | string): number => Number(value);
+export const formatCurrency = (value: number | string): string =>
+  `$${Number(value).toFixed(2)}`;
+export const formatPercent = (value: number | string): string =>
+  `${Number(value).toFixed(1)}%`;
+```
+
+Use them wherever you render query results:
+
+```typescript
+import { toNumber, formatCurrency, formatPercent } from './formatters'; // adjust import path to your file layout
 
 // Convert to number
 const amount = toNumber(row.amount);  // "123.45" → 123.45
@@ -79,7 +92,7 @@ const percent = formatPercent(row.rate);  // "85.5" → "85.5%"
 
 ## Available sql.* Helpers
 
-**Full API reference**: `npx @databricks/appkit docs ./docs/docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
+**Full API reference**: `npx @databricks/appkit docs ./docs/api/appkit/Variable.sql.md` — always check this for the latest available helpers.
 
 ```typescript
 import { sql } from "@databricks/appkit-ui/js";
@@ -99,7 +112,7 @@ sql.binary(value)      // For BINARY (returns hex string, use UNHEX() in SQL)
 // sql.float()    - use sql.number()
 ```
 
-**For nullable parameters**, use sentinel values or empty strings - see "Optional Parameters" section below.
+**For nullable string parameters**, use sentinel values or empty strings. **For nullable date parameters**, use sentinel dates only (empty strings cause validation errors) — see "Optional Date Parameters" section below.
 
 ## Databricks SQL Dialect
 
@@ -120,6 +133,17 @@ Databricks uses Databricks SQL (based on Spark SQL), NOT PostgreSQL/MySQL. Commo
 - `samples.tpcds.*` — data from 1998-2003
 
 Always check date ranges before writing date-filtered queries.
+
+## Before Running `npm run typegen`
+
+Verify each SQL file before running typegen:
+
+- [ ] Uses Databricks SQL syntax (NOT PostgreSQL) — check dialect table above
+- [ ] `DATEDIFF` has 3 arguments: `DATEDIFF(DAY, start, end)`
+- [ ] Uses `LOWER(col) LIKE LOWER(pattern)` instead of `ILIKE`
+- [ ] Column aliases in `ORDER BY` match `SELECT` aliases exactly
+- [ ] Date columns are not passed to numeric functions like `ROUND()`
+- [ ] Date range filters use actual data dates (NOT `CURRENT_DATE()` on historical data — check date ranges first)
 
 ## Query Parameterization
 

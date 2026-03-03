@@ -9,7 +9,7 @@ parent: databricks
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
 
 Build apps that deploy to Databricks Apps platform.
 
@@ -28,7 +28,7 @@ Build apps that deploy to Databricks Apps platform.
 These apply regardless of framework:
 
 - **Deployment**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
-- **Validation**: `databricks apps validate` before deploying
+- **Validation**: `databricks apps validate --profile <PROFILE>` before deploying
 - **App name**: Must be ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
 - **Smoke tests**: ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Authentication**: covered by parent `databricks` skill
@@ -40,6 +40,10 @@ These apply regardless of framework:
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
 
+## Data Discovery
+
+Before writing any SQL, use the parent `databricks` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
+
 ## Development Workflow (FOLLOW THIS ORDER)
 
 1. Create SQL files in `config/queries/`
@@ -47,7 +51,7 @@ These apply regardless of framework:
 3. Read `client/src/appKitTypes.d.ts` to see generated types
 4. **THEN** write `App.tsx` using the generated types
 5. Update `tests/smoke.spec.ts` selectors
-6. Run `databricks apps validate`
+6. Run `databricks apps validate --profile <PROFILE>`
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
@@ -68,11 +72,14 @@ TypeScript/React framework with type-safe SQL queries and built-in components.
 **Official Documentation** — the source of truth for all API details:
 
 ```bash
-npx @databricks/appkit docs              # ← ALWAYS start here to see available pages
-npx @databricks/appkit docs <path>       # then use paths from the index
+npx @databricks/appkit docs                              # ← ALWAYS start here to see available pages
+npx @databricks/appkit docs <query>                      # view a section by name or doc path
+npx @databricks/appkit docs --full                       # full index with all API entries
+npx @databricks/appkit docs "appkit-ui API reference"    # example: section by name
+npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc file
 ```
 
-**DO NOT guess doc paths.** Run without args first, pick from the index. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
+**DO NOT guess doc paths.** Run without args first, pick from the index. The `<query>` argument accepts both section names (from the index) and file paths. Docs are the authority on component props, hook signatures, and server APIs — skill files only cover anti-patterns and gotchas.
 
 **App Manifest and Scaffolding**
 
@@ -95,6 +102,7 @@ npx @databricks/appkit docs <path>       # then use paths from the index
      --set <plugin1>.<resourceKey>.<field>=<value> \
      --set <plugin2>.<resourceKey>.<field>=<value> \
      --description "<DESC>" --run none --profile <PROFILE>
+   # --run none: skip auto-run after scaffolding (review code first)
    # With custom template:
    databricks apps init --template <GIT_URL> --name <NAME> --features ... --set ... --profile <PROFILE>
    ```
@@ -105,6 +113,22 @@ npx @databricks/appkit docs <path>       # then use paths from the index
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
+
+### Common Scaffolding Mistakes
+
+```bash
+# ❌ WRONG: name is NOT a positional argument
+databricks apps init --features analytics my-app-name
+# → "unknown command" error
+
+# ✅ CORRECT: use --name flag
+databricks apps init --name my-app-name --features analytics --set "..." --profile <PROFILE>
+```
+
+### Directory Naming
+
+`databricks apps init` creates directories in kebab-case matching the app name.
+App names must be lowercase with hyphens only (≤26 chars).
 
 ### Other Frameworks
 

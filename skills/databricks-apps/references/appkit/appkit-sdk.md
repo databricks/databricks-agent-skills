@@ -8,19 +8,19 @@ Template enforces `noUnusedLocals` - remove unused imports immediately or build 
 
 ```typescript
 // ✅ CORRECT - use import type for types
-import type { MyInterface, MyType } from '../../shared/types';
+import type { MyInterface, MyType } from './types';
 
 // ❌ WRONG - will fail compilation
-import { MyInterface, MyType } from '../../shared/types';
+import { MyInterface, MyType } from './types';
 ```
 
 ## Server Setup
 
-For server configuration, see: `npx @databricks/appkit docs ./docs/docs/plugins.md`
+For server configuration, see: `npx @databricks/appkit docs ./docs/plugins.md`
 
 ## useAnalyticsQuery Hook
 
-**ONLY use when displaying data in a custom way that isn't a chart or table.** For charts/tables, pass `queryKey` directly to the component — don't double-fetch.
+**ONLY use when displaying data in a custom way that isn't a chart or table.** For charts/tables, pass `queryKey` directly to the component — don't double-fetch. Charts also accept a `format` option (`"json"` | `"arrow"` | `"auto"`, default `"auto"`) to control the data transfer format.
 
 Use cases:
 - Custom HTML layouts (cards, lists, grids)

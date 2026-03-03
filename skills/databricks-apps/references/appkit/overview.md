@@ -11,18 +11,7 @@ AppKit is the recommended way to build Databricks Apps - provides type-safe SQL 
 
 ## Data Discovery (Before Writing SQL)
 
-```bash
-# 1. get warehouse id
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
-
-# 2. explore table structure
-databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
-
-# 3. test query
-databricks experimental aitools tools query "SELECT * FROM catalog.schema.table LIMIT 5" --profile <PROFILE>
-```
-
-Do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`.
+**Use the parent `databricks` skill for data discovery** (table search, schema exploration, query execution).
 
 ## Pre-Implementation Checklist
 
@@ -38,7 +27,7 @@ Before writing App.tsx, complete these steps:
 
 ## Post-Implementation Checklist
 
-Before running `databricks apps validate`, complete these steps:
+Before running `databricks apps validate`:
 
 1. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
 2. ✅ Update or remove the 'hello world' text assertion
@@ -50,7 +39,7 @@ Before running `databricks apps validate`, complete these steps:
 ```
 my-app/
 ├── server/
-│   ├── index.ts              # Backend entry point (AppKit)
+│   ├── server.ts             # Backend entry point (AppKit)
 │   └── .env                  # Optional local dev env vars (do not commit)
 ├── client/
 │   ├── index.html
@@ -70,18 +59,18 @@ my-app/
 | Task | File |
 |------|------|
 | Build UI | `client/src/App.tsx` |
-| Add SQL query | `config/queries/<name>.sql` |
+| Add SQL query | `config/queries/<NAME>.sql` |
 | Add API endpoint | `server/server.ts` (tRPC) |
-| Add shared types | `shared/types.ts` |
+| Add shared helpers (optional) | create `shared/types.ts` or `client/src/lib/formatters.ts` |
 | Fix smoke test | `tests/smoke.spec.ts` |
 
 ## Type Safety
 
-For type generation details, see: `npx @databricks/appkit docs ./docs/docs/development/type-generation.md`
+For type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
 **Quick workflow:**
 1. Add/modify SQL in `config/queries/`
-2. Run `npm run typegen`
+2. Types auto-generate during dev via the Vite plugin (or run `npm run typegen` manually)
 3. Types appear in `client/src/appKitTypes.d.ts`
 
 ## Adding Visualizations
@@ -94,29 +83,41 @@ SELECT category, COUNT(*) as count FROM my_table GROUP BY category
 **Step 2**: Use component (types auto-generated!)
 ```typescript
 import { BarChart } from '@databricks/appkit-ui/react';
+// Query mode: fetches data automatically
 <BarChart queryKey="my_data" parameters={{}} />
+
+// Data mode: pass static data directly (no queryKey/parameters needed)
+<BarChart data={myData} xKey="category" yKey="count" />
 ```
 
 ## AppKit Official Documentation
 
-**Always use AppKit docs as the source of truth for API details.** Run `npx @databricks/appkit docs` (no args) to see the full index, then navigate to specific pages. Do not guess paths.
+**Always use AppKit docs as the source of truth for API details.**
 
-## References - READ BEFORE Writing Code
+```bash
+npx @databricks/appkit docs                              # show the docs index (start here)
+npx @databricks/appkit docs <query>                      # look up a section by name or doc path
+```
 
-| Before doing... | READ |
-|-----------------|------|
-| Creating SQL files | [SQL Queries](sql-queries.md) - parameterization, sql.* helpers |
-| Using `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) - memoization, conditional queries |
-| Adding charts/tables | [Frontend](frontend.md) - anti-patterns and gotchas |
-| Adding API endpoints | [tRPC](trpc.md) - mutations, Databricks API calls |
+Do not guess paths — run without args first, then pick from the index.
+
+## References
+
+| When you're about to... | Read |
+|-------------------------|------|
+| Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
+| Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
+| Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
+| Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
 
 ## Critical Rules
 
 1. **SQL for data retrieval**: Use `config/queries/` + visualization components. Never tRPC for SELECT.
 2. **Numeric types**: SQL numbers may return as strings. Always convert: `Number(row.amount)`
 3. **Type imports**: Use `import type { ... }` (verbatimModuleSyntax enabled).
-4. **Charts are ECharts**: No Recharts children - use props (`xKey`, `yKey`, `colors`).
-5. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
+4. **Charts are ECharts**: No Recharts children — use props (`xKey`, `yKey`, `colors`). `xKey`/`yKey` auto-detect from schema if omitted.
+5. **Two data modes**: Charts/tables support query mode (`queryKey` + `parameters`) and data mode (static `data` prop).
+6. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
 
 ## Decision Tree
 

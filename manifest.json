@@ -1,32 +1,21 @@
 {
   "version": "1",
-  "updated_at": "2026-02-28T11:05:23Z",
+  "updated_at": "2026-03-03T09:10:58Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-02-28T11:05:12Z",
+      "updated_at": "2026-03-03T09:10:44Z",
       "files": [
         "SKILL.md",
-        "ai-bi-dashboards.md",
         "asset-bundles.md",
-        "clusters.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
-        "databricks-cli-install.md",
-        "dbfs.md",
-        "dbsql.md",
-        "genie.md",
-        "jobs.md",
-        "lakeflow.md",
-        "model-serving.md",
-        "secrets.md",
-        "unity-catalog.md",
-        "workspace.md"
+        "databricks-cli-install.md"
       ]
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-02-23T12:29:59Z",
+      "updated_at": "2026-03-03T09:10:44Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -46,7 +35,7 @@
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-02-28T11:05:03Z",
+      "updated_at": "2026-03-03T09:04:22Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
