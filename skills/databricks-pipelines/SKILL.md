@@ -112,7 +112,7 @@ resources:
 
 Detailed reference guides for each pipeline API:
 
-- [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) - Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md))
+- **MANDATORY** [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) - Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md)). **Always read before writing any pipeline code.**
 - [Streaming Tables](references/streaming-table.md) - Continuous data stream processing with exactly-once semantics
 - [Materialized Views](references/materialized-view.md) - Physically stored query results with incremental refresh
 - [Views](references/view.md) - Reusable query logic published to Unity Catalog (SQL only)
