@@ -1,10 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-02-26T11:37:31Z",
+  "updated_at": "2026-03-03T09:35:19Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-02-26T11:36:38Z",
+      "updated_at": "2026-03-03T09:10:44Z",
       "files": [
         "SKILL.md",
         "asset-bundles.md",
@@ -15,7 +15,7 @@
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-02-26T11:36:23Z",
+      "updated_at": "2026-03-03T09:10:44Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -24,6 +24,52 @@
         "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
         "references/testing.md"
+      ]
+    },
+    "databricks-jobs": {
+      "version": "0.1.0",
+      "updated_at": "2026-02-28T11:03:28Z",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    "databricks-pipelines": {
+      "version": "0.1.0",
+      "updated_at": "2026-03-03T09:35:13Z",
+      "files": [
+        "SKILL.md",
+        "references/auto-cdc-python.md",
+        "references/auto-cdc-sql.md",
+        "references/auto-cdc.md",
+        "references/auto-loader-python.md",
+        "references/auto-loader-sql.md",
+        "references/auto-loader.md",
+        "references/expectations-python.md",
+        "references/expectations-sql.md",
+        "references/expectations.md",
+        "references/materialized-view-python.md",
+        "references/materialized-view-sql.md",
+        "references/materialized-view.md",
+        "references/options-avro.md",
+        "references/options-csv.md",
+        "references/options-json.md",
+        "references/options-orc.md",
+        "references/options-parquet.md",
+        "references/options-text.md",
+        "references/options-xml.md",
+        "references/python-basics.md",
+        "references/sink-python.md",
+        "references/sink.md",
+        "references/sql-basics.md",
+        "references/streaming-table-python.md",
+        "references/streaming-table-sql.md",
+        "references/streaming-table.md",
+        "references/temporary-view-python.md",
+        "references/temporary-view-sql.md",
+        "references/temporary-view.md",
+        "references/view-sql.md",
+        "references/view.md",
+        "references/write-spark-declarative-pipelines.md"
       ]
     }
   }
