@@ -7,6 +7,14 @@
 - `AUTO CDC INTO` - Change data capture flows
 - `CREATE FLOW` - Define flows or backfills for streaming tables
 
+#### Message Bus Ingestion Functions
+
+- `read_kafka(bootstrapServers => '...', subscribe => '...')` - Apache Kafka
+- `read_kinesis(streamName => '...', region => '...')` - AWS Kinesis
+- `read_pubsub(subscriptionId => '...', topicId => '...')` - Google Cloud Pub/Sub
+- `read_pulsar(serviceUrl => '...', topics => '...')` - Apache Pulsar
+- Event Hubs: Use `read_kafka()` with Kafka-compatible Event Hubs config
+
 #### Critical Rules
 
 - ✅ Use `CREATE OR REFRESH` syntax to define/update datasets
@@ -144,6 +152,15 @@ NO exceptions — always read these reference files first.
 #### Sink Rules
 
 **NOTE:** Sinks are NOT supported in SQL. Sinks are a Python-only feature in Spark Declarative Pipelines. To write data to event streaming services (Apache Kafka, Azure Event Hubs), external Delta tables, or custom data sources, use Python with `dp.create_sink()` and `@dp.append_flow()` APIs. See [sink-python.md](sink-python.md) for details.
+
+#### skipChangeCommits
+
+When a downstream streaming table reads from an upstream streaming table that has updates or deletes, use `skipChangeCommits` to ignore change commits:
+
+```sql
+CREATE OR REFRESH STREAMING TABLE downstream
+AS SELECT * FROM STREAM read_stream("upstream_table", skipChangeCommits => true)
+```
 
 #### Data Quality Expectations Rules
 

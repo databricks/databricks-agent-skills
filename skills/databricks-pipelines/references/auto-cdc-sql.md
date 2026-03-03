@@ -29,7 +29,7 @@ Parameters:
 - `IGNORE NULL UPDATES` (optional): If specified, NULL values won't overwrite existing non-NULL values
 - `APPLY AS DELETE WHEN` (optional): Condition identifying delete operations (e.g., `operation = 'DELETE'`)
 - `APPLY AS TRUNCATE WHEN` (optional): Condition identifying truncate operations (supported only for SCD Type 1)
-- `SEQUENCE BY` (column): Column for ordering events (timestamp, version). **Required.**
+- `SEQUENCE BY` (column or struct): Column for ordering events (timestamp, version). **Required.** For multi-column sequencing, use `SEQUENCE BY STRUCT(timestamp_col, id_col)` to order by the first field first, then break ties with subsequent fields.
 - `COLUMNS` (optional): Columns to include or exclude (use `column1, column2` or `* EXCEPT (column1, column2)`)
 - `STORED AS` (optional): `SCD TYPE 1` for latest values (default), `SCD TYPE 2` for full history with `__START_AT`/`__END_AT` columns
 - `TRACK HISTORY ON` (optional): For SCD Type 2, columns to track history for (others use Type 1)
@@ -92,7 +92,19 @@ STORED AS SCD TYPE 2;
 -- Target will include __START_AT and __END_AT columns
 ```
 
-**Pattern 5: Selective column inclusion**
+**Pattern 5: Multi-column sequencing**
+
+```sql
+CREATE OR REFRESH STREAMING TABLE events;
+
+CREATE FLOW event_flow AS AUTO CDC INTO events
+FROM STREAM(event_changes)
+KEYS (event_id)
+SEQUENCE BY STRUCT(event_timestamp, event_id)
+STORED AS SCD TYPE 1;
+```
+
+**Pattern 6: Selective column inclusion**
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE accounts;
@@ -105,7 +117,7 @@ COLUMNS account_id, balance, status
 STORED AS SCD TYPE 1;
 ```
 
-**Pattern 6: Selective column exclusion**
+**Pattern 7: Selective column exclusion**
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE products;
@@ -117,7 +129,7 @@ SEQUENCE BY updated_at
 COLUMNS * EXCEPT (internal_notes, temp_field);
 ```
 
-**Pattern 7: SCD Type 2 with selective history tracking**
+**Pattern 8: SCD Type 2 with selective history tracking**
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE accounts;
@@ -132,7 +144,7 @@ TRACK HISTORY ON balance, status;
 -- Only balance and status changes create new history records
 ```
 
-**Pattern 8: SCD Type 2 with history tracking exclusion**
+**Pattern 9: SCD Type 2 with history tracking exclusion**
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE accounts;
@@ -146,7 +158,7 @@ TRACK HISTORY ON * EXCEPT (last_login, view_count);
 -- Track history on all columns except last_login and view_count
 ```
 
-**Pattern 9: Truncate support (SCD Type 1 only)**
+**Pattern 10: Truncate support (SCD Type 1 only)**
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE inventory;

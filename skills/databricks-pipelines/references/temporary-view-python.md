@@ -2,11 +2,11 @@ Temporary Views in Spark Declarative Pipelines create temporary logical datasets
 
 **API Reference:**
 
-**@dp.view() / @dlt.view()**
+**@dp.temporary_view() (preferred) / @dp.view() (alias) / @dlt.view() (deprecated)**
 Decorator to define a temporary view.
 
 ```python
-@dp.view(
+@dp.temporary_view(
   name="<name>",
   comment="<comment>"
 )
@@ -25,7 +25,7 @@ Parameters:
 
 ```python
 # View for shared filtering logic
-@dp.view()
+@dp.temporary_view()
 def valid_events():
     return spark.read.table("raw.events") \
         .filter("event_type IS NOT NULL") \
@@ -47,7 +47,7 @@ def system_events():
 
 ```python
 # Views work with streaming DataFrames too
-@dp.view()
+@dp.temporary_view()
 def streaming_events():
     return spark.readStream.table("bronze.events") \
         .filter("event_id IS NOT NULL")

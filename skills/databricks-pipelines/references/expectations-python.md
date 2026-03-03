@@ -2,7 +2,7 @@ Expectations apply data quality constraints to Lakeflow Spark Declarative Pipeli
 
 ## When to Use Expectations
 
-- Apply to `@dp.materialized_view()`/`@dp.table()`/`@dlt.table()`/`@dp.view()`/`@dlt.view()` decorated functions
+- Apply to `@dp.materialized_view()`/`@dp.table()`/`@dlt.table()`/`@dp.temporary_view()`/`@dp.view()`/`@dlt.view()` decorated functions
 - Use on streaming tables, materialized views, or temporary views
 - Stack multiple expectation decorators above the dataset function
 

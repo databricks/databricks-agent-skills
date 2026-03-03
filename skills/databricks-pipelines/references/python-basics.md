@@ -7,7 +7,7 @@
 
 - `@dp.materialized_view()` - Materialized views (batch processing, recommended for materialized views)
 - `@dp.table()` - Streaming tables (when returning streaming DataFrame) or materialized views (legacy, when returning batch DataFrame)
-- `@dp.view()` - Temporary views (non-materialized, private to pipeline)
+- `@dp.temporary_view()` - Temporary views (non-materialized, private to pipeline)
 - `@dp.expect*()` - Data quality constraints (expect, expect_or_drop, expect_or_fail, expect_all, expect_all_or_drop, expect_all_or_fail)
 
 #### Core Functions
@@ -112,7 +112,7 @@ Temporary views in Spark Declarative Pipelines are non-materialized views that e
 
 **Relevant APIs:**
 
-- `@dp.view()` or `@dlt.view()`
+- `@dp.temporary_view()` (preferred) or `@dp.view()` (alias) or `@dlt.view()` (deprecated)
 
 **MANDATORY:** Before implementing, editing, or suggesting any code involving the above relevant APIs, you MUST read the following reference file:
 
@@ -187,3 +187,13 @@ Sinks in Spark Declarative Pipelines enable writing data to alternative targets 
 NO exceptions — always read these reference files first.
 
 **NOTE:** Sinks are Python-only in Spark Declarative Pipelines. SQL does not support sinks.
+
+#### skipChangeCommits
+
+When a downstream streaming table reads from an upstream streaming table that has updates or deletes (e.g., GDPR compliance, Auto CDC targets), use `skipChangeCommits` to ignore those change commits:
+
+```python
+@dp.table()
+def downstream():
+    return spark.readStream.option("skipChangeCommits", "true").table("upstream_table")
+```

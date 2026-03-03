@@ -208,6 +208,28 @@ def employees():
     return spark.readStream.table("source.employees")
 ```
 
+**Pattern 5: Stream-static join (enrich streaming data with dimension table)**
+
+```python
+@dp.table()
+def enriched_transactions():
+    transactions = spark.readStream.table("transactions")
+    customers = spark.read.table("customers")
+    return transactions.join(customers, transactions.customer_id == customers.id)
+```
+
+The dimension table (`customers`) is read as a static snapshot at stream start, while the streaming source (`transactions`) is read incrementally.
+
+**Pattern 6: Reading from upstream ST with updates/deletes (skipChangeCommits)**
+
+```python
+@dp.table()
+def downstream():
+    return spark.readStream.option("skipChangeCommits", "true").table("upstream_with_deletes")
+```
+
+Use `skipChangeCommits` when reading from a streaming table that has updates/deletes (e.g., GDPR compliance, Auto CDC targets). Without this flag, change commits cause errors.
+
 **KEY RULES:**
 
 - Streaming tables use `spark.readStream` (streaming reads)
@@ -217,3 +239,4 @@ def employees():
 - For one-time flows (`once=True`): Use `spark.read` to return a batch DataFrame
 - Generated columns, constraints, and masks require schema definition
 - Row filters force full refresh of downstream materialized views
+- Use `skipChangeCommits` when reading from STs that have updates/deletes

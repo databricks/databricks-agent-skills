@@ -222,7 +222,18 @@ CREATE STREAMING TABLE customers (
 AS SELECT * FROM STREAM(source.customers);
 ```
 
-**Pattern 6: One-time backfill with flow**
+**Pattern 6: Private streaming table (pipeline-internal staging)**
+
+```sql
+CREATE OR REFRESH PRIVATE STREAMING TABLE staging_events
+AS SELECT *
+FROM STREAM(raw_events)
+WHERE event_type IS NOT NULL;
+```
+
+Use `PRIVATE` for internal staging datasets that should not be published to the catalog. Private tables are only accessible within the pipeline.
+
+**Pattern 7: One-time backfill with flow**
 
 ```sql
 CREATE STREAMING TABLE transactions (
@@ -243,6 +254,26 @@ AS INSERT INTO ONCE transactions
 SELECT * FROM archive.historical_transactions;
 ```
 
+**Pattern 8: Stream-static join (enrich streaming data with dimension table)**
+
+```sql
+CREATE OR REFRESH STREAMING TABLE enriched_transactions
+AS SELECT t.*, c.name, c.email
+FROM STREAM(transactions) t
+JOIN customers c ON t.customer_id = c.id;
+```
+
+The dimension table (`customers`) is read as a static snapshot at stream start, while the streaming source (`transactions`) is read incrementally. This is the standard pattern for enriching streaming data with lookup/dimension tables.
+
+**Pattern 9: Reading from upstream ST with updates/deletes (skipChangeCommits)**
+
+```sql
+CREATE OR REFRESH STREAMING TABLE downstream
+AS SELECT * FROM STREAM read_stream("upstream_with_deletes", skipChangeCommits => true)
+```
+
+Use `skipChangeCommits` when reading from a streaming table that has updates/deletes (e.g., GDPR compliance, Auto CDC targets). Without this flag, change commits cause errors.
+
 **KEY RULES:**
 
 - Streaming tables require `STREAM()` keyword for streaming reads
@@ -254,3 +285,4 @@ SELECT * FROM archive.historical_transactions;
 - Table renaming and ownership changes prohibited
 - `CLUSTER BY` is recommended over `PARTITIONED BY` for most use cases
 - For batch processing, use materialized views instead (see the `materializedView` API guide)
+- Use `skipChangeCommits` when reading from STs that have updates/deletes

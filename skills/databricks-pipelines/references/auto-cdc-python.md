@@ -29,10 +29,10 @@ Parameters:
 - `target` (str): Target table name (must exist, create with `dp.create_streaming_table()`). **Required.**
 - `source` (str): Source table name with CDC events. **Required.**
 - `keys` (list): Primary key columns for row identification. **Required.**
-- `sequence_by` (str): Column for ordering events (timestamp, version). **Required.**
+- `sequence_by` (str | Column): Column for ordering events (timestamp, version). **Required.** Accepts a string column name or a `Column` expression. For multi-column sequencing, use `struct("col1", "col2")` to order by multiple columns.
 - `ignore_null_updates` (bool): If True, NULL values won't overwrite existing non-NULL values
-- `apply_as_deletes` (str): SQL expression identifying delete operations (e.g., `"op = 'D'"`)
-- `apply_as_truncates` (str): SQL expression identifying truncate operations
+- `apply_as_deletes` (str or Column): Expression identifying delete operations. Use `expr("op = 'D'")` (Column) or `"op = 'D'"` (string).
+- `apply_as_truncates` (str or Column): Expression identifying truncate operations. Use `expr("op = 'TRUNCATE'")` (Column) or `"op = 'TRUNCATE'"` (string).
 - `column_list` (list): Columns to include (mutually exclusive with `except_column_list`)
 - `except_column_list` (list): Columns to exclude
 - `stored_as_scd_type` (int): `1` for latest values (default), `2` for full history with `__START_AT`/`__END_AT` columns
@@ -96,7 +96,7 @@ dp.create_auto_cdc_flow(
 
 ```python
 # Step 1: Define view with transformation (source preprocessing)
-@dp.view()
+@dp.temporary_view()
 def filtered_user_changes():
     return (
         spark.readStream.table("raw_user_changes")
@@ -118,9 +118,11 @@ dp.create_auto_cdc_flow(
 #  source="raw_user_changes" can be used directly
 ```
 
-**Pattern 3: CDC with explicit deletes**
+**Pattern 3: CDC with explicit deletes and truncates**
 
 ```python
+from pyspark.sql.functions import expr
+
 dp.create_streaming_table(name="orders")
 
 dp.create_auto_cdc_flow(
@@ -128,7 +130,8 @@ dp.create_auto_cdc_flow(
     source="order_events",
     keys=["order_id"],
     sequence_by="event_timestamp",
-    apply_as_deletes="operation = 'DELETE'",
+    apply_as_deletes=expr("operation = 'DELETE'"),
+    apply_as_truncates=expr("operation = 'TRUNCATE'"),
     ignore_null_updates=True
 )
 ```
@@ -205,7 +208,7 @@ dp.create_auto_cdc_flow(
 
 - Create target with `dp.create_streaming_table()` before defining CDC flow
 - `dp.create_auto_cdc_flow()` does NOT return a value - call it at top level without assigning to a variable
-- `source` must be a table name (string) - use `@dp.view()` to transform data before CDC processing
+- `source` must be a table name (string) - use `@dp.temporary_view()` to preprocess/filter/transform data before CDC processing. A temporary view is the **preferred** approach for source preprocessing (not a streaming table)
 - SCD Type 2 adds `__START_AT` and `__END_AT` columns for validity tracking
 - When specifying the schema of the target table for SCD Type 2, you must also include the `__START_AT` and `__END_AT` columns with the same data type as the `sequence_by` field
 - Legacy names (`apply_changes`, `apply_changes_from_snapshot`) are equivalent but deprecated - prefer `create_auto_cdc_*` variants
