@@ -61,7 +61,7 @@ Auto Loader (`read_files()`) is recommended for ingesting from cloud storage.
 2. Always look up format-specific options for the format being loaded
 3. [streaming-table-sql.md](streaming-table-sql.md) (when Auto Loader is used with streaming tables)
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.
 
 #### Materialized View Rules
 
@@ -76,7 +76,7 @@ Materialized Views enable batch processing with full refresh or incremental comp
 
 1. [materialized-view-sql.md](materialized-view-sql.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Streaming Table Rules
 
@@ -93,7 +93,7 @@ Backfilling allows retroactively processing historical data using flows with `IN
 
 1. [streaming-table-sql.md](streaming-table-sql.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Temporary View Rules
 
@@ -108,7 +108,7 @@ Temporary views are non-materialized views that exist only during pipeline execu
 
 1. [temporary-view-sql.md](temporary-view-sql.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### View Rules
 
@@ -122,7 +122,7 @@ Views are non-materialized catalog views published to Unity Catalog (Unity Catal
 
 1. [view-sql.md](view-sql.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Auto CDC/Apply Changes Rules
 
@@ -145,7 +145,7 @@ Auto CDC in Spark Declarative Pipelines processes change data capture (CDC) even
 1. [auto-cdc-sql.md](auto-cdc-sql.md)
 2. [streaming-table-sql.md](streaming-table-sql.md) (since Auto CDC always requires a streaming table as a target)
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.
 
 **NOTE:** SQL only supports Auto CDC from streaming sources. Auto CDC from database snapshots is NOT supported in SQL - use Python `dp.create_auto_cdc_from_snapshot_flow()` or `dlt.create_auto_cdc_from_snapshot_flow()` instead.
 
@@ -175,4 +175,4 @@ Expectations in SQL Declarative Pipelines apply data quality constraints using S
 1. [expectations-sql.md](expectations-sql.md)
 2. The corresponding dataset definition guide ("materializedView"/"streamingTable"/"temporaryView"/"view") to ensure the expectations are correctly defined for the particular dataset definition
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.

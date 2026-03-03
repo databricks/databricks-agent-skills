@@ -72,7 +72,7 @@ Auto Loader (`cloudFiles`) is recommended for ingesting from cloud storage.
 2. Always look up format-specific options for the format being loaded
 3. [streaming-table-python.md](streaming-table-python.md) (when Auto Loader is used with streaming tables)
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.
 
 #### Materialized View Rules
 
@@ -87,7 +87,7 @@ Materialized Views in Spark Declarative Pipelines enable batch processing with f
 
 1. [materialized-view-python.md](materialized-view-python.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Streaming Table Rules
 
@@ -104,7 +104,7 @@ Backfilling allows retroactively processing historical data using append flows w
 
 1. [streaming-table-python.md](streaming-table-python.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Temporary View Rules
 
@@ -118,7 +118,7 @@ Temporary views in Spark Declarative Pipelines are non-materialized views that e
 
 1. [temporary-view-python.md](temporary-view-python.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 **NOTE:** Python only supports temporary views (private to pipeline). Persistent views published to Unity Catalog are NOT supported in Python - use SQL `CREATE VIEW` syntax instead, more details are available in [view-sql.md](view-sql.md).
 
@@ -144,7 +144,7 @@ Auto CDC in Spark Declarative Pipelines processes change data capture (CDC) even
 1. [auto-cdc-python.md](auto-cdc-python.md)
 2. [streaming-table-python.md](streaming-table-python.md) (since Auto CDC always requires a streaming table as a target)
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.
 
 #### Data Quality Expectations Rules
 
@@ -163,7 +163,7 @@ Expectations in Spark Declarative Pipelines apply data quality constraints using
 
 1. [expectations-python.md](expectations-python.md)
 
-NO exceptions — always read this reference file first.
+NO exceptions for looking up this skill.
 
 #### Sink Rules
 
@@ -184,7 +184,7 @@ Sinks in Spark Declarative Pipelines enable writing data to alternative targets 
 1. [sink-python.md](sink-python.md)
 2. [streaming-table-python.md](streaming-table-python.md) (since sinks work exclusively with streaming append flows)
 
-NO exceptions — always read these reference files first.
+NO exceptions for looking up these skills.
 
 **NOTE:** Sinks are Python-only in Spark Declarative Pipelines. SQL does not support sinks.
 
