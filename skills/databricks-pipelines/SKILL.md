@@ -112,21 +112,12 @@ resources:
 
 Detailed reference guides for each pipeline API:
 
-- [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) - Core syntax and rules
-- [Python basics](references/python-basics.md) - Python decorators, functions, and critical rules
-- [SQL basics](references/sql-basics.md) - SQL statements and critical rules
-- [Streaming Tables (Python)](references/streaming-table-python.md) - `@dp.table()`, `dp.create_streaming_table()`, `@dp.append_flow()`
-- [Streaming Tables (SQL)](references/streaming-table-sql.md) - `CREATE STREAMING TABLE`, `CREATE FLOW`
-- [Materialized Views (Python)](references/materialized-view-python.md) - `@dp.materialized_view()`
-- [Materialized Views (SQL)](references/materialized-view-sql.md) - `CREATE MATERIALIZED VIEW`
-- [Views (SQL)](references/view-sql.md) - `CREATE VIEW` (published to Unity Catalog)
-- [Temporary Views (Python)](references/temporary-view-python.md) - `@dp.view()`
-- [Temporary Views (SQL)](references/temporary-view-sql.md) - `CREATE TEMPORARY VIEW`
-- [Auto Loader (Python)](references/auto-loader-python.md) - `cloudFiles` format for file ingestion
-- [Auto Loader (SQL)](references/auto-loader-sql.md) - `read_files()` for file ingestion
-- [Auto Loader options: JSON](references/options-json.md), [CSV](references/options-csv.md), [XML](references/options-xml.md), [Parquet](references/options-parquet.md), [Avro](references/options-avro.md), [Text](references/options-text.md), [ORC](references/options-orc.md)
-- [Auto CDC (Python)](references/auto-cdc-python.md) - `dp.create_auto_cdc_flow()`
-- [Auto CDC (SQL)](references/auto-cdc-sql.md) - `AUTO CDC INTO`
-- [Expectations (Python)](references/expectations-python.md) - Data quality decorators
-- [Expectations (SQL)](references/expectations-sql.md) - Data quality constraints
-- [Sinks (Python)](references/sink-python.md) - `dp.create_sink()` for Kafka, Event Hubs, external Delta
+- [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) - Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md))
+- [Streaming Tables](references/streaming-table.md) - Continuous data stream processing with exactly-once semantics
+- [Materialized Views](references/materialized-view.md) - Physically stored query results with incremental refresh
+- [Views](references/view.md) - Reusable query logic published to Unity Catalog (SQL only)
+- [Temporary Views](references/temporary-view.md) - Pipeline-private views not published to Unity Catalog
+- [Auto Loader](references/auto-loader.md) - Incrementally ingest files from cloud storage into Delta Lake
+- [Auto CDC](references/auto-cdc.md) - Process Change Data Capture feeds (SCD Type 1 & 2)
+- [Expectations](references/expectations.md) - Define and enforce data quality constraints
+- [Sinks](references/sink.md) - Write to Kafka, Event Hubs, external Delta tables (Python only)
