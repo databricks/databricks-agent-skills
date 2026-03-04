@@ -1,7 +1,7 @@
 ---
 name: databricks-jobs
 description: Develop and deploy Lakeflow Jobs on Databricks. Use when creating data engineering jobs with notebooks, Python wheels, or SQL tasks. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.288.0)
+compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
 parent: databricks
