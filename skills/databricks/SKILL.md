@@ -52,7 +52,7 @@ export DATABRICKS_CONFIG_PROFILE=my-workspace
 databricks apps list  # profile not set!
 ```
 
-## Data Exploration — Use AI Tools
+## Data Discovery — Use AI Tools
 
 **Use these instead of manually navigating catalogs/schemas/tables:**
 
@@ -67,7 +67,7 @@ databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --pro
 databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
-See [Data Exploration](data-exploration.md) for details.
+See [Data Discovery](data-discovery.md) for details.
 
 ## Quick Reference
 
@@ -129,12 +129,12 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 |------|------------------------|
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
-| Exploring tables/schemas | [Data Exploration](data-exploration.md) |
+| Exploring tables/schemas | [Data Discovery](data-discovery.md) |
 | Deploying jobs/pipelines | [Asset Bundles](asset-bundles.md) |
 
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
-- [Data Exploration](data-exploration.md)
+- [Data Discovery](data-discovery.md)
 - [Asset Bundles](asset-bundles.md)

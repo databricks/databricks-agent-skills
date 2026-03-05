@@ -1,4 +1,4 @@
-# Data Exploration
+# Data Discovery
 
 Tools for discovering table schemas and executing SQL queries in Databricks.
 
@@ -188,7 +188,7 @@ DATABRICKS_WAREHOUSE_ID=abc123 databricks experimental aitools tools query \
      --profile my-workspace
    ```
 
-## Workflow: Complete Data Exploration
+## Workflow: Complete Data Discovery
 
 Here's a typical workflow combining both commands:
 

@@ -9,7 +9,7 @@ parent: databricks
 
 # Lakeflow Spark Declarative Pipelines Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data discovery commands.
 
 Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
 

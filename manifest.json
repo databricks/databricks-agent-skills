@@ -8,7 +8,7 @@
       "files": [
         "SKILL.md",
         "asset-bundles.md",
-        "data-exploration.md",
+        "data-discovery.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md"
       ]

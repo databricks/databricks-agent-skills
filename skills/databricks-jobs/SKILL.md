@@ -9,7 +9,7 @@ parent: databricks
 
 # Lakeflow Jobs Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data discovery commands.
 
 Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL queries, and other tasks on Databricks.
 
