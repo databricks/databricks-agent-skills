@@ -96,9 +96,23 @@ databricks postgres create-branch projects/<PROJECT_ID> <BRANCH_ID> \
 
 Branches require an expiration policy: use `"no_expiry": true` for permanent branches.
 
-When done experimenting, delete the branch. Protected branches must be unprotected first -- use `update-branch` to set `spec.is_protected` to `false`, then run `databricks postgres delete-branch -h` to discover the deletion command.
+When done experimenting, delete the branch. Protected branches must be unprotected first -- use `update-branch` to set `spec.is_protected` to `false`, then delete:
 
-## What's Next: Build a Databricks App
+```bash
+# Step 1 — unprotect
+databricks postgres update-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+  --json '{"spec": {"is_protected": false}}' --profile <PROFILE>
+
+# Step 2 — delete (run -h to confirm positional arg format for your CLI version)
+databricks postgres delete-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+  --profile <PROFILE>
+```
+
+**Never delete the `production` branch** — it is the authoritative branch auto-provisioned at project creation.
+
+## What's Next
+
+### Build a Databricks App
 
 After creating a Lakebase project, scaffold a Databricks App connected to it.
 
@@ -108,10 +122,10 @@ After creating a Lakebase project, scaffold a Databricks App connected to it.
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 ```
 
-**Step 2 — Discover database name** (use `.name` from the desired database):
+**Step 2 — Discover database name** (use `.name` from the desired database; `<BRANCH_ID>` is the branch ID, not the full resource name):
 
 ```bash
-databricks postgres list-databases <BRANCH_NAME> --profile <PROFILE>
+databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
 ```
 
 **Step 3 — Scaffold the app** with the `lakebase` feature:
@@ -127,6 +141,30 @@ databricks apps init --name <APP_NAME> \
 Where `<BRANCH_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>`) and `<DATABASE_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
 
 For the full app development workflow, use the **`databricks-apps`** skill.
+
+### Other Workflows
+
+**Connect a Postgres client**
+Get the connection string from the endpoint, then connect with psql, DBeaver, or any standard Postgres client.
+
+```bash
+databricks postgres get-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> --profile <PROFILE>
+```
+
+**Manage roles and permissions**
+Create Postgres roles and grant access to databases or schemas.
+
+```bash
+databricks postgres create-role -h   # discover role spec fields
+```
+
+**Add a read-only endpoint**
+Create a read replica for analytics or reporting workloads to avoid contention on the primary read-write endpoint.
+
+```bash
+databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <ENDPOINT_ID> \
+  --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
+```
 
 ### Database Permissions
 
