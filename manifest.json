@@ -19,9 +19,7 @@
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
-        "references/appkit/frontend.md",
-        "references/appkit/overview.md",
-        "references/appkit/sql-queries.md",
+        "references/appkit/lakebase.md",
         "references/appkit/trpc.md",
         "references/testing.md"
       ]

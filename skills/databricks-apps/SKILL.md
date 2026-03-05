@@ -22,6 +22,8 @@ Build apps that deploy to Databricks Apps platform.
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
+| Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
+| Configuring app resources | [Manifest Guide](references/appkit/manifest.md) |
 
 ## Generic Guidelines
 
@@ -40,11 +42,20 @@ These apply regardless of framework:
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
 
+## Project Structure (after `databricks apps init --features lakebase`)
+- `server/server.ts` — backend with Lakebase pool + tRPC routes
+- `client/src/App.tsx` — React frontend
+- `app.yaml` — manifest with `database` resource declaration
+- `package.json` — includes `@databricks/lakebase` dependency
+- Note: **No `config/queries/`** — Lakebase apps use `pool.query()` in tRPC, not SQL files
+
 ## Data Discovery
 
 Before writing any SQL, use the parent `databricks` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
 
 ## Development Workflow (FOLLOW THIS ORDER)
+
+**Analytics apps** (`--features analytics`):
 
 1. Create SQL files in `config/queries/`
 2. Run `npm run typegen` — verify all queries show ✓
@@ -55,13 +66,16 @@ Before writing any SQL, use the parent `databricks` skill for data exploration �
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
+**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
+
 ## When to Use What
-- **Read data → display in chart/table**: Use visualization components with `queryKey` prop
-- **Read data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
-- **Read data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
+- **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
+- **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
+- **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
+- **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Call ML model endpoint**: Use tRPC
-- **Write/update data (INSERT/UPDATE/DELETE)**: Use tRPC
-- **⚠️ NEVER use tRPC to run SELECT queries** — always use SQL files in `config/queries/`
+- **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
+- **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
 
 ## Frameworks
 
