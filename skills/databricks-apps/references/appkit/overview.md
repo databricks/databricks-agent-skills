@@ -2,6 +2,18 @@
 
 AppKit is the recommended way to build Databricks Apps - provides type-safe SQL queries, React components, and seamless deployment.
 
+## Choose Your Data Pattern FIRST
+
+Before scaffolding, decide which data pattern the app needs:
+
+| Pattern | When to use | Init command |
+|---------|-------------|-------------|
+| **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
+| **Lakebase** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
+| **Both** | Dashboard + user data or preferences | `--features analytics,lakebase` with all required `--set` flags |
+
+See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code patterns.
+
 ## Workflow
 
 1. **Scaffold**: Run `databricks apps manifest`, then `databricks apps init` with `--features` and `--set` as in parent SKILL.md (App Manifest and Scaffolding)
@@ -109,6 +121,8 @@ Do not guess paths — run without args first, then pick from the index.
 | Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
 | Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
+| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — createLakebasePool, tRPC patterns, schema init |
+| Configure app resources (warehouse, database, secrets) | [Manifest](manifest.md) — app.yaml resource declarations |
 
 ## Critical Rules
 
