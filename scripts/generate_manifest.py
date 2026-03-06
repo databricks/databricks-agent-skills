@@ -52,25 +52,15 @@ def get_skill_updated_at(skill_path: Path) -> str:
     )
 
 
-def load_existing_manifest(repo_root: Path) -> dict:
-    """Load existing manifest.json if it exists, for preserving extra fields."""
-    manifest_path = repo_root / "manifest.json"
-    if manifest_path.exists():
-        return json.loads(manifest_path.read_text())
-    return {}
-
-
-# Fields in each skill entry that are managed externally (not derived from
-# the file system) and should be preserved across regenerations.
-PRESERVED_SKILL_FIELDS = {"base_revision"}
-
-
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
-    existing = load_existing_manifest(repo_root)
-    existing_skills = existing.get("skills", {})
-    skills = {}
+    # Load existing manifest to preserve base_revision fields
+    manifest_path = repo_root / "manifest.json"
+    existing_skills = {}
+    if manifest_path.exists():
+        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
 
+    skills = {}
     skills_dir = repo_root / "skills"
 
     for item in sorted(skills_dir.iterdir()):
@@ -95,11 +85,10 @@ def generate_manifest(repo_root: Path) -> dict:
             "files": files,
         }
 
-        # Preserve externally-managed fields from the existing manifest
-        if item.name in existing_skills:
-            for field in PRESERVED_SKILL_FIELDS:
-                if field in existing_skills[item.name]:
-                    skill_entry[field] = existing_skills[item.name][field]
+        # Preserve base_revision from existing manifest
+        existing = existing_skills.get(item.name, {})
+        if "base_revision" in existing:
+            skill_entry["base_revision"] = existing["base_revision"]
 
         skills[item.name] = skill_entry
 
@@ -119,8 +108,7 @@ def normalize_manifest(manifest: dict) -> dict:
     for name, skill in manifest.get("skills", {}).items():
         skill_copy = skill.copy()
         skill_copy.pop("updated_at", None)
-        for field in PRESERVED_SKILL_FIELDS:
-            skill_copy.pop(field, None)
+        skill_copy.pop("base_revision", None)
         skills[name] = skill_copy
 
     normalized["skills"] = skills
