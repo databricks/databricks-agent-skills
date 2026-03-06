@@ -13,23 +13,6 @@ parent: databricks
 
 Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
 
-## Scaffolding a New Pipeline Project
-
-When starting a new pipeline project, use the CLI to scaffold:
-
-```bash
-databricks experimental aitools tools init-template pipeline --name my_pipeline --language python --profile <PROFILE>
-databricks experimental aitools tools init-template pipeline --name my_pipeline --language sql --profile <PROFILE>
-databricks experimental aitools tools init-template pipeline --name my_pipeline --language sql --catalog my_catalog --profile <PROFILE>
-```
-
-- `--name` and `--language` are required
-- `--language`: `python` or `sql`. Ask the user which they prefer:
-  - SQL: Recommended for straightforward transformations (filters, joins, aggregations)
-  - Python: Recommended for complex logic (custom UDFs, ML, advanced processing)
-- `--catalog` defaults to workspace default catalog
-- Names: letters, numbers, underscores only
-
 ## Pipeline Structure
 
 - Follow the medallion architecture pattern (Bronze → Silver → Gold) unless the user specifies otherwise

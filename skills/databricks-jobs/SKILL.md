@@ -13,19 +13,6 @@ parent: databricks
 
 Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL queries, and other tasks on Databricks.
 
-## Scaffolding a New Job Project
-
-When starting a new job project, use the CLI to scaffold:
-
-```bash
-databricks experimental aitools tools init-template job --name my_job --profile <PROFILE>
-databricks experimental aitools tools init-template job --name my_job --catalog my_catalog --profile <PROFILE>
-```
-
-- `--name` is required
-- `--catalog` defaults to workspace default catalog
-- Names: letters, numbers, underscores only
-
 ## Project Structure
 
 ```
