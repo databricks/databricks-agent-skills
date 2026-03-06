@@ -20,14 +20,16 @@ my-pipeline-project/
 ├── databricks.yml                        # Bundle configuration
 ├── resources/
 │   ├── my_pipeline.pipeline.yml          # Pipeline definition
-│   └── my_pipeline_job.job.yml           # Scheduling job (optional)
+│   └── sample_job.job.yml                # Scheduling job (optional)
 └── src/
-    ├── my_table.py (or .sql)             # One dataset per file
-    ├── another_table.py (or .sql)
-    └── ...
+    └── my_pipeline/
+        └── transformations/
+            ├── my_table.py (or .sql)     # One dataset per file
+            ├── another_table.py (or .sql)
+            └── ...
 ```
 
-By convention, each dataset definition should be in a file named like the dataset, e.g. `src/my_table.py`.
+By convention, each dataset definition should be in a file named like the dataset, e.g. `transformations/my_table.py`. Resource files use the naming convention `<resource_key>.pipeline.yml`.
 
 ## Adding Transformations
 
@@ -80,16 +82,25 @@ Use `CREATE STREAMING TABLE` for incremental ingestion, `CREATE MATERIALIZED VIE
 
 ## Scheduling Pipelines
 
-To schedule a pipeline, add a job that triggers it in `resources/<name>.job.yml`:
+To schedule a pipeline, add a job that triggers it in `resources/sample_job.job.yml`:
 
 ```yaml
 resources:
   jobs:
-    my_pipeline_job:
+    sample_job:
+      name: sample_job
+
       trigger:
         periodic:
           interval: 1
           unit: DAYS
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+
       tasks:
         - task_key: refresh_pipeline
           pipeline_task:

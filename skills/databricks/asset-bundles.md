@@ -6,7 +6,7 @@ Databricks Asset Bundles provide Infrastructure-as-Code for Databricks resources
 
 Asset Bundles let you define your Databricks projects as code, including:
 - Jobs
-- Pipelines (Delta Live Tables)
+- Pipelines (Lakeflow Declarative Pipelines)
 - Apps
 - Models
 - Dashboards
@@ -26,7 +26,7 @@ databricks bundle validate --profile my-workspace
 # Deploy bundle to workspace
 databricks bundle deploy --profile my-workspace
 
-# Deploy to specific environment (dev/staging/prod)
+# Deploy to specific target (dev/staging/prod)
 databricks bundle deploy -t dev --profile my-workspace
 databricks bundle deploy -t staging --profile my-workspace
 databricks bundle deploy -t prod --profile my-workspace
@@ -51,25 +51,22 @@ A typical bundle has this structure:
 
 ```
 my-project/
-├── databricks.yml         # Main bundle configuration
+├── databricks.yml                        # Main bundle configuration
 ├── resources/
-│   ├── jobs/
-│   │   └── my_job.yml
-│   ├── pipelines/
-│   │   └── my_pipeline.yml
-│   ├── apps/
-│   │   └── my_app.yml
-│   └── models/
-│       └── my_model.yml
+│   ├── sample_job.job.yml                # Job definition
+│   └── my_project_etl.pipeline.yml       # Pipeline definition
 ├── src/
-│   ├── notebooks/
-│   │   └── process_data.py
-│   └── python/
-│       └── utils.py
+│   ├── sample_notebook.ipynb             # Notebook tasks
+│   └── my_project_etl/                   # Pipeline source
+│       └── transformations/
+│           ├── transform.py
+│           └── transform.sql
 ├── tests/
-│   └── test_utils.py
+│   └── test_main.py
 └── README.md
 ```
+
+Resource files use the naming convention `<resource_key>.<resource_type>.yml` (e.g. `sample_job.job.yml`, `my_project_etl.pipeline.yml`).
 
 ## Main Configuration (databricks.yml)
 
@@ -79,70 +76,37 @@ my-project/
 bundle:
   name: my-project
 
-# Workspace configuration
-workspace:
-  host: https://company-workspace.cloud.databricks.com
-
-# Define targets (environments)
-targets:
-  dev:
-    default: true
-    mode: development
-    workspace:
-      root_path: /Users/${workspace.current_user.userName}/.bundle/${bundle.name}/dev
-
-  staging:
-    mode: production
-    workspace:
-      root_path: /Shared/.bundle/${bundle.name}/staging
-
-  prod:
-    mode: production
-    workspace:
-      root_path: /Shared/.bundle/${bundle.name}/prod
-
-# Include resource definitions
 include:
-  - resources/**/*.yml
-```
-
-### Advanced Example with Variables
-
-```yaml
-bundle:
-  name: my-project
+  - resources/*.yml
+  - resources/*/*.yml
 
 variables:
   catalog:
-    description: "Unity Catalog name"
-    default: dev_catalog
-
-  warehouse_id:
-    description: "SQL Warehouse ID"
-
-workspace:
-  host: https://company-workspace.cloud.databricks.com
+    description: The catalog to use
+  schema:
+    description: The schema to use
 
 targets:
   dev:
-    default: true
     mode: development
+    default: true
+    workspace:
+      host: https://company-workspace.cloud.databricks.com
     variables:
       catalog: dev_catalog
-      warehouse_id: "abc123def456"
-    workspace:
-      root_path: /Users/${workspace.current_user.userName}/.bundle/${bundle.name}/dev
+      schema: ${workspace.current_user.short_name}
 
   prod:
     mode: production
+    workspace:
+      host: https://company-workspace.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       catalog: prod_catalog
-      warehouse_id: "xyz789uvw012"
-    workspace:
-      root_path: /Shared/.bundle/${bundle.name}/prod
-
-include:
-  - resources/**/*.yml
+      schema: prod
+    permissions:
+      - user_name: my-user@example.com
+        level: CAN_MANAGE
 ```
 
 ## Initializing a Bundle
@@ -155,85 +119,122 @@ databricks bundle init --profile my-workspace
 ```
 
 Available templates:
-- **default-python** - Python project with jobs
-- **dlt-pipeline** - Delta Live Tables pipeline
-- **ml-project** - ML project with MLflow
-- **databricks-app** - Databricks App
-
-### Template Selection Example
-
-```bash
-$ databricks bundle init
-
-Template to use [default-python, dlt-pipeline, ml-project, databricks-app]: default-python
-Project name: my-analytics-project
-```
+- **default-python** - Python project with jobs and pipeline
+- **default-sql** - SQL project with jobs
+- **default-scala** - Scala/Java project
+- **lakeflow-pipelines** - Lakeflow Declarative Pipelines (Python or SQL)
+- **dbt-sql** - dbt integration
+- **default-minimal** - Minimal structure
 
 ## Defining Resources
 
-### Job Resource
+### Job Resource (Serverless)
 
 ```yaml
-# resources/jobs/daily_job.yml
+# resources/sample_job.job.yml
 resources:
   jobs:
-    daily_analytics:
-      name: "Daily Analytics Job"
+    sample_job:
+      name: sample_job
+
+      trigger:
+        periodic:
+          interval: 1
+          unit: DAYS
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
 
       tasks:
-        - task_key: "extract_data"
+        - task_key: notebook_task
           notebook_task:
-            notebook_path: "./src/notebooks/extract.py"
-            source: WORKSPACE
-          new_cluster:
-            spark_version: "13.3.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 2
+            notebook_path: ../src/sample_notebook.ipynb
 
-        - task_key: "transform_data"
+        - task_key: main_task
           depends_on:
-            - task_key: "extract_data"
-          notebook_task:
-            notebook_path: "./src/notebooks/transform.py"
-            source: WORKSPACE
-          new_cluster:
-            spark_version: "13.3.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 2
+            - task_key: notebook_task
+          python_wheel_task:
+            package_name: my_project
+            entry_point: main
+          environment_key: default
 
-      schedule:
-        quartz_cron_expression: "0 0 2 * * ?"  # Daily at 2 AM
-        timezone_id: "UTC"
+        - task_key: refresh_pipeline
+          depends_on:
+            - task_key: notebook_task
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.my_project_etl.id}
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - ../dist/*.whl
 ```
 
-### Pipeline Resource (DLT)
+### Job Resource (Classic Clusters)
 
 ```yaml
-# resources/pipelines/data_pipeline.yml
+# resources/sample_job.job.yml
+resources:
+  jobs:
+    sample_job:
+      name: sample_job
+
+      tasks:
+        - task_key: notebook_task
+          notebook_task:
+            notebook_path: ../src/sample_notebook.ipynb
+          job_cluster_key: job_cluster
+          libraries:
+            - whl: ../dist/*.whl
+
+        - task_key: main_task
+          depends_on:
+            - task_key: notebook_task
+          python_wheel_task:
+            package_name: my_project
+            entry_point: main
+          job_cluster_key: job_cluster
+          libraries:
+            - whl: ../dist/*.whl
+
+      job_clusters:
+        - job_cluster_key: job_cluster
+          new_cluster:
+            spark_version: 16.4.x-scala2.12
+            node_type_id: i3.xlarge
+            data_security_mode: SINGLE_USER
+            autoscale:
+              min_workers: 1
+              max_workers: 4
+```
+
+### Pipeline Resource
+
+```yaml
+# resources/my_project_etl.pipeline.yml
 resources:
   pipelines:
-    customer_pipeline:
-      name: "Customer Data Pipeline"
-
+    my_project_etl:
+      name: my_project_etl
       catalog: ${var.catalog}
-      target: customer_analytics
+      schema: ${var.schema}
+      serverless: true
+      root_path: "../src/my_project_etl"
 
       libraries:
-        - notebook:
-            path: ./src/notebooks/customer_pipeline.py
-
-      clusters:
-        - label: default
-          autoscale:
-            min_workers: 1
-            max_workers: 5
-            mode: ENHANCED
+        - glob:
+            include: ../src/my_project_etl/transformations/**
 ```
 
 ### App Resource
 
 ```yaml
-# resources/apps/my_app.yml
+# resources/my_app.app.yml
 resources:
   apps:
     dashboard_app:
@@ -245,7 +246,7 @@ resources:
 ### Model Resource
 
 ```yaml
-# resources/models/my_model.yml
+# resources/my_model.yml
 resources:
   registered_models:
     customer_churn:
@@ -253,43 +254,47 @@ resources:
       description: "Customer churn prediction model"
 ```
 
-## Working with Environments
+## Working with Targets
 
-### Environment Configuration
-
-Environments (targets) allow you to deploy the same code to different workspaces with different configurations.
+Targets allow you to deploy the same code to different workspaces with different configurations.
 
 ```yaml
 targets:
   dev:
-    default: true
     mode: development
+    default: true
     variables:
       catalog: dev_catalog
-      cluster_size: "Small"
+      schema: ${workspace.current_user.short_name}
     workspace:
-      root_path: /Users/${workspace.current_user.userName}/.bundle/${bundle.name}/dev
+      host: https://company-workspace.cloud.databricks.com
 
   staging:
     mode: production
     variables:
       catalog: staging_catalog
-      cluster_size: "Medium"
+      schema: staging
     workspace:
-      root_path: /Shared/.bundle/${bundle.name}/staging
       host: https://staging-workspace.cloud.databricks.com
+      root_path: /Workspace/Users/deployer@example.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: deployer@example.com
+        level: CAN_MANAGE
 
   prod:
     mode: production
     variables:
       catalog: prod_catalog
-      cluster_size: "Large"
+      schema: prod
     workspace:
-      root_path: /Shared/.bundle/${bundle.name}/prod
       host: https://prod-workspace.cloud.databricks.com
+      root_path: /Workspace/Users/deployer@example.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: deployer@example.com
+        level: CAN_MANAGE
 ```
 
-### Deploying to Different Environments
+### Deploying to Different Targets
 
 ```bash
 # Deploy to dev (default)
@@ -329,10 +334,10 @@ databricks bundle deploy -t prod --profile my-workspace
 5. **Test your deployment**:
    ```bash
    # Run a job
-   databricks bundle run my-job -t dev --profile my-workspace
+   databricks bundle run sample_job -t dev --profile my-workspace
 
    # Start a pipeline
-   databricks bundle run my-pipeline -t dev --profile my-workspace
+   databricks bundle run my_project_etl -t dev --profile my-workspace
    ```
 
 6. **Deploy to production**:
@@ -344,54 +349,16 @@ databricks bundle deploy -t prod --profile my-workspace
 
 If you have existing resources in your workspace, you can generate bundle configuration:
 
-### Generate Job Configuration
-
 ```bash
 # Get job ID from list
 databricks jobs list --profile my-workspace
 
 # Generate configuration
 databricks bundle generate job 12345 --profile my-workspace
-```
-
-This creates:
-- Job configuration file in `resources/`
-- Downloads associated notebooks/files
-
-### Generate Pipeline Configuration
-
-```bash
 databricks bundle generate pipeline <pipeline-id> --profile my-workspace
-```
-
-### Generate App Configuration
-
-```bash
 databricks bundle generate app my-app --profile my-workspace
-```
-
-This generates:
-- App configuration file
-- Downloads app source code
-
-### Generate Dashboard Configuration
-
-```bash
 databricks bundle generate dashboard <dashboard-id> --profile my-workspace
 ```
-
-## Binding Existing Resources
-
-You can link bundle-defined resources to existing resources in your workspace without recreating them:
-
-```bash
-databricks bundle bind --profile my-workspace
-```
-
-This is useful when:
-- Migrating existing projects to bundles
-- Adopting bundle management for running resources
-- Avoiding downtime during migration
 
 ## Variables and Templating
 
@@ -401,15 +368,12 @@ This is useful when:
 # databricks.yml
 variables:
   catalog:
-    description: "Unity Catalog name"
+    description: The catalog to use
     default: dev_catalog
-
+  schema:
+    description: The schema to use
   warehouse_id:
-    description: "SQL Warehouse ID"
-
-  num_workers:
-    description: "Number of cluster workers"
-    default: 2
+    description: SQL Warehouse ID
 ```
 
 ### Using Variables
@@ -420,28 +384,36 @@ resources:
   jobs:
     my_job:
       name: "Job in ${var.catalog}"
-
-      tasks:
-        - task_key: "main"
-          notebook_task:
-            notebook_path: "./notebook.py"
-          new_cluster:
-            num_workers: ${var.num_workers}
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
 ```
 
-### Environment-Specific Variables
+### Target-Specific Variables
 
 ```yaml
 targets:
   dev:
     variables:
       catalog: dev_catalog
-      num_workers: 2
-
+      schema: ${workspace.current_user.short_name}
   prod:
     variables:
       catalog: prod_catalog
-      num_workers: 10
+      schema: prod
+```
+
+### Available Substitutions
+
+```yaml
+${var.my_variable}                          # User-defined variable
+${bundle.name}                              # Bundle name
+${bundle.target}                            # Current target name (dev, prod, etc.)
+${workspace.current_user.userName}          # Current user email
+${workspace.current_user.short_name}        # Current user short name
+${workspace.file_path}                      # Workspace file path
+${resources.pipelines.my_pipeline.id}       # Reference another resource's ID
+${resources.jobs.my_job.id}                 # Reference a job's ID
 ```
 
 ## Best Practices
@@ -456,31 +428,29 @@ git add databricks.yml resources/ src/
 git commit -m "Initial bundle setup"
 ```
 
-### 2. Separate Concerns
+### 2. Use Typed Resource File Names
 
-Organize resources by type:
+Name resource files with their type for clarity:
 
 ```
 resources/
-├── jobs/
-│   ├── daily_jobs.yml
-│   └── hourly_jobs.yml
-├── pipelines/
-│   ├── ingestion.yml
-│   └── transformation.yml
-└── apps/
-    └── dashboard.yml
+├── sample_job.job.yml
+├── my_project_etl.pipeline.yml
+└── my_app.app.yml
 ```
 
-### 3. Use Environment-Specific Configuration
+### 3. Use Target-Specific Configuration
 
 ```yaml
 targets:
   dev:
-    mode: development  # Allows in-place updates
+    mode: development  # Prefixes resources with [dev user_name], pauses schedules
 
   prod:
-    mode: production   # Ensures immutable deployments
+    mode: production   # Requires permissions, runs schedules as configured
+    permissions:
+      - user_name: deployer@example.com
+        level: CAN_MANAGE
 ```
 
 ### 4. Validate Before Deploy
@@ -489,41 +459,6 @@ Always validate:
 
 ```bash
 databricks bundle validate --profile my-workspace
-```
-
-### 5. Use Descriptive Names
-
-```yaml
-resources:
-  jobs:
-    daily_customer_analytics:  # Good: descriptive
-      name: "Daily Customer Analytics"
-```
-
-### 6. Document with Comments
-
-```yaml
-# This job runs daily ETL for customer analytics
-# Schedule: 2 AM UTC daily
-# Dependencies: Unity Catalog tables in analytics schema
-resources:
-  jobs:
-    daily_etl:
-      name: "Daily ETL"
-      # ...
-```
-
-### 7. Use Variables for Environment Differences
-
-```yaml
-variables:
-  catalog: ${bundle.environment}  # Automatically uses env name
-  cluster_size: Small
-
-targets:
-  prod:
-    variables:
-      cluster_size: Large  # Override for prod
 ```
 
 ## Troubleshooting
@@ -548,16 +483,6 @@ targets:
 3. Verify target configuration
 4. Check for resource name conflicts
 5. Review error message for specific issues
-
-### Resources Not Found After Deploy
-
-**Symptom**: Resources deployed but not visible in workspace
-
-**Solution**:
-1. Check target root_path in `databricks.yml`
-2. Verify you're looking in the correct workspace location
-3. Check deployment logs for errors
-4. Ensure resources were included in deployment
 
 ### Variable Not Resolved
 
