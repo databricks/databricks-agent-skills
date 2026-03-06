@@ -19,9 +19,9 @@ Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL qu
 my-job-project/
 ├── databricks.yml              # Bundle configuration
 ├── resources/
-│   └── sample_job.job.yml      # Job definition
+│   └── my_job.job.yml          # Job definition
 ├── src/
-│   ├── sample_notebook.ipynb   # Notebook tasks
+│   ├── my_notebook.ipynb       # Notebook tasks
 │   └── my_module/              # Python wheel package
 │       ├── __init__.py
 │       └── main.py
@@ -30,9 +30,7 @@ my-job-project/
 └── pyproject.toml               # Python project config (if using wheels)
 ```
 
-Resource files use the naming convention `<resource_key>.job.yml`.
-
-## Configuring Tasks (Serverless)
+## Configuring Tasks
 
 Edit `resources/<job_name>.job.yml` to configure tasks:
 
@@ -42,12 +40,6 @@ resources:
     my_job:
       name: my_job
 
-      parameters:
-        - name: catalog
-          default: ${var.catalog}
-        - name: schema
-          default: ${var.schema}
-
       tasks:
         - task_key: my_notebook
           notebook_task:
@@ -59,51 +51,6 @@ resources:
           python_wheel_task:
             package_name: my_package
             entry_point: main
-          environment_key: default
-
-      environments:
-        - environment_key: default
-          spec:
-            environment_version: "4"
-            dependencies:
-              - ../dist/*.whl
-```
-
-## Configuring Tasks (Classic Clusters)
-
-```yaml
-resources:
-  jobs:
-    my_job:
-      name: my_job
-
-      tasks:
-        - task_key: my_notebook
-          notebook_task:
-            notebook_path: ../src/my_notebook.ipynb
-          job_cluster_key: job_cluster
-          libraries:
-            - whl: ../dist/*.whl
-
-        - task_key: my_python
-          depends_on:
-            - task_key: my_notebook
-          python_wheel_task:
-            package_name: my_package
-            entry_point: main
-          job_cluster_key: job_cluster
-          libraries:
-            - whl: ../dist/*.whl
-
-      job_clusters:
-        - job_cluster_key: job_cluster
-          new_cluster:
-            spark_version: 16.4.x-scala2.12
-            node_type_id: i3.xlarge
-            data_security_mode: SINGLE_USER
-            autoscale:
-              min_workers: 1
-              max_workers: 4
 ```
 
 Task types: `notebook_task`, `python_wheel_task`, `spark_python_task`, `pipeline_task`, `sql_task`
@@ -184,18 +131,6 @@ resources:
             - task_key: transform
           notebook_task:
             notebook_path: ../src/load.ipynb
-```
-
-## Triggering a Pipeline from a Job
-
-```yaml
-resources:
-  jobs:
-    my_job:
-      tasks:
-        - task_key: refresh_pipeline
-          pipeline_task:
-            pipeline_id: ${resources.pipelines.my_pipeline.id}
 ```
 
 ## Unit Testing
