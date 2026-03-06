@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "updated_at": "2026-03-06T13:43:58Z",
+  "updated_at": "2026-03-06T15:58:15Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
@@ -47,8 +47,6 @@
         "references/expectations-python.md",
         "references/expectations-sql.md",
         "references/expectations.md",
-        "references/foreach-batch-sink-python.md",
-        "references/foreach-batch-sink.md",
         "references/materialized-view-python.md",
         "references/materialized-view-sql.md",
         "references/materialized-view.md",
