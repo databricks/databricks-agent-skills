@@ -35,7 +35,8 @@
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-03-03T09:35:13Z",
+      "updated_at": "2026-03-06T00:00:00Z",
+      "base_revision": "9fe40569f56b",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
