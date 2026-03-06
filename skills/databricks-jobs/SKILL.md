@@ -31,6 +31,15 @@ After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. 
 
 This project uses Databricks Asset Bundles for deployment.
 
+## Prerequisites
+
+Install the Databricks CLI (>= v0.288.0) if not already installed:
+- macOS: `brew tap databricks/tap && brew install databricks`
+- Linux: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
+- Windows: `winget install Databricks.DatabricksCLI`
+
+Verify: `databricks -v`
+
 ## For AI Agents
 
 Read the `databricks` skill for CLI basics, authentication, and deployment workflow.

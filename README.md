@@ -4,18 +4,6 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
-### 1. Install the Databricks CLI
-
-If you don't have the Databricks CLI installed (>= v0.288.0), install it first:
-
-- **macOS**: `brew tap databricks/tap && brew install databricks`
-- **Linux**: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
-- **Windows**: `winget install Databricks.DatabricksCLI`
-
-Verify: `databricks -v`
-
-### 2. Install skills
-
 **For Claude Code:**
 
 ```bash
