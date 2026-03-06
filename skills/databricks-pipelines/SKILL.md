@@ -106,3 +106,17 @@ When a user asks to change a dataset type:
 2. **Deploy**: `databricks bundle deploy -t dev --profile <profile>`
 3. **Run pipeline**: `databricks bundle run <pipeline_name> -t dev --profile <profile>`
 4. **Check status**: `databricks pipelines get --pipeline-id <id> --profile <profile>`
+
+## Pipeline API Reference
+
+Detailed reference guides for each pipeline API. **Read the relevant guide before writing pipeline code.**
+
+- [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) — Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md))
+- [Streaming Tables](references/streaming-table.md) — Continuous data stream processing ([Python](references/streaming-table-python.md), [SQL](references/streaming-table-sql.md))
+- [Materialized Views](references/materialized-view.md) — Physically stored query results with incremental refresh ([Python](references/materialized-view-python.md), [SQL](references/materialized-view-sql.md))
+- [Views](references/view.md) — Reusable query logic published to Unity Catalog ([SQL](references/view-sql.md))
+- [Temporary Views](references/temporary-view.md) — Pipeline-private views ([Python](references/temporary-view-python.md), [SQL](references/temporary-view-sql.md))
+- [Auto Loader](references/auto-loader.md) — Incrementally ingest files from cloud storage ([Python](references/auto-loader-python.md), [SQL](references/auto-loader-sql.md))
+- [Auto CDC](references/auto-cdc.md) — Process Change Data Capture feeds, SCD Type 1 & 2 ([Python](references/auto-cdc-python.md), [SQL](references/auto-cdc-sql.md))
+- [Expectations](references/expectations.md) — Define and enforce data quality constraints ([Python](references/expectations-python.md), [SQL](references/expectations-sql.md))
+- [Sinks](references/sink.md) — Write to Kafka, Event Hubs, external Delta tables ([Python](references/sink-python.md))
