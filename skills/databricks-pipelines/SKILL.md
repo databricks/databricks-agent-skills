@@ -13,6 +13,35 @@ parent: databricks
 
 Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
 
+## Scaffolding a New Pipeline Project
+
+Use `databricks bundle init` with a config file to scaffold non-interactively:
+
+```bash
+databricks bundle init lakeflow-pipelines --config-file <(echo '{"project_name": "my_pipeline", "language": "python", "personal_schemas": "yes"}') --profile <PROFILE>
+```
+
+- `project_name`: letters, numbers, underscores only
+- `language`: `python` or `sql`. Ask the user which they prefer:
+  - SQL: Recommended for straightforward transformations (filters, joins, aggregations)
+  - Python: Recommended for complex logic (custom UDFs, ML, advanced processing)
+- `default_catalog`: optional, defaults to workspace default catalog
+
+After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
+
+```
+# Databricks Asset Bundles Project
+
+This project uses Databricks Asset Bundles for deployment.
+
+## For AI Agents
+
+Read the `databricks` skill for CLI basics, authentication, and deployment workflow.
+Read the `databricks-pipelines` skill for pipeline-specific guidance.
+
+If skills are not available, install them: `databricks experimental aitools skills install`
+```
+
 ## Pipeline Structure
 
 - Follow the medallion architecture pattern (Bronze → Silver → Gold) unless the user specifies otherwise
