@@ -87,21 +87,6 @@ resources:
             pipeline_id: ${resources.pipelines.my_pipeline.id}
 ```
 
-## Schema Definition Guidelines
-
-**Start with schema inference by default.** Always begin with automatic schema inference, even when the user requests manual schema definition. Only add explicit schemas when: (1) after successful inference if user requested it (use inferred schema as basis), or (2) when pipeline fails due to missing schema (add minimal required schema only).
-
-## Changing Dataset Types
-
-Changing an existing dataset's type (e.g., streaming table to materialized view, or vice versa) is NOT possible without the user first manually dropping the existing table. Full refresh does NOT help.
-
-When a user asks to change a dataset type:
-
-1. **Explain the limitation clearly**: you MUST explicitly tell the user that changing the type on the same name will cause the pipeline to **FAIL** unless the existing table is manually dropped first. Also state that full refresh does NOT help. Do not skip or soften this warning.
-2. **Rename the dataset by default**: unless the user indicated they already dropped the existing table, create the new dataset with a different name (e.g., append a suffix or use a descriptive new name) so both the old and new datasets can coexist. The old dataset will become inactive once it is no longer defined in code. Do NOT just change the type in-place without renaming — that will fail.
-3. **Update all downstream datasets**: after renaming, update every file that references the old dataset name to use the new name. Also ensure downstream datasets use the correct read semantics for the new type (e.g., `spark.read`/direct reference for materialized view sources, `spark.readStream`/`STREAM()` for streaming table sources). Do NOT change the type of downstream datasets — only update their name references and read method.
-4. **Offer manual drop as a follow-up**: explicitly suggest as a follow-up action that the user can drop the old table themselves and then rename the new dataset back to the original name if they prefer.
-
 ## Running Pipelines
 
 **You must deploy before running.** In local development, code changes only take effect after `databricks bundle deploy`. Always deploy before any run, dry run, or selective refresh.
