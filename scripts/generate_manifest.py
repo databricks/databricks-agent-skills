@@ -52,8 +52,23 @@ def get_skill_updated_at(skill_path: Path) -> str:
     )
 
 
+def load_existing_manifest(repo_root: Path) -> dict:
+    """Load existing manifest.json if it exists, for preserving extra fields."""
+    manifest_path = repo_root / "manifest.json"
+    if manifest_path.exists():
+        return json.loads(manifest_path.read_text())
+    return {}
+
+
+# Fields in each skill entry that are managed externally (not derived from
+# the file system) and should be preserved across regenerations.
+PRESERVED_SKILL_FIELDS = {"base_revision"}
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
+    existing = load_existing_manifest(repo_root)
+    existing_skills = existing.get("skills", {})
     skills = {}
 
     skills_dir = repo_root / "skills"
@@ -74,11 +89,19 @@ def generate_manifest(repo_root: Path) -> dict:
             if f.is_file()
         )
 
-        skills[item.name] = {
+        skill_entry = {
             "version": extract_version_from_skill(item),
             "updated_at": get_skill_updated_at(item),
             "files": files,
         }
+
+        # Preserve externally-managed fields from the existing manifest
+        if item.name in existing_skills:
+            for field in PRESERVED_SKILL_FIELDS:
+                if field in existing_skills[item.name]:
+                    skill_entry[field] = existing_skills[item.name][field]
+
+        skills[item.name] = skill_entry
 
     return {
         "version": "1",
@@ -88,7 +111,7 @@ def generate_manifest(repo_root: Path) -> dict:
 
 
 def normalize_manifest(manifest: dict) -> dict:
-    """Normalize manifest for comparison by excluding updated_at timestamps."""
+    """Normalize manifest for comparison by excluding volatile fields."""
     normalized = manifest.copy()
     normalized.pop("updated_at", None)
 
@@ -96,6 +119,8 @@ def normalize_manifest(manifest: dict) -> dict:
     for name, skill in manifest.get("skills", {}).items():
         skill_copy = skill.copy()
         skill_copy.pop("updated_at", None)
+        for field in PRESERVED_SKILL_FIELDS:
+            skill_copy.pop(field, None)
         skills[name] = skill_copy
 
     normalized["skills"] = skills
