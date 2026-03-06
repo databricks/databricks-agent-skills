@@ -15,14 +15,13 @@ Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL qu
 
 ## Scaffolding a New Job Project
 
-Use `databricks bundle init` with a config file to scaffold non-interactively:
+Use `databricks bundle init` with a config file to scaffold non-interactively. This creates a project in the `<project_name>/` directory:
 
 ```bash
-databricks bundle init default-python --config-file <(echo '{"project_name": "my_job", "include_job": "yes", "include_pipeline": "no", "include_python": "yes", "personal_schemas": "yes"}') --profile <PROFILE>
+databricks bundle init default-python --config-file <(echo '{"project_name": "my_job", "include_job": "yes", "include_pipeline": "no", "include_python": "yes", "serverless": "yes"}') --profile <PROFILE> < /dev/null
 ```
 
 - `project_name`: letters, numbers, underscores only
-- `default_catalog`: optional, defaults to workspace default catalog
 
 After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
 
