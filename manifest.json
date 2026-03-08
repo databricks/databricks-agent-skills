@@ -1,10 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-03-06T15:58:15Z",
+  "updated_at": "2026-03-06T18:05:47Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T13:43:51Z",
+      "updated_at": "2026-03-06T16:01:42Z",
       "files": [
         "SKILL.md",
         "asset-bundles.md",
@@ -28,14 +28,15 @@
     },
     "databricks-jobs": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T13:43:51Z",
+      "updated_at": "2026-03-06T16:58:44Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T13:43:51Z",
+      "updated_at": "2026-03-06T18:05:29Z",
+      "base_revision": "6bc8ee47a2cc",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
@@ -47,6 +48,8 @@
         "references/expectations-python.md",
         "references/expectations-sql.md",
         "references/expectations.md",
+        "references/foreach-batch-sink-python.md",
+        "references/foreach-batch-sink.md",
         "references/materialized-view-python.md",
         "references/materialized-view-sql.md",
         "references/materialized-view.md",
