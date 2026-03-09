@@ -54,8 +54,13 @@ def get_skill_updated_at(skill_path: Path) -> str:
 
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
-    skills = {}
+    # Load existing manifest to preserve base_revision fields
+    manifest_path = repo_root / "manifest.json"
+    existing_skills = {}
+    if manifest_path.exists():
+        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
 
+    skills = {}
     skills_dir = repo_root / "skills"
 
     for item in sorted(skills_dir.iterdir()):
@@ -74,11 +79,18 @@ def generate_manifest(repo_root: Path) -> dict:
             if f.is_file()
         )
 
-        skills[item.name] = {
+        skill_entry = {
             "version": extract_version_from_skill(item),
             "updated_at": get_skill_updated_at(item),
             "files": files,
         }
+
+        # Preserve base_revision from existing manifest
+        existing = existing_skills.get(item.name, {})
+        if "base_revision" in existing:
+            skill_entry["base_revision"] = existing["base_revision"]
+
+        skills[item.name] = skill_entry
 
     return {
         "version": "1",
@@ -88,7 +100,7 @@ def generate_manifest(repo_root: Path) -> dict:
 
 
 def normalize_manifest(manifest: dict) -> dict:
-    """Normalize manifest for comparison by excluding updated_at timestamps."""
+    """Normalize manifest for comparison by excluding volatile fields."""
     normalized = manifest.copy()
     normalized.pop("updated_at", None)
 
@@ -96,6 +108,7 @@ def normalize_manifest(manifest: dict) -> dict:
     for name, skill in manifest.get("skills", {}).items():
         skill_copy = skill.copy()
         skill_copy.pop("updated_at", None)
+        skill_copy.pop("base_revision", None)
         skills[name] = skill_copy
 
     normalized["skills"] = skills
