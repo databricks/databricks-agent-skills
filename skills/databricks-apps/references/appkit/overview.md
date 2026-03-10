@@ -9,7 +9,7 @@ Before scaffolding, decide which data pattern the app needs:
 | Pattern | When to use | Init command |
 |---------|-------------|-------------|
 | **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
-| **Lakebase** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
+| **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
 | **Both** | Dashboard + user data or preferences | `--features analytics,lakebase` with all required `--set` flags |
 
 See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code patterns.

@@ -11,6 +11,8 @@ parent: databricks
 
 **FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
 
+Lakebase is Databricks' serverless Postgres-compatible database (similar to Neon). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
+
 Manage Lakebase Postgres projects, branches, endpoints, and databases via `databricks postgres` CLI commands.
 
 ## Resource Hierarchy
