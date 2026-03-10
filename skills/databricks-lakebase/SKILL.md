@@ -42,6 +42,8 @@ All IDs: 1-63 characters, start with lowercase letter, lowercase letters/numbers
 
 ## CLI Discovery — ALWAYS Do This First
 
+> **Note:** "Lakebase" is the product name; the CLI command group is `postgres`. All commands use `databricks postgres ...`.
+
 **Do NOT guess command syntax.** Discover available commands and their usage dynamically:
 
 ```bash
@@ -166,22 +168,6 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
 
-### Database Permissions
-
-When you scaffold a Databricks App with the `lakebase` feature, the app's Service Principal is automatically granted the `CONNECT_AND_CREATE` permission set (Databricks-defined, bundles Postgres `CONNECT` and `CREATE` privileges). This means:
-
-- The Service Principal **can** connect to the database, create new schemas and tables, and has full DML rights on objects it creates.
-- The Service Principal **cannot** access any existing schemas or tables (including `public`).
-
-**Always create a custom schema** for your app's tables as a part of the app scaffolding process:
-
-```sql
-CREATE SCHEMA IF NOT EXISTS app_data;
-CREATE TABLE app_data.my_table (...);
-```
-
-Do NOT use the `public` schema or assume any pre-existing schema is accessible.
-
 ## Troubleshooting
 
 | Error | Solution |
@@ -190,4 +176,3 @@ Do NOT use the `public` schema or assume any pre-existing schema is accessible.
 | `PERMISSION_DENIED` | Check workspace permissions |
 | Protected branch cannot be deleted | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
-| `permission denied for schema public` | Service Principal only has `CONNECT_AND_CREATE`; create a custom schema instead (see [Database Permissions](#database-permissions)) |

@@ -122,7 +122,6 @@ Do not guess paths — run without args first, then pick from the index.
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
 | Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
 | Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — createLakebasePool, tRPC patterns, schema init |
-| Configure app resources (warehouse, database, secrets) | [Manifest](manifest.md) — app.yaml resource declarations |
 
 ## Critical Rules
 

@@ -1,10 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-03-06T18:05:47Z",
+  "updated_at": "2026-03-10T09:39:21Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T16:01:42Z",
+      "updated_at": "2026-03-10T09:30:48Z",
       "files": [
         "SKILL.md",
         "asset-bundles.md",
@@ -15,26 +15,35 @@
     },
     "databricks-apps": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T09:31:02Z",
+      "updated_at": "2026-03-10T09:39:10Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
+        "references/appkit/frontend.md",
         "references/appkit/lakebase.md",
+        "references/appkit/overview.md",
+        "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
         "references/testing.md"
       ]
     },
     "databricks-jobs": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T16:58:44Z",
+      "updated_at": "2026-03-10T09:30:48Z",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    "databricks-lakebase": {
+      "version": "0.1.0",
+      "updated_at": "2026-03-10T09:38:48Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-03-06T18:05:29Z",
-      "base_revision": "6bc8ee47a2cc",
+      "updated_at": "2026-03-10T09:30:48Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
@@ -46,8 +55,6 @@
         "references/expectations-python.md",
         "references/expectations-sql.md",
         "references/expectations.md",
-        "references/foreach-batch-sink-python.md",
-        "references/foreach-batch-sink.md",
         "references/materialized-view-python.md",
         "references/materialized-view-sql.md",
         "references/materialized-view.md",
@@ -71,7 +78,8 @@
         "references/view-sql.md",
         "references/view.md",
         "references/write-spark-declarative-pipelines.md"
-      ]
+      ],
+      "base_revision": "5c4b4fb0a82a"
     }
   }
 }

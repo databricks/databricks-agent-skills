@@ -108,7 +108,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   listItems: publicProcedure.query(async () => {
     const { rows } = await pool.query(
-      "SELECT * FROM app_data.items ORDER BY created_at DESC"
+      "SELECT * FROM app_data.items ORDER BY created_at DESC LIMIT 100"
     );
     return rows;
   }),

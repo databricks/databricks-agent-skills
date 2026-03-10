@@ -23,7 +23,6 @@ Build apps that deploy to Databricks Apps platform.
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
-| Configuring app resources | [Manifest Guide](references/appkit/manifest.md) |
 
 ## Generic Guidelines
 
