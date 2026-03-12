@@ -38,7 +38,7 @@ databricks secrets put-acl <SCOPE> <SP_NAME> READ --profile <PROFILE>
 # Unity Catalog resources (tables, volumes, vector search indexes)
 # use SQL GRANT statements via a SQL warehouse:
 # GRANT SELECT ON TABLE catalog.schema.table TO `<SP_NAME>`
-# GRANT READ_VOLUME ON VOLUME catalog.schema.volume TO `<SP_NAME>`
+# GRANT READ VOLUME ON VOLUME catalog.schema.volume TO `<SP_NAME>`
 ```
 
 ### Permission Matrix
@@ -48,7 +48,7 @@ databricks secrets put-acl <SCOPE> <SP_NAME> READ --profile <PROFILE>
 | SQL Warehouse | CAN_USE | Minimum for query execution |
 | Model Serving Endpoint | CAN_QUERY | For inference calls |
 | Vector Search Index | SELECT on underlying table | VS index is a UC securable of type TABLE |
-| Volume | READ_VOLUME or WRITE_VOLUME | Via UC GRANT |
+| Volume | READ VOLUME or WRITE VOLUME | Via UC GRANT |
 | Secret Scope | READ | Deploying user needs MANAGE |
 | Feature Table | SELECT | Via UC GRANT |
 
@@ -107,6 +107,8 @@ env:
 ⚠️ Databricks blocks access outside approved scopes even if the user has permission.
 
 ## Deployment Workflow
+
+⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.
 
 ```bash
 # 1. validate

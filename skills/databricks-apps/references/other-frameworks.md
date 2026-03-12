@@ -57,7 +57,7 @@ app.run(host="0.0.0.0",
 ```
 
 #### Next.js
-```json
+```jsonc
 // package.json
 "scripts": {
   "start": "next start -p ${DATABRICKS_APP_PORT:-8000} -H 0.0.0.0"
@@ -259,7 +259,7 @@ def get_connection():
     cfg = Config()
     return sql.connect(
         server_hostname=cfg.host,
-        http_path=os.environ["DATABRICKS_HTTP_PATH"],
+        http_path=f"/sql/1.0/warehouses/{os.environ['DATABRICKS_WAREHOUSE_ID']}",
         credentials_provider=lambda: cfg.authenticate,
     )
 ```
