@@ -1,10 +1,10 @@
 {
   "version": "1",
-  "updated_at": "2026-03-10T11:33:11Z",
+  "updated_at": "2026-03-12T13:25:42Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-03-10T11:32:46Z",
+      "updated_at": "2026-03-11T17:08:20Z",
       "files": [
         "SKILL.md",
         "asset-bundles.md",
@@ -14,8 +14,8 @@
       ]
     },
     "databricks-apps": {
-      "version": "0.1.0",
-      "updated_at": "2026-03-10T11:32:58Z",
+      "version": "0.1.1",
+      "updated_at": "2026-03-12T13:25:31Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -24,26 +24,27 @@
         "references/appkit/overview.md",
         "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
+        "references/platform-guide.md",
         "references/testing.md"
       ]
     },
     "databricks-jobs": {
       "version": "0.1.0",
-      "updated_at": "2026-03-10T11:32:46Z",
+      "updated_at": "2026-03-11T17:08:20Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-lakebase": {
       "version": "0.1.0",
-      "updated_at": "2026-03-10T11:32:58Z",
+      "updated_at": "2026-03-11T17:08:20Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-03-10T11:32:46Z",
+      "updated_at": "2026-03-11T17:08:20Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
