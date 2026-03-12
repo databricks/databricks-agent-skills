@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "updated_at": "2026-03-12T13:25:42Z",
+  "updated_at": "2026-03-12T13:32:45Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
@@ -15,7 +15,7 @@
     },
     "databricks-apps": {
       "version": "0.1.1",
-      "updated_at": "2026-03-12T13:25:31Z",
+      "updated_at": "2026-03-12T13:32:37Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -24,6 +24,7 @@
         "references/appkit/overview.md",
         "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
+        "references/other-frameworks.md",
         "references/platform-guide.md",
         "references/testing.md"
       ]
