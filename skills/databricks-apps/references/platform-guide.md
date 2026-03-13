@@ -10,47 +10,42 @@ For non-AppKit framework-specific setup (port config, app.yaml, Streamlit gotcha
 
 When your app uses a Databricks resource (SQL warehouse, model serving endpoint, vector search index, volume, secret scope), the app's **service principal** must have explicit permissions on that resource.
 
-### ⚠️ CRITICAL AGENT BEHAVIOR
-After adding ANY resource to the app, IMMEDIATELY grant the SP access. Do NOT wait for a permission error — do it proactively every time.
+### How Permissions Work
 
-### How to Grant Permissions
+When you declare a resource in `app.yaml` / `databricks.yml` with a `permission` field, the platform **automatically grants** that permission to the app's SP on deployment. You do NOT need to run manual `set-permissions` commands for declared resources.
 
-```bash
-# 1. find the app's service principal
-databricks apps get <APP_NAME> --profile <PROFILE>
-# look for service_principal_id in the output
-
-# 2. grant permissions per resource type:
-
-# SQL Warehouse
-databricks warehouses set-permissions <WAREHOUSE_ID> \
-  --json '{"access_control_list": [{"service_principal_name": "<SP_NAME>", "permission_level": "CAN_USE"}]}' \
-  --profile <PROFILE>
-
-# Model Serving Endpoint
-databricks serving-endpoints set-permissions <ENDPOINT_NAME> \
-  --json '{"access_control_list": [{"service_principal_name": "<SP_NAME>", "permission_level": "CAN_QUERY"}]}' \
-  --profile <PROFILE>
-
-# Secret Scope — deploying user needs MANAGE permission
-databricks secrets put-acl <SCOPE> <SP_NAME> READ --profile <PROFILE>
-
-# Unity Catalog resources (tables, volumes, vector search indexes)
-# use SQL GRANT statements via a SQL warehouse:
-# GRANT SELECT ON TABLE catalog.schema.table TO `<SP_NAME>`
-# GRANT READ VOLUME ON VOLUME catalog.schema.volume TO `<SP_NAME>`
+```yaml
+# databricks.yml — declaring resources with permissions
+resources:
+  apps:
+    my_app:
+      resources:
+        - name: my-warehouse
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE          # auto-granted to SP on deploy
+        - name: my-endpoint
+          serving_endpoint:
+            name: ${var.endpoint_name}
+            permission: CAN_QUERY        # auto-granted to SP on deploy
 ```
 
-### Permission Matrix
+### Default Permissions by Resource Type
 
-| Resource Type | Permission Level | Notes |
-|---------------|-----------------|-------|
+| Resource Type | Default Permission | Notes |
+|---------------|-------------------|-------|
 | SQL Warehouse | CAN_USE | Minimum for query execution |
 | Model Serving Endpoint | CAN_QUERY | For inference calls |
-| Vector Search Index | SELECT on underlying table | VS index is a UC securable of type TABLE |
-| Volume | READ VOLUME or WRITE VOLUME | Via UC GRANT |
-| Secret Scope | READ | Deploying user needs MANAGE |
-| Feature Table | SELECT | Via UC GRANT |
+| Vector Search Index (UC) | SELECT | UC securable of type TABLE |
+| Volume (UC) | READ_VOLUME | Via UC securable |
+| Secret Scope | READ | Deploying user needs MANAGE on the scope |
+| Job | CAN_MANAGE_RUN | |
+| Lakebase Database | CAN_CONNECT_AND_CREATE | |
+| Genie Space | CAN_VIEW | |
+
+### ⚠️ CRITICAL AGENT BEHAVIOR
+
+Always declare resources in `databricks.yml` with the correct `permission` field — do NOT skip this. The platform handles granting automatically on deploy.
 
 ## Resource Types & Injection
 
@@ -111,17 +106,16 @@ env:
 ⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.
 
 ```bash
-# 1. validate
+# Option A: single command (recommended) — validates, deploys, and runs
+databricks apps deploy -t <TARGET> --profile <PROFILE>
+
+# Option B: step by step
 databricks apps validate --profile <PROFILE>
-
-# 2. deploy code
 databricks bundle deploy -t <TARGET> --profile <PROFILE>
-
-# 3. apply config and start/restart the app
 databricks bundle run <APP_RESOURCE_NAME> -t <TARGET> --profile <PROFILE>
 ```
 
-❌ **Common mistake:** Running only `bundle deploy` and expecting the app to update. Deploy uploads code but does NOT apply config changes or restart the app.
+❌ **Common mistake:** Running only `bundle deploy` and expecting the app to update. Deploy uploads code but does NOT apply config changes or restart the app. Use `databricks apps deploy` or add `bundle run` after `bundle deploy`.
 
 ### ⚠️ Destructive Updates Warning
 
