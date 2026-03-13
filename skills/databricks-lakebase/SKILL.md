@@ -1,7 +1,7 @@
 ---
 name: databricks-lakebase
 description: "Manage Lakebase Postgres Autoscaling projects, branches, and endpoints via Databricks CLI. Use when asked to create, configure, or manage Lakebase Postgres databases, projects, branches, computes, or endpoints."
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
 parent: databricks
@@ -42,23 +42,20 @@ Project (top-level container)
 
 All IDs: 1-63 characters, start with lowercase letter, lowercase letters/numbers/hyphens only (RFC 1123).
 
-## CLI Discovery — ALWAYS Do This First
+## CLI Commands
 
 > **Note:** "Lakebase" is the product name; the CLI command group is `postgres`. All commands use `databricks postgres ...`.
 
-**Do NOT guess command syntax.** Discover available commands and their usage dynamically:
+Discover available commands and flags dynamically:
 
 ```bash
-# List all postgres subcommands
-databricks postgres -h
-
-# Get detailed usage for any subcommand (flags, args, JSON fields)
-databricks postgres <subcommand> -h
+databricks postgres -h                       # list all subcommands
+databricks postgres <subcommand> -h          # flags, args, JSON spec fields
 ```
 
-Run `databricks postgres -h` before constructing any command. Run `databricks postgres <subcommand> -h` to discover exact flags, positional arguments, and JSON spec fields for that subcommand.
-
 ## Create a Project
+
+> **Do NOT list projects before creating.** When building a new app, create a new Lakebase project directly.
 
 ```bash
 databricks postgres create-project <PROJECT_ID> \
@@ -139,7 +136,7 @@ databricks apps init --name <APP_NAME> \
   --features lakebase \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
-  --profile <PROFILE>
+  --run none --profile <PROFILE>
 ```
 
 Where `<BRANCH_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>`) and `<DATABASE_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).

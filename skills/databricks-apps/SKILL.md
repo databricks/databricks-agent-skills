@@ -1,7 +1,7 @@
 ---
 name: databricks-apps
 description: Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"
 parent: databricks
@@ -100,6 +100,8 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 1. **Get the manifest** (JSON schema describing plugins and their resources):
    ```bash
    databricks apps manifest --profile <PROFILE>
+   # See plugins available in a specific AppKit version:
+   databricks apps manifest --version <VERSION> --profile <PROFILE>
    # Custom template:
    databricks apps manifest --template <GIT_URL> --profile <PROFILE>
    ```
@@ -118,6 +120,7 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
    # With custom template:
    databricks apps init --template <GIT_URL> --name <NAME> --features ... --set ... --profile <PROFILE>
    ```
+   Optionally use `--version <VERSION>` to target a specific AppKit version.
    - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
    - **Resources**: Pass `--set` for every required resource (each field in `resources.required`) for (1) all plugins with `requiredByTemplate: true`, and (2) any optional plugins you added to `--features`. Add `--set` for `resources.optional` only when the user requests them.
    - **Discovery**: Use the parent `databricks` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
