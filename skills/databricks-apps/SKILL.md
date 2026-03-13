@@ -3,7 +3,7 @@ name: databricks-apps
 description: Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Invoke BEFORE starting implementation.
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 parent: databricks
 ---
 
@@ -23,16 +23,15 @@ Build apps that deploy to Databricks Apps platform.
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
+| Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
+| Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
 ## Generic Guidelines
 
-These apply regardless of framework:
-
-- **Deployment**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
-- **Validation**: `databricks apps validate --profile <PROFILE>` before deploying
-- **App name**: Must be ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
-- **Smoke tests**: ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
-- **Authentication**: covered by parent `databricks` skill
+- **App name**: ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
+- **Validation**: `databricks apps validate --profile <PROFILE>` before deploying.
+- **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
+- **Authentication**: covered by parent `databricks` skill.
 
 ## Project Structure (after `databricks apps init --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
@@ -143,6 +142,8 @@ databricks apps init --name my-app-name --features analytics --set "..." --profi
 `databricks apps init` creates directories in kebab-case matching the app name.
 App names must be lowercase with hyphens only (≤26 chars).
 
-### Other Frameworks
+### Other Frameworks (Streamlit, FastAPI, Flask, Gradio, Dash, Next.js, etc.)
 
-Databricks Apps supports any framework that can run as a web server (Flask, FastAPI, Streamlit, Gradio, etc.). Use standard framework documentation - this skill focuses on AppKit.
+Databricks Apps supports any framework that runs as an HTTP server. LLMs already know these frameworks — the challenge is Databricks platform integration.
+
+**READ [Other Frameworks Guide](references/other-frameworks.md) BEFORE building any non-AppKit app.** It covers port/host configuration, `app.yaml` and `databricks.yml` setup, dependency management, networking, and framework-specific gotchas.
