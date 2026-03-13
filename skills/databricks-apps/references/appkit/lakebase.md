@@ -16,7 +16,7 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 **Lakebase only** (no analytics SQL warehouse):
 ```bash
-databricks apps init --name <NAME> --version <VERSION> --features lakebase \
+databricks apps init --name <NAME> --features lakebase \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
@@ -24,14 +24,12 @@ databricks apps init --name <NAME> --version <VERSION> --features lakebase \
 
 **Both Lakebase and analytics**:
 ```bash
-databricks apps init --name <NAME> --version <VERSION> --features analytics,lakebase \
+databricks apps init --name <NAME> --features analytics,lakebase \
   --set "analytics.sql-warehouse.id=<WAREHOUSE_ID>" \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
 ```
-
-The `--version` flag is **required** for Lakebase apps — the `lakebase` plugin is only available in AppKit >= 0.20.0. Without `--version`, the CLI uses the default AppKit version which may not include the `lakebase` plugin.
 
 Where `<BRANCH_NAME>` and `<DATABASE_NAME>` are full resource names (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>` and `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
 

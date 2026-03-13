@@ -1,7 +1,7 @@
 ---
 name: databricks-apps
 description: Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"
 parent: databricks
@@ -95,18 +95,16 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 
 **App Manifest and Scaffolding**
 
-**Agent workflow for scaffolding: determine the AppKit version, get the manifest, then build the init command.**
+**Agent workflow for scaffolding: get the manifest first, then build the init command.**
 
 1. **Get the manifest** (JSON schema describing plugins and their resources):
    ```bash
-   # For a specific AppKit version (REQUIRED when using version-specific plugins like lakebase):
-   databricks apps manifest --version <VERSION> --profile <PROFILE>
-   # Default (latest) version:
    databricks apps manifest --profile <PROFILE>
+   # See plugins available in a specific AppKit version:
+   databricks apps manifest --version <VERSION> --profile <PROFILE>
    # Custom template:
    databricks apps manifest --template <GIT_URL> --profile <PROFILE>
    ```
-   **Important:** Some plugins (e.g. `lakebase`) are only available in specific AppKit versions. If the manifest doesn't show the plugin you need, use `--version` to target the correct version.
    The output defines:
    - **Plugins**: each has a key (plugin ID for `--features`), plus `requiredByTemplate`, and `resources`.
    - **requiredByTemplate**: If **true**, that plugin is **mandatory** for this template — do **not** add it to `--features` (it is included automatically); you must still supply all of its required resources via `--set`. If **false** or absent, the plugin is **optional** — add it to `--features` only when the user's prompt indicates they want that capability (e.g. analytics/SQL), and then supply its required resources via `--set`.
@@ -114,17 +112,16 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 
 2. **Scaffold** (DO NOT use `npx`; use the CLI only):
    ```bash
-   databricks apps init --name <NAME> --version <VERSION> \
-     --features <plugin1>,<plugin2> \
+   databricks apps init --name <NAME> --features <plugin1>,<plugin2> \
      --set <plugin1>.<resourceKey>.<field>=<value> \
      --set <plugin2>.<resourceKey>.<field>=<value> \
      --description "<DESC>" --run none --profile <PROFILE>
    # --run none: skip auto-run after scaffolding (review code first)
-   # --version: target a specific AppKit version (REQUIRED for version-specific plugins)
    # With custom template:
-   databricks apps init --template <GIT_URL> --name <NAME> --version <VERSION> --features ... --set ... --profile <PROFILE>
+   databricks apps init --template <GIT_URL> --name <NAME> --features ... --set ... --profile <PROFILE>
    ```
-   - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--version` when targeting a specific AppKit version (required for plugins like `lakebase` that only exist in certain versions). Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
+   Optionally use `--version <VERSION>` to target a specific AppKit version.
+   - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
    - **Resources**: Pass `--set` for every required resource (each field in `resources.required`) for (1) all plugins with `requiredByTemplate: true`, and (2) any optional plugins you added to `--features`. Add `--set` for `resources.optional` only when the user requests them.
    - **Discovery**: Use the parent `databricks` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
 
