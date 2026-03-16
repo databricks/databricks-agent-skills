@@ -1,7 +1,7 @@
 ---
 name: "databricks"
 description: "Databricks CLI operations: auth, profiles, data exploration, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
 ---
@@ -21,7 +21,7 @@ For specific products, use dedicated skills:
 ## Prerequisites
 
 1. **CLI installed**: Run `databricks --version` to check.
-   - **If the CLI is missing or outdated (< v0.292.0): STOP. Do not proceed or work around a missing CLI.**
+   - **If the CLI is missing or outdated (< v0.294.0): STOP. Do not proceed or work around a missing CLI.**
    - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
 
