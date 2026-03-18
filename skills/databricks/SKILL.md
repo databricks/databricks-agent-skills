@@ -131,11 +131,11 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
 | Exploring tables/schemas | [Data Exploration](data-exploration.md) |
-| Deploying jobs/pipelines | [Asset Bundles](asset-bundles.md) |
+| Deploying jobs/pipelines | [Declarative Automation Bundles](declarative-automation-bundles.md) |
 
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
 - [Data Exploration](data-exploration.md)
-- [Asset Bundles](asset-bundles.md)
+- [Declarative Automation Bundles](declarative-automation-bundles.md)

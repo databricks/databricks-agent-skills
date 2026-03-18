@@ -88,7 +88,7 @@ env:
 ```
 
 ### databricks.yml — Bundle/Deployment Configuration
-- Defines the **app resource** for DABs (Databricks Asset Bundles)
+- Defines the **app resource** for DABs (Declarative Automation Bundles)
 - `config:` section only takes effect after `bundle run`, NOT just `bundle deploy`
 
 ```yaml

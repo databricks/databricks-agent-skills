@@ -26,9 +26,9 @@ databricks bundle init default-python --config-file <(echo '{"project_name": "my
 After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
 
 ```
-# Databricks Asset Bundles Project
+# Declarative Automation Bundles Project
 
-This project uses Databricks Asset Bundles for deployment.
+This project uses Declarative Automation Bundles (formerly Databricks Asset Bundles) for deployment.
 
 ## Prerequisites
 
@@ -186,4 +186,4 @@ uv run pytest
 
 - Lakeflow Jobs: https://docs.databricks.com/jobs
 - Task types: https://docs.databricks.com/jobs/configure-task
-- Databricks Asset Bundles: https://docs.databricks.com/dev-tools/bundles/examples
+- Declarative Automation Bundles: https://docs.databricks.com/dev-tools/bundles/

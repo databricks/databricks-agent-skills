@@ -168,5 +168,5 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | App deploys but config doesn't change | Only ran `bundle deploy` | Also run `bundle run <app-name>` |
 | `File is larger than 10485760 bytes` | Bundled dependencies | Use requirements.txt / package.json |
 | OBO scopes missing after deploy | Destructive update wiped them | Re-apply scopes after each deploy |
-| `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not DABs variables |
+| `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
 | 504 Gateway Timeout | Request exceeded 120s | Use WebSockets for long operations |

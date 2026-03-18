@@ -1,10 +1,10 @@
-# Databricks Asset Bundles (DABs)
+# Declarative Automation Bundles (DABs)
 
-Databricks Asset Bundles provide Infrastructure-as-Code for Databricks resources, enabling version control, automated deployments, and environment management.
+Declarative Automation Bundles (formerly known as Databricks Asset Bundles) provide Infrastructure-as-Code for Databricks resources, enabling version control, automated deployments, and environment management.
 
-## What are Asset Bundles?
+## What are Declarative Automation Bundles?
 
-Asset Bundles let you define your Databricks projects as code, including:
+Declarative Automation Bundles let you define your Databricks projects as code, including:
 - Jobs
 - Pipelines (Lakeflow Declarative Pipelines)
 - Apps

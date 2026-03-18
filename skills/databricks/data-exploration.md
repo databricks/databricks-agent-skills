@@ -327,4 +327,4 @@ Both commands support:
 
 ## Related Commands
 
-- **[Asset Bundles](asset-bundles.md)** - Deploy SQL, pipeline, and app resources as code
+- **[Declarative Automation Bundles](declarative-automation-bundles.md)** - Deploy SQL, pipeline, and app resources as code

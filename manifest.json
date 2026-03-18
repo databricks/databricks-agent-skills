@@ -7,7 +7,7 @@
       "updated_at": "2026-03-11T17:08:20Z",
       "files": [
         "SKILL.md",
-        "asset-bundles.md",
+        "declarative-automation-bundles.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md"
