@@ -1,10 +1,13 @@
 {
-  "version": "1",
-  "updated_at": "2026-03-18T11:59:47Z",
+  "version": "2",
+  "updated_at": "2026-03-22T09:27:16Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
-      "updated_at": "2026-03-18T10:58:50Z",
+      "description": "Core Databricks skill for CLI, auth, and data exploration",
+      "experimental": false,
+      "min_cli_version": "",
+      "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
@@ -15,7 +18,10 @@
     },
     "databricks-apps": {
       "version": "0.1.1",
-      "updated_at": "2026-03-18T10:58:38Z",
+      "description": "Databricks Apps development with AppKit SDK",
+      "experimental": false,
+      "min_cli_version": "",
+      "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -31,21 +37,30 @@
     },
     "databricks-jobs": {
       "version": "0.1.0",
-      "updated_at": "2026-03-18T10:58:24Z",
+      "description": "Databricks Jobs orchestration and scheduling",
+      "experimental": false,
+      "min_cli_version": "",
+      "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-lakebase": {
       "version": "0.1.0",
-      "updated_at": "2026-03-18T10:01:56Z",
+      "description": "Databricks Lakebase database development",
+      "experimental": false,
+      "min_cli_version": "",
+      "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "updated_at": "2026-03-18T10:58:21Z",
+      "description": "Databricks Pipelines (DLT) for ETL and streaming",
+      "experimental": false,
+      "min_cli_version": "",
+      "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",

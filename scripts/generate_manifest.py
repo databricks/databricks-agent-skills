@@ -52,6 +52,30 @@ def get_skill_updated_at(skill_path: Path) -> str:
     )
 
 
+SKILL_METADATA = {
+    "databricks": {
+        "description": "Core Databricks skill for CLI, auth, and data exploration",
+        "experimental": False,
+    },
+    "databricks-apps": {
+        "description": "Databricks Apps development with AppKit SDK",
+        "experimental": False,
+    },
+    "databricks-jobs": {
+        "description": "Databricks Jobs orchestration and scheduling",
+        "experimental": False,
+    },
+    "databricks-lakebase": {
+        "description": "Databricks Lakebase database development",
+        "experimental": False,
+    },
+    "databricks-pipelines": {
+        "description": "Databricks Pipelines (DLT) for ETL and streaming",
+        "experimental": False,
+    },
+}
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
     # Load existing manifest to preserve base_revision fields
@@ -79,8 +103,12 @@ def generate_manifest(repo_root: Path) -> dict:
             if f.is_file()
         )
 
+        metadata = SKILL_METADATA.get(item.name, {})
         skill_entry = {
             "version": extract_version_from_skill(item),
+            "description": metadata.get("description", ""),
+            "experimental": metadata.get("experimental", False),
+            "min_cli_version": "",
             "updated_at": get_skill_updated_at(item),
             "files": files,
         }
@@ -93,7 +121,7 @@ def generate_manifest(repo_root: Path) -> dict:
         skills[item.name] = skill_entry
 
     return {
-        "version": "1",
+        "version": "2",
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "skills": skills,
     }
