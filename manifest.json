@@ -1,12 +1,11 @@
 {
   "version": "2",
-  "updated_at": "2026-03-22T09:27:16Z",
+  "updated_at": "2026-03-22T10:27:09Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "min_cli_version": "",
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",
@@ -20,7 +19,6 @@
       "version": "0.1.1",
       "description": "Databricks Apps development with AppKit SDK",
       "experimental": false,
-      "min_cli_version": "",
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",
@@ -39,7 +37,6 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "min_cli_version": "",
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md"
@@ -49,7 +46,6 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "min_cli_version": "",
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md"
@@ -59,7 +55,6 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "min_cli_version": "",
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [
         "SKILL.md",

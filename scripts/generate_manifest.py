@@ -103,15 +103,20 @@ def generate_manifest(repo_root: Path) -> dict:
             if f.is_file()
         )
 
-        metadata = SKILL_METADATA.get(item.name, {})
+        if item.name not in SKILL_METADATA:
+            raise ValueError(f"Missing SKILL_METADATA entry for skill '{item.name}'. Add it to SKILL_METADATA dict.")
+
+        metadata = SKILL_METADATA[item.name]
         skill_entry = {
             "version": extract_version_from_skill(item),
             "description": metadata.get("description", ""),
             "experimental": metadata.get("experimental", False),
-            "min_cli_version": "",
             "updated_at": get_skill_updated_at(item),
             "files": files,
         }
+
+        if metadata.get("min_cli_version"):
+            skill_entry["min_cli_version"] = metadata["min_cli_version"]
 
         # Preserve base_revision from existing manifest
         existing = existing_skills.get(item.name, {})
