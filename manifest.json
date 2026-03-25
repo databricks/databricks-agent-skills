@@ -1,24 +1,28 @@
 {
-  "version": "2",
-  "updated_at": "2026-04-07T13:25:51Z",
+  "version": "1",
+  "updated_at": "2026-03-25T13:22:01Z",
   "skills": {
-    "databricks-apps": {
-      "version": "0.1.1",
-      "description": "Databricks Apps development and deployment",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:59Z",
+    "databricks": {
+      "version": "0.1.0",
+      "updated_at": "2026-03-25T13:07:20Z",
       "files": [
         "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
+        "data-exploration.md",
+        "databricks-cli-auth.md",
+        "databricks-cli-install.md",
+        "declarative-automation-bundles.md"
+      ]
+    },
+    "databricks-apps": {
+      "version": "0.1.1",
+      "updated_at": "2026-03-25T13:21:50Z",
+      "files": [
+        "SKILL.md",
         "references/appkit/appkit-sdk.md",
         "references/appkit/frontend.md",
+        "references/appkit/genie.md",
         "references/appkit/lakebase.md",
-        "references/appkit/model-serving.md",
         "references/appkit/overview.md",
-        "references/appkit/proto-contracts.md",
-        "references/appkit/proto-first.md",
         "references/appkit/sql-queries.md",
         "references/appkit/trpc.md",
         "references/other-frameworks.md",
@@ -26,85 +30,25 @@
         "references/testing.md"
       ]
     },
-    "databricks-core": {
-      "version": "0.1.0",
-      "description": "Core Databricks skill for CLI, auth, and data exploration",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:46Z",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "data-exploration.md",
-        "databricks-cli-auth.md",
-        "databricks-cli-install.md"
-      ]
-    },
-    "databricks-dabs": {
-      "version": "0.0.0",
-      "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:46Z",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "references/alerts.md",
-        "references/bundle-structure.md",
-        "references/deploy-and-run.md",
-        "references/resource-permissions.md",
-        "references/sdp-pipelines.md"
-      ],
-      "base_revision": "e742f36e8ab1"
-    },
     "databricks-jobs": {
       "version": "0.1.0",
-      "description": "Databricks Jobs orchestration and scheduling",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:46Z",
+      "updated_at": "2026-03-25T13:07:20Z",
       "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
+        "SKILL.md"
       ]
     },
     "databricks-lakebase": {
       "version": "0.1.0",
-      "description": "Databricks Lakebase database development",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:59Z",
+      "updated_at": "2026-03-25T13:07:20Z",
       "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ]
-    },
-    "databricks-model-serving": {
-      "version": "0.1.0",
-      "description": "Databricks Model Serving endpoint management",
-      "experimental": true,
-      "updated_at": "2026-04-07T13:25:43Z",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
+        "SKILL.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "description": "Databricks Pipelines (DLT) for ETL and streaming",
-      "experimental": false,
-      "updated_at": "2026-04-07T13:17:46Z",
+      "updated_at": "2026-03-25T13:07:20Z",
       "files": [
         "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
         "references/auto-cdc-python.md",
         "references/auto-cdc-sql.md",
         "references/auto-cdc.md",

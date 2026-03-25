@@ -23,6 +23,7 @@ Build apps that deploy to Databricks Apps platform.
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
+| Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — do not assume the user already has a Genie Space ID |
 | Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
@@ -130,6 +131,8 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
+
+For chat interfaces backed by Databricks Genie, read [Genie Guide](references/appkit/genie.md).
 
 ### Common Scaffolding Mistakes
 
