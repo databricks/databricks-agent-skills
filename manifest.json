@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-03-22T10:27:09Z",
+  "updated_at": "2026-03-25T23:11:20Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
@@ -17,7 +17,7 @@
     },
     "databricks-apps": {
       "version": "0.1.1",
-      "description": "Databricks Apps development with AppKit SDK",
+      "description": "Databricks Apps development and deployment",
       "experimental": false,
       "updated_at": "2026-03-22T09:19:20Z",
       "files": [

@@ -58,7 +58,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-apps": {
-        "description": "Databricks Apps development with AppKit SDK",
+        "description": "Databricks Apps development and deployment",
         "experimental": False,
     },
     "databricks-jobs": {
