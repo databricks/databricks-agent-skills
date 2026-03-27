@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Jobs"
+  short_description: "Jobs orchestration and scheduling"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-jobs for Databricks Jobs orchestration and scheduling."

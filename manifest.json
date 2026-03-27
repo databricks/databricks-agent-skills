@@ -1,27 +1,31 @@
 {
   "version": "2",
-  "updated_at": "2026-03-25T23:11:20Z",
+  "updated_at": "2026-03-27T12:04:17Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-27T11:49:32Z",
       "files": [
         "SKILL.md",
+        "agents/openai.yaml",
         "data-exploration.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md",
-        "declarative-automation-bundles.md"
+        "declarative-automation-bundles.md",
+        "@root:assets/databricks.svg",
+        "@root:assets/databricks.png"
       ]
     },
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-27T11:49:33Z",
       "files": [
         "SKILL.md",
+        "agents/openai.yaml",
         "references/appkit/appkit-sdk.md",
         "references/appkit/frontend.md",
         "references/appkit/lakebase.md",
@@ -30,34 +34,43 @@
         "references/appkit/trpc.md",
         "references/other-frameworks.md",
         "references/platform-guide.md",
-        "references/testing.md"
+        "references/testing.md",
+        "@root:assets/databricks.svg",
+        "@root:assets/databricks.png"
       ]
     },
     "databricks-jobs": {
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-27T12:04:09Z",
       "files": [
-        "SKILL.md"
+        "SKILL.md",
+        "agents/openai.yaml",
+        "@root:assets/databricks.svg",
+        "@root:assets/databricks.png"
       ]
     },
     "databricks-lakebase": {
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-27T11:49:36Z",
       "files": [
-        "SKILL.md"
+        "SKILL.md",
+        "agents/openai.yaml",
+        "@root:assets/databricks.svg",
+        "@root:assets/databricks.png"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-27T11:49:38Z",
       "files": [
         "SKILL.md",
+        "agents/openai.yaml",
         "references/auto-cdc-python.md",
         "references/auto-cdc-sql.md",
         "references/auto-cdc.md",
@@ -91,7 +104,9 @@
         "references/temporary-view.md",
         "references/view-sql.md",
         "references/view.md",
-        "references/write-spark-declarative-pipelines.md"
+        "references/write-spark-declarative-pipelines.md",
+        "@root:assets/databricks.svg",
+        "@root:assets/databricks.png"
       ],
       "base_revision": "5c4b4fb0a82a"
     }

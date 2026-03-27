@@ -52,6 +52,13 @@ def get_skill_updated_at(skill_path: Path) -> str:
     )
 
 
+# Repo-root files included in every skill's file list with an @root: prefix.
+# The CLI installer uses this prefix to fetch from the repo root instead of skills/<name>/.
+SHARED_ASSETS = [
+    "assets/databricks.svg",
+    "assets/databricks.png",
+]
+
 SKILL_METADATA = {
     "databricks": {
         "description": "Core Databricks skill for CLI, auth, and data exploration",
@@ -84,6 +91,10 @@ def generate_manifest(repo_root: Path) -> dict:
     if manifest_path.exists():
         existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
 
+    for asset in SHARED_ASSETS:
+        if not (repo_root / asset).exists():
+            raise ValueError(f"Missing shared asset '{asset}' at repo root.")
+
     skills = {}
     skills_dir = repo_root / "skills"
 
@@ -102,9 +113,14 @@ def generate_manifest(repo_root: Path) -> dict:
             for f in item.rglob("*")
             if f.is_file()
         )
+        files += [f"@root:{f}" for f in SHARED_ASSETS]
 
         if item.name not in SKILL_METADATA:
             raise ValueError(f"Missing SKILL_METADATA entry for skill '{item.name}'. Add it to SKILL_METADATA dict.")
+
+        openai_yaml = item / "agents" / "openai.yaml"
+        if not openai_yaml.exists():
+            raise ValueError(f"Missing agents/openai.yaml in skill '{item.name}'. Each skill must include Codex marketplace metadata.")
 
         metadata = SKILL_METADATA[item.name]
         skill_entry = {
