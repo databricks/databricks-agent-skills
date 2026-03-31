@@ -69,6 +69,10 @@ SKILL_METADATA = {
         "description": "Databricks Lakebase database development",
         "experimental": False,
     },
+    "databricks-model-serving": {
+        "description": "Databricks Model Serving endpoint management",
+        "experimental": True,
+    },
     "databricks-pipelines": {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
         "experimental": False,
