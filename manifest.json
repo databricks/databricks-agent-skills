@@ -15,6 +15,7 @@
         "references/appkit/appkit-sdk.md",
         "references/appkit/frontend.md",
         "references/appkit/lakebase.md",
+        "references/appkit/model-serving.md",
         "references/appkit/overview.md",
         "references/appkit/proto-contracts.md",
         "references/appkit/proto-first.md",
@@ -80,6 +81,15 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg"
+      ]
+    },
+    "databricks-model-serving": {
+      "version": "0.1.0",
+      "description": "Databricks Model Serving endpoint management",
+      "experimental": true,
+      "updated_at": "2026-04-02T10:44:20Z",
+      "files": [
+        "SKILL.md"
       ]
     },
     "databricks-pipelines": {

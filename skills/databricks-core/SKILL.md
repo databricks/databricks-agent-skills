@@ -17,6 +17,7 @@ For specific products, use dedicated skills:
 - **databricks-pipelines** - Lakeflow Spark Declarative Pipelines (batch and streaming data pipelines)
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
+- **databricks-model-serving** - Model Serving endpoint management and inference
 
 ## Prerequisites
 
