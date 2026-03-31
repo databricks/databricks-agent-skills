@@ -53,7 +53,7 @@ def get_skill_updated_at(skill_path: Path) -> str:
 
 
 SKILL_METADATA = {
-    "databricks": {
+    "databricks-core": {
         "description": "Core Databricks skill for CLI, auth, and data exploration",
         "experimental": False,
     },

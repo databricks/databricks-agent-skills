@@ -23,7 +23,7 @@ See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code pat
 
 ## Data Discovery (Before Writing SQL)
 
-**Use the parent `databricks` skill for data discovery** (table search, schema exploration, query execution).
+**Use the parent `databricks-core` skill for data discovery** (table search, schema exploration, query execution).
 
 ## Pre-Implementation Checklist
 

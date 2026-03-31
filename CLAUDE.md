@@ -6,7 +6,7 @@ Skills for AI coding assistants (Claude Code, etc.) that provide Databricks-spec
 
 ```
 skills/
-├── databricks/           # core skill: CLI, auth, data exploration
+├── databricks-core/      # core skill: CLI, auth, data exploration
 │   ├── SKILL.md
 │   └── *.md (references)
 └── databricks-apps/      # product skill: app development
@@ -14,7 +14,7 @@ skills/
     └── references/
 ```
 
-Hierarchy: `databricks` (core) → `databricks-apps` (product) → `databricks-apps-*` (niche)
+Hierarchy: `databricks-core` (core) → `databricks-apps` (product) → `databricks-apps-*` (niche)
 
 ## Development
 

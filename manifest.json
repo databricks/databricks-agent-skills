@@ -1,25 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-03-25T23:11:20Z",
+  "updated_at": "2026-03-31T18:36:08Z",
   "skills": {
-    "databricks": {
-      "version": "0.1.0",
-      "description": "Core Databricks skill for CLI, auth, and data exploration",
-      "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
-      "files": [
-        "SKILL.md",
-        "data-exploration.md",
-        "databricks-cli-auth.md",
-        "databricks-cli-install.md",
-        "declarative-automation-bundles.md"
-      ]
-    },
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-31T18:35:18Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -33,11 +20,24 @@
         "references/testing.md"
       ]
     },
+    "databricks-core": {
+      "version": "0.1.0",
+      "description": "Core Databricks skill for CLI, auth, and data exploration",
+      "experimental": false,
+      "updated_at": "2026-03-31T18:34:21Z",
+      "files": [
+        "SKILL.md",
+        "data-exploration.md",
+        "databricks-cli-auth.md",
+        "databricks-cli-install.md",
+        "declarative-automation-bundles.md"
+      ]
+    },
     "databricks-jobs": {
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-31T18:35:12Z",
       "files": [
         "SKILL.md"
       ]
@@ -46,7 +46,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-31T18:34:30Z",
       "files": [
         "SKILL.md"
       ]
@@ -55,7 +55,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-31T18:35:15Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",

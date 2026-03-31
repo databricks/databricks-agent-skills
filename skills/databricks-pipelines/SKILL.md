@@ -4,12 +4,12 @@ description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live T
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
-parent: databricks
+parent: databricks-core
 ---
 
 # Lakeflow Spark Declarative Pipelines Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data discovery commands.
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data discovery commands.
 
 ## Decision Tree
 
@@ -199,7 +199,7 @@ Verify: `databricks -v`
 
 ## For AI Agents
 
-Read the `databricks` skill for CLI basics, authentication, and deployment workflow.
+Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-pipelines` skill for pipeline-specific guidance.
 
 If skills are not available, install them: `databricks experimental aitools skills install`

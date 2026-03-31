@@ -4,12 +4,12 @@ description: Develop and deploy Lakeflow Jobs on Databricks. Use when creating d
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
-parent: databricks
+parent: databricks-core
 ---
 
 # Lakeflow Jobs Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, profile selection, and data exploration commands.
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands.
 
 Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL queries, and other tasks on Databricks.
 
@@ -41,7 +41,7 @@ Verify: `databricks -v`
 
 ## For AI Agents
 
-Read the `databricks` skill for CLI basics, authentication, and deployment workflow.
+Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-jobs` skill for job-specific guidance.
 
 If skills are not available, install them: `databricks experimental aitools skills install`

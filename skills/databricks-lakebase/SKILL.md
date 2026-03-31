@@ -4,12 +4,12 @@ description: "Manage Lakebase Postgres Autoscaling projects, branches, and endpo
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
-parent: databricks
+parent: databricks-core
 ---
 
 # Lakebase Postgres Autoscaling
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
 Lakebase is Databricks' serverless Postgres-compatible database (similar to Neon). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
 

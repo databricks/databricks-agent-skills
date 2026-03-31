@@ -4,12 +4,12 @@ description: Build apps on Databricks Apps platform. Use when asked to create da
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"
-parent: databricks
+parent: databricks-core
 ---
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks` skill for CLI basics, authentication, and profile selection.
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
 Build apps that deploy to Databricks Apps platform.
 
@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | Parent `databricks` skill (auth, warehouse discovery); run `databricks apps manifest` and use its plugins/resources to build `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | Parent `databricks-core` skill (auth, warehouse discovery); run `databricks apps manifest` and use its plugins/resources to build `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -31,7 +31,7 @@ Build apps that deploy to Databricks Apps platform.
 - **App name**: ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
 - **Validation**: `databricks apps validate --profile <PROFILE>` before deploying.
 - **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
-- **Authentication**: covered by parent `databricks` skill.
+- **Authentication**: covered by parent `databricks-core` skill.
 
 ## Project Structure (after `databricks apps init --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
@@ -49,7 +49,7 @@ Build apps that deploy to Databricks Apps platform.
 
 ## Data Discovery
 
-Before writing any SQL, use the parent `databricks` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
+Before writing any SQL, use the parent `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
 
 ## Development Workflow (FOLLOW THIS ORDER)
 
@@ -123,7 +123,7 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
    Optionally use `--version <VERSION>` to target a specific AppKit version.
    - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
    - **Resources**: Pass `--set` for every required resource (each field in `resources.required`) for (1) all plugins with `requiredByTemplate: true`, and (2) any optional plugins you added to `--features`. Add `--set` for `resources.optional` only when the user requests them.
-   - **Discovery**: Use the parent `databricks` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
+   - **Discovery**: Use the parent `databricks-core` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
