@@ -73,6 +73,10 @@ SKILL_METADATA = {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
         "experimental": False,
     },
+    "databricks-proto-first": {
+        "description": "Proto-first schema design for Databricks apps",
+        "experimental": False,
+    },
 }
 
 
