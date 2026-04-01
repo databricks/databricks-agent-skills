@@ -24,6 +24,9 @@ Build apps that deploy to Databricks Apps platform.
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
+| Testing progression | [Testing Patterns](references/appkit/testing-patterns.md) |
+| Contract testing | [Contract Testing](references/appkit/contract-testing.md) |
+| Scenario/E2E testing | [Scenario Testing](references/appkit/scenario-testing.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
 | Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
