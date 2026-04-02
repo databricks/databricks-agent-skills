@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-02T15:49:24Z",
+  "updated_at": "2026-04-02T17:53:54Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-02T15:49:00Z",
+      "updated_at": "2026-04-02T17:53:44Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -48,7 +48,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-02T15:49:12Z",
+      "updated_at": "2026-04-02T17:53:21Z",
       "files": [
         "SKILL.md"
       ]

@@ -150,11 +150,22 @@ For the full app development workflow, use the **`databricks-apps`** skill.
 
 ### Schema Permissions for Deployed Apps
 
-When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CONNECT_AND_CREATE` permission. This means it can **create new schemas** but **cannot access schemas or tables created by other roles** (including `public`).
+When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner.
 
-**Deploy the app before running locally.** The deployed SP runs schema initialization (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`) and becomes the schema owner. If you run locally first, your credentials create the schema — and the SP cannot access it after deployment.
+**ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
 
-After deploying, grant `databricks_superuser` to your identity via the Lakebase UI for local DML access. See the **`databricks-apps`** skill's Lakebase guide for the full deploy-first workflow.
+When deployed, the app's Service Principal runs the schema initialization SQL (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`), creating the schema and tables — and becoming their **owner**. Only the owner (or a superuser) can access those objects.
+
+**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
+
+**Correct workflow:**
+1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
+2. **Grant local access**: assign `databricks_superuser` to your identity via the Lakebase UI
+3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
+
+> **Note:** `databricks_superuser` grants full DML but **not DDL** (CREATE SCHEMA, CREATE TABLE) on SP-owned schemas. If you need to alter the schema during local development, redeploy the app to apply DDL changes.
+
+**If you already ran locally first** and hit `permission denied` after deploying: connect to the database with your credentials, drop the schema (`DROP SCHEMA <name> CASCADE;`), then redeploy so the SP recreates it.
 
 ### Other Workflows
 
