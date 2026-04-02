@@ -69,6 +69,10 @@ SKILL_METADATA = {
         "description": "Databricks Lakebase database development",
         "experimental": False,
     },
+    "databricks-dabs": {
+        "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
+        "experimental": False,
+    },
     "databricks-pipelines": {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
         "experimental": False,

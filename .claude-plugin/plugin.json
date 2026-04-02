@@ -1,11 +1,11 @@
 {
   "name": "databricks-skills",
-  "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles, and more.",
+  "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more.",
   "version": "0.1.0",
   "author": {
     "name": "Databricks"
   },
   "repository": "https://github.com/databricks/databricks-agent-skills",
-  "keywords": ["databricks", "cli", "apps", "etl", "data-engineering", "spark", "data-pipelines", "unity-catalog", "model-serving", "declarative-automation-bundles"],
+  "keywords": ["databricks", "cli", "apps", "etl", "data-engineering", "spark", "data-pipelines", "unity-catalog", "model-serving", "dabs"],
   "skills": "./skills/"
 }
