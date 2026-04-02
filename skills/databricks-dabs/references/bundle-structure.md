@@ -91,7 +91,7 @@ resources:
           notebook_task:
             notebook_path: ../src/notebooks/main.ipynb
           new_cluster:
-            spark_version: '13.3.x-scala2.12'
+            spark_version: '17.3.x-scala2.13'
             node_type_id: 'i3.xlarge'
             num_workers: 2
       schedule:

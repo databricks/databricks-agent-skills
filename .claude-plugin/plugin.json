@@ -1,6 +1,6 @@
 {
   "name": "databricks-skills",
-  "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, DABs, and more.",
+  "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more.",
   "version": "0.1.0",
   "author": {
     "name": "Databricks"
