@@ -148,6 +148,25 @@ Where `<BRANCH_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/bra
 
 For the full app development workflow, use the **`databricks-apps`** skill.
 
+### Schema Permissions for Deployed Apps
+
+When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner.
+
+**ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
+
+When deployed, the app's Service Principal runs the schema initialization SQL (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`), creating the schema and tables — and becoming their **owner**. Only the owner (or a superuser) can access those objects.
+
+**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
+
+**Correct workflow:**
+1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
+2. **Grant local access** *(if needed)*: if you're not the project creator, assign `databricks_superuser` to your identity via the Lakebase UI. Project creators already have sufficient access.
+3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
+
+> **Note:** Project creators already have access to SP-owned schemas. Other team members need `databricks_superuser` (grants full DML but **not DDL**). If you need to alter the schema during local development, redeploy the app to apply DDL changes.
+
+**If you already ran locally first** and hit `permission denied` after deploying: connect to the database with your credentials, drop the schema (`DROP SCHEMA <name> CASCADE;`), then redeploy so the SP recreates it.
+
 ### Other Workflows
 
 **Connect a Postgres client**
@@ -178,5 +197,6 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions |
+| `permission denied for schema <name>` | Schema owned by another role. Deploy the app first so the SP creates and owns the schema. See **Schema Permissions for Deployed Apps** above |
 | Protected branch cannot be deleted | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
