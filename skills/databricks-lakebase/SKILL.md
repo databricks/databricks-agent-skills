@@ -160,10 +160,10 @@ When deployed, the app's Service Principal runs the schema initialization SQL (e
 
 **Correct workflow:**
 1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
-2. **Grant local access**: assign `databricks_superuser` to your identity via the Lakebase UI
+2. **Grant local access** *(if needed)*: if you're not the project creator, assign `databricks_superuser` to your identity via the Lakebase UI. Project creators already have sufficient access.
 3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
 
-> **Note:** `databricks_superuser` grants full DML but **not DDL** (CREATE SCHEMA, CREATE TABLE) on SP-owned schemas. If you need to alter the schema during local development, redeploy the app to apply DDL changes.
+> **Note:** Project creators already have access to SP-owned schemas. Other team members need `databricks_superuser` (grants full DML but **not DDL**). If you need to alter the schema during local development, redeploy the app to apply DDL changes.
 
 **If you already ran locally first** and hit `permission denied` after deploying: connect to the database with your credentials, drop the schema (`DROP SCHEMA <name> CASCADE;`), then redeploy so the SP recreates it.
 
