@@ -1,5 +1,5 @@
 ---
-name: dabs
+name: databricks-dabs
 description: 'Create, configure, validate, deploy, run, and manage DABs — Declarative Automation Bundles (formerly Databricks Asset Bundles) — for Databricks resources including dashboards, jobs, pipelines, alerts, volumes, and apps'
 ---
 

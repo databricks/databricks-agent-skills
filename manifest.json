@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-04-02T08:47:25Z",
+  "updated_at": "2026-04-02T09:31:21Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -26,20 +26,19 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-02T08:45:16Z",
+      "updated_at": "2026-04-02T09:29:11Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
-        "databricks-cli-install.md",
-        "declarative-automation-bundles.md"
+        "databricks-cli-install.md"
       ]
     },
     "databricks-dabs": {
       "version": "0.0.0",
       "description": "Declarative Automation Bundles (DABs) for Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-02T08:37:02Z",
+      "updated_at": "2026-04-02T09:29:49Z",
       "files": [
         "SKILL.md",
         "references/alerts.md",
