@@ -23,6 +23,7 @@
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
+        "references/appkit/files.md",
         "references/appkit/frontend.md",
         "references/appkit/lakebase.md",
         "references/appkit/overview.md",
