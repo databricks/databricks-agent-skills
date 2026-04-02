@@ -192,16 +192,14 @@ import {
 ```typescript
 import type { DirectoryEntry, FilePreview } from '@databricks/appkit-ui/react';
 import {
-  Button,
   DirectoryList,
   FileBreadcrumb,
   FilePreviewPanel,
-  NewFolderInput,
 } from '@databricks/appkit-ui/react';
 import { useCallback, useEffect, useState } from 'react';
 
 export function FilesPage() {
-  const [volumeKey, setVolumeKey] = useState('uploads');
+  const [volumeKey] = useState('uploads');
   const [currentPath, setCurrentPath] = useState('');
   const [entries, setEntries] = useState<DirectoryEntry[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -219,6 +217,11 @@ export function FilesPage() {
   const loadDirectory = useCallback(async (path?: string) => {
     const url = path ? apiUrl('list', { path }) : apiUrl('list');
     const res = await fetch(url);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => null);
+      console.error('Failed to load directory', errBody ?? res.statusText);
+      return;
+    }
     const data: DirectoryEntry[] = await res.json();
     // Sort: directories first, then alphabetically
     data.sort((a, b) => {
@@ -256,8 +259,19 @@ export function FilesPage() {
             } else {
               setSelectedFile(entryPath);
               fetch(apiUrl('preview', { path: entryPath }))
-                .then((r) => r.json())
-                .then(setPreview);
+                .then(async (r) => {
+                  if (!r.ok) {
+                    const errBody = await r.json().catch(() => null);
+                    console.error('Failed to load file preview', errBody ?? r.statusText);
+                    return null;
+                  }
+                  return r.json();
+                })
+                .then((data) => {
+                  if (data) {
+                    setPreview(data);
+                  }
+                });
             }
           }}
           resolveEntryPath={(entry) =>
@@ -272,7 +286,7 @@ export function FilesPage() {
         selectedFile={selectedFile}
         preview={preview}
         onDownload={(path) =>
-          window.open(apiUrl('download', { path }), '_blank')
+          window.open(apiUrl('download', { path }), '_blank', 'noopener,noreferrer')
         }
         imagePreviewSrc={(p) => apiUrl('raw', { path: p })}
       />
