@@ -164,6 +164,15 @@ env:
 
 **Important**: When source code is in project root (not src/app), use `source_code_path: ..` in the resource file.
 
+## Generate Configuration for Existing Resources
+
+```bash
+databricks bundle generate job <job-id>
+databricks bundle generate pipeline <pipeline-id>
+databricks bundle generate dashboard <dashboard-id>
+databricks bundle generate app <app-name>
+```
+
 ## Other Resources
 
 DABs supports schemas, models, experiments, clusters, warehouses, etc. Use `databricks bundle schema` to inspect schemas.
