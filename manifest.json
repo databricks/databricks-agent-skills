@@ -1,12 +1,32 @@
 {
   "version": "2",
-  "updated_at": "2026-03-31T11:40:34Z",
+  "updated_at": "2026-04-02T08:39:27Z",
   "skills": {
-    "databricks": {
+    "databricks-apps": {
+      "version": "0.1.1",
+      "description": "Databricks Apps development and deployment",
+      "experimental": false,
+      "updated_at": "2026-04-02T07:56:18Z",
+      "files": [
+        "SKILL.md",
+        "references/appkit/appkit-sdk.md",
+        "references/appkit/frontend.md",
+        "references/appkit/lakebase.md",
+        "references/appkit/overview.md",
+        "references/appkit/proto-contracts.md",
+        "references/appkit/proto-first.md",
+        "references/appkit/sql-queries.md",
+        "references/appkit/trpc.md",
+        "references/other-frameworks.md",
+        "references/platform-guide.md",
+        "references/testing.md"
+      ]
+    },
+    "databricks-core": {
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-03-31T11:37:22Z",
+      "updated_at": "2026-04-02T07:56:18Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
@@ -15,31 +35,26 @@
         "declarative-automation-bundles.md"
       ]
     },
-    "databricks-apps": {
-      "version": "0.1.1",
-      "description": "Databricks Apps development and deployment",
+    "databricks-dabs": {
+      "version": "0.0.0",
+      "description": "Declarative Automation Bundles (DABs) for Databricks resources",
       "experimental": false,
-      "updated_at": "2026-03-31T11:37:22Z",
+      "updated_at": "2026-04-02T08:37:02Z",
       "files": [
         "SKILL.md",
-        "references/appkit/appkit-sdk.md",
-        "references/appkit/frontend.md",
-        "references/appkit/lakebase.md",
-        "references/appkit/overview.md",
-        "references/appkit/sql-queries.md",
-        "references/appkit/proto-contracts.md",
-        "references/appkit/proto-first.md",
-        "references/appkit/trpc.md",
-        "references/other-frameworks.md",
-        "references/platform-guide.md",
-        "references/testing.md"
-      ]
+        "references/alerts.md",
+        "references/bundle-structure.md",
+        "references/deploy-and-run.md",
+        "references/resource-permissions.md",
+        "references/sdp-pipelines.md"
+      ],
+      "base_revision": "e742f36e8ab1"
     },
     "databricks-jobs": {
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-03-31T11:37:22Z",
+      "updated_at": "2026-04-02T07:56:18Z",
       "files": [
         "SKILL.md"
       ]
@@ -48,7 +63,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-03-31T11:37:22Z",
+      "updated_at": "2026-04-02T07:56:18Z",
       "files": [
         "SKILL.md"
       ]
@@ -57,7 +72,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-03-31T11:37:22Z",
+      "updated_at": "2026-04-02T07:56:18Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
