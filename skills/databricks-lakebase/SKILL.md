@@ -148,6 +148,14 @@ Where `<BRANCH_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/bra
 
 For the full app development workflow, use the **`databricks-apps`** skill.
 
+### Schema Permissions for Deployed Apps
+
+When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CONNECT_AND_CREATE` permission. This means it can **create new schemas** but **cannot access schemas or tables created by other roles** (including `public`).
+
+**Deploy the app before running locally.** The deployed SP runs schema initialization (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`) and becomes the schema owner. If you run locally first, your credentials create the schema — and the SP cannot access it after deployment.
+
+After deploying, grant `databricks_superuser` to your identity via the Lakebase UI for local DML access. See the **`databricks-apps`** skill's Lakebase guide for the full deploy-first workflow.
+
 ### Other Workflows
 
 **Connect a Postgres client**
@@ -178,5 +186,6 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions |
+| `permission denied for schema <name>` | Schema owned by another role. Deploy the app first so the SP creates and owns the schema. See **Schema Permissions for Deployed Apps** above |
 | Protected branch cannot be deleted | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
