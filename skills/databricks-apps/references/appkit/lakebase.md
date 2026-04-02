@@ -132,6 +132,8 @@ export const appRouter = t.router({
 });
 ```
 
+> **Deploy first!** The Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
+
 ## Schema Initialization
 
 **Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables on server startup:
@@ -180,7 +182,7 @@ const prisma = new PrismaClient({ adapter });
 
 ## Local Development
 
-> **Important:** Deploy the app first so the Service Principal creates and owns the database schema. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details. If you run locally before deploying, you'll create schemas under your credentials that the SP cannot access after deployment.
+> **CRITICAL: Deploy the app first** so the Service Principal creates and owns the database schema. If you run locally before deploying, you'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
