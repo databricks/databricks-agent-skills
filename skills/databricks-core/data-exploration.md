@@ -327,4 +327,4 @@ Both commands support:
 
 ## Related Commands
 
-- **[Declarative Automation Bundles](declarative-automation-bundles.md)** - Deploy SQL, pipeline, and app resources as code
+- Use `/databricks-dabs` - Deploy SQL, pipeline, and app resources as code

@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-04-02T08:39:27Z",
+  "updated_at": "2026-04-02T08:47:25Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -26,7 +26,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-02T07:56:18Z",
+      "updated_at": "2026-04-02T08:45:16Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
