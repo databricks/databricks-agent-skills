@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-02T09:31:21Z",
+  "updated_at": "2026-04-02T10:44:39Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-02T07:56:18Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -26,7 +26,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-02T09:29:11Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
@@ -36,9 +36,9 @@
     },
     "databricks-dabs": {
       "version": "0.0.0",
-      "description": "Declarative Automation Bundles (DABs) for Databricks resources",
+      "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-02T09:29:49Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md",
         "references/alerts.md",
@@ -53,7 +53,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-02T07:56:18Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md"
       ]
@@ -62,7 +62,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-02T07:56:18Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md"
       ]
@@ -71,7 +71,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-02T07:56:18Z",
+      "updated_at": "2026-04-02T10:44:20Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",

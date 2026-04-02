@@ -70,7 +70,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-dabs": {
-        "description": "Declarative Automation Bundles (DABs) for Databricks resources",
+        "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
         "experimental": False,
     },
     "databricks-pipelines": {
