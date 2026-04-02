@@ -134,7 +134,7 @@ export const appRouter = t.router({
 
 ## Schema Initialization
 
-**Always create a custom schema** — the Service Principal has `CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner. Initialize tables on server startup:
+**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables on server startup:
 
 ```typescript
 // server/server.ts — run once at startup before handling requests
@@ -147,23 +147,6 @@ await pool.query(`
   );
 `);
 ```
-
-## Deploy-First Workflow
-
-**ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
-
-When deployed, the app's Service Principal runs the schema initialization SQL above, creating the schema and tables — and becoming their **owner**. Only the owner (or a superuser) can access those objects.
-
-**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
-
-**Correct workflow:**
-1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
-2. **Grant local access**: assign `databricks_superuser` to your identity via the Lakebase UI
-3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
-
-> **Note:** `databricks_superuser` grants full DML but **not DDL** (CREATE SCHEMA, CREATE TABLE) on SP-owned schemas. If you need to alter the schema during local development, redeploy the app to apply DDL changes.
-
-**If you already ran locally first** and hit `permission denied` after deploying: connect to the database with your credentials, drop the schema (`DROP SCHEMA <name> CASCADE;`), then redeploy so the SP recreates it.
 
 ## ORM Integration (Optional)
 
@@ -197,7 +180,7 @@ const prisma = new PrismaClient({ adapter });
 
 ## Local Development
 
-> **Important:** Deploy the app first so the Service Principal creates and owns the database schema. See **Deploy-First Workflow** above. If you run locally before deploying, you'll create schemas under your credentials that the SP cannot access after deployment.
+> **Important:** Deploy the app first so the Service Principal creates and owns the database schema. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details. If you run locally before deploying, you'll create schemas under your credentials that the SP cannot access after deployment.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
@@ -226,8 +209,8 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | Error | Cause | Solution |
 |-------|-------|---------|
 | `permission denied for schema public` | SP cannot access `public` schema | Create custom schema: `CREATE SCHEMA IF NOT EXISTS app_data` and qualify all table names with `app_data.` |
-| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Drop the schema, then redeploy so the SP creates and owns it. See **Deploy-First Workflow** above |
-| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | Drop the schema, deploy first, then use `databricks_superuser` for local dev. See **Deploy-First Workflow** above |
+| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Drop the schema, then redeploy so the SP creates and owns it. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** |
+| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | Drop the schema, deploy first, then use `databricks_superuser` for local dev. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |
