@@ -4,7 +4,8 @@ on:
   pull_request:
     paths:
       - 'skills/**'
-      - 'scripts/generate_manifest.py'
+      - 'assets/**'
+      - 'scripts/skills.py'
       - 'manifest.json'
   push:
     branches:
@@ -24,4 +25,4 @@ jobs:
           python-version: '3.11'
 
       - name: Validate manifest is up to date
-        run: python3 scripts/generate_manifest.py validate
+        run: python3 scripts/skills.py validate

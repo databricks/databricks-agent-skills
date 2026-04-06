@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-04-06T11:01:30Z",
+  "updated_at": "2026-04-06T13:20:49Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -10,6 +10,8 @@
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
         "references/appkit/appkit-sdk.md",
         "references/appkit/frontend.md",
         "references/appkit/lakebase.md",
@@ -20,9 +22,7 @@
         "references/appkit/trpc.md",
         "references/other-frameworks.md",
         "references/platform-guide.md",
-        "references/testing.md",
-        "@root:assets/databricks.svg",
-        "@root:assets/databricks.png"
+        "references/testing.md"
       ]
     },
     "databricks-core": {
@@ -33,12 +33,12 @@
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
         "data-exploration.md",
         "databricks-cli-auth.md",
         "databricks-cli-install.md",
-        "declarative-automation-bundles.md",
-        "@root:assets/databricks.svg",
-        "@root:assets/databricks.png"
+        "declarative-automation-bundles.md"
       ]
     },
     "databricks-dabs": {
@@ -64,8 +64,8 @@
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
-        "@root:assets/databricks.svg",
-        "@root:assets/databricks.png"
+        "assets/databricks.png",
+        "assets/databricks.svg"
       ]
     },
     "databricks-lakebase": {
@@ -76,18 +76,20 @@
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
-        "@root:assets/databricks.svg",
-        "@root:assets/databricks.png"
+        "assets/databricks.png",
+        "assets/databricks.svg"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-06T10:59:35Z",
+      "updated_at": "2026-04-06T13:15:29Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
         "references/auto-cdc-python.md",
         "references/auto-cdc-sql.md",
         "references/auto-cdc.md",
@@ -121,9 +123,7 @@
         "references/temporary-view.md",
         "references/view-sql.md",
         "references/view.md",
-        "references/write-spark-declarative-pipelines.md",
-        "@root:assets/databricks.svg",
-        "@root:assets/databricks.png"
+        "references/write-spark-declarative-pipelines.md"
       ],
       "base_revision": "5c4b4fb0a82a"
     }

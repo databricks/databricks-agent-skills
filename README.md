@@ -62,16 +62,16 @@ This approach:
 
 ### Manifest Management
 
-Generate manifest after adding/updating skills:
+Sync assets and generate manifest after adding/updating skills:
 
 ```bash
-python3 scripts/generate_manifest.py
+python3 scripts/skills.py
 ```
 
-Validate that manifest is up to date (for CI):
+Validate that assets and manifest are up to date (for CI):
 
 ```bash
-python3 scripts/generate_manifest.py validate
+python3 scripts/skills.py validate
 ```
 
 The manifest is used by the CLI to discover available skills.
