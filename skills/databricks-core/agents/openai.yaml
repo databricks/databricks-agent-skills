@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks"
+  short_description: "CLI, auth, and data exploration"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-core for Databricks CLI, auth, and data exploration."
