@@ -211,8 +211,8 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | Error | Cause | Solution |
 |-------|-------|---------|
 | `permission denied for schema public` | SP cannot access `public` schema | Create custom schema: `CREATE SCHEMA IF NOT EXISTS app_data` and qualify all table names with `app_data.` |
-| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Drop the schema, then redeploy so the SP creates and owns it. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** |
-| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | Drop the schema, deploy first, then use `databricks_superuser` for local dev. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** |
+| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | **Ask the user before dropping** — `DROP SCHEMA` deletes all data. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
+| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | **Ask the user before dropping** — warn about data loss, then deploy first. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |

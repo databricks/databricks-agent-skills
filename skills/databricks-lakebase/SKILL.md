@@ -165,7 +165,9 @@ When deployed, the app's Service Principal runs the schema initialization SQL (e
 
 > **Note:** Project creators already have access to SP-owned schemas. Other team members need `databricks_superuser` (grants full DML but **not DDL**). If you need to alter the schema during local development, redeploy the app to apply DDL changes.
 
-**If you already ran locally first** and hit `permission denied` after deploying: connect to the database with your credentials, drop the schema (`DROP SCHEMA <name> CASCADE;`), then redeploy so the SP recreates it.
+**If you already ran locally first** and hit `permission denied` after deploying: the schema is owned by your personal credentials, not the SP. **⚠️ Do NOT drop the schema without asking the user first** — dropping it (`DROP SCHEMA <name> CASCADE`) **deletes all data** in that schema. Ask the user how they'd like to proceed:
+- **Option A (destructive):** Drop the schema and redeploy so the SP recreates it. Only safe if the schema has no valuable data.
+- **Option B (manual):** The user can reassign ownership or manually grant the SP access, preserving existing data.
 
 ### Other Workflows
 
