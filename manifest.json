@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-02T17:57:59Z",
+  "updated_at": "2026-04-07T11:41:21Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-02T17:53:44Z",
+      "updated_at": "2026-04-07T11:41:14Z",
       "files": [
         "SKILL.md",
         "references/appkit/appkit-sdk.md",
@@ -26,20 +26,33 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-02T14:44:18Z",
+      "updated_at": "2026-04-07T11:41:02Z",
       "files": [
         "SKILL.md",
         "data-exploration.md",
         "databricks-cli-auth.md",
-        "databricks-cli-install.md",
-        "declarative-automation-bundles.md"
+        "databricks-cli-install.md"
+      ]
+    },
+    "databricks-dabs": {
+      "version": "0.0.0",
+      "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
+      "experimental": false,
+      "updated_at": "2026-04-07T11:41:02Z",
+      "files": [
+        "SKILL.md",
+        "references/alerts.md",
+        "references/bundle-structure.md",
+        "references/deploy-and-run.md",
+        "references/resource-permissions.md",
+        "references/sdp-pipelines.md"
       ]
     },
     "databricks-jobs": {
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-02T14:44:18Z",
+      "updated_at": "2026-04-07T10:27:43Z",
       "files": [
         "SKILL.md"
       ]
@@ -48,7 +61,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-02T17:53:21Z",
+      "updated_at": "2026-04-07T11:41:14Z",
       "files": [
         "SKILL.md"
       ]
@@ -57,7 +70,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-02T14:44:18Z",
+      "updated_at": "2026-04-07T10:27:43Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
