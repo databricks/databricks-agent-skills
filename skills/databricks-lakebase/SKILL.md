@@ -159,7 +159,7 @@ When deployed, the app's Service Principal runs the schema initialization SQL (e
 **If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CAN_CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
 
 **Correct workflow:**
-1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
+1. **Deploy first**: `databricks apps deploy <APP_NAME> --profile <PROFILE>` — verify with `databricks apps get <APP_NAME> --profile <PROFILE>` that the app is deployed before proceeding
 2. **Grant local access** *(if needed)*: if you're not the project creator, assign `databricks_superuser` to your identity via the Lakebase UI. Project creators already have sufficient access.
 3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
 

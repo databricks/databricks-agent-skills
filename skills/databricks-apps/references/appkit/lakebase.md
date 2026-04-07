@@ -132,7 +132,7 @@ export const appRouter = t.router({
 });
 ```
 
-> **Deploy first!** The Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
+> **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
 
 ## Schema Initialization
 
@@ -182,7 +182,20 @@ const prisma = new PrismaClient({ adapter });
 
 ## Local Development
 
-> **CRITICAL: Deploy the app first** so the Service Principal creates and owns the database schema. If you run locally before deploying, you'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
+### Prerequisites (MUST verify before local development)
+
+**This applies when your Databricks App uses Lakebase.** Run this check before any local development:
+
+```bash
+databricks apps get <APP_NAME> --profile <PROFILE>
+```
+
+Check the response for the `active_deployment` field. If it exists with `status.state` of `SUCCEEDED`, the app has been deployed. If `active_deployment` is missing, the app has never been deployed:
+1. **STOP** — do not proceed with local development
+2. Deploy first: `databricks apps deploy <APP_NAME> --profile <PROFILE>`
+3. Wait for deployment to complete, then continue
+
+If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
