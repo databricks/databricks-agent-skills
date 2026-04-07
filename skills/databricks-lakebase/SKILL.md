@@ -150,13 +150,13 @@ For the full app development workflow, use the **`databricks-apps`** skill.
 
 ### Schema Permissions for Deployed Apps
 
-When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner.
+When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CAN_CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner.
 
 **ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
 
 When deployed, the app's Service Principal runs the schema initialization SQL (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`), creating the schema and tables — and becoming their **owner**. Only the owner (or a superuser) can access those objects.
 
-**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
+**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CAN_CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
 
 **Correct workflow:**
 1. **Deploy first**: `databricks apps deploy --profile <PROFILE>` — the SP creates and owns the schema
