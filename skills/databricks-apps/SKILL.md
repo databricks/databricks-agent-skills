@@ -138,7 +138,7 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 1. Ask which Unity Catalog tables the app should query (fully qualified: `catalog.schema.table`).
 2. Ask whether to reuse an existing Genie space or create a new one.
 3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Guide](references/appkit/genie.md) for syntax and serialized space format).
-4. If reusing: discover existing spaces with `w.genie.list_spaces()` (Python SDK) and let the user pick.
+4. If reusing: discover existing spaces with `databricks genie list-spaces --profile <PROFILE>` and let the user pick.
 5. Scaffold or wire the space ID into the app — derive `--set` keys from `databricks apps manifest`.
 
 Read the [Genie Guide](references/appkit/genie.md) for configuration, SSE endpoints, and frontend integration.

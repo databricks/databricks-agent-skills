@@ -93,7 +93,7 @@ resources:
           genie_space:
             name: ${var.genie_space_name}
             space_id: ${var.genie_space_id}
-            permission: CAN_VIEW
+            permission: CAN_RUN
 
 targets:
   default:
@@ -191,8 +191,7 @@ The plugin mounts SSE endpoints under `/api/genie`:
 
 | Error | Cause | Solution |
 |-------|-------|---------|
-| Server reports Genie not configured | Missing `DATABRICKS_GENIE_SPACE_ID` | Set env var in `server/.env` (local) or wire via `app.yaml` (deployed) |
 | `create-space` fails with "Cannot find field" | Wrong `serialized_space` JSON format | Use `{"version":2,"data_sources":{"tables":[{"identifier":"..."}]}}` — export an existing space to verify |
+| `plugin "genie" has no resource with key "..."` | Wrong `--set` flags during scaffold | Always derive resource keys from `databricks apps manifest` |
 | Chat collapses or renders poorly | No explicit height on container | Give the parent a fixed height |
 | Duplicate routes or import confusion | Old local Genie proxy file | Remove it — use `genie` from `@databricks/appkit` |
-| Wrong `--set` flags during scaffold | Guessed plugin resource keys | Always derive from `databricks apps manifest` |
