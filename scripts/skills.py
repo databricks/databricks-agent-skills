@@ -38,7 +38,7 @@ SKILL_METADATA = {
     },
     "databricks-model-serving": {
         "description": "Databricks Model Serving endpoint management",
-        "experimental": True,
+        "experimental": False,
     },
     "databricks-pipelines": {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
