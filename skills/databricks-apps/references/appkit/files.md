@@ -1,5 +1,7 @@
 # Files: Unity Catalog Volume Operations
 
+**For full Files plugin API (routes, types, config options)**: run `npx @databricks/appkit docs` → Files plugin.
+
 Use the `files()` plugin when your app needs to **browse, upload, download, or manage files** in Databricks Unity Catalog Volumes. For analytics dashboards reading from a SQL warehouse, use `config/queries/` instead. For persistent CRUD storage, use Lakebase.
 
 ## When to Use Files vs Other Patterns
@@ -33,7 +35,7 @@ DATABRICKS_VOLUME_UPLOADS=/Volumes/catalog/schema/uploads
 DATABRICKS_VOLUME_EXPORTS=/Volumes/catalog/schema/exports
 ```
 
-The plugin auto-discovers `DATABRICKS_VOLUME_*` environment variables at startup. The env var suffix becomes the volume key (lowercased). Empty values or bare `DATABRICKS_VOLUME_` prefixes are skipped.
+The env var suffix (after `DATABRICKS_VOLUME_`) becomes the volume key, lowercased.
 
 ## Plugin Setup
 
@@ -48,57 +50,6 @@ await createApp({
 });
 ```
 
-## Volume Configuration
-
-```typescript
-files({
-  maxUploadSize: 5_000_000_000, // 5 GB default
-  customContentTypes: { ".avro": "application/avro" },
-  volumes: {
-    uploads: { maxUploadSize: 100_000_000 }, // 100 MB limit for this volume
-    exports: {}, // uses plugin-level defaults
-  },
-});
-```
-
-**Merge semantics:** Auto-discovered volumes (from env vars) merge with explicitly configured ones. Explicit configuration takes precedence for per-volume overrides.
-
-### Custom Content Types
-
-```typescript
-files({
-  volumes: { data: {} },
-  customContentTypes: {
-    ".avro": "application/avro",
-    ".ndjson": "application/x-ndjson",
-  },
-});
-```
-
-> ⚠️ **Blocked MIME types:** `text/html`, `text/javascript`, `application/javascript`, `application/xhtml+xml`, `image/svg+xml` are blocked to prevent stored-XSS when served inline via `/raw`.
-
-### Configuration Types
-
-```typescript
-interface IFilesConfig {
-  /** Named volumes to expose. Each key becomes a volume accessor. */
-  volumes?: Record<string, VolumeConfig>;
-  /** Operation timeout in milliseconds. Overrides per-tier defaults. */
-  timeout?: number;
-  /** Map of file extensions to MIME types (priority over built-in map). */
-  customContentTypes?: Record<string, string>;
-  /** Maximum upload size in bytes. Defaults to 5 GB. */
-  maxUploadSize?: number;
-}
-
-interface VolumeConfig {
-  /** Maximum upload size in bytes for this volume. */
-  maxUploadSize?: number;
-  /** Map of file extensions to MIME types for this volume. */
-  customContentTypes?: Record<string, string>;
-}
-```
-
 ## Server-Side API (Programmatic)
 
 Access volumes through the `files()` callable, which returns a `VolumeHandle`:
@@ -108,84 +59,17 @@ Access volumes through the `files()` callable, which returns a `VolumeHandle`:
 const entries = await appkit.files("uploads").asUser(req).list();
 const content = await appkit.files("exports").asUser(req).read("report.csv");
 
-// ❌ BLOCKED — Service principal access is not allowed
+// ❌ WRONG — omitting .asUser(req)
 const entries = await appkit.files("uploads").list();
+// In dev: silently falls back to service principal credentials, bypassing user-level UC permissions
+// In production: throws an error
 ```
 
-**ALWAYS use `.asUser(req)`** — direct calls without user context are blocked and will throw an error.
-
-### VolumeAPI Methods
-
-| Method | Signature | Returns |
-| --- | --- | --- |
-| `list` | `(directoryPath?: string)` | `DirectoryEntry[]` |
-| `read` | `(filePath: string, options?: { maxSize?: number })` | `string` |
-| `download` | `(filePath: string)` | `DownloadResponse` |
-| `exists` | `(filePath: string)` | `boolean` |
-| `metadata` | `(filePath: string)` | `FileMetadata` |
-| `upload` | `(filePath: string, contents: ReadableStream \| Buffer \| string, options?: { overwrite?: boolean })` | `void` |
-| `createDirectory` | `(directoryPath: string)` | `void` |
-| `delete` | `(filePath: string)` | `void` |
-| `preview` | `(filePath: string)` | `FilePreview` |
-
-**`read()` loads entire files into memory.** Files larger than 10 MB are rejected by default — use `download()` for large files or pass `{ maxSize: <bytes> }` to override.
-
-### Types
-
-```typescript
-interface FileMetadata {
-  contentLength: number | undefined;
-  contentType: string | undefined;
-  lastModified: string | undefined; // ISO 8601
-}
-
-interface FilePreview extends FileMetadata {
-  textPreview: string | null;  // first portion of text content, null for non-text
-  isText: boolean;
-  isImage: boolean;
-}
-```
-
-## HTTP Routes
-
-Routes mount at `/api/files/*`. All routes except `/volumes` execute in user context via `asUser(req)`.
-
-| Method | Path | Query/Body | Response |
-| --- | --- | --- | --- |
-| GET | `/volumes` | — | `{ volumes: string[] }` |
-| GET | `/:volumeKey/list` | `?path` (optional) | `DirectoryEntry[]` |
-| GET | `/:volumeKey/read` | `?path` (required) | `text/plain` body |
-| GET | `/:volumeKey/download` | `?path` (required) | Binary stream (attachment) |
-| GET | `/:volumeKey/raw` | `?path` (required) | Binary stream (inline/attachment) |
-| GET | `/:volumeKey/exists` | `?path` (required) | `{ exists: boolean }` |
-| GET | `/:volumeKey/metadata` | `?path` (required) | `FileMetadata` |
-| GET | `/:volumeKey/preview` | `?path` (required) | `FilePreview` |
-| POST | `/:volumeKey/upload` | `?path` (required), raw body | `{ success: true }` |
-| POST | `/:volumeKey/mkdir` | `body.path` (required) | `{ success: true }` |
-| DELETE | `/:volumeKey` | `?path` (required) | `{ success: true }` |
-
-Unknown volume keys return 404 with available volumes listed.
-
-### Path Validation
-
-All path parameters enforce:
-- Required (non-empty)
-- Maximum 4096 characters
-- No null bytes
-- No path traversal (`../` rejected)
+**ALWAYS use `.asUser(req)`** — without it, dev mode silently uses the app's service principal (masking permission issues that will crash in production).
 
 ## Frontend Components
 
-Import file browser components from `@databricks/appkit-ui/react`:
-
-```typescript
-import {
-  DirectoryList,
-  FileBreadcrumb,
-  FilePreviewPanel,
-  NewFolderInput,
-} from "@databricks/appkit-ui/react";
-```
+Import file browser components from `@databricks/appkit-ui/react`. Full component props: `npx @databricks/appkit docs "FileBreadcrumb"`.
 
 ### File Browser Example
 
@@ -345,43 +229,28 @@ const handleCreateDirectory = async (name: string) => {
 };
 ```
 
-## Execution Defaults
-
-| Tier | Cache | Retry | Timeout | Operations |
-| --- | --- | --- | --- | --- |
-| Read | 60 s | 3x | 30 s | list, read, exists, metadata, preview |
-| Download | none | 3x | 30 s | download, raw |
-| Write | none | none | 600 s | upload, mkdir, delete |
-
-Retry uses exponential backoff with 1 s initial delay. Download timeout applies to stream start, not full transfer.
-
-Write operations automatically invalidate the cached `list` entry for the affected directory's parent.
-
-## Path Resolution
-
-Paths can be **absolute** or **relative**:
-
-- **Absolute:** Must start with `/Volumes/` (e.g., `/Volumes/catalog/schema/vol/data.csv`)
-- **Relative:** Prepended with the volume path from the environment variable (e.g., `data.csv` → `/Volumes/catalog/schema/uploads/data.csv`)
-
-`list()` with no arguments lists the volume root.
-
-**DO NOT use `../` in paths** — path traversal is rejected.
-
 ## Resource Requirements
 
-Each volume key generates a required resource with `WRITE_VOLUME` permission and a `DATABRICKS_VOLUME_{KEY_UPPERCASE}` environment variable. These are declared dynamically — no explicit `volumes` config needed if env vars are set.
+Each volume key requires a resource with `WRITE_VOLUME` permission. Declare in `databricks.yml`:
 
-## Error Responses
+```yaml
+resources:
+  apps:
+    my_app:
+      resources:
+        - name: uploads-volume
+          volume:
+            path: /Volumes/catalog/schema/uploads
+            permission: WRITE_VOLUME
+```
 
-All errors return JSON with `{ "error": "message", "plugin": "files" }`.
+Wire the env var in `app.yaml`:
 
-| Status | Description |
-| --- | --- |
-| 400 | Missing or invalid `path` parameter |
-| 404 | Unknown volume key (response lists available volumes) |
-| 413 | Upload exceeds `maxUploadSize` |
-| 500 | Operation failed (SDK, network, or upstream error) |
+```yaml
+env:
+  - name: DATABRICKS_VOLUME_UPLOADS
+    valueFrom: uploads-volume
+```
 
 ## Troubleshooting
 
