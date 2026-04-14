@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks DABs"
+  short_description: "Declarative Automation Bundles for deploying and managing Databricks resources"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-dabs for creating, deploying, and managing Databricks resources through Declarative Automation Bundles."

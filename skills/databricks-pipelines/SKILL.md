@@ -202,7 +202,7 @@ Verify: `databricks -v`
 Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-pipelines` skill for pipeline-specific guidance.
 
-If skills are not available, install them: `databricks experimental aitools skills install`
+If skills are not available, install them: `databricks experimental aitools install`
 ```
 
 ## Pipeline Structure

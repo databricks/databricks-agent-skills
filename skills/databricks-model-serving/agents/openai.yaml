@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Model Serving"
+  short_description: "Model Serving endpoint management"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-model-serving for Databricks Model Serving endpoint management."

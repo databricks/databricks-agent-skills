@@ -37,11 +37,12 @@ Then apply these patterns:
 - Pattern 2
 ```
 
-### Manifest
+### Skills management
 
 ```bash
-python3 scripts/generate_manifest.py           # generate
-python3 scripts/generate_manifest.py validate  # check in CI
+python3 scripts/skills.py              # sync assets + generate manifest (default)
+python3 scripts/skills.py sync         # copy shared assets into each skill dir
+python3 scripts/skills.py validate     # check assets + manifest are up to date (CI)
 ```
 
 ## Security

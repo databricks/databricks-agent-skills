@@ -17,6 +17,7 @@ For specific products, use dedicated skills:
 - **databricks-pipelines** - Lakeflow Spark Declarative Pipelines (batch and streaming data pipelines)
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
+- **databricks-model-serving** - Model Serving endpoint management and inference
 
 ## Prerequisites
 
@@ -131,11 +132,10 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
 | Exploring tables/schemas | [Data Exploration](data-exploration.md) |
-| Deploying jobs/pipelines | [Declarative Automation Bundles](declarative-automation-bundles.md) |
+| Deploying jobs/pipelines | Use `/databricks-dabs` |
 
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
 - [Data Exploration](data-exploration.md)
-- [Declarative Automation Bundles](declarative-automation-bundles.md)
