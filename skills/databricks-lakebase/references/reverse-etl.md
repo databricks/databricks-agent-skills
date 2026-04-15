@@ -1,33 +1,23 @@
 # Reverse ETL with Lakebase Autoscaling
 
-## Overview
+Sync data from Unity Catalog Delta tables into Lakebase as PostgreSQL tables for OLTP access patterns.
 
-Reverse ETL allows you to sync data from Unity Catalog Delta tables into Lakebase Autoscaling as PostgreSQL tables. This enables OLTP access patterns on data processed in the Lakehouse.
+**How it works:** Synced tables create a managed copy — a Unity Catalog table (read-only, managed by sync pipeline) and a Postgres table in Lakebase (queryable by apps). Uses managed Lakeflow Spark Declarative Pipelines.
 
-## How It Works
-
-Synced tables create a managed copy of Unity Catalog data in Lakebase:
-
-1. A new Unity Catalog table (read-only, managed by the sync pipeline)
-2. A Postgres table in Lakebase (queryable by applications)
-
-The sync pipeline uses managed Lakeflow Spark Declarative Pipelines to continuously update both tables.
-
-### Performance
-
-- **Continuous/Triggered writes:** ~150 rows/sec per CU
-- **Snapshot writes:** ~2,000 rows/sec per CU
-- **Connections used:** Up to 16 per synced table
+**Performance (per Autoscaling CU):**
+- Continuous/Triggered: ~150 rows/sec per CU
+- Snapshot: ~2,000 rows/sec per CU
+- Each synced table uses up to 16 connections
 
 ## Sync Modes
 
-| Mode | Description | Best For | Notes |
-|------|-------------|----------|-------|
-| **Snapshot** | One-time full copy | Initial setup, historical analysis | 10x more efficient if modifying >10% of data |
-| **Triggered** | Scheduled updates on demand | Dashboards updated hourly/daily | Requires CDF on source table |
-| **Continuous** | Real-time streaming (seconds of latency) | Live applications | Highest cost, minimum 15s intervals, requires CDF |
+| Mode | Description | CDF Required | Best For |
+|------|-------------|-------------|----------|
+| **Snapshot** | One-time full copy | No | Initial setup, small tables, >10% data change |
+| **Triggered** | Scheduled updates | Yes | Dashboards updated hourly/daily |
+| **Continuous** | Real-time (seconds latency, 15s min interval) | Yes | Live applications |
 
-**Note:** Triggered and Continuous modes require Change Data Feed (CDF) enabled on the source table:
+**Enable CDF on source table:**
 
 ```sql
 ALTER TABLE your_catalog.your_schema.your_table
@@ -35,8 +25,6 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 ```
 
 ## Creating Synced Tables
-
-### Using CLI
 
 ```bash
 databricks database create-synced-database-table \
@@ -54,50 +42,13 @@ databricks database create-synced-database-table \
   }' --profile <PROFILE>
 ```
 
-### Using Python SDK
+**Check status:**
 
-```python
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.database import (
-    SyncedDatabaseTable,
-    SyncedTableSpec,
-    NewPipelineSpec,
-    SyncedTableSchedulingPolicy,
-)
-
-w = WorkspaceClient()
-
-synced_table = w.database.create_synced_database_table(
-    SyncedDatabaseTable(
-        name="lakebase_catalog.schema.synced_table",
-        spec=SyncedTableSpec(
-            source_table_full_name="analytics.gold.user_profiles",
-            primary_key_columns=["user_id"],
-            scheduling_policy=SyncedTableSchedulingPolicy.TRIGGERED,
-            new_pipeline_spec=NewPipelineSpec(
-                storage_catalog="lakebase_catalog",
-                storage_schema="staging"
-            )
-        ),
-    )
-)
-print(f"Created synced table: {synced_table.name}")
+```bash
+databricks database get-synced-database-table --name "lakebase_catalog.schema.synced_table" --profile <PROFILE>
 ```
 
-## Checking Synced Table Status
-
-```python
-status = w.database.get_synced_database_table(name="lakebase_catalog.schema.synced_table")
-print(f"State: {status.data_synchronization_status.detailed_state}")
-print(f"Message: {status.data_synchronization_status.message}")
-```
-
-## Deleting a Synced Table
-
-Delete from both Unity Catalog and Postgres:
-
-1. **Unity Catalog:** Delete from Catalog Explorer or SDK
-2. **Postgres:** Drop the table to free storage
+**Delete:** Remove from Unity Catalog (Catalog Explorer or SDK), then drop the Postgres table:
 
 ```sql
 DROP TABLE your_database.your_schema.your_table;
@@ -121,60 +72,32 @@ DROP TABLE your_database.your_schema.your_table;
 | TIMESTAMP | TIMESTAMP WITH TIME ZONE |
 | TIMESTAMP_NTZ | TIMESTAMP WITHOUT TIME ZONE |
 | TINYINT | SMALLINT |
-| ARRAY | JSONB |
-| MAP | JSONB |
-| STRUCT | JSONB |
+| ARRAY, MAP, STRUCT | JSONB |
 
-**Unsupported types:** GEOGRAPHY, GEOMETRY, VARIANT, OBJECT
+**Unsupported:** GEOGRAPHY, GEOMETRY, VARIANT, OBJECT
 
 ## Capacity Planning
 
-- **Connection usage:** Each synced table uses up to 16 connections
-- **Size limits:** 8 TB total across all synced tables; recommend < 1 TB per table requiring refreshes. Logical data limit per branch: 8 TB
-- **Naming:** Database, schema, and table names only allow `[A-Za-z0-9_]+`
-- **Schema evolution:** Only additive changes (e.g., adding columns) for Triggered/Continuous modes
+- **Connections:** Each synced table uses up to 16 connections toward the endpoint limit
+- **Storage:** 8 TB total across all synced tables per branch
+- **Recommendation:** Keep individual tables under 1 TB if they require incremental refreshes
+- **Naming:** Database, schema, and table names allow `[A-Za-z0-9_]+` only
+- **Schema evolution:** Only additive changes (adding columns) for Triggered/Continuous modes
+
+## Lakehouse Sync (Beta, AWS only)
+
+Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC. Enables analytics and downstream pipelines on OLTP-written data. Azure support not yet available.
 
 ## Use Cases
 
-### Product Catalog for Web App
+**Product catalog:** Sync gold-tier product data to Lakebase for low-latency web app reads. Use Triggered mode for hourly/daily updates.
 
-```python
-w.database.create_synced_database_table(
-    SyncedDatabaseTable(
-        name="ecommerce_catalog.public.products",
-        spec=SyncedTableSpec(
-            source_table_full_name="gold.products.catalog",
-            primary_key_columns=["product_id"],
-            scheduling_policy=SyncedTableSchedulingPolicy.TRIGGERED,
-        ),
-    )
-)
-```
-
-### Real-time Feature Serving
-
-```python
-w.database.create_synced_database_table(
-    SyncedDatabaseTable(
-        name="ml_catalog.public.user_features",
-        spec=SyncedTableSpec(
-            source_table_full_name="ml.features.user_features",
-            primary_key_columns=["user_id"],
-            scheduling_policy=SyncedTableSchedulingPolicy.CONTINUOUS,
-        ),
-    )
-)
-```
-
-## Lakehouse Sync (Beta as of April 2026) — Lakebase to Delta
-
-Lakehouse Sync is the reverse direction: it continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC. This enables analytics, historical storage, and downstream pipelines on data written by OLTP applications.
+**Real-time feature serving:** Sync ML feature tables to Lakebase with Continuous mode for sub-second feature lookups during inference.
 
 ## Best Practices
 
-1. **Enable CDF** on source tables before creating Triggered or Continuous synced tables
-2. **Choose appropriate sync mode**: Snapshot for small tables, Triggered for hourly/daily, Continuous for real-time
-3. **Monitor sync status**: Check for failures and latency via Catalog Explorer
-4. **Index target tables**: Create appropriate indexes in Postgres for your query patterns
-5. **Handle schema changes**: Only additive changes are supported for streaming modes
-6. **Account for connection limits**: Each synced table uses up to 16 connections
+1. Enable CDF on source tables before creating Triggered/Continuous syncs
+2. Snapshot mode is 10x more efficient when >10% of data changes per cycle
+3. Monitor sync status for failures and latency via Catalog Explorer
+4. Create indexes in Postgres for your application query patterns
+5. Account for the 16-connection-per-table limit when planning endpoint capacity
