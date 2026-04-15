@@ -23,8 +23,10 @@ Build apps that deploy to Databricks Apps platform.
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
 | Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
+| Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — follow the Genie agent workflow below |
 | Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
+| Managing files in UC Volumes | [Files Guide](references/appkit/files.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
 | Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
@@ -73,6 +75,7 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
+- **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
@@ -130,6 +133,16 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
+
+**Genie Agent Workflow** — when the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
+
+1. Ask which Unity Catalog tables the app should query (fully qualified: `catalog.schema.table`).
+2. Ask whether to reuse an existing Genie space or create a new one.
+3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Guide](references/appkit/genie.md) for syntax and serialized space format).
+4. If reusing: discover existing spaces with `databricks genie list-spaces --profile <PROFILE>` and let the user pick.
+5. Scaffold or wire the space ID into the app — derive `--set` keys from `databricks apps manifest`.
+
+Read the [Genie Guide](references/appkit/genie.md) for configuration, SSE endpoints, and frontend integration.
 
 ### Common Scaffolding Mistakes
 
