@@ -75,12 +75,17 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-07T13:17:59Z",
+      "updated_at": "2026-04-14T19:06:12Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "computes.md",
+        "connection-patterns.md",
+        "data-api.md",
+        "high-availability.md",
+        "reverse-etl.md"
       ]
     },
     "databricks-model-serving": {
