@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-15T11:25:47Z",
+  "updated_at": "2026-04-07T13:25:51Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-15T11:18:57Z",
+      "updated_at": "2026-04-07T13:17:59Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -30,7 +30,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-15T09:36:12Z",
+      "updated_at": "2026-04-07T13:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -45,7 +45,7 @@
       "version": "0.0.0",
       "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-15T09:36:12Z",
+      "updated_at": "2026-04-07T13:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -63,7 +63,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-15T09:36:12Z",
+      "updated_at": "2026-04-07T13:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -75,7 +75,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-15T11:24:50Z",
+      "updated_at": "2026-04-15T18:00:00Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -90,7 +90,7 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": true,
-      "updated_at": "2026-04-15T09:36:12Z",
+      "updated_at": "2026-04-07T13:25:43Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -102,7 +102,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-15T09:36:12Z",
+      "updated_at": "2026-04-07T13:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
