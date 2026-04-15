@@ -10,10 +10,12 @@ Before scaffolding, decide which data pattern the app needs:
 |---------|-------------|-------------|
 | **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
 | **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
-| **Both** | Dashboard + user data or preferences | `--features analytics,lakebase` with all required `--set` flags |
+| **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
 | **Model Serving** (ML inference) | Chat, AI features, model predictions | Add `serving_endpoint` resource to `databricks.yml` (or `--features serving` if available in manifest) |
+| **Multiple** | Combine plugins as needed (e.g. dashboard + CRUD, analytics + Genie) | `--features analytics,lakebase,genie,...` with all required `--set` flags per plugin |
 
 See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code patterns.
+See [Genie Guide](genie.md) for space creation, plugin setup, and frontend components.
 
 ## Workflow
 
@@ -123,6 +125,7 @@ Do not guess paths — run without args first, then pick from the index.
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
 | Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
 | Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — createLakebasePool, tRPC patterns, schema init |
+| Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — resource declaration, tRPC query pattern |
 
 ## Critical Rules
