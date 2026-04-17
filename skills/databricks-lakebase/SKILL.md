@@ -11,9 +11,28 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
-Lakebase is Databricks' serverless Postgres-compatible database (similar to Neon). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
+Lakebase is Databricks' serverless Postgres-compatible database, available on both AWS and Azure (GA). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
 
-Manage Lakebase Postgres projects, branches, endpoints, and databases via `databricks postgres` CLI commands.
+> **Autoscaling by Default (March 2026):** All new Lakebase instances are Autoscaling projects. The `/database/` APIs now create autoscaling instances behind the scenes. Existing provisioned instances are unchanged.
+
+**Compliance:** Supports HIPAA, C5, TISAX, or None.
+
+| Feature | Status |
+|---------|--------|
+| Autoscaling Compute | 0.5--32 CU dynamic, 36--112 CU fixed (~2 GB RAM/CU) |
+| Scale-to-Zero | Default 5 min timeout, minimum 60s |
+| Branching | Copy-on-write isolated environments |
+| Point-in-Time Branching | Create branches from past state |
+| OAuth Authentication | 1-hour token expiry, refresh before expiry |
+| High Availability | 1 primary + 1--3 secondaries, automatic failover |
+| Data API | PostgREST-compatible HTTP CRUD (Autoscaling only) |
+| Reverse ETL | Sync Delta tables to Postgres via synced tables |
+| Cloud Support | AWS and Azure (GA) |
+
+**Reference docs:**
+- [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
+- [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
+- [reverse-etl.md](references/reverse-etl.md) — Synced tables, data type mapping, capacity planning
 
 ## Resource Hierarchy
 
@@ -27,10 +46,9 @@ Project (top-level container)
 
 - **Project**: Top-level container. Creating one auto-provisions a `production` branch and a `primary` read-write endpoint.
 - **Branch**: Isolated database environment sharing storage with parent (copy-on-write). States: `READY`, `ARCHIVED`.
-- **Endpoint** (called **Compute** in the Lakebase UI): Compute resource powering a branch. Types: `ENDPOINT_TYPE_READ_WRITE`, `ENDPOINT_TYPE_READ_ONLY` (read replica).
+- **Endpoint** (called **Compute** in UI): Compute resource powering a branch. Types: `ENDPOINT_TYPE_READ_WRITE`, `ENDPOINT_TYPE_READ_ONLY`.
 - **Database**: Standard Postgres database within a branch. Default: `databricks_postgres`.
-- **Role**: Postgres role within a branch. Manage roles via `databricks postgres create-role -h`.
-
+- **Role**: Postgres role within a branch.
 ### Resource Name Formats
 
 | Resource | Format |
@@ -41,22 +59,16 @@ Project (top-level container)
 | Database | `projects/{project_id}/branches/{branch_id}/databases/{database_id}` |
 
 All IDs: 1-63 characters, start with lowercase letter, lowercase letters/numbers/hyphens only (RFC 1123).
-
-## CLI Discovery — ALWAYS Do This First
+## CLI Discovery -- ALWAYS Do This First
 
 > **Note:** "Lakebase" is the product name; the CLI command group is `postgres`. All commands use `databricks postgres ...`.
 
-**Do NOT guess command syntax.** Discover available commands and their usage dynamically:
+**Do NOT guess command syntax.** Discover available commands dynamically:
 
 ```bash
-# List all postgres subcommands
-databricks postgres -h
-
-# Get detailed usage for any subcommand (flags, args, JSON fields)
-databricks postgres <subcommand> -h
+databricks postgres -h                    # List all subcommands
+databricks postgres <subcommand> -h       # Flags, args, JSON fields
 ```
-
-Run `databricks postgres -h` before constructing any command. Run `databricks postgres <subcommand> -h` to discover exact flags, positional arguments, and JSON spec fields for that subcommand.
 
 ## Create a Project
 
@@ -68,130 +80,147 @@ databricks postgres create-project <PROJECT_ID> \
   --profile <PROFILE>
 ```
 
-- Auto-creates: `production` branch + `primary` read-write endpoint (1 CU min/max, scale-to-zero)
-- Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately.
-- Run `databricks postgres create-project -h` for all available spec fields (e.g. `pg_version`).
+Auto-creates: `production` branch + `primary` read-write endpoint (1 CU min/max, scale-to-zero). Long-running operation; CLI waits by default. Use `--no-wait` to return immediately.
 
-After creation, verify the auto-provisioned resources:
+After creation, verify:
 
 ```bash
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 databricks postgres list-endpoints projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
-databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
+```
+
+### Updating a Project
+
+```bash
+databricks postgres update-project projects/<PROJECT_ID> spec.display_name \
+  --json '{"spec": {"display_name": "My Updated Application"}}' \
+  --profile <PROFILE>
+```
+
+### Deleting a Project
+
+**WARNING:** Permanent -- deletes all branches, computes, databases, roles, and data. **Do not delete without explicit user permission.**
+
+```bash
+databricks postgres delete-project projects/<PROJECT_ID> --profile <PROFILE>
 ```
 
 ## Autoscaling
 
-Endpoints use **compute units (CU)** for autoscaling. Configure min/max CU via `create-endpoint` or `update-endpoint`. Run `databricks postgres create-endpoint -h` to see all spec fields.
+Endpoints use **compute units (CU)** (~2 GB RAM per CU). Configure min/max CU on endpoints.
 
-Scale-to-zero is enabled by default. When idle, compute scales down to zero; it resumes in seconds on next connection.
+- **Autoscale range:** 0.5--32 CU (dynamic). **Fixed-size:** 36--112 CU.
+- **Constraint:** Max - Min cannot exceed 16 CU.
+- **Scale-to-zero:** Enabled by default (5 min timeout).
 
-## Branches
-
-Branches are copy-on-write snapshots of an existing branch. Use them for **experimentation**: testing schema migrations, trying queries, or previewing data changes -- without affecting production.
-
-```bash
-databricks postgres create-branch projects/<PROJECT_ID> <BRANCH_ID> \
-  --json '{
-    "spec": {
-      "source_branch": "projects/<PROJECT_ID>/branches/<SOURCE_BRANCH_ID>",
-      "no_expiry": true
-    }
-  }' --profile <PROFILE>
-```
-
-Branches require an expiration policy: use `"no_expiry": true` for permanent branches.
-
-When done experimenting, delete the branch. Protected branches must be unprotected first -- use `update-branch` to set `spec.is_protected` to `false`, then delete:
+See [computes-and-scaling.md](references/computes-and-scaling.md) for sizing tables, endpoint CRUD, and scale-to-zero details.
 
 ```bash
-# Step 1 — unprotect
-databricks postgres update-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> \
-  --json '{"spec": {"is_protected": false}}' --profile <PROFILE>
-
-# Step 2 — delete (run -h to confirm positional arg format for your CLI version)
-databricks postgres delete-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+# Resize an endpoint
+databricks postgres update-endpoint \
+  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
+  "spec.autoscaling_limit_min_cu,spec.autoscaling_limit_max_cu" \
+  --json '{"spec": {"autoscaling_limit_min_cu": 2.0, "autoscaling_limit_max_cu": 8.0}}' \
   --profile <PROFILE>
 ```
 
-**Never delete the `production` branch** — it is the authoritative branch auto-provisioned at project creation.
+## Branches
 
+Branches are copy-on-write snapshots. Use for testing schema migrations, trying queries, or previewing data changes without affecting production.
+
+```bash
+databricks postgres create-branch projects/<PROJECT_ID> <BRANCH_ID> \
+  --json '{"spec": {"source_branch": "projects/<PROJECT_ID>/branches/<SOURCE>", "no_expiry": true}}' \
+  --profile <PROFILE>
+```
+
+Branches require an expiration policy: `"no_expiry": true` for permanent, or `"ttl": "<seconds>s"` (max 30 days).
+
+**Limits:** 10 unarchived branches per project. 8 TB logical data per branch. 1,000 projects per workspace.
+
+| Use Case | TTL |
+|----------|-----|
+| CI/CD environments | 2--4 hours (`"ttl": "14400s"`) |
+| Demos | 24--48 hours (`"ttl": "172800s"`) |
+| Feature development | 1--7 days (`"ttl": "604800s"`) |
+| Long-term testing | Up to 30 days (`"ttl": "2592000s"`) |
+
+**Point-in-time branching:** Create from a past state (within restore window) for recovery. Run `databricks postgres create-branch -h` for time specification fields.
+
+**Reset:** Replaces branch data with latest from parent. Local changes are lost. Root branches and branches with children cannot be reset.
+
+```bash
+databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
+```
+
+**Delete:** Protected branches must be unprotected first (`update-branch` to set `spec.is_protected` to `false`). Cannot delete branches with children. **Never delete the `production` branch.**
+
+## Key Differences from Lakebase Provisioned
+
+> All new instances default to Autoscaling as of March 2026. Automatic migration of Provisioned instances begins June 2026.
+
+| Aspect | Provisioned | Autoscaling |
+|--------|-------------|-------------|
+| CLI group | `databricks database` | `databricks postgres` |
+| Top-level resource | Instance | Project |
+| Capacity | CU_1--CU_8 (16 GB/CU) | 0.5--112 CU (2 GB/CU) |
+| Branching | Not supported | Full support |
+| Scale-to-zero | Not supported | Configurable |
+| HA | Readable secondaries | 1--3 secondaries + read replicas |
+| Data API | Not available | PostgREST HTTP API |
+| Cloud | AWS only | AWS and Azure |
+
+**Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
 ## What's Next
 
 ### Build a Databricks App
 
-After creating a Lakebase project, scaffold a Databricks App connected to it.
-
-**Step 1 — Discover branch name** (use `.name` from a `READY` branch):
+After creating a project, scaffold a connected Databricks App:
 
 ```bash
+# 1. Get branch name
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
-```
 
-**Step 2 — Discover database name** (use `.name` from the desired database; `<BRANCH_ID>` is the branch ID, not the full resource name):
-
-```bash
+# 2. Get database name
 databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
-```
 
-**Step 3 — Scaffold the app** with the `lakebase` feature:
-
-```bash
-databricks apps init --name <APP_NAME> \
-  --features lakebase \
+# 3. Scaffold with lakebase feature
+databricks apps init --name <APP_NAME> --features lakebase \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
 ```
 
-Where `<BRANCH_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>`) and `<DATABASE_NAME>` is the full resource name (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
-
-For the full app development workflow, use the **`databricks-apps`** skill.
+For the full app workflow, use the **`databricks-apps`** skill.
 
 ### Schema Permissions for Deployed Apps
 
-When a Lakebase database is used by a deployed Databricks App, the app's Service Principal has `CAN_CONNECT_AND_CREATE` permission, which means it can create new objects but **cannot access any existing schemas or tables** (including `public`). The SP must create the schema itself to become its owner.
+The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new objects but **cannot access existing schemas**. The SP must create the schema to become its owner.
 
 **ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
 
-When deployed, the app's Service Principal runs the schema initialization SQL (e.g. `CREATE SCHEMA IF NOT EXISTS app_data`), creating the schema and tables — and becoming their **owner**. Only the owner (or a superuser) can access those objects.
-
-**If you run locally first**, your personal credentials create the schema and become the owner. The deployed Service Principal then **cannot access it** — even though it has `CAN_CONNECT_AND_CREATE` — because it didn't create it and cannot access existing schemas.
-
 **Correct workflow:**
-1. **Deploy first**: `databricks apps deploy <APP_NAME> --profile <PROFILE>` — verify with `databricks apps get <APP_NAME> --profile <PROFILE>` that the app is deployed before proceeding
-2. **Grant local access** *(if needed)*: if you're not the project creator, assign `databricks_superuser` to your identity via the Lakebase UI. Project creators already have sufficient access.
-3. **Develop locally**: your credentials get DML access (SELECT/INSERT/UPDATE/DELETE) to SP-owned schemas
+1. **Deploy first**: `databricks apps deploy <APP_NAME> --profile <PROFILE>`
+2. **Grant local access** *(if needed)*: assign `databricks_superuser` via UI (project creators already have access)
+3. **Develop locally**: your credentials get DML access to SP-owned schemas
 
-> **Note:** Project creators already have access to SP-owned schemas. Other team members need `databricks_superuser` (grants full DML but **not DDL**). If you need to alter the schema during local development, redeploy the app to apply DDL changes.
-
-**If you already ran locally first** and hit `permission denied` after deploying: the schema is owned by your personal credentials, not the SP. **⚠️ Do NOT drop the schema without asking the user first** — dropping it (`DROP SCHEMA <name> CASCADE`) **deletes all data** in that schema. Ask the user how they'd like to proceed:
-- **Option A (destructive):** Drop the schema and redeploy so the SP recreates it. Only safe if the schema has no valuable data.
-- **Option B (manual):** The user can reassign ownership or manually grant the SP access, preserving existing data.
-
+**If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data. Ask the user to choose: (A) drop and redeploy (destructive), or (B) manually reassign ownership (preserves data).
 ### Other Workflows
 
-**Connect a Postgres client**
-Get the connection string from the endpoint, then connect with psql, DBeaver, or any standard Postgres client.
-
 ```bash
+# Connect a Postgres client -- get connection string
 databricks postgres get-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> --profile <PROFILE>
-```
 
-**Manage roles and permissions**
-Create Postgres roles and grant access to databases or schemas.
+# Manage roles
+databricks postgres create-role -h
 
-```bash
-databricks postgres create-role -h   # discover role spec fields
-```
-
-**Add a read-only endpoint**
-Create a read replica for analytics or reporting workloads to avoid contention on the primary read-write endpoint.
-
-```bash
+# Add a read replica
 databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <ENDPOINT_ID> \
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
+
+**Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
+**Reverse ETL:** Sync Delta tables into Lakebase. See [reverse-etl.md](references/reverse-etl.md).
 
 ## Troubleshooting
 
@@ -199,6 +228,22 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions |
-| `permission denied for schema <name>` | Schema owned by another role. Deploy the app first so the SP creates and owns the schema. See **Schema Permissions for Deployed Apps** above |
-| Protected branch cannot be deleted | `update-branch` to set `spec.is_protected` to `false` first |
+| `permission denied for schema` | Schema owned by another role. Deploy app first so SP creates/owns it |
+| Protected branch won't delete | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
+| Token expired during long query | Tokens expire after 1 hour; implement refresh (see [connectivity.md](references/connectivity.md)) |
+| Connection refused after scale-to-zero | Compute wakes in ~100ms; implement retry logic |
+| Branch deletion blocked | Delete child branches first |
+| Autoscaling range too wide | Max - Min cannot exceed 16 CU |
+| SSL required error | Always use `sslmode=require` |
+| Update mask required | All `update-*` operations require specifying fields (see `-h`) |
+| Connection closed after idle | 24h idle timeout; max lifetime beyond 24h not guaranteed. Implement retry. |
+| DNS resolution fails (macOS) | Python `socket.getaddrinfo()` fails with long hostnames. Use `dig` to resolve IP, pass via `hostaddr` param alongside `host` (for TLS SNI). See [connectivity.md](references/connectivity.md). |
+## SDK and Version Requirements
+
+| Component | Minimum Version |
+|-----------|----------------|
+| Databricks CLI | >= v0.294.0 |
+| Databricks SDK for Python | >= 0.81.0 (for `w.postgres` module) |
+| psycopg | 2.x or 3.x (3.x recommended for async/pooling) |
+| Postgres | 16 or 17 (default: PG 17) |
