@@ -64,6 +64,7 @@ User request → What kind of output?
 - **Auto CDC supports TRUNCATE** (SCD Type 1 only) → SQL: `APPLY AS TRUNCATE WHEN condition`. Python: `apply_as_truncates=expr("condition")`. Do NOT say truncate is unsupported.
 - **Python-only features** → Sinks, ForEachBatch Sinks, CDC from snapshots, and custom data sources are Python-only. When the user is working in SQL, explicitly clarify this and suggest switching to Python.
 - **MV incremental refresh** → Materialized Views on **serverless** pipelines support automatic incremental refresh for aggregations. Mention the serverless requirement when discussing incremental refresh.
+- **UNRESOLVED_COLUMN / UNRESOLVED_COLUMN.WITH_SUGGESTION** → If encountered, verify that the upstream tables actually contain the referenced columns. If the upstream table uses Auto Loader, ensure its schema includes the expected fields (e.g., via `schemaHints`).
 - **Recommend ONE clear approach** → Present a single recommended approach. Do NOT present anti-patterns or significantly inferior alternatives — it confuses users. Only mention alternatives if they are genuinely viable for different trade-offs.
 
 ## Publishing Modes

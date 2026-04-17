@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-03-25T23:11:20Z",
+  "updated_at": "2026-03-28T00:00:00Z",
   "skills": {
     "databricks": {
       "version": "0.1.0",
@@ -55,7 +55,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-03-22T09:19:20Z",
+      "updated_at": "2026-03-28T00:00:00Z",
       "files": [
         "SKILL.md",
         "references/auto-cdc-python.md",
@@ -93,7 +93,7 @@
         "references/view.md",
         "references/write-spark-declarative-pipelines.md"
       ],
-      "base_revision": "5c4b4fb0a82a"
+      "base_revision": "4f4ad819991c"
     }
   }
 }
