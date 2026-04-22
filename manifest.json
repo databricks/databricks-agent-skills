@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-04-14T11:39:36Z",
+  "updated_at": "2026-04-22T15:52:03Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -143,6 +143,23 @@
         "references/write-spark-declarative-pipelines.md"
       ],
       "base_revision": "5c4b4fb0a82a"
+    },
+    "databricks-serverless-migration": {
+      "version": "0.1.0",
+      "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
+      "experimental": false,
+      "updated_at": "2026-04-22T15:52:03Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/code-patterns.md",
+        "references/compatibility-checks.md",
+        "references/configuration-guide.md",
+        "references/networking-and-security.md",
+        "references/streaming-migration.md"
+      ]
     }
   }
 }
