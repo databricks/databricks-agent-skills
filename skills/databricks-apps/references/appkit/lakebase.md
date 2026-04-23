@@ -165,6 +165,47 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 ```
 
+## Reading from Synced Tables
+
+Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `pool.query()` pattern but **read-only**.
+
+**Key differences from CRUD tables:**
+
+| | CRUD Tables | Synced Tables |
+|--|-------------|---------------|
+| Created by | App SP (via `CREATE TABLE`) | Sync pipeline (DLT) |
+| Owned by | SP role | System role (`databricks_writer_*`) |
+| Operations | Read + Write | **Read-only** (writes corrupt sync) |
+| Schema init | App must `CREATE SCHEMA/TABLE` | Already exists after sync |
+| Deploy-first | Required (SP must own schema) | Not required |
+
+**Permission grant required:** The app's SP has `CAN_CONNECT_AND_CREATE` but does **not** have `pg_read_all_data`. To read synced tables, the project owner must grant access:
+
+```sql
+-- Run as project owner (databricks_superuser), not as the SP
+GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
+```
+
+**Example route reading synced taxi data:**
+
+```typescript
+app.get('/api/taxi/top-pickups', async (_req, res) => {
+  const { rows } = await pool.query(`
+    SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
+    FROM public.nyc_trips
+    GROUP BY pickup_zip
+    ORDER BY trip_count DESC
+    LIMIT 10
+  `);
+  res.json(rows);
+});
+```
+
+> **Do not write to synced tables.** The sync pipeline manages the data — direct writes corrupt the sync state. For mixed read/write patterns, read from synced tables and write to separate app-owned tables.
+
+For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../databricks-lakebase/references/synced-tables.md).
+
 ## Key Differences from Analytics Pattern
 
 | | Analytics | Lakebase |

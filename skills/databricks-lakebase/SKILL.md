@@ -26,13 +26,13 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 | OAuth Authentication | 1-hour token expiry, refresh before expiry |
 | High Availability | 1 primary + 1--3 secondaries, automatic failover |
 | Data API | PostgREST-compatible HTTP CRUD (Autoscaling only) |
-| Reverse ETL | Sync Delta tables to Postgres via synced tables |
+| Synced Tables | Sync Delta tables to Postgres via synced tables |
 | Cloud Support | AWS and Azure (GA) |
 
 **Reference docs:**
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
 - [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
-- [reverse-etl.md](references/reverse-etl.md) — Synced tables, data type mapping, capacity planning
+- [synced-tables.md](references/synced-tables.md) — Synced tables, data type mapping, capacity planning
 
 ## Resource Hierarchy
 
