@@ -49,6 +49,7 @@ Project (top-level container)
 - **Endpoint** (called **Compute** in UI): Compute resource powering a branch. Types: `ENDPOINT_TYPE_READ_WRITE`, `ENDPOINT_TYPE_READ_ONLY`.
 - **Database**: Standard Postgres database within a branch. Default: `databricks_postgres`.
 - **Role**: Postgres role within a branch.
+
 ### Resource Name Formats
 
 | Resource | Format |
@@ -59,6 +60,7 @@ Project (top-level container)
 | Database | `projects/{project_id}/branches/{branch_id}/databases/{database_id}` |
 
 All IDs: 1-63 characters, start with lowercase letter, lowercase letters/numbers/hyphens only (RFC 1123).
+
 ## CLI Discovery -- ALWAYS Do This First
 
 > **Note:** "Lakebase" is the product name; the CLI command group is `postgres`. All commands use `databricks postgres ...`.
@@ -171,6 +173,7 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 | Cloud | AWS only | AWS and Azure |
 
 **Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
+
 ## What's Next
 
 ### Build a Databricks App
@@ -205,6 +208,7 @@ The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new ob
 3. **Develop locally**: your credentials get DML access to SP-owned schemas
 
 **If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data. Ask the user to choose: (A) drop and redeploy (destructive), or (B) manually reassign ownership (preserves data).
+
 ### Other Workflows
 
 ```bash
@@ -218,9 +222,6 @@ databricks postgres create-role -h
 databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <ENDPOINT_ID> \
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
-
-**Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
-**Reverse ETL:** Sync Delta tables into Lakebase. See [reverse-etl.md](references/reverse-etl.md).
 
 ## Troubleshooting
 
@@ -239,6 +240,7 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 | Update mask required | All `update-*` operations require specifying fields (see `-h`) |
 | Connection closed after idle | 24h idle timeout; max lifetime beyond 24h not guaranteed. Implement retry. |
 | DNS resolution fails (macOS) | Python `socket.getaddrinfo()` fails with long hostnames. Use `dig` to resolve IP, pass via `hostaddr` param alongside `host` (for TLS SNI). See [connectivity.md](references/connectivity.md). |
+
 ## SDK and Version Requirements
 
 | Component | Minimum Version |
