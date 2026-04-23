@@ -9,7 +9,9 @@
 
 **Connection timeouts:** 24h idle timeout is guaranteed. Max connection lifetime beyond 24h is not guaranteed — implement reconnection logic. Always use `sslmode=require`.
 
-## Connection Patterns
+## Connection Patterns (Python)
+
+> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity fully auto-injected via `createLakebasePool()` — see the **`databricks-apps`** skill.
 
 ### Pattern 1: Direct Connection (Scripts/Notebooks)
 
@@ -87,6 +89,46 @@ import os
 url = os.environ["LAKEBASE_PG_URL"]
 engine = create_engine(url, pool_size=5)
 ```
+
+### Pattern 4: Databricks App (Python)
+
+For Python apps deployed on Databricks (FastAPI, Flask, Streamlit). Platform injects env vars automatically when the app has a Lakebase database resource.
+
+**Auto-injected env vars (set at deploy time):**
+
+| Variable | Description |
+|----------|-------------|
+| `PGHOST` | Lakebase hostname |
+| `PGPORT` | Port (default 5432) |
+| `PGDATABASE` | Database name |
+| `PGUSER` | Service principal client ID |
+| `PGSSLMODE` | SSL mode (`require`) |
+| `LAKEBASE_ENDPOINT` | Endpoint resource path |
+
+**Pattern:**
+```python
+import os
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# Generate OAuth token using platform-injected endpoint
+token = w.postgres.generate_database_credential(
+    endpoint=os.environ["LAKEBASE_ENDPOINT"]
+).token
+
+# Connect using platform-injected env vars
+conn = psycopg.connect(
+    host=os.environ["PGHOST"],
+    port=os.environ.get("PGPORT", "5432"),
+    dbname=os.environ["PGDATABASE"],
+    user=os.environ["PGUSER"],
+    password=token,
+    sslmode="require",
+)
+```
+
+For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy pooling. For the full app development workflow (scaffolding, tRPC, schema init), use the **`databricks-apps`** skill.
 
 ## Best Practices
 
