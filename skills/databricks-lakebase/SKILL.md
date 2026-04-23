@@ -109,22 +109,9 @@ databricks postgres delete-project projects/<PROJECT_ID> --profile <PROFILE>
 
 ## Autoscaling
 
-Endpoints use **compute units (CU)** (~2 GB RAM per CU). Configure min/max CU on endpoints.
+Endpoints use **compute units (CU)** (~2 GB RAM per CU). Range: 0.5--32 CU (dynamic), 36--112 CU (fixed). Scale-to-zero enabled by default (5 min timeout).
 
-- **Autoscale range:** 0.5--32 CU (dynamic). **Fixed-size:** 36--112 CU.
-- **Constraint:** Max - Min cannot exceed 16 CU.
-- **Scale-to-zero:** Enabled by default (5 min timeout).
-
-See [computes-and-scaling.md](references/computes-and-scaling.md) for sizing tables, endpoint CRUD, and scale-to-zero details.
-
-```bash
-# Resize an endpoint
-databricks postgres update-endpoint \
-  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
-  "spec.autoscaling_limit_min_cu,spec.autoscaling_limit_max_cu" \
-  --json '{"spec": {"autoscaling_limit_min_cu": 2.0, "autoscaling_limit_max_cu": 8.0}}' \
-  --profile <PROFILE>
-```
+See [computes-and-scaling.md](references/computes-and-scaling.md) for sizing tables, endpoint CRUD, and configuration details.
 
 ## Branches
 
@@ -222,6 +209,9 @@ databricks postgres create-role -h
 databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <ENDPOINT_ID> \
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
+
+**Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
+**Synced Tables:** Sync Delta tables into Lakebase. See [synced-tables.md](references/synced-tables.md).
 
 ## Troubleshooting
 

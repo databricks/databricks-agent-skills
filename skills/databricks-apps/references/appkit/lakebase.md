@@ -204,7 +204,7 @@ app.get('/api/taxi/top-pickups', async (_req, res) => {
 
 > **Do not write to synced tables.** The sync pipeline manages the data — direct writes corrupt the sync state. For mixed read/write patterns, read from synced tables and write to separate app-owned tables.
 
-For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../databricks-lakebase/references/synced-tables.md).
+For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md).
 
 ## Key Differences from Analytics Pattern
 
