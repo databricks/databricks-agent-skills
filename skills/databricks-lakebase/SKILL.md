@@ -1,6 +1,6 @@
 ---
 name: databricks-lakebase
-description: "Manage Lakebase Postgres Autoscaling projects, branches, and endpoints via Databricks CLI. Use when asked to create, configure, or manage Lakebase Postgres databases, projects, branches, computes, or endpoints."
+description: "Manages Lakebase Postgres Autoscaling projects, branches, endpoints, and synced tables (reverse ETL) via Databricks CLI. Covers creating and configuring projects, computes, scale-to-zero, high availability, branching, PostgreSQL connectivity, OAuth token refresh, connection pooling, Data API (PostgREST), and syncing Delta tables to Postgres. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
@@ -17,17 +17,17 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 
 **Compliance:** Supports HIPAA, C5, TISAX, or None.
 
-| Feature | Status |
-|---------|--------|
-| Autoscaling Compute | 0.5--32 CU dynamic, 36--112 CU fixed (~2 GB RAM/CU) |
-| Scale-to-Zero | Default 5 min timeout, minimum 60s |
-| Branching | Copy-on-write isolated environments |
-| Point-in-Time Branching | Create branches from past state |
-| OAuth Authentication | 1-hour token expiry, refresh before expiry |
-| High Availability | 1 primary + 1--3 secondaries, automatic failover |
-| Data API | PostgREST-compatible HTTP CRUD (Autoscaling only) |
-| Synced Tables | Sync Delta tables to Postgres via synced tables |
-| Cloud Support | AWS and Azure (GA) |
+## Capabilities
+
+- **Project lifecycle** -- create, update, delete Lakebase Postgres Autoscaling projects
+- **Branching** -- copy-on-write branches with TTL, point-in-time recovery, and reset
+- **Compute scaling** -- autoscale 0.5--32 CU, fixed 36--112 CU, scale-to-zero
+- **High availability** -- 1 primary + 1--3 secondaries, automatic failover
+- **PostgreSQL connectivity** -- OAuth token refresh, connection pooling, SSL
+- **Data API** -- PostgREST-compatible HTTP CRUD (Autoscaling only)
+- **Synced tables (reverse ETL)** -- sync Unity Catalog Delta tables into Postgres
+- **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow
+- **Cloud support** -- AWS and Azure (GA)
 
 **Reference docs:**
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
@@ -230,6 +230,9 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 | Update mask required | All `update-*` operations require specifying fields (see `-h`) |
 | Connection closed after idle | 24h idle timeout; max lifetime beyond 24h not guaranteed. Implement retry. |
 | DNS resolution fails (macOS) | Python `socket.getaddrinfo()` fails with long hostnames. Use `dig` to resolve IP, pass via `hostaddr` param alongside `host` (for TLS SNI). See [connectivity.md](references/connectivity.md). |
+| `storage_catalog` pipeline failure | `new_pipeline_spec.storage_catalog` must be a regular UC catalog, not the Lakebase catalog. DLT cannot write event logs to Postgres-backed schemas. |
+| Synced table CDF error | Enable CDF on source: `ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`. Required for Triggered/Continuous modes. |
+| Sync permissions error | Ensure `USE CATALOG`/`USE SCHEMA` on source table and `CREATE TABLE` in storage catalog |
 
 ## SDK and Version Requirements
 
