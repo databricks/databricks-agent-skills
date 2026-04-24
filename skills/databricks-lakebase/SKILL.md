@@ -221,7 +221,19 @@ databricks postgres generate-database-credential \
   --profile <PROFILE>
 
 # 3. Connect (use token from step 2 as password, host from step 1)
-PGPASSWORD='<TOKEN>' psql -h <HOST> -U <USERNAME> -d databricks_postgres "sslmode=require"
+PGPASSWORD='<TOKEN>' psql "host=<HOST> user=<USERNAME> dbname=databricks_postgres sslmode=require"
+```
+
+> **Note:** `generate-database-credential` requires the **endpoint** resource path (`.../endpoints/<ENDPOINT_ID>`), not a database or branch path.
+
+**Scriptable version** (single copy-paste, useful for agents):
+```bash
+EP=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
+HOST=$(databricks postgres get-endpoint $EP --profile <PROFILE> -o json \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['status']['hosts']['host'])")
+TOKEN=$(databricks postgres generate-database-credential $EP --profile <PROFILE> -o json \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
+PGPASSWORD="$TOKEN" psql "host=$HOST user=<USERNAME> dbname=databricks_postgres sslmode=require"
 ```
 
 **Grant app SP access to synced tables** (run as project owner after sync is ONLINE and app is deployed):
@@ -257,6 +269,7 @@ Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `serv
 | Sync permissions error | Ensure `USE CATALOG`/`USE SCHEMA` on source table and `CREATE TABLE` in storage catalog |
 | Synced table null bytes | Null bytes (0x00) in STRING/ARRAY/MAP/STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')` |
 | Synced table data modified | Only read queries, indexes, and DROP TABLE allowed on synced tables in Postgres. Modifications break sync pipeline. |
+| DABs `synced_database_tables` with Autoscaling | Do NOT use — maps to the Provisioned API. Use `databricks postgres create-synced-table` CLI instead. DAB support for Autoscaling synced tables (`postgres_synced_tables`) is not yet available. |
 
 ## SDK and Version Requirements
 
