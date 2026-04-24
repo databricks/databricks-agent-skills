@@ -48,6 +48,10 @@ SKILL_METADATA = {
         "description": "Proto-first schema design for Databricks apps",
         "experimental": False,
     },
+    "databricks-serverless-migration": {
+        "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
+        "experimental": False,
+    },
 }
 
 
