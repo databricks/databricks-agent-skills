@@ -72,7 +72,7 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 ## When to Use What
 
-> **If the user asks for fast, instant, or low-latency reads of lakehouse data:** present two options before proceeding:
+> **If the user asks for fast, instant, or low-latency reads of lakehouse data — or mentions quick lookups, search by key/ID, feature serving, product catalog, real-time, or operational dashboards:** present two options before proceeding:
 > - **(A) Analytics** — precompute aggregates in a SQL query, load once via `useAnalyticsQuery`, filter client-side. Simpler setup, but requires a running SQL warehouse and initial query takes seconds.
 > - **(B) Synced tables** — sync a gold table from Delta into Lakebase Postgres for OLTP-speed point lookups. Requires a Lakebase project but gives true low-latency reads without a SQL warehouse. See [Lakebase Guide](references/appkit/lakebase.md).
 >
@@ -87,7 +87,7 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
 
-> **Choosing between Analytics and Lakebase for reads:** If the user doesn't mention latency, default to the analytics pattern (simpler setup). If they mention "fast", "instant", "low latency", or "don't want to wait" — always present both options from the decision gate above before committing to an approach.
+> **Choosing between Analytics and Lakebase for reads:** If the user doesn't mention latency or real-time needs, default to the analytics pattern (simpler setup). If they mention "fast", "instant", "low latency", "quick", "quickly", "search by ID/key", "don't want to wait", "real-time", "point queries", "feature serving", "product catalog", or "no warehouse" — always present both options from the decision gate above before committing to an approach.
 
 ## Frameworks
 

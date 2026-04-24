@@ -187,6 +187,7 @@ App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync
 
 **Do NOT use synced tables when:**
 - OLAP-heavy workload (large scans, aggregations, heavy joins) — use DBSQL + materialized views (seconds-to-minutes latency is acceptable for dashboards)
+- Your app aggregates across large synced tables (GROUP BY, JOINs on millions of rows) — pre-aggregate in Delta first, then sync the small result table
 - You need to write back to the synced data — writes corrupt sync; use separate Lakebase OLTP tables
 - Table is huge + high churn (>1TB) — sync only small serving/gold tables, keep raw data on Delta
 - UC FGAC (row filters, column masks) is critical — synced tables don't propagate UC policies; use DBSQL with user authorization
@@ -211,6 +212,7 @@ Synced tables (created via `databricks postgres create-synced-table`) appear as 
 -- Run as project owner (databricks_superuser), not as the SP
 GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
 
 **Example tRPC route reading synced taxi data:**

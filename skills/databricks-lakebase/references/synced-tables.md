@@ -176,7 +176,7 @@ databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.public
 ## Capacity Planning
 
 - **Connections:** Each synced table uses up to 16 connections toward the endpoint limit
-- **Storage:** 8 TB total across all synced tables
+- **Storage:** 8 TB logical data per branch (synced tables count toward the branch storage limit)
 - **Recommendation:** Keep individual tables under 1 TB if they require incremental refreshes
 - **Connections (instance):** 1,000 max concurrent connections per instance
 - **Naming:** Database, schema, and table names allow `[A-Za-z0-9_]+` only
@@ -196,8 +196,9 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 
 ## Best Practices
 
-1. Enable CDF on source tables before creating Triggered/Continuous syncs
-2. Snapshot mode is 10x more efficient when >10% of data changes per cycle
-3. Monitor sync status for failures and latency via Catalog Explorer
-4. Create indexes in Postgres for your application query patterns
-5. Account for the 16-connection-per-table limit when planning endpoint capacity
+1. **Sync gold/aggregated tables, not raw tables.** Synced tables are for serving pre-curated data at OLTP speed. If your app needs aggregations (GROUP BY, JOINs across large tables), create a gold Delta table or materialized view first, then sync that. Syncing raw tables and aggregating in Postgres defeats the latency benefit — Postgres is not optimized for OLAP workloads on millions of rows.
+2. Enable CDF on source tables before creating Triggered/Continuous syncs
+3. Snapshot mode is ~10x faster than incremental when >10% of data changes per cycle
+4. Monitor sync status for failures and latency via Catalog Explorer
+5. Create indexes in Postgres for your application query patterns
+6. Account for the 16-connection-per-table limit when planning endpoint capacity
