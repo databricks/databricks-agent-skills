@@ -153,7 +153,10 @@ import subprocess
 
 def resolve_host(hostname: str) -> str:
     result = subprocess.run(["dig", "+short", hostname], capture_output=True, text=True)
-    return result.stdout.strip().splitlines()[0]
+    lines = result.stdout.strip().splitlines()
+    if not lines:
+        raise RuntimeError(f"DNS resolution failed for {hostname}")
+    return lines[0]
 
 ip = resolve_host(endpoint_host)
 

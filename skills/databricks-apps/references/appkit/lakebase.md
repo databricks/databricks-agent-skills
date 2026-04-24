@@ -7,8 +7,10 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 | Pattern | Use Case | Data Source |
 |---------|----------|-------------|
 | Analytics | Read-only dashboards, charts, KPIs | Databricks SQL Warehouse |
-| Lakebase | CRUD operations, persistent state, forms | PostgreSQL (Lakebase Autoscaling) |
+| Lakebase | CRUD operations, persistent state, forms, low-latency reads of synced lakehouse data | PostgreSQL (Lakebase Autoscaling) |
 | Both | Dashboard with user preferences/saved state | Warehouse + Lakebase |
+
+> **Serving lakehouse data to apps?** If your app needs low-latency reads of Delta/UC tables (entity lookups, product catalogs, feature serving), use **synced tables** to materialize them into Lakebase instead of querying a SQL warehouse (which takes seconds to minutes). See *Reading from Synced Tables* below.
 
 ## Scaffolding
 
@@ -166,6 +168,30 @@ const prisma = new PrismaClient({ adapter });
 ```
 
 ## Reading from Synced Tables
+
+Synced tables materialize Delta/UC tables into Lakebase Postgres for low-latency app reads. The lakehouse remains the source of truth; Lakebase serves as a read-optimized index.
+
+**Architecture:**
+```
+Delta gold tables  →  Synced tables (read-only)  →  App reads via pool.query()
+App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync → Delta
+```
+
+**Use synced tables when** data is curated in Delta, changes relatively slowly, and must be served at OLTP latency:
+
+- **Operational consoles over gold tables** — support portals, sales ops, supply-chain cockpits that need row-level drill-down with fast filters and point lookups on curated Delta tables (tickets, orders, assets, SLAs)
+- **User-facing apps on analytical data** — serve product catalogs, personalization attributes, experiment assignments, pricing from Lakebase instead of hitting the warehouse (seconds to minutes) directly
+- **Online feature serving / ML** — sync features or predictions (churn scores, recommendations, risk scores) from lakehouse into Lakebase for real-time inference; app writes feedback/overrides to separate OLTP tables
+- **Hybrid read/write patterns** — join app-owned mutable state (tasks, approvals, comments) with read-only synced reference data (customers, products, policies, ML scores) for rich views
+- **Postgres-specific capabilities on lakehouse data** — when the app benefits from B-tree/GiST/GIN indexes, JSONB, pgvector, or PostGIS on Delta-derived tables
+
+**Do NOT use synced tables when:**
+- OLAP-heavy workload (large scans, aggregations, heavy joins) — use DBSQL + materialized views (seconds-to-minutes latency is acceptable for dashboards)
+- You need to write back to the synced data — writes corrupt sync; use separate Lakebase OLTP tables
+- Table is huge + high churn (>1TB) — sync only small serving/gold tables, keep raw data on Delta
+- UC FGAC (row filters, column masks) is critical — synced tables don't propagate UC policies; use DBSQL with user authorization
+
+### How It Works
 
 Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `pool.query()` pattern but **read-only**.
 
