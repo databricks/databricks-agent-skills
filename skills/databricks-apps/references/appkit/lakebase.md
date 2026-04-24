@@ -232,6 +232,8 @@ topPickups: publicProcedure.query(async () => {
 
 For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md).
 
+> **Creating synced tables for apps:** Use `databricks postgres create-synced-table` (see the **`databricks-lakebase`** skill). After sync completes and app is deployed, grant the app's SP read access — the GRANT SQL is shown above, connect via psql (see the lakebase skill's SKILL.md Other Workflows for connection steps).
+
 ## Key Differences from Analytics Pattern
 
 | | Analytics | Lakebase |

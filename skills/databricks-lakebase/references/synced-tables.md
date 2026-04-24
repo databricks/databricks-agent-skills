@@ -50,6 +50,8 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 
 ## Creating Synced Tables
 
+> **Source table must exist first.** Synced tables sync from an existing UC table, view, or materialized view. If the source needs transformation, ask the user how they want to prepare it (DLT materialized view, regular view, or existing table). Do not run ad-hoc `CREATE TABLE AS SELECT` statements.
+
 ```bash
 databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
   --json '{
@@ -96,6 +98,8 @@ databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.<SCHEM
 ```
 
 Deletes the sync pipeline and the UC table entry. The Postgres table remains and must be dropped manually if no longer needed (`DROP TABLE <schema>.<table>`).
+
+> **DABs:** The bundle schema includes `synced_database_tables`, but it maps to the Provisioned Terraform resource (`databricks_database_synced_database_table`), not the Autoscaling API. **Do not use `synced_database_tables` in DABs with Autoscaling projects** — it routes through the Provisioned API and may create unintended Provisioned instances. DAB support for Autoscaling synced tables (`postgres_synced_tables`) is blocked on Terraform provider work and not yet available. **For Autoscaling projects, use the CLI commands above.**
 
 ## Example: Sync NYC Taxi Data to Lakebase
 
