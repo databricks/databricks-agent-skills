@@ -75,10 +75,13 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
+- **Read lakehouse data with low latency (entity lookups, catalogs, features)**: Consider syncing Delta tables into Lakebase — see [Lakebase Guide](references/appkit/lakebase.md). Use when the app needs fast point lookups and DBSQL warehouse latency (seconds to minutes) is too slow.
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
+
+> **Choosing between Analytics and Lakebase for reads:** If the user wants to display lakehouse data and hasn't specified latency requirements, ask whether they need interactive/instant responses (→ consider synced tables in Lakebase) or whether dashboard-style latency is fine (→ DBSQL analytics). Don't force a choice — suggest the simpler analytics path as default, mention synced tables as an option if latency matters.
 
 ## Frameworks
 
