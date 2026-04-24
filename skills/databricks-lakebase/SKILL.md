@@ -233,6 +233,8 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 | `storage_catalog` pipeline failure | `new_pipeline_spec.storage_catalog` must be a regular UC catalog, not the Lakebase catalog. DLT cannot write event logs to Postgres-backed schemas. |
 | Synced table CDF error | Enable CDF on source: `ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`. Required for Triggered/Continuous modes. |
 | Sync permissions error | Ensure `USE CATALOG`/`USE SCHEMA` on source table and `CREATE TABLE` in storage catalog |
+| Synced table null bytes | Null bytes (0x00) in STRING/ARRAY/MAP/STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')` |
+| Synced table data modified | Only read queries, indexes, and DROP TABLE allowed on synced tables in Postgres. Modifications break sync pipeline. |
 
 ## SDK and Version Requirements
 

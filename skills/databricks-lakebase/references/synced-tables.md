@@ -28,19 +28,25 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 
 ## Prerequisites
 
-Before creating synced tables, register a UC catalog for your Lakebase database:
+- A Databricks workspace with Lakebase enabled
+- An active Lakebase project with a branch and endpoint
+- A Unity Catalog source table to sync
+- **Permissions:** `USE_SCHEMA` and `CREATE_TABLE` on the target schema
+- For Triggered/Continuous modes: Change Data Feed enabled on the source table
 
-```bash
-databricks postgres create-catalog <CATALOG_NAME> \
-  --json '{
-    "spec": {
-      "postgres_database": "<POSTGRES_DATABASE>",
-      "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>"
-    }
-  }' --profile <PROFILE>
-```
-
-The `<POSTGRES_DATABASE>` is the Postgres database name (default: `databricks_postgres`), not the resource path.
+> **Note:** Your Lakebase database must be registered as a UC catalog. If not already done, register one:
+>
+> ```bash
+> databricks postgres create-catalog <CATALOG_NAME> \
+>   --json '{
+>     "spec": {
+>       "postgres_database": "<POSTGRES_DATABASE>",
+>       "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>"
+>     }
+>   }' --profile <PROFILE>
+> ```
+>
+> The `<POSTGRES_DATABASE>` is the Postgres database name (default: `databricks_postgres`), not the resource path.
 
 ## Creating Synced Tables
 
@@ -73,8 +79,6 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
 | `new_pipeline_spec.storage_catalog` | Yes | A **regular** UC catalog for DLT pipeline metadata (NOT the Lakebase catalog) |
 | `new_pipeline_spec.storage_schema` | Yes | Schema in the storage catalog for pipeline metadata (e.g. `default`) |
 
-> **Important:** `new_pipeline_spec.storage_catalog` must be a regular Unity Catalog managed catalog, not the Lakebase catalog. Using the Lakebase catalog causes pipeline failures because DLT cannot create event log tables in Postgres-backed schemas.
-
 Long-running operation; CLI waits by default. Use `--no-wait` to return immediately.
 
 **Supported source types:** managed/external Delta tables, managed/external Iceberg tables, views, and materialized views.
@@ -91,21 +95,13 @@ databricks postgres get-synced-table "synced_tables/<LAKEBASE_CATALOG>.<SCHEMA>.
 databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.<SCHEMA>.<TABLE>" --profile <PROFILE>
 ```
 
+Deletes the sync pipeline and the UC table entry. The Postgres table remains and must be dropped manually if no longer needed (`DROP TABLE <schema>.<table>`).
+
 ## Example: Sync NYC Taxi Data to Lakebase
 
 Sync the `samples.nyctaxi.trips` sample table into Lakebase for low-latency app queries.
 
-**1. Register a UC catalog** (if not already done):
-
-```bash
-databricks postgres create-catalog <CATALOG_NAME> \
-  --json '{
-    "spec": {
-      "postgres_database": "databricks_postgres",
-      "branch": "projects/<PROJECT_ID>/branches/production"
-    }
-  }' --profile <PROFILE>
-```
+**1. Register a UC catalog** (if not already done — see Prerequisites above).
 
 **2. Create the synced table (Snapshot mode):**
 
@@ -176,12 +172,15 @@ databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.public
 ## Capacity Planning
 
 - **Connections:** Each synced table uses up to 16 connections toward the endpoint limit
-- **Storage:** 8 TB total across all synced tables per branch
+- **Storage:** 8 TB total across all synced tables
 - **Recommendation:** Keep individual tables under 1 TB if they require incremental refreshes
+- **Connections (instance):** 1,000 max concurrent connections per instance
 - **Naming:** Database, schema, and table names allow `[A-Za-z0-9_]+` only
 - **Schema evolution:** Only additive changes (adding columns) for Triggered/Continuous modes
 
 ## Lakehouse Sync (Beta, AWS only)
+
+> **Note:** This feature is not yet documented in the official synced tables docs. Verify availability in your workspace.
 
 Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC. Enables analytics and downstream pipelines on OLTP-written data. Azure support not yet available.
 

@@ -187,10 +187,10 @@ GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ```
 
-**Example route reading synced taxi data:**
+**Example tRPC route reading synced taxi data:**
 
 ```typescript
-app.get('/api/taxi/top-pickups', async (_req, res) => {
+topPickups: publicProcedure.query(async () => {
   const { rows } = await pool.query(`
     SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
     FROM public.nyc_trips
@@ -198,8 +198,8 @@ app.get('/api/taxi/top-pickups', async (_req, res) => {
     ORDER BY trip_count DESC
     LIMIT 10
   `);
-  res.json(rows);
-});
+  return rows;
+}),
 ```
 
 > **Do not write to synced tables.** The sync pipeline manages the data — direct writes corrupt the sync state. For mixed read/write patterns, read from synced tables and write to separate app-owned tables.
