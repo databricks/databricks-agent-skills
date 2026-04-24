@@ -210,6 +210,28 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
 
+**Run SQL against Lakebase** (GRANT, CREATE INDEX, etc.):
+```bash
+# 1. Get endpoint host
+databricks postgres get-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> --profile <PROFILE>
+
+# 2. Generate OAuth token
+databricks postgres generate-database-credential \
+  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
+  --profile <PROFILE>
+
+# 3. Connect (use token from step 2 as password, host from step 1)
+PGPASSWORD='<TOKEN>' psql -h <HOST> -U <USERNAME> -d databricks_postgres "sslmode=require"
+```
+
+**Grant app SP access to synced tables** (run as project owner after sync is ONLINE and app is deployed):
+```sql
+GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
+```
+Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `service_principal_client_id` field.
+
 **Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
 **Synced Tables:** Sync Delta tables into Lakebase. See [synced-tables.md](references/synced-tables.md).
 
