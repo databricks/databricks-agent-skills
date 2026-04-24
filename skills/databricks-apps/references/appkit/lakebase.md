@@ -7,8 +7,10 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 | Pattern | Use Case | Data Source |
 |---------|----------|-------------|
 | Analytics | Read-only dashboards, charts, KPIs | Databricks SQL Warehouse |
-| Lakebase | CRUD operations, persistent state, forms | PostgreSQL (Lakebase Autoscaling) |
+| Lakebase | CRUD operations, persistent state, forms, low-latency reads of synced lakehouse data | PostgreSQL (Lakebase Autoscaling) |
 | Both | Dashboard with user preferences/saved state | Warehouse + Lakebase |
+
+> **Serving lakehouse data to apps?** If your app needs low-latency reads of Delta/UC tables (entity lookups, product catalogs, feature serving), use **synced tables** to materialize them into Lakebase instead of querying a SQL warehouse (which takes seconds to minutes). See *Reading from Synced Tables* below.
 
 ## Scaffolding
 
@@ -164,6 +166,75 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 ```
+
+## Reading from Synced Tables
+
+Synced tables materialize Delta/UC tables into Lakebase Postgres for low-latency app reads. The lakehouse remains the source of truth; Lakebase serves as a read-optimized index.
+
+**Architecture:**
+```
+Delta gold tables  →  Synced tables (read-only)  →  App reads via pool.query()
+App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync → Delta
+```
+
+**Use synced tables when** data is curated in Delta, changes relatively slowly, and must be served at OLTP latency:
+
+- **Operational consoles over gold tables** — support portals, sales ops, supply-chain cockpits that need row-level drill-down with fast filters and point lookups on curated Delta tables (tickets, orders, assets, SLAs)
+- **User-facing apps on analytical data** — serve product catalogs, personalization attributes, experiment assignments, pricing from Lakebase instead of hitting the warehouse (seconds to minutes) directly
+- **Online feature serving / ML** — sync features or predictions (churn scores, recommendations, risk scores) from lakehouse into Lakebase for real-time inference; app writes feedback/overrides to separate OLTP tables
+- **Hybrid read/write patterns** — join app-owned mutable state (tasks, approvals, comments) with read-only synced reference data (customers, products, policies, ML scores) for rich views
+- **Postgres-specific capabilities on lakehouse data** — when the app benefits from B-tree/GiST/GIN indexes, JSONB, pgvector, or PostGIS on Delta-derived tables
+
+**Do NOT use synced tables when:**
+- OLAP-heavy workload (large scans, aggregations, heavy joins) — use DBSQL + materialized views (seconds-to-minutes latency is acceptable for dashboards)
+- Your app aggregates across large synced tables (GROUP BY, JOINs on millions of rows) — pre-aggregate in Delta first, then sync the small result table
+- You need to write back to the synced data — writes corrupt sync; use separate Lakebase OLTP tables
+- Table is huge + high churn (>1TB) — sync only small serving/gold tables, keep raw data on Delta
+- UC FGAC (row filters, column masks) is critical — synced tables don't propagate UC policies; use DBSQL with user authorization
+
+### How It Works
+
+Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `pool.query()` pattern but **read-only**.
+
+**Key differences from CRUD tables:**
+
+| | CRUD Tables | Synced Tables |
+|--|-------------|---------------|
+| Created by | App SP (via `CREATE TABLE`) | Sync pipeline (DLT) |
+| Owned by | SP role | System role (`databricks_writer_*`) |
+| Operations | Read + Write | **Read-only** (writes corrupt sync) |
+| Schema init | App must `CREATE SCHEMA/TABLE` | Already exists after sync |
+| Deploy-first | Required (SP must own schema) | Not required |
+
+**Permission grant required:** The app's SP has `CAN_CONNECT_AND_CREATE` but does **not** have `pg_read_all_data`. To read synced tables, the project owner must grant access:
+
+```sql
+-- Run as project owner (databricks_superuser), not as the SP
+GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
+```
+
+**Example tRPC route reading synced taxi data:**
+
+```typescript
+topPickups: publicProcedure.query(async () => {
+  const { rows } = await pool.query(`
+    SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
+    FROM public.nyc_trips
+    GROUP BY pickup_zip
+    ORDER BY trip_count DESC
+    LIMIT 10
+  `);
+  return rows;
+}),
+```
+
+> **Do not write to synced tables.** The sync pipeline manages the data — direct writes corrupt the sync state. For mixed read/write patterns, read from synced tables and write to separate app-owned tables.
+
+For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md).
+
+> **Creating synced tables for apps:** Use `databricks postgres create-synced-table` (see the **`databricks-lakebase`** skill). After sync completes and app is deployed, grant the app's SP read access — the GRANT SQL is shown above, connect via psql (see the lakebase skill's SKILL.md Other Workflows for connection steps).
 
 ## Key Differences from Analytics Pattern
 

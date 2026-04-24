@@ -1,6 +1,6 @@
 ---
 name: databricks-lakebase
-description: "Manage Lakebase Postgres Autoscaling projects, branches, and endpoints via Databricks CLI. Use when asked to create, configure, or manage Lakebase Postgres databases, projects, branches, computes, or endpoints."
+description: "Manages Lakebase Postgres Autoscaling projects, branches, endpoints, and synced tables (reverse ETL) via Databricks CLI. Covers creating and configuring projects, computes, scale-to-zero, high availability, branching, PostgreSQL connectivity, OAuth token refresh, connection pooling, Data API (PostgREST), and syncing Delta tables to Postgres. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
@@ -17,22 +17,22 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 
 **Compliance:** Supports HIPAA, C5, TISAX, or None.
 
-| Feature | Status |
-|---------|--------|
-| Autoscaling Compute | 0.5--32 CU dynamic, 36--112 CU fixed (~2 GB RAM/CU) |
-| Scale-to-Zero | Default 5 min timeout, minimum 60s |
-| Branching | Copy-on-write isolated environments |
-| Point-in-Time Branching | Create branches from past state |
-| OAuth Authentication | 1-hour token expiry, refresh before expiry |
-| High Availability | 1 primary + 1--3 secondaries, automatic failover |
-| Data API | PostgREST-compatible HTTP CRUD (Autoscaling only) |
-| Reverse ETL | Sync Delta tables to Postgres via synced tables |
-| Cloud Support | AWS and Azure (GA) |
+## Capabilities
+
+- **Project lifecycle** -- create, update, delete Lakebase Postgres Autoscaling projects
+- **Branching** -- copy-on-write branches with TTL, point-in-time recovery, and reset
+- **Compute scaling** -- autoscale 0.5--32 CU, fixed 36--112 CU, scale-to-zero
+- **High availability** -- 1 primary + 1--3 secondaries, automatic failover
+- **PostgreSQL connectivity** -- OAuth token refresh, connection pooling, SSL
+- **Data API** -- PostgREST-compatible HTTP CRUD (Autoscaling only)
+- **Synced tables (reverse ETL)** -- sync Unity Catalog Delta tables into Postgres
+- **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow
+- **Cloud support** -- AWS and Azure (GA)
 
 **Reference docs:**
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
 - [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
-- [reverse-etl.md](references/reverse-etl.md) — Synced tables, data type mapping, capacity planning
+- [synced-tables.md](references/synced-tables.md) — Synced tables, data type mapping, capacity planning
 
 ## Resource Hierarchy
 
@@ -49,6 +49,7 @@ Project (top-level container)
 - **Endpoint** (called **Compute** in UI): Compute resource powering a branch. Types: `ENDPOINT_TYPE_READ_WRITE`, `ENDPOINT_TYPE_READ_ONLY`.
 - **Database**: Standard Postgres database within a branch. Default: `databricks_postgres`.
 - **Role**: Postgres role within a branch.
+
 ### Resource Name Formats
 
 | Resource | Format |
@@ -59,6 +60,7 @@ Project (top-level container)
 | Database | `projects/{project_id}/branches/{branch_id}/databases/{database_id}` |
 
 All IDs: 1-63 characters, start with lowercase letter, lowercase letters/numbers/hyphens only (RFC 1123).
+
 ## CLI Discovery -- ALWAYS Do This First
 
 > **Note:** "Lakebase" is the product name; the CLI command group is `postgres`. All commands use `databricks postgres ...`.
@@ -107,22 +109,9 @@ databricks postgres delete-project projects/<PROJECT_ID> --profile <PROFILE>
 
 ## Autoscaling
 
-Endpoints use **compute units (CU)** (~2 GB RAM per CU). Configure min/max CU on endpoints.
+Endpoints use **compute units (CU)** (~2 GB RAM per CU). Range: 0.5--32 CU (dynamic), 36--112 CU (fixed). Scale-to-zero enabled by default (5 min timeout).
 
-- **Autoscale range:** 0.5--32 CU (dynamic). **Fixed-size:** 36--112 CU.
-- **Constraint:** Max - Min cannot exceed 16 CU.
-- **Scale-to-zero:** Enabled by default (5 min timeout).
-
-See [computes-and-scaling.md](references/computes-and-scaling.md) for sizing tables, endpoint CRUD, and scale-to-zero details.
-
-```bash
-# Resize an endpoint
-databricks postgres update-endpoint \
-  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
-  "spec.autoscaling_limit_min_cu,spec.autoscaling_limit_max_cu" \
-  --json '{"spec": {"autoscaling_limit_min_cu": 2.0, "autoscaling_limit_max_cu": 8.0}}' \
-  --profile <PROFILE>
-```
+See [computes-and-scaling.md](references/computes-and-scaling.md) for sizing tables, endpoint CRUD, and configuration details.
 
 ## Branches
 
@@ -171,6 +160,7 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 | Cloud | AWS only | AWS and Azure |
 
 **Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
+
 ## What's Next
 
 ### Build a Databricks App
@@ -205,6 +195,7 @@ The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new ob
 3. **Develop locally**: your credentials get DML access to SP-owned schemas
 
 **If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data. Ask the user to choose: (A) drop and redeploy (destructive), or (B) manually reassign ownership (preserves data).
+
 ### Other Workflows
 
 ```bash
@@ -219,8 +210,42 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
   --json '{"spec": {"type": "ENDPOINT_TYPE_READ_ONLY"}}' --profile <PROFILE>
 ```
 
+**Run SQL against Lakebase** (GRANT, CREATE INDEX, etc.):
+```bash
+# 1. Get endpoint host
+databricks postgres get-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> --profile <PROFILE>
+
+# 2. Generate OAuth token
+databricks postgres generate-database-credential \
+  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
+  --profile <PROFILE>
+
+# 3. Connect (use token from step 2 as password, host from step 1)
+PGPASSWORD='<TOKEN>' psql "host=<HOST> user=<USERNAME> dbname=databricks_postgres sslmode=require"
+```
+
+> **Note:** `generate-database-credential` requires the **endpoint** resource path (`.../endpoints/<ENDPOINT_ID>`), not a database or branch path.
+
+**Scriptable version** (single copy-paste, useful for agents):
+```bash
+EP=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
+HOST=$(databricks postgres get-endpoint $EP --profile <PROFILE> -o json \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['status']['hosts']['host'])")
+TOKEN=$(databricks postgres generate-database-credential $EP --profile <PROFILE> -o json \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
+PGPASSWORD="$TOKEN" psql "host=$HOST user=<USERNAME> dbname=databricks_postgres sslmode=require"
+```
+
+**Grant app SP access to synced tables** (run as project owner after sync is ONLINE and app is deployed):
+```sql
+GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
+```
+Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `service_principal_client_id` field.
+
 **Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
-**Reverse ETL:** Sync Delta tables into Lakebase. See [reverse-etl.md](references/reverse-etl.md).
+**Synced Tables:** Sync Delta tables into Lakebase. See [synced-tables.md](references/synced-tables.md).
 
 ## Troubleshooting
 
@@ -239,6 +264,13 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 | Update mask required | All `update-*` operations require specifying fields (see `-h`) |
 | Connection closed after idle | 24h idle timeout; max lifetime beyond 24h not guaranteed. Implement retry. |
 | DNS resolution fails (macOS) | Python `socket.getaddrinfo()` fails with long hostnames. Use `dig` to resolve IP, pass via `hostaddr` param alongside `host` (for TLS SNI). See [connectivity.md](references/connectivity.md). |
+| `storage_catalog` pipeline failure | `new_pipeline_spec.storage_catalog` must be a regular UC catalog, not the Lakebase catalog. DLT cannot write event logs to Postgres-backed schemas. |
+| Synced table CDF error | Enable CDF on source: `ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`. Required for Triggered/Continuous modes. |
+| Sync permissions error | Ensure `USE CATALOG`/`USE SCHEMA` on source table and `CREATE TABLE` in storage catalog |
+| Synced table null bytes | Null bytes (0x00) in STRING/ARRAY/MAP/STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')` |
+| Synced table data modified | Only read queries, indexes, and DROP TABLE allowed on synced tables in Postgres. Modifications break sync pipeline. |
+| DABs `synced_database_tables` with Autoscaling | Do NOT use — maps to the Provisioned API. Use `databricks postgres create-synced-table` CLI instead. DAB support for Autoscaling synced tables (`postgres_synced_tables`) is not yet available. |
+
 ## SDK and Version Requirements
 
 | Component | Minimum Version |

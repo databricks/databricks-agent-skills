@@ -71,6 +71,13 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 **Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
 
 ## When to Use What
+
+> **If the user asks for fast, instant, or low-latency reads of lakehouse data — or mentions quick lookups, search by key/ID, feature serving, product catalog, real-time, or operational dashboards:** present two options before proceeding:
+> - **(A) Analytics** — precompute aggregates in a SQL query, load once via `useAnalyticsQuery`, filter client-side. Simpler setup, but requires a running SQL warehouse and initial query takes seconds.
+> - **(B) Synced tables** — sync a gold table from Delta into Lakebase Postgres for OLTP-speed point lookups. Requires a Lakebase project but gives true low-latency reads without a SQL warehouse. See [Lakebase Guide](references/appkit/lakebase.md).
+>
+> Let the user choose. If they don't have a strong preference, briefly explain the trade-off.
+
 - **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
@@ -79,6 +86,8 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
+
+> **Choosing between Analytics and Lakebase for reads:** If the user doesn't mention latency or real-time needs, default to the analytics pattern (simpler setup). If they mention "fast", "instant", "low latency", "quick", "quickly", "search by ID/key", "don't want to wait", "real-time", "point queries", "feature serving", "product catalog", or "no warehouse" — always present both options from the decision gate above before committing to an approach.
 
 ## Frameworks
 

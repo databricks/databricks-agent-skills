@@ -9,7 +9,9 @@
 
 **Connection timeouts:** 24h idle timeout is guaranteed. Max connection lifetime beyond 24h is not guaranteed — implement reconnection logic. Always use `sslmode=require`.
 
-## Connection Patterns
+## Connection Patterns (Python)
+
+> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity fully auto-injected via `createLakebasePool()` — see the **`databricks-apps`** skill.
 
 ### Pattern 1: Direct Connection (Scripts/Notebooks)
 
@@ -88,6 +90,46 @@ url = os.environ["LAKEBASE_PG_URL"]
 engine = create_engine(url, pool_size=5)
 ```
 
+### Pattern 4: Databricks App (Python)
+
+For Python apps deployed on Databricks (FastAPI, Flask, Streamlit). Platform injects env vars automatically when the app has a Lakebase database resource.
+
+**Auto-injected env vars (set at deploy time):**
+
+| Variable | Description |
+|----------|-------------|
+| `PGHOST` | Lakebase hostname |
+| `PGPORT` | Port (default 5432) |
+| `PGDATABASE` | Database name |
+| `PGUSER` | Service principal client ID |
+| `PGSSLMODE` | SSL mode (`require`) |
+| `LAKEBASE_ENDPOINT` | Endpoint resource path |
+
+**Pattern:**
+```python
+import os
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# Generate OAuth token using platform-injected endpoint
+token = w.postgres.generate_database_credential(
+    endpoint=os.environ["LAKEBASE_ENDPOINT"]
+).token
+
+# Connect using platform-injected env vars
+conn = psycopg.connect(
+    host=os.environ["PGHOST"],
+    port=os.environ.get("PGPORT", "5432"),
+    dbname=os.environ["PGDATABASE"],
+    user=os.environ["PGUSER"],
+    password=token,
+    sslmode="require",
+)
+```
+
+For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy pooling. For the full app development workflow (scaffolding, tRPC, schema init), use the **`databricks-apps`** skill.
+
 ## Best Practices
 
 - **Always use `sslmode=require`** — Lakebase requires SSL/TLS on all connections
@@ -96,6 +138,37 @@ engine = create_engine(url, pool_size=5)
 - **Enable `pool_pre_ping`** — detects stale connections after scale-to-zero wake-up
 - **Handle scale-to-zero reconnection** — first connection after idle may take ~100ms; implement retry
 - **psycopg2 or psycopg3** — both work; psycopg3 recommended for new development (better async, pooling)
+
+## DNS Resolution (macOS)
+
+Python's `socket.getaddrinfo()` can fail with long Lakebase hostnames on macOS. Workaround: resolve via `dig`, then pass the IP through `hostaddr` while keeping `host` for TLS SNI.
+
+```bash
+# Resolve the Lakebase hostname to an IP
+dig +short <ENDPOINT_HOST>
+```
+
+```python
+import subprocess
+
+def resolve_host(hostname: str) -> str:
+    result = subprocess.run(["dig", "+short", hostname], capture_output=True, text=True)
+    lines = result.stdout.strip().splitlines()
+    if not lines:
+        raise RuntimeError(f"DNS resolution failed for {hostname}")
+    return lines[0]
+
+ip = resolve_host(endpoint_host)
+
+conn = psycopg.connect(
+    host=endpoint_host,      # kept for TLS SNI verification
+    hostaddr=ip,             # bypasses getaddrinfo()
+    dbname="databricks_postgres",
+    user=username,
+    password=token,
+    sslmode="require",
+)
+```
 
 ## Data API
 

@@ -29,7 +29,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-lakebase": {
-        "description": "Databricks Lakebase database development",
+        "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
         "experimental": False,
     },
     "databricks-dabs": {
