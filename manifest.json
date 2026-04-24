@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-23T19:20:22Z",
+  "updated_at": "2026-04-24T09:37:12Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-23T18:25:53Z",
+      "updated_at": "2026-04-24T09:30:35Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -77,7 +77,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-04-23T19:20:11Z",
+      "updated_at": "2026-04-24T09:15:50Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
