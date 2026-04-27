@@ -120,7 +120,7 @@ token = w.postgres.generate_database_credential(
 # Connect using platform-injected env vars
 conn = psycopg.connect(
     host=os.environ["PGHOST"],
-    port=os.environ.get("PGPORT", "5432"),
+    port=int(os.environ.get("PGPORT", "5432")),
     dbname=os.environ["PGDATABASE"],
     user=os.environ["PGUSER"],
     password=token,

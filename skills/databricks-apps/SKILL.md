@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | Parent `databricks-core` skill (auth, warehouse discovery); **complete Step 0** of Development Workflow (data access pattern); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | Parent `databricks-core` skill (auth, warehouse discovery); **complete the Data Access Decision Gate** in Development Workflow; then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -58,7 +58,7 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 ## Development Workflow (FOLLOW THIS ORDER)
 
-**Step 0 — Choose data access pattern (REQUIRED before scaffolding):**
+**Data Access Decision Gate (REQUIRED before scaffolding):**
 
 If the app reads from Unity Catalog / lakehouse tables, you MUST show the comparison below to the user and ask them to choose. Do not skip this. Do not choose for them.
 
@@ -74,9 +74,9 @@ After showing the table, add a brief recommendation. Default to recommending Syn
 - (A) Synced Tables: scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
 - (B) Analytics: scaffold with `--features analytics`.
 - Both: scaffold with `--features analytics,lakebase` if the app needs both patterns.
-- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip Step 0 and scaffold with the appropriate `--features` flag.
+- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
 
-**Step 1 onwards — Analytics apps** (`--features analytics`):
+**Analytics apps** (`--features analytics`):
 
 1. Create SQL files in `config/queries/`
 2. Run `npm run typegen` — verify all queries show ✓
@@ -87,11 +87,11 @@ After showing the table, add a brief recommendation. Default to recommending Syn
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
-**Step 1 onwards — Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
+**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
 
 ## When to Use What
 
-After completing Step 0 above, use this routing table:
+After completing the decision gate above, use this routing table:
 
 - **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook

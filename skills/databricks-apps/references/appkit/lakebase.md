@@ -206,14 +206,7 @@ Synced tables (created via `databricks postgres create-synced-table`) appear as 
 | Schema init | App must `CREATE SCHEMA/TABLE` | Already exists after sync |
 | Deploy-first | Required (SP must own schema) | Not required |
 
-**Permission grant required:** The app's SP has `CAN_CONNECT_AND_CREATE` but does **not** have `pg_read_all_data`. To read synced tables, the project owner must grant access:
-
-```sql
--- Run as project owner (databricks_superuser), not as the SP
-GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
-```
+**Permission grant required:** The app's SP has `CAN_CONNECT_AND_CREATE` but does **not** have `pg_read_all_data`. To read synced tables, the project owner must grant access — see the **`databricks-lakebase`** skill's SKILL.md "Grant app SP access to synced tables" section for the SQL commands and psql connection steps.
 
 **Example tRPC route reading synced taxi data:**
 
@@ -234,7 +227,7 @@ topPickups: publicProcedure.query(async () => {
 
 For creating synced tables, see the **`databricks-lakebase`** skill's [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md).
 
-> **Creating synced tables for apps:** Use `databricks postgres create-synced-table` (see the **`databricks-lakebase`** skill). After sync completes and app is deployed, grant the app's SP read access — the GRANT SQL is shown above, connect via psql (see the lakebase skill's SKILL.md Other Workflows for connection steps).
+> **Creating synced tables for apps:** Use `databricks postgres create-synced-table` (see the **`databricks-lakebase`** skill). After sync completes and app is deployed, grant the app's SP read access (see the lakebase skill's SKILL.md "Grant app SP access to synced tables" for SQL and psql connection steps).
 
 ## Key Differences from Analytics Pattern
 
