@@ -60,21 +60,21 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 **Step 0 — Choose data access pattern (REQUIRED before scaffolding):**
 
-If the app reads from Unity Catalog / lakehouse tables, you MUST show the table below to the user and ask them to choose. Do not skip this. Do not choose for them. Do not recommend one option over the other — present both neutrally.
+If the app reads from Unity Catalog / lakehouse tables, you MUST show the comparison below to the user and ask them to choose. Do not skip this. Do not choose for them.
 
 | | **(A) Synced Tables** | **(B) Analytics** |
 |--|---|---|
-| Scaffold | `--features lakebase` | `--features analytics` |
-| How it works | Sync Delta table to Lakebase Postgres, read from Postgres | SQL warehouse query at read time |
-| Latency | Sub-second (Postgres point lookups) | Seconds (warehouse spin-up + query) |
-| Best for | Entity search, lookups by key/ID, catalogs, real-time reads, operational apps | Dashboards, charts, aggregations, KPIs |
-| Always available | Yes — no warehouse dependency | No — requires a running SQL warehouse |
-| Setup | Requires Lakebase project + sync pipeline | Simpler (warehouse only) |
-| Details | See [Lakebase Guide](references/appkit/lakebase.md) | See AppKit section below |
+| Speed | Sub-second responses | Takes a few seconds |
+| Best for | Search, lookups, catalogs, real-time data, operational apps | Dashboards, charts, aggregations, KPIs |
+| How it works | Data synced from Delta into Lakebase Postgres | Queries run on SQL warehouse at read time |
 
-Apps can combine both — scaffold with `--features analytics,lakebase` if the app needs both patterns.
+After showing the table, add a brief recommendation. Default to recommending Synced Tables (A) unless the use case is clearly about aggregations, charts, or dashboards where seconds of latency is acceptable. For lookups, searches, serving data to users, or any interactive use case, recommend Synced Tables. Always let the user make the final call.
 
-If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this step and scaffold with the appropriate `--features` flag.
+*Agent notes (do not show to user):*
+- (A) Synced Tables: scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
+- (B) Analytics: scaffold with `--features analytics`.
+- Both: scaffold with `--features analytics,lakebase` if the app needs both patterns.
+- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip Step 0 and scaffold with the appropriate `--features` flag.
 
 **Step 1 onwards — Analytics apps** (`--features analytics`):
 
