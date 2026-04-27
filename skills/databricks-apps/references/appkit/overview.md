@@ -9,6 +9,7 @@ Before scaffolding, decide which data pattern the app needs:
 | Pattern | When to use | Init command |
 |---------|-------------|-------------|
 | **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
+| **Synced Tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` + sync Delta table via `databricks-lakebase` skill |
 | **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
 | **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
 | **Model Serving** (ML inference) | Chat, AI features, model predictions | Add `serving_endpoint` resource to `databricks.yml` (or `--features serving` if available in manifest) |

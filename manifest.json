@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-24T09:37:12Z",
+  "updated_at": "2026-04-27T10:27:58Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
-      "description": "Databricks Apps development and deployment",
+      "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "experimental": false,
-      "updated_at": "2026-04-24T09:30:35Z",
+      "updated_at": "2026-04-27T10:27:54Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -78,7 +78,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-04-24T09:15:50Z",
+      "updated_at": "2026-04-24T15:12:06Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -152,7 +152,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-04-22T15:52:03Z",
+      "updated_at": "2026-04-24T15:10:23Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

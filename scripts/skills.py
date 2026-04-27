@@ -21,7 +21,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-apps": {
-        "description": "Databricks Apps development and deployment",
+        "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
         "experimental": False,
     },
     "databricks-jobs": {

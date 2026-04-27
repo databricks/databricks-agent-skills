@@ -1,6 +1,6 @@
 ---
 name: databricks-apps
-description: Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Invoke BEFORE starting implementation.
+description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"
@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | Parent `databricks-core` skill (auth, warehouse discovery); run `databricks apps manifest` and use its plugins/resources to build `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | Parent `databricks-core` skill (auth, warehouse discovery); **complete Step 0** of Development Workflow (data access pattern); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -58,7 +58,27 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 ## Development Workflow (FOLLOW THIS ORDER)
 
-**Analytics apps** (`--features analytics`):
+**Step 0 — Choose data access pattern (REQUIRED before scaffolding):**
+
+If the app reads from Unity Catalog / lakehouse tables, present both options and let the user choose. Do not choose for them.
+
+| | **(A) Analytics** | **(B) Synced Tables** |
+|--|---|---|
+| Scaffold | `--features analytics` | `--features lakebase` |
+| How it works | SQL warehouse query at read time | Sync Delta table to Lakebase Postgres, read from Postgres |
+| Latency | Seconds (warehouse spin-up + query) | Sub-second (Postgres point lookups) |
+| Best for | Dashboards, charts, aggregations, KPIs | Entity search, lookups by key/ID, catalogs, real-time reads |
+| Setup complexity | Simpler (warehouse only) | More setup (Lakebase project + sync pipeline) |
+| Warehouse required | Yes, must be running | No |
+| Details | See AppKit section below | See [Lakebase Guide](references/appkit/lakebase.md) |
+
+Apps can combine both patterns -- scaffold with `--features analytics,lakebase` if the app needs dashboard queries AND persistent read/write storage or synced table reads.
+
+If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this step and scaffold with the appropriate `--features` flag.
+
+Do not skip this step for UC reads. Do not choose for the user.
+
+**Step 1 onwards — Analytics apps** (`--features analytics`):
 
 1. Create SQL files in `config/queries/`
 2. Run `npm run typegen` — verify all queries show ✓
@@ -69,15 +89,11 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
-**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
+**Step 1 onwards — Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
 
 ## When to Use What
 
-> **If the user asks for fast, instant, or low-latency reads of lakehouse data — or mentions quick lookups, search by key/ID, feature serving, product catalog, real-time, or operational dashboards:** present two options before proceeding:
-> - **(A) Analytics** — precompute aggregates in a SQL query, load once via `useAnalyticsQuery`, filter client-side. Simpler setup, but requires a running SQL warehouse and initial query takes seconds.
-> - **(B) Synced tables** — sync a gold table from Delta into Lakebase Postgres for OLTP-speed point lookups. Requires a Lakebase project but gives true low-latency reads without a SQL warehouse. See [Lakebase Guide](references/appkit/lakebase.md).
->
-> Let the user choose. If they don't have a strong preference, briefly explain the trade-off.
+After completing Step 0 above, use this routing table:
 
 - **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
@@ -88,8 +104,6 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
-
-> **Choosing between Analytics and Lakebase for reads:** If the user doesn't mention latency or real-time needs, default to the analytics pattern (simpler setup). If they mention "fast", "instant", "low latency", "quick", "quickly", "search by ID/key", "don't want to wait", "real-time", "point queries", "feature serving", "product catalog", or "no warehouse" — always present both options from the decision gate above before committing to an approach.
 
 ## Frameworks
 

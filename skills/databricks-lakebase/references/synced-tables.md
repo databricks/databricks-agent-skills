@@ -34,7 +34,7 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 - **Permissions:** `USE_SCHEMA` and `CREATE_TABLE` on the target schema
 - For Triggered/Continuous modes: Change Data Feed enabled on the source table
 
-> **Note:** Your Lakebase database must be registered as a UC catalog. If not already done, register one:
+> **Note:** Your Lakebase database must be registered as a UC catalog (one-time setup per project). Skip if already done.
 >
 > ```bash
 > databricks postgres create-catalog <CATALOG_NAME> \
@@ -151,6 +151,10 @@ LIMIT 10;
 databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.public.nyc_trips" --profile <PROFILE>
 ```
 
+## App Access
+
+If a Databricks App reads synced tables, the app's Service Principal needs explicit GRANT access. See the lakebase skill's SKILL.md "Grant app SP access to synced tables" section for the SQL commands and connection steps.
+
 ## Data Type Mapping
 
 | Unity Catalog Type | Postgres Type |
@@ -202,3 +206,9 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 4. Monitor sync status for failures and latency via Catalog Explorer
 5. Create indexes in Postgres for your application query patterns
 6. Account for the 16-connection-per-table limit when planning endpoint capacity
+
+## Constraints
+
+- **Read-only in Postgres:** Only SELECT queries, CREATE INDEX, and DROP TABLE are allowed on synced tables. Any data modifications (INSERT, UPDATE, DELETE) corrupt the sync pipeline.
+- **Null bytes:** Null bytes (0x00) in STRING, ARRAY, MAP, or STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')`.
+- **Unsupported types:** GEOGRAPHY, GEOMETRY, VARIANT, OBJECT columns cannot be synced.
