@@ -60,23 +60,21 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 
 **Step 0 — Choose data access pattern (REQUIRED before scaffolding):**
 
-If the app reads from Unity Catalog / lakehouse tables, present both options and let the user choose. Do not choose for them.
+If the app reads from Unity Catalog / lakehouse tables, you MUST show the table below to the user and ask them to choose. Do not skip this. Do not choose for them. Do not recommend one option over the other — present both neutrally.
 
-| | **(A) Analytics** | **(B) Synced Tables** |
+| | **(A) Synced Tables** | **(B) Analytics** |
 |--|---|---|
-| Scaffold | `--features analytics` | `--features lakebase` |
-| How it works | SQL warehouse query at read time | Sync Delta table to Lakebase Postgres, read from Postgres |
-| Latency | Seconds (warehouse spin-up + query) | Sub-second (Postgres point lookups) |
-| Best for | Dashboards, charts, aggregations, KPIs | Entity search, lookups by key/ID, catalogs, real-time reads |
-| Setup complexity | Simpler (warehouse only) | More setup (Lakebase project + sync pipeline) |
-| Warehouse required | Yes, must be running | No |
-| Details | See AppKit section below | See [Lakebase Guide](references/appkit/lakebase.md) |
+| Scaffold | `--features lakebase` | `--features analytics` |
+| How it works | Sync Delta table to Lakebase Postgres, read from Postgres | SQL warehouse query at read time |
+| Latency | Sub-second (Postgres point lookups) | Seconds (warehouse spin-up + query) |
+| Best for | Entity search, lookups by key/ID, catalogs, real-time reads, operational apps | Dashboards, charts, aggregations, KPIs |
+| Always available | Yes — no warehouse dependency | No — requires a running SQL warehouse |
+| Setup | Requires Lakebase project + sync pipeline | Simpler (warehouse only) |
+| Details | See [Lakebase Guide](references/appkit/lakebase.md) | See AppKit section below |
 
-Apps can combine both patterns -- scaffold with `--features analytics,lakebase` if the app needs dashboard queries AND persistent read/write storage or synced table reads.
+Apps can combine both — scaffold with `--features analytics,lakebase` if the app needs both patterns.
 
 If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this step and scaffold with the appropriate `--features` flag.
-
-Do not skip this step for UC reads. Do not choose for the user.
 
 **Step 1 onwards — Analytics apps** (`--features analytics`):
 
