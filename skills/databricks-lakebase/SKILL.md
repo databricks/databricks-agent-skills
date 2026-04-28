@@ -243,19 +243,13 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
 
-**Grant app SP for AppKit / CRUD apps** (full DML) — run **once after the first deploy** of any app whose `lakebase` plugin owns its own schema. Without this the app fails to connect with `password authentication failed for user '<SP_CLIENT_ID>'` because the SP has no Postgres role yet.
+**Grant app SP for AppKit / CRUD apps** (full DML).
 
-Two steps: create the SP's Postgres role, then grant it DML.
+> **First check: is the Lakebase declared as an app resource?** When the Apps platform attaches a `database` resource (declared in the app's `databricks.yml` under `resources.apps.<app>.resources`) to an app on deploy, it auto-creates the SP's Postgres role with `CAN_CONNECT_AND_CREATE`. If the SP is failing to connect with `password authentication failed for user '<SP_CLIENT_ID>'`, the most likely cause is a missing `database` resource — fix that first, redeploy, and the auto-grant fires. See the `databricks-apps` skill (Scaffolding) for verifying every required plugin resource is declared.
+>
+> The SQL block below is the **fallback** for cases the resource form doesn't cover: granting access to an existing Lakebase the app spec doesn't own (shared across apps, pre-existing schema with custom permissions, post-hoc grants for additional tables/sequences).
 
-Step 1 — create the role. Either via CLI:
-```bash
-databricks postgres create-role projects/<PROJECT_ID>/branches/<BRANCH_ID> \
-  --role-id <SP_CLIENT_ID> \
-  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1","membership_roles":["DATABRICKS_SUPERUSER"]}}' \
-  --profile <PROFILE>
-```
-
-Or, equivalently, as the first statement in the SQL block below — `databricks_create_role()` does the same thing, lets you bundle role creation and grants into one `psql` round-trip, and is the form the AppKit Lakebase docs use:
+Manual fallback — create the role and grant DML, in one psql round-trip:
 ```sql
 CREATE EXTENSION IF NOT EXISTS databricks_auth;
 
@@ -272,7 +266,15 @@ BEGIN
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO %I', sp);
 END $$;
 ```
-Pipe through `databricks psql` (above) — no UI step required. Both forms are idempotent; re-running is safe.
+Pipe through `databricks psql` (above). The block is idempotent; re-running is safe.
+
+The role-creation step alone has a CLI form too (useful when granting privileges separately):
+```bash
+databricks postgres create-role projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+  --role-id <SP_CLIENT_ID> \
+  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1","membership_roles":["DATABRICKS_SUPERUSER"]}}' \
+  --profile <PROFILE>
+```
 
 > **CLI body shape.** `databricks postgres create-role`'s `--json` flag binds to the inner `Role` object — fields go directly under `spec`, **not** wrapped in `{"role": ...}`. The error `Field 'role' is required and must contain at least one subfield with a non-default value` means the inner Role had no recognized fields (often because someone wrapped the body, which the CLI strips with `Warning: unknown field: role` and ships an empty body). The CLI also doesn't yet expose convenience flags like `--spec.identity-type` ([cmd/workspace/postgres/postgres.go](https://github.com/databricks/cli/blob/main/cmd/workspace/postgres/postgres.go) marks `spec` as TODO), so you must hand-craft the JSON.
 

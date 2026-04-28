@@ -156,6 +156,8 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
+3. **Verify resources after init.** Open `databricks.yml` and confirm `resources.apps.<app>.resources` contains a block for **every** required resource from every plugin you included (manifest's `resources.required`). For example, `--features analytics,genie,lakebase` must produce three blocks: `sql_warehouse`, `genie_space`, **and** `database`. A missing resource means the Apps platform won't grant the SP access to that resource at deploy time, and the app will fail at runtime — typically with `password authentication failed for user '<SP_UUID>'` (Lakebase), `403` from the SQL warehouse, or `CAN_RUN denied` (Genie). Fix by re-running `init` with the missing `--set` flag, not by hand-editing the YAML — the YAML is a generated artifact and your edit will be lost the next time someone re-scaffolds.
+
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
 **Genie Agent Workflow** — when the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
