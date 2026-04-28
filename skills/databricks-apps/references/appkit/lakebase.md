@@ -246,6 +246,8 @@ Check the response for the `active_deployment` field. If it exists with `status.
 
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
+> **First deploy with `lakebase`:** the SP also needs a Postgres role created via `databricks_create_role()` before it can connect at all — otherwise the deployed app fails with `password authentication failed for user '<UUID>'`. Run the **Grant app SP for AppKit / CRUD apps** SQL block from the **`databricks-lakebase`** skill once after the first deploy, then restart the app.
+
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
 ```bash
@@ -276,5 +278,6 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | **Ask the user before dropping** — `DROP SCHEMA` deletes all data. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
 | Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | **Ask the user before dropping** — warn about data loss, then deploy first. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
+| `password authentication failed for user '<UUID>'` | SP has no Postgres role on the branch (first deploy with `lakebase` plugin) | Run the **Grant app SP for AppKit / CRUD apps** SQL block from the **`databricks-lakebase`** skill, then restart the app |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |
