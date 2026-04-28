@@ -263,10 +263,17 @@ Then create `server/.env` with the values from the endpoint response:
 PGHOST=<host from endpoint>
 PGPORT=5432
 PGDATABASE=<your database name>
-PGUSER=<your service principal client ID>
+PGUSER=<see note below>
 PGSSLMODE=require
 LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
 ```
+
+> **`PGUSER` must match the credentials the AppKit dev server uses.** The Postgres role in `PGUSER` has to correspond to the principal that produced `PGPASSWORD` (the OAuth token).
+>
+> - **Default (personal Databricks profile):** AppKit's local server authenticates as your Databricks user, so `PGUSER` is your Databricks username/email. Tables created locally will be owned by your user, not the SP — that's why the deploy-first workflow exists.
+> - **Testing the deployed flow locally:** export `DATABRICKS_CLIENT_ID=<SP_CLIENT_ID>` and `DATABRICKS_CLIENT_SECRET=...` so the dev server authenticates as the SP. Then `PGUSER=<SP_CLIENT_ID>` matches.
+>
+> If `PGUSER` and the OAuth token disagree, Postgres rejects the connection with `password authentication failed for user '<UUID>'`.
 
 Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=server/.env`). Never commit `.env` files — add `server/.env` to `.gitignore`.
 
