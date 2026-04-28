@@ -214,12 +214,14 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 
 Preferred — `databricks psql` wrapper handles auth, host discovery, and TLS in one call:
 ```bash
-databricks psql --project <PROJECT_ID> --branch <BRANCH_ID> --endpoint <ENDPOINT_ID> \
-  -- -d databricks_postgres -f path/to/script.sql --profile <PROFILE>
+databricks psql --profile <PROFILE> --project <PROJECT_ID> --branch <BRANCH_ID> --endpoint <ENDPOINT_ID> \
+  -- -d databricks_postgres -f path/to/script.sql
 
 # One-off statement
-databricks psql --project <PROJECT_ID> -- -d databricks_postgres -c "SELECT 1" --profile <PROFILE>
+databricks psql --profile <PROFILE> --project <PROJECT_ID> -- -d databricks_postgres -c "SELECT 1"
 ```
+
+> **`--profile` placement.** All `databricks` flags (including `--profile`) MUST come before the `--` separator. Anything after `--` is forwarded verbatim to `psql`, which doesn't understand `--profile` and will exit with `psql: error: unrecognized option`.
 
 Requires `psql` on `PATH` (the wrapper shells out to it). Branch/endpoint default to the only one when there is just one.
 
@@ -242,6 +244,8 @@ GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
+
+> **Default privileges caveat.** `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` only applies to tables created by the role running this statement. If sync pipelines create new tables under a different role, re-run `GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>"` after each new table appears, or add `FOR ROLE <pipeline_role>` once you know which role the sync runs as.
 
 **Grant app SP for AppKit / CRUD apps** (full DML).
 
@@ -272,9 +276,11 @@ The role-creation step alone has a CLI form too (useful when granting privileges
 ```bash
 databricks postgres create-role projects/<PROJECT_ID>/branches/<BRANCH_ID> \
   --role-id <SP_CLIENT_ID> \
-  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1","membership_roles":["DATABRICKS_SUPERUSER"]}}' \
+  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1"}}' \
   --profile <PROFILE>
 ```
+
+> **Least privilege.** The example creates the role with default privileges only — grant database/schema/table access via the explicit `GRANT` statements above. Don't add `membership_roles: ["DATABRICKS_SUPERUSER"]` for an app SP unless broad administrative access is intentional; superuser membership lets the app role read every Lakebase database, not just its own.
 
 > **CLI body shape.** `databricks postgres create-role`'s `--json` flag binds to the inner `Role` object — fields go directly under `spec`, **not** wrapped in `{"role": ...}`. The error `Field 'role' is required and must contain at least one subfield with a non-default value` means the inner Role had no recognized fields (often because someone wrapped the body, which the CLI strips with `Warning: unknown field: role` and ships an empty body). The CLI also doesn't yet expose convenience flags like `--spec.identity-type` ([cmd/workspace/postgres/postgres.go](https://github.com/databricks/cli/blob/main/cmd/workspace/postgres/postgres.go) marks `spec` as TODO), so you must hand-craft the JSON.
 

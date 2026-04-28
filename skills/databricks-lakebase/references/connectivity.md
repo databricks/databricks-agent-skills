@@ -140,6 +140,42 @@ For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy 
 - **Handle scale-to-zero reconnection** — first connection after idle may take ~100ms; implement retry
 - **psycopg2 or psycopg3** — both work; psycopg3 recommended for new development (better async, pooling)
 
+## DNS Resolution (macOS)
+
+Python's `socket.getaddrinfo()` can fail with long Lakebase hostnames on macOS. Workaround: resolve via `dig`, then pass the IP through `hostaddr` while keeping `host` for TLS SNI.
+
+```bash
+# Resolve the Lakebase hostname to an IP
+dig +short <ENDPOINT_HOST>
+```
+
+```python
+import subprocess
+
+def resolve_host(hostname: str) -> str:
+    try:
+        result = subprocess.run(
+            ["dig", "+short", hostname], capture_output=True, text=True, check=False
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError("'dig' is not installed; install it (e.g. `apt-get install dnsutils`) or use socket.getaddrinfo() instead") from e
+    lines = result.stdout.strip().splitlines()
+    if not lines:
+        raise RuntimeError(f"DNS resolution failed for {hostname}")
+    return lines[0]
+
+ip = resolve_host(endpoint_host)
+
+conn = psycopg.connect(
+    host=endpoint_host,      # kept for TLS SNI verification
+    hostaddr=ip,             # bypasses getaddrinfo()
+    dbname="databricks_postgres",
+    user=username,
+    password=token,
+    sslmode="require",
+)
+```
+
 ## Data API
 
 PostgREST-compatible HTTP API for CRUD operations on Postgres tables. **Autoscaling only.**
