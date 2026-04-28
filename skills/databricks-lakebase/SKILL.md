@@ -243,7 +243,19 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
 
-**Grant app SP for AppKit / CRUD apps** (full DML) — run **once after the first deploy** of any app whose `lakebase` plugin owns its own schema. Without this the app fails to connect with `password authentication failed for user '<SP_CLIENT_ID>'` because the SP has no Postgres role yet:
+**Grant app SP for AppKit / CRUD apps** (full DML) — run **once after the first deploy** of any app whose `lakebase` plugin owns its own schema. Without this the app fails to connect with `password authentication failed for user '<SP_CLIENT_ID>'` because the SP has no Postgres role yet.
+
+Two steps: create the SP's Postgres role, then grant it DML.
+
+Step 1 — create the role. Either via CLI:
+```bash
+databricks postgres create-role projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+  --role-id <SP_CLIENT_ID> \
+  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1","membership_roles":["DATABRICKS_SUPERUSER"]}}' \
+  --profile <PROFILE>
+```
+
+Or, equivalently, as the first statement in the SQL block below — `databricks_create_role()` does the same thing, lets you bundle role creation and grants into one `psql` round-trip, and is the form the AppKit Lakebase docs use:
 ```sql
 CREATE EXTENSION IF NOT EXISTS databricks_auth;
 
@@ -260,9 +272,9 @@ BEGIN
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO %I', sp);
 END $$;
 ```
-Pipe through `databricks psql` (above) — no UI step required. The grant is idempotent; re-running is safe.
+Pipe through `databricks psql` (above) — no UI step required. Both forms are idempotent; re-running is safe.
 
-> **Footgun:** `databricks postgres create-role` (the CLI) cannot create the SP role — every payload shape returns `Field 'role' is required and must contain at least one subfield with a non-default value`. Use the `databricks_create_role()` SQL function above instead.
+> **CLI body shape.** `databricks postgres create-role`'s `--json` flag binds to the inner `Role` object — fields go directly under `spec`, **not** wrapped in `{"role": ...}`. The error `Field 'role' is required and must contain at least one subfield with a non-default value` means the inner Role had no recognized fields (often because someone wrapped the body, which the CLI strips with `Warning: unknown field: role` and ships an empty body). The CLI also doesn't yet expose convenience flags like `--spec.identity-type` ([cmd/workspace/postgres/postgres.go](https://github.com/databricks/cli/blob/main/cmd/workspace/postgres/postgres.go) marks `spec` as TODO), so you must hand-craft the JSON.
 
 Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `service_principal_client_id` field.
 
@@ -277,7 +289,7 @@ Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `serv
 | `PERMISSION_DENIED` | Check workspace permissions |
 | `permission denied for schema` | Schema owned by another role. Deploy app first so SP creates/owns it |
 | `password authentication failed for user '<UUID>'` (deployed app) | SP has no Postgres role on the branch yet. Run the **Grant app SP for AppKit / CRUD apps** SQL block above, then restart the app |
-| `Field 'role' is required` from `databricks postgres create-role` | The CLI cannot create SP roles. Use the `databricks_create_role()` SQL function over `databricks psql` instead — see **Grant app SP for AppKit / CRUD apps** |
+| `Field 'role' is required` from `databricks postgres create-role` | `--json` binds to the inner `Role`. Pass fields directly under `spec` (no `{"role": ...}` wrapper). See the CLI body-shape note in **Grant app SP for AppKit / CRUD apps** |
 | Protected branch won't delete | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
 | Token expired during long query | Tokens expire after 1 hour; implement refresh (see [connectivity.md](references/connectivity.md)) |
