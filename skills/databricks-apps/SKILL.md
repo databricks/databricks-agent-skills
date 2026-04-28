@@ -27,6 +27,7 @@ Build apps that deploy to Databricks Apps platform.
 | Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
 | Managing files in UC Volumes | [Files Guide](references/appkit/files.md) |
+| Triggering / monitoring Lakeflow Jobs from the app | [Jobs Guide](references/appkit/jobs.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
 | Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
@@ -77,6 +78,7 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
+- **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
 

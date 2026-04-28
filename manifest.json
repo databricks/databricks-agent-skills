@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-22T15:52:03Z",
+  "updated_at": "2026-04-28T11:49:00Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T11:48:52Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -16,6 +16,7 @@
         "references/appkit/files.md",
         "references/appkit/frontend.md",
         "references/appkit/genie.md",
+        "references/appkit/jobs.md",
         "references/appkit/lakebase.md",
         "references/appkit/model-serving.md",
         "references/appkit/overview.md",
@@ -32,7 +33,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T10:35:07Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -47,7 +48,7 @@
       "version": "0.0.0",
       "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T10:35:07Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -65,7 +66,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T10:35:07Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -77,7 +78,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase database development",
       "experimental": false,
-      "updated_at": "2026-04-15T18:00:00Z",
+      "updated_at": "2026-04-28T11:48:52Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -92,7 +93,7 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T10:35:07Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -104,7 +105,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-14T11:07:19Z",
+      "updated_at": "2026-04-28T10:35:07Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -151,7 +152,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-04-22T15:52:03Z",
+      "updated_at": "2026-04-28T11:48:52Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
