@@ -53,7 +53,7 @@ Verify: `databricks -v`
 Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-jobs` skill for job-specific guidance.
 
-If skills are not available, install them: `databricks experimental aitools install`
+If skills are not available, install them: `databricks aitools install`
 ```
 
 ## Project Structure
