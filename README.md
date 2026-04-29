@@ -7,7 +7,7 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 **For Claude Code:**
 
 ```bash
-databricks experimental aitools install
+databricks aitools install
 ```
 
 This installs skills to `~/.claude/skills/` for use with Claude Code.
