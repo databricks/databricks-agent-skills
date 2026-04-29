@@ -44,10 +44,6 @@ SKILL_METADATA = {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
         "experimental": False,
     },
-    "databricks-proto-first": {
-        "description": "Proto-first schema design for Databricks apps",
-        "experimental": False,
-    },
     "databricks-serverless-migration": {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
         "experimental": False,
@@ -92,14 +88,33 @@ def extract_version_from_skill(skill_path: Path) -> str:
     return "0.0.0"
 
 
+def iter_skill_files(skill_path: Path):
+    """Yield tracked files in a skill directory, skipping VCS-ignored noise.
+
+    Filters out dot-prefixed paths (.DS_Store, .git, etc.), __pycache__
+    directories, and *.pyc files so manifest output and updated_at timestamps
+    stay reproducible across machines.
+    """
+    for file_path in skill_path.rglob("*"):
+        if not file_path.is_file():
+            continue
+        rel_parts = file_path.relative_to(skill_path).parts
+        if any(part.startswith(".") for part in rel_parts):
+            continue
+        if "__pycache__" in rel_parts:
+            continue
+        if file_path.suffix == ".pyc":
+            continue
+        yield file_path
+
+
 def get_skill_updated_at(skill_path: Path) -> str:
     """Get the most recent modification time of any file in the skill directory."""
     latest_mtime = 0.0
-    for file_path in skill_path.rglob("*"):
-        if file_path.is_file():
-            mtime = file_path.stat().st_mtime
-            if mtime > latest_mtime:
-                latest_mtime = mtime
+    for file_path in iter_skill_files(skill_path):
+        mtime = file_path.stat().st_mtime
+        if mtime > latest_mtime:
+            latest_mtime = mtime
 
     if latest_mtime == 0.0:
         return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -180,8 +195,7 @@ def generate_manifest(repo_root: Path) -> dict:
     for skill_dir in iter_skill_dirs(repo_root):
         files = sorted(
             str(f.relative_to(skill_dir))
-            for f in skill_dir.rglob("*")
-            if f.is_file()
+            for f in iter_skill_files(skill_dir)
         )
 
         if skill_dir.name not in SKILL_METADATA:
