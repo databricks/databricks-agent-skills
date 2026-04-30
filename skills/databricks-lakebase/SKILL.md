@@ -1,6 +1,6 @@
 ---
 name: databricks-lakebase
-description: "Manages Lakebase Postgres Autoscaling projects, branches, endpoints, and synced tables (reverse ETL) via Databricks CLI. Covers creating and configuring projects, computes, scale-to-zero, high availability, branching, PostgreSQL connectivity, OAuth token refresh, connection pooling, Data API (PostgREST), and syncing Delta tables to Postgres. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
+description: "Databricks Lakebase Postgres: projects, scaling, connectivity, Lakebase synced tables, and Data API. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
@@ -25,14 +25,14 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 - **High availability** -- 1 primary + 1--3 secondaries, automatic failover
 - **PostgreSQL connectivity** -- OAuth token refresh, connection pooling, SSL
 - **Data API** -- PostgREST-compatible HTTP CRUD (Autoscaling only)
-- **Synced tables (reverse ETL)** -- sync Unity Catalog Delta tables into Postgres
+- **Lakebase synced tables** -- sync Unity Catalog Delta tables into Postgres (previously known as Reverse ETL)
 - **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow
 - **Cloud support** -- AWS and Azure (GA)
 
 **Reference docs:**
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
 - [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
-- [synced-tables.md](references/synced-tables.md) — Synced tables, data type mapping, capacity planning
+- [synced-tables.md](references/synced-tables.md) — Lakebase synced tables, data type mapping, capacity planning
 
 ## Resource Hierarchy
 
@@ -229,6 +229,7 @@ PGPASSWORD='<TOKEN>' psql "host=<HOST> user=<USERNAME> dbname=databricks_postgre
 **Scriptable version** (single copy-paste, useful for agents):
 ```bash
 EP=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
+# get-endpoint JSON shape: {"status": {"hosts": {"host": "<HOSTNAME>"}, ...}, ...}
 HOST=$(databricks postgres get-endpoint $EP --profile <PROFILE> -o json \
   | python3 -c "import json,sys; print(json.load(sys.stdin)['status']['hosts']['host'])")
 TOKEN=$(databricks postgres generate-database-credential $EP --profile <PROFILE> -o json \
@@ -242,6 +243,8 @@ GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
+For least-privilege, consider syncing into a dedicated schema instead of `public` so the grant is scoped to synced data only.
+
 Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `service_principal_client_id` field.
 
 **Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).

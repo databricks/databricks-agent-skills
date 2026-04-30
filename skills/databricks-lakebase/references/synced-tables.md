@@ -1,8 +1,8 @@
-# Synced Tables
+# Lakebase synced tables
 
 > **Official docs:** https://docs.databricks.com/aws/en/oltp/projects/sync-tables
 
-Sync data from Unity Catalog Delta tables into Lakebase as PostgreSQL tables for OLTP access patterns. Previously known as **Reverse ETL**.
+Lakebase synced tables sync data from Unity Catalog Delta tables into Lakebase as PostgreSQL tables for OLTP access patterns. Previously known as **Reverse ETL**.
 
 **How it works:** Synced tables create a managed copy — a Unity Catalog table (read-only, managed by sync pipeline) and a Postgres table in Lakebase (queryable by apps). Uses managed Lakeflow Spark Declarative Pipelines.
 
@@ -48,7 +48,7 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 >
 > The `<POSTGRES_DATABASE>` is the Postgres database name (default: `databricks_postgres`), not the resource path.
 
-## Creating Synced Tables
+## Creating Lakebase synced tables
 
 > **Source table must exist first.** Synced tables sync from an existing UC table, view, or materialized view. If the source needs transformation, ask the user how they want to prepare it (DLT materialized view, regular view, or existing table). Do not run ad-hoc `CREATE TABLE AS SELECT` statements.
 

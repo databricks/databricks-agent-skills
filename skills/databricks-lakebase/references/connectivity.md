@@ -78,10 +78,11 @@ For a complete async implementation with FastAPI integration, see [Databricks do
 
 ### Pattern 3: Static URL (Local Development)
 
-For local dev, use a static connection URL via environment variable:
+> **Local dev only.** Store the URL in a `.env` file excluded from version control — never commit real credentials or paste them into shell history. Do not use this pattern in production; use OAuth token refresh (Pattern 1/2) instead.
 
 ```bash
-export LAKEBASE_PG_URL="postgresql://user:password@host:5432/database?sslmode=require"
+# .env (add to .gitignore)
+LAKEBASE_PG_URL="postgresql://user:password@host:5432/database?sslmode=require"
 ```
 
 ```python
@@ -138,37 +139,6 @@ For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy 
 - **Enable `pool_pre_ping`** — detects stale connections after scale-to-zero wake-up
 - **Handle scale-to-zero reconnection** — first connection after idle may take ~100ms; implement retry
 - **psycopg2 or psycopg3** — both work; psycopg3 recommended for new development (better async, pooling)
-
-## DNS Resolution (macOS)
-
-Python's `socket.getaddrinfo()` can fail with long Lakebase hostnames on macOS. Workaround: resolve via `dig`, then pass the IP through `hostaddr` while keeping `host` for TLS SNI.
-
-```bash
-# Resolve the Lakebase hostname to an IP
-dig +short <ENDPOINT_HOST>
-```
-
-```python
-import subprocess
-
-def resolve_host(hostname: str) -> str:
-    result = subprocess.run(["dig", "+short", hostname], capture_output=True, text=True)
-    lines = result.stdout.strip().splitlines()
-    if not lines:
-        raise RuntimeError(f"DNS resolution failed for {hostname}")
-    return lines[0]
-
-ip = resolve_host(endpoint_host)
-
-conn = psycopg.connect(
-    host=endpoint_host,      # kept for TLS SNI verification
-    hostaddr=ip,             # bypasses getaddrinfo()
-    dbname="databricks_postgres",
-    user=username,
-    password=token,
-    sslmode="require",
-)
-```
 
 ## Data API
 
