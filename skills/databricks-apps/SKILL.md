@@ -28,6 +28,7 @@ Build apps that deploy to Databricks Apps platform.
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
 | Managing files in UC Volumes | [Files Guide](references/appkit/files.md) |
 | Triggering / monitoring Lakeflow Jobs from the app | [Jobs Guide](references/appkit/jobs.md) |
+| Driving the running app in a browser (visual checks, screenshots, agent-driven UI smoke) | [agent-browser Guide](references/appkit/agent-browser.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
 | Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
