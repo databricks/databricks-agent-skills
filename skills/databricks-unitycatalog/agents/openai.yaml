@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Unity Catalog"
+  short_description: "UC governance: grants, volumes, external locations"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-unitycatalog for Unity Catalog governance tasks (grants, volumes, external locations, discovery)."

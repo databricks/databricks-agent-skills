@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-04-30T11:02:41Z",
+  "updated_at": "2026-05-04T13:00:55Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "experimental": false,
-      "updated_at": "2026-04-30T11:00:26Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -33,7 +33,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-04T12:38:42Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -48,7 +48,7 @@
       "version": "0.0.0",
       "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -66,7 +66,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -78,7 +78,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-04-30T11:02:37Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -93,7 +93,7 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -105,7 +105,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -152,7 +152,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-04-24T15:10:23Z",
+      "updated_at": "2026-04-30T11:19:36Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -163,6 +163,25 @@
         "references/configuration-guide.md",
         "references/networking-and-security.md",
         "references/streaming-migration.md"
+      ]
+    },
+    "databricks-unitycatalog": {
+      "version": "0.1.0",
+      "description": "Unity Catalog governance: discovery, grants, volumes, external locations, lineage, and UC-managed objects",
+      "experimental": false,
+      "updated_at": "2026-05-04T12:42:21Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/access-control.md",
+        "references/ai-ml-objects.md",
+        "references/lineage-and-observability.md",
+        "references/namespace-and-objects.md",
+        "references/operations-and-migration.md",
+        "references/storage-and-connections.md",
+        "references/volumes.md"
       ]
     }
   }
