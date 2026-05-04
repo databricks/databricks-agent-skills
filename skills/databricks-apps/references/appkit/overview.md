@@ -130,7 +130,7 @@ Do not guess paths — run without args first, then pick from the index.
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — resource declaration, tRPC query pattern |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
-| Render / drive the running app in a browser | [agent-browser](agent-browser.md) — local (`run-local` proxy) and deployed (`--headed --profile`) modes for visual checks |
+| Render / drive the running app in a browser | [agent-browser](agent-browser.md) — primary path: drive a deployed app with `--headed --profile`; local Vite dev for UI iteration; `run-local` reserved as edge case |
 
 ## Critical Rules
 
