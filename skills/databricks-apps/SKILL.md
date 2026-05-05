@@ -37,6 +37,7 @@ Build apps that deploy to Databricks Apps platform.
 - **Validation**: `databricks apps validate --profile <PROFILE>` before deploying.
 - **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Authentication**: covered by parent `databricks-core` skill.
+- **TypeScript casts**: never use `as unknown as <T>` double-assertions — `appkit lint` (run by `databricks apps validate`) enforces `no-double-type-assertion` and validate fails on a single occurrence. Fix the source type, use a runtime type guard (`if (typeof x.foo === "string") { ... }`), or narrow with Zod (`z.infer<typeof schema>`). If a query result needs reshaping, type the row schema in the SQL queryKey types or use a small mapper function rather than casting.
 
 ## Project Structure (after `databricks apps init --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
