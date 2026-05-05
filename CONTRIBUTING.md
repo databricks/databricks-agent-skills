@@ -11,6 +11,14 @@ Examples in skills and references must follow secure defaults:
 - Prefer scoped tokens over broad credentials
 - Obfuscate sensitive values: use placeholder workspace IDs (`1111111111111111`), URLs (`company-workspace.cloud.databricks.com`), and never include real tokens or passwords
 
+## Version resolution in Databricks CLI
+
+The Databricks CLI uses [`cli-compat.json`](https://github.com/databricks/cli/blob/main/internal/build/cli-compat.json)
+to determine which Agent Skills version to install for `aitools install`. The manifest maps
+CLI versions to compatible Agent Skills versions. It lives in the
+[CLI repository](https://github.com/databricks/cli) — see the
+[README](https://github.com/databricks/cli/blob/main/internal/build/README.md) for details.
+
 ## Developer Certificate of Origin
 
 To contribute to this repository, you must sign off your commits to certify 
