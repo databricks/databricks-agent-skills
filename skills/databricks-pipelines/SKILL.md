@@ -1,10 +1,10 @@
 ---
 name: databricks-pipelines
-description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation.
+description: "Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks: create streaming tables, materialized views, configure data quality expectations, and set up Auto Loader or Auto CDC. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
-parent: databricks-core
+  parent: databricks-core
 ---
 
 # Lakeflow Spark Declarative Pipelines Development
@@ -181,29 +181,7 @@ databricks bundle init lakeflow-pipelines --config-file <(echo '{"project_name":
   - SQL: Recommended for straightforward transformations (filters, joins, aggregations)
   - Python: Recommended for complex logic (custom UDFs, ML, advanced processing)
 
-After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
-
-```
-# Declarative Automation Bundles Project
-
-This project uses Declarative Automation Bundles (formerly Databricks Asset Bundles) for deployment.
-
-## Prerequisites
-
-Install the Databricks CLI (>= v0.288.0) if not already installed:
-- macOS: `brew tap databricks/tap && brew install databricks`
-- Linux: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
-- Windows: `winget install Databricks.DatabricksCLI`
-
-Verify: `databricks -v`
-
-## For AI Agents
-
-Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
-Read the `databricks-pipelines` skill for pipeline-specific guidance.
-
-If skills are not available, install them: `databricks experimental aitools install`
-```
+After scaffolding, create `CLAUDE.md` and `AGENTS.md` pointing agents to the `databricks-core` and `databricks-pipelines` skills.
 
 ## Pipeline Structure
 
