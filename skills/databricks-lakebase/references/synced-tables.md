@@ -186,24 +186,32 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 - **Naming:** Database, schema, and table names allow `[A-Za-z0-9_]+` only
 - **Schema evolution:** Only additive changes (adding columns) for Triggered/Continuous modes
 
-## Lakehouse Sync (Beta, AWS only)
+## Lakehouse Sync (Beta)
 
-Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Enables analytics and downstream pipelines on OLTP-written data. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Azure support not yet available.
+Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS and Azure.
 
-**Lakehouse Sync enablement is a UI-only action** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog as Delta tables. When automating CDC workflows, treat this as a manual post-automation step and inform the user.
+**Lakehouse Sync enablement is a UI-only action** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog. When automating CDC workflows, treat this as a manual post-automation step and inform the user.
 
 **Prerequisites:**
-- `REPLICA IDENTITY FULL` must be set on all source Postgres tables before enabling sync. This requires table ownership.
+- Lakebase Autoscaling project running **Postgres 17**
+- Tables must reside in the `databricks_postgres` database
+- `REPLICA IDENTITY FULL` must be set on all source tables before enabling sync:
   ```sql
   ALTER TABLE <schema>.<table> REPLICA IDENTITY FULL;
   ```
-- Verify replica identity is set:
+- Verify replica identity:
   ```sql
   SELECT n.nspname AS schema, c.relname AS table_name,
          CASE c.relreplident WHEN 'f' THEN 'full' WHEN 'd' THEN 'default' WHEN 'n' THEN 'nothing' END AS replica_identity
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE c.relkind = 'r' AND n.nspname = 'public';
   ```
+- **Permissions:** CAN MANAGE on source project; USE CATALOG + USE SCHEMA + CREATE TABLE on destination
+- Catalogs with default storage are **unsupported**
+
+**Limitations:**
+- Partitioned tables are not supported
+- Disabling and re-enabling sync does **not** re-snapshot — missing changes are lost permanently
 
 ## Use Cases
 
