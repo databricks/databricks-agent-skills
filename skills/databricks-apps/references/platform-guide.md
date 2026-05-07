@@ -101,6 +101,8 @@ env:
 
 ⚠️ Databricks blocks access outside approved scopes even if the user has permission.
 
+**When to use OBO vs SP-only:** Most apps work fine with SP-only authentication. Only add `user_api_scopes` when the app needs to act as the logged-in user (e.g., user-scoped file access, per-user Genie queries). If unsure, start without it — you can add OBO scopes later if needed. Adding `user_api_scopes` requires the workspace to have user token passthrough enabled; if it's not enabled, `bundle deploy` will fail.
+
 ## Deployment Workflow
 
 ⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.
@@ -116,6 +118,37 @@ databricks bundle run <APP_RESOURCE_NAME> -t <TARGET> --profile <PROFILE>
 ```
 
 ❌ **Common mistake:** Running only `bundle deploy` and expecting the app to update. Deploy uploads code but does NOT apply config changes or restart the app. Use `databricks apps deploy` or add `bundle run` after `bundle deploy`.
+
+### Verify Deployment
+
+After deploying, confirm the app is running:
+
+```bash
+databricks apps get <APP_NAME> --profile <PROFILE>
+```
+
+Check these fields in the response:
+- `app_status`: should be `RUNNING` (may show `STARTING` immediately after deploy — poll until `RUNNING`)
+- `compute_status`: should be `ACTIVE`
+- `active_deployment.status.state`: should be `SUCCEEDED`
+
+For real-time log monitoring: `databricks apps logs <APP_NAME> --follow --profile <PROFILE>`
+
+### Deployment Recovery
+
+If `databricks bundle deploy` fails on terraform or infrastructure errors, `databricks apps deploy` is a direct fallback — it uploads source code and applies `app.yaml` without the bundle/terraform layer:
+
+```bash
+# Fallback when bundle deploy fails
+databricks apps deploy <APP_NAME> --profile <PROFILE>
+```
+
+If deployment fails with `File is larger than 10485760 bytes` pointing to files inside `.databricks/bundle/` (terraform binary cached by the bundle), delete the `.databricks/` directory and retry:
+
+```bash
+rm -rf .databricks/
+databricks apps deploy <APP_NAME> --profile <PROFILE>
+```
 
 ### ⚠️ Destructive Updates Warning
 
@@ -170,3 +203,6 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | OBO scopes missing after deploy | Destructive update wiped them | Re-apply scopes after each deploy |
 | `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
 | 504 Gateway Timeout | Request exceeded 120s | Use WebSockets for long operations |
+| `user token passthrough not enabled` | `user_api_scopes` in `databricks.yml` requires OBO auth, which is not enabled in the workspace | Remove the `user_api_scopes` block if the app doesn't need user-specific data — app runs under SP permissions instead |
+| `File is larger than 10485760 bytes` in `.databricks/` | Terraform binary cached by bundle exceeds workspace file upload limit | Delete `.databricks/` directory and use `databricks apps deploy` instead of `bundle deploy` |
+| `databricks apps logs` auth error | PAT authentication is incompatible with `databricks apps logs` | Use OAuth authentication: run `databricks auth login` instead of PAT-based profile |

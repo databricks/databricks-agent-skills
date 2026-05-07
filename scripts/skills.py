@@ -48,6 +48,10 @@ SKILL_METADATA = {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
         "experimental": False,
     },
+    "databricks-unity-catalog": {
+        "description": "Unity Catalog setup: storage credentials, external locations, catalogs, schemas, and grants",
+        "experimental": True,
+    },
 }
 
 

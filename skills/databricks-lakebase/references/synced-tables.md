@@ -188,9 +188,22 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 
 ## Lakehouse Sync (Beta, AWS only)
 
-> **Note:** This feature is not yet documented in the official synced tables docs. Verify availability in your workspace.
+Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Enables analytics and downstream pipelines on OLTP-written data. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Azure support not yet available.
 
-Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC. Enables analytics and downstream pipelines on OLTP-written data. Azure support not yet available.
+**Lakehouse Sync enablement is a UI-only action** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog as Delta tables. When automating CDC workflows, treat this as a manual post-automation step and inform the user.
+
+**Prerequisites:**
+- `REPLICA IDENTITY FULL` must be set on all source Postgres tables before enabling sync. This requires table ownership.
+  ```sql
+  ALTER TABLE <schema>.<table> REPLICA IDENTITY FULL;
+  ```
+- Verify replica identity is set:
+  ```sql
+  SELECT n.nspname AS schema, c.relname AS table_name,
+         CASE c.relreplident WHEN 'f' THEN 'full' WHEN 'd' THEN 'default' WHEN 'n' THEN 'nothing' END AS replica_identity
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE c.relkind = 'r' AND n.nspname = 'public';
+  ```
 
 ## Use Cases
 

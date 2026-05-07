@@ -94,6 +94,22 @@ const result = await trpc.queryModel.query({ prompt: userInput });
 const answer = result.choices?.[0]?.message?.content;
 ```
 
+## Streaming Chat Pattern
+
+For real-time token streaming in a chat UI, the serving endpoint must be called with streaming enabled. The Databricks Apps reverse proxy enforces a **120-second timeout** on HTTP requests, so streaming responses must complete within that window.
+
+- For streaming API details, check `npx @databricks/appkit docs` for the latest streaming support in AppKit
+- If AppKit doesn't provide a built-in streaming pattern, use the OpenAI-compatible streaming API via `fetch` with `stream: true` in the request body and process the SSE response
+- For interactions exceeding 120 seconds, use **WebSockets** instead of SSE — see [Platform Guide](../platform-guide.md)
+
+## AI Gateway & Embeddings
+
+AI Gateway foundation model endpoints (available in the `system.ai` catalog) are called the same way as custom serving endpoints — use the tRPC pattern above with the endpoint name.
+
+**Embeddings vs chat:** Embedding endpoints use a different request shape — `input` field instead of `messages`. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME>` from the `databricks-model-serving` skill to discover the expected input/output schema for any endpoint.
+
+**Storing embeddings:** For similarity search, store embeddings in Lakebase with pgvector — see the **`databricks-lakebase`** skill's pgvector section for `VECTOR` column types, indexes, and query patterns.
+
 ## Troubleshooting
 
 | Error | Cause | Solution |

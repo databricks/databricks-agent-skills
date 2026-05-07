@@ -255,6 +255,17 @@ resources:
 3. **Run pipeline**: `databricks bundle run <pipeline_name> -t dev --profile <profile>`
 4. **Check status**: `databricks pipelines get --pipeline-id <id> --profile <profile>`
 
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `PERMISSION_DENIED` on pipeline run | User or SP lacks pipeline or catalog permissions | Grant `CAN_MANAGE` on pipeline; verify UC catalog/schema grants |
+| `Table or view not found` | Target catalog/schema misconfigured or not deployed | Check `catalog` and `target` in pipeline settings; deploy first |
+| `UpdateError: Cannot change dataset type` | Tried to change ST→MV or MV→ST | Manually drop the existing table, then deploy and run again |
+| Pipeline stuck in STARTING | Compute provisioning issue | Check cluster policy quotas; use serverless compute |
+| Full refresh data loss | `full_refresh` on production pipeline deletes and recreates all tables | Use selective refresh (`--refresh <table>`) unless full refresh is explicitly needed |
+| `DeltaStreamIllegalStateException` | Streaming checkpoint corrupted or source schema changed | Try `full_refresh` on the affected table only, or delete checkpoint |
+
 ## Pipeline API Reference
 
 Detailed reference guides for each pipeline API. **Read the relevant guide before writing pipeline code.**

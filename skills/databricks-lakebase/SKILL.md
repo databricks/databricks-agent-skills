@@ -250,6 +250,48 @@ Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `serv
 **Data API:** PostgREST-compatible HTTP CRUD on Postgres tables. See [connectivity.md](references/connectivity.md).
 **Synced Tables:** Sync Delta tables into Lakebase. See [synced-tables.md](references/synced-tables.md).
 
+## pgvector (Vector Embeddings)
+
+Lakebase supports the `pgvector` PostgreSQL extension for storing and querying vector embeddings (e.g., from AI Gateway or Model Serving endpoints).
+
+**Check availability and enable:**
+```sql
+-- Verify pgvector is available
+SELECT * FROM pg_available_extensions WHERE name = 'vector';
+
+-- Enable the extension
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+**Create a table with vector column:**
+```sql
+CREATE TABLE items (
+  id SERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  embedding VECTOR(1536)  -- dimension must match your embedding model
+);
+```
+
+**Create an index for fast similarity search:**
+```sql
+-- IVFFlat: faster queries, approximate results (good default)
+CREATE INDEX ON items USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- HNSW: better recall, higher memory usage
+CREATE INDEX ON items USING hnsw (embedding vector_cosine_ops);
+```
+
+**Query by similarity:**
+```sql
+-- Cosine distance (use <=> operator)
+SELECT id, content, embedding <=> $1 AS distance
+FROM items
+ORDER BY embedding <=> $1
+LIMIT 10;
+```
+
+To generate embeddings, use AI Gateway or Model Serving endpoints — see the **`databricks-apps`** model-serving guide.
+
 ## Troubleshooting
 
 | Error | Solution |

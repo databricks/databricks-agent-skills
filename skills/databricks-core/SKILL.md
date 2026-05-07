@@ -18,6 +18,7 @@ For specific products, use dedicated skills:
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
 - **databricks-model-serving** - Model Serving endpoint management and inference
+- **databricks-unity-catalog** - Unity Catalog setup, storage credentials, external locations, and grants
 
 ## Prerequisites
 
@@ -25,6 +26,7 @@ For specific products, use dedicated skills:
    - **If the CLI is missing or outdated (< v0.292.0): STOP. Do not proceed or work around a missing CLI.**
    - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
+   - **Exception for off-platform tasks:** If CLI installation is blocked (sandboxed containers, restricted environments) and the task does NOT require deploying to Databricks, fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the `databricks-lakebase` connectivity guide for REST API patterns.
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)
@@ -133,6 +135,18 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
 | Exploring tables/schemas | [Data Exploration](data-exploration.md) |
 | Deploying jobs/pipelines | Use `/databricks-dabs` |
+
+## Getting Started (End-to-End)
+
+For a full local-to-production workflow:
+
+1. **Install CLI** → [CLI Installation](databricks-cli-install.md)
+2. **Authenticate** → [CLI Authentication](databricks-cli-auth.md) → select profile
+3. **Discover resources** → `databricks experimental aitools tools get-default-warehouse`, `databricks catalogs list`
+4. **Scaffold app** → `databricks apps init --name <NAME> --features <...> --set <...> --profile <PROFILE>` (see `databricks-apps` skill)
+5. **Local dev** → `cd <app-dir> && npm install && npm run dev`
+6. **Deploy** → `databricks apps deploy --profile <PROFILE>`
+7. **Verify** → `databricks apps get <APP_NAME> --profile <PROFILE>` → check `app_status: RUNNING`
 
 ## Reference Guides
 

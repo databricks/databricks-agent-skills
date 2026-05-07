@@ -131,6 +131,56 @@ conn = psycopg.connect(
 
 For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy pooling. For the full app development workflow (scaffolding, tRPC, schema init), use the **`databricks-apps`** skill.
 
+### Pattern 5: Off-Platform Apps (TypeScript/Node.js)
+
+For apps running outside Databricks (external servers, local dev, CI/CD) that connect to Lakebase. Uses the `pg` driver with OAuth token from the Databricks REST API.
+
+**Discover Lakebase endpoint (when CLI is unavailable):**
+
+If the Databricks CLI is not installed (sandboxed environments, restricted containers), use `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables to call the REST API directly:
+
+```bash
+# List Lakebase projects
+curl -s -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+  "https://$DATABRICKS_HOST/api/2.0/postgres/projects" | jq .
+
+# Get endpoint details (host, port)
+curl -s -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+  "https://$DATABRICKS_HOST/api/2.0/postgres/endpoints/projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>" | jq .
+
+# Generate database credential (OAuth token for Postgres)
+curl -s -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+  "https://$DATABRICKS_HOST/api/2.0/postgres/credentials" \
+  -d '{"endpoint": "projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>"}' | jq .
+```
+
+Use the results to populate `.env.local` with real values (not placeholders).
+
+**TypeScript connection with token refresh:**
+
+```typescript
+import pg from "pg";
+
+// Token refresh: Lakebase OAuth tokens expire in 1 hour.
+// Refresh every 30-40 minutes via background interval.
+let currentToken = await generateToken();
+setInterval(async () => {
+  currentToken = await generateToken();
+}, 30 * 60 * 1000); // 30 minutes
+
+const pool = new pg.Pool({
+  host: process.env.PGHOST,
+  port: parseInt(process.env.PGPORT || "5432"),
+  database: process.env.PGDATABASE || "databricks_postgres",
+  user: process.env.PGUSER,
+  password: () => currentToken, // dynamic password via callback
+  ssl: { rejectUnauthorized: false }, // required — see SSL note below
+  max: 10,
+});
+```
+
+**⚠️ SSL gotcha:** The `pg` driver's default `ssl: true` sets `rejectUnauthorized: true`, which fails against Lakebase certificates. Use `ssl: { rejectUnauthorized: false }` or pass `sslmode=require` in the connection string. This also affects Drizzle ORM: if `drizzle-kit migrate` doesn't support custom SSL options, use Drizzle's programmatic `migrate()` API for finer control over the connection.
+
 ## Best Practices
 
 - **Always use `sslmode=require`** — Lakebase requires SSL/TLS on all connections

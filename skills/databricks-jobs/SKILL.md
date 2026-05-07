@@ -182,6 +182,17 @@ uv run pytest
 3. **Run**: `databricks bundle run <job_name> -t dev --profile <profile>`
 4. **Check run status**: `databricks jobs get-run --run-id <id> --profile <profile>`
 
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `PERMISSION_DENIED` on deploy | User or SP lacks workspace permissions | Grant `CAN_MANAGE` on the job, or `CAN_MANAGE_RUN` for run-only |
+| `RESOURCE_DOES_NOT_EXIST` for notebook | Wrong path or not deployed | Check `notebook_path` is relative to bundle root (`../src/`); deploy first |
+| `TABLE_OR_VIEW_NOT_FOUND` in job run | Catalog/schema not accessible from serverless compute | Verify UC permissions; ensure `catalog` and `schema` params resolve correctly |
+| `InvalidParameterValue` for task | Malformed YAML task config | Validate with `databricks bundle validate --strict --profile <PROFILE>` |
+| Run stuck in PENDING | No available compute | Check cluster policy quotas or switch to serverless compute |
+| Job run fails silently | Task dependency not met | Check `depends_on` chains; a failed upstream task skips downstream tasks |
+
 ## Documentation
 
 - Lakeflow Jobs: https://docs.databricks.com/jobs
