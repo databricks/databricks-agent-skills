@@ -133,33 +133,16 @@ For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy 
 
 ### Pattern 5: Off-Platform Apps (TypeScript/Node.js)
 
-For apps running outside Databricks (external servers, local dev, CI/CD) that connect to Lakebase. Use the `@databricks/lakebase` package — it works standalone without AppKit.
-
-```bash
-npm install @databricks/lakebase
-```
+For apps running outside Databricks (external servers, local dev, CI/CD), use the `@databricks/lakebase` package — it works standalone without AppKit and handles OAuth token refresh, SSL, and connection pooling automatically.
 
 ```typescript
 import { createLakebasePool } from "@databricks/lakebase";
 
-const pool = createLakebasePool({
-  host: process.env.PGHOST,
-  database: process.env.PGDATABASE,
-  endpoint: process.env.LAKEBASE_ENDPOINT,
-  // Authentication: reads from DATABRICKS_HOST + DATABRICKS_TOKEN,
-  // .databrickscfg, or explicit workspaceClient
-});
-
-// Returns a standard pg.Pool — works with Drizzle, Prisma, or any PostgreSQL library
+const pool = createLakebasePool({ host, database, endpoint });
 const { rows } = await pool.query("SELECT * FROM my_table LIMIT 10");
 ```
 
-**What `@databricks/lakebase` handles automatically:**
-- **OAuth token refresh** — tokens expire after 1 hour; the package refreshes 2 minutes before expiry with request deduplication
-- **SSL** — defaults to `sslmode=require`
-- **Connection pooling** — configurable `max`, `idleTimeoutMillis`, `connectionTimeoutMillis`
-
-**Authentication chain** (in order): explicit `workspaceClient` → Databricks SDK default auth (`DATABRICKS_HOST` + `DATABRICKS_TOKEN`, `.databrickscfg`) → `currentUser.me()` API fallback. For native Postgres password auth (bypassing OAuth), pass `password` directly.
+For full configuration, auth chain, and SSL details, run `npm view @databricks/lakebase readme`.
 
 ## Best Practices
 

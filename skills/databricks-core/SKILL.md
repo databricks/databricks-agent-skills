@@ -25,7 +25,7 @@ For specific products, use dedicated skills:
    - **If the CLI is missing or outdated (< v0.292.0): STOP. Do not proceed or work around a missing CLI.**
    - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
-   - **Exception for off-platform tasks:** If CLI installation is blocked (sandboxed containers, restricted environments) and the task does NOT require deploying to Databricks, fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the `databricks-lakebase` connectivity guide for REST API patterns.
+   - **Exception for off-platform tasks:** If CLI installation is blocked (sandboxed containers, restricted environments) and the task does NOT require deploying to Databricks, fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the [Databricks REST API docs](https://docs.databricks.com/api/workspace/introduction).
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)

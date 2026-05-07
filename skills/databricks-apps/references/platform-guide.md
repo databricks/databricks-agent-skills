@@ -101,8 +101,6 @@ env:
 
 ⚠️ Databricks blocks access outside approved scopes even if the user has permission.
 
-**When to use OBO vs SP-only:** Most apps work fine with SP-only authentication. Only add `user_api_scopes` when the app needs to act as the logged-in user (e.g., user-scoped file access, per-user Genie queries). If unsure, start without it — you can add OBO scopes later if needed. Adding `user_api_scopes` requires the workspace to have user token passthrough enabled; if it's not enabled, `bundle deploy` will fail.
-
 ## Deployment Workflow
 
 ⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.

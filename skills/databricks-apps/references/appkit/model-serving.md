@@ -96,7 +96,7 @@ const answer = result.choices?.[0]?.message?.content;
 
 For streaming and advanced patterns, see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
 
-AppKit integrates with **Model Serving endpoints**. To add AI Gateway features (rate limits, usage tracking, guardrails), configure them on the Model Serving endpoint — see [AI Gateway docs](https://docs.databricks.com/aws/en/ai-gateway/overview-beta).
+AppKit integrates with **Model Serving endpoints**. AI Gateway (beta) endpoints are not directly supported — use the underlying Model Serving endpoint name instead. AI Gateway features (rate limits, usage tracking) can be configured on Model Serving endpoints via the `databricks-model-serving` skill.
 
 ## Troubleshooting
 
