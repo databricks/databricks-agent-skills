@@ -64,7 +64,7 @@ Note: **No `config/queries/` directory** — Lakebase apps use server-side `pool
 
 ## Lakebase Plugin API
 
-Access Lakebase through the plugin handle returned by `createApp()`:
+Scaffolding with `--features lakebase` (see above) generates this pattern. Access Lakebase through the plugin handle returned by `createApp()`:
 
 ```typescript
 import { createApp, server, lakebase } from "@databricks/appkit";
@@ -150,18 +150,20 @@ await AppKit.lakebase.query(`
 
 ## ORM Integration (Optional)
 
-The underlying pool is a standard `pg.Pool` — works with any PostgreSQL library:
+The plugin exposes the raw `pg.Pool` via `AppKit.lakebase.pool` — works with any PostgreSQL library:
 
 ```typescript
 // Drizzle ORM
 import { drizzle } from "drizzle-orm/node-postgres";
-const db = drizzle(pool);
+const db = drizzle(AppKit.lakebase.pool);
 
 // Prisma (with @prisma/adapter-pg)
 import { PrismaPg } from "@prisma/adapter-pg";
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg(AppKit.lakebase.pool);
 const prisma = new PrismaClient({ adapter });
 ```
+
+For ORM-compatible config: `AppKit.lakebase.getOrmConfig()`.
 
 ## Reading from Lakebase synced tables
 
@@ -169,7 +171,7 @@ Lakebase synced tables materialize Delta/UC tables into Lakebase Postgres for lo
 
 **Architecture:**
 ```
-Delta gold tables  →  Synced tables (read-only)  →  App reads via pool.query()
+Delta gold tables  →  Synced tables (read-only)  →  App reads via AppKit.lakebase.query()
 App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync → Delta
 ```
 
@@ -179,7 +181,7 @@ App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync
 
 ### How It Works
 
-Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `pool.query()` pattern but **read-only**.
+Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `AppKit.lakebase.query()` pattern but **read-only**.
 
 **Key differences from CRUD tables:**
 
@@ -197,7 +199,7 @@ Synced tables (created via `databricks postgres create-synced-table`) appear as 
 
 ```typescript
 topPickups: publicProcedure.query(async () => {
-  const { rows } = await pool.query(`
+  const { rows } = await AppKit.lakebase.query(`
     SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
     FROM public.nyc_trips
     GROUP BY pickup_zip

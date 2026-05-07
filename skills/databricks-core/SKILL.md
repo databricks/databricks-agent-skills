@@ -135,18 +135,6 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | Exploring tables/schemas | [Data Exploration](data-exploration.md) |
 | Deploying jobs/pipelines | Use `/databricks-dabs` |
 
-## Getting Started (End-to-End)
-
-For a full local-to-production workflow:
-
-1. **Install CLI** → [CLI Installation](databricks-cli-install.md)
-2. **Authenticate** → [CLI Authentication](databricks-cli-auth.md) → select profile
-3. **Discover resources** → `databricks experimental aitools tools get-default-warehouse`, `databricks catalogs list`
-4. **Scaffold app** → `databricks apps init --name <NAME> --features <...> --set <...> --profile <PROFILE>` (see `databricks-apps` skill)
-5. **Local dev** → `cd <app-dir> && npm install && npm run dev`
-6. **Deploy** → `databricks apps deploy --profile <PROFILE>`
-7. **Verify** → `databricks apps get <APP_NAME> --profile <PROFILE>` → check `app_status: RUNNING`
-
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)

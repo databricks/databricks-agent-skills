@@ -94,22 +94,9 @@ const result = await trpc.queryModel.query({ prompt: userInput });
 const answer = result.choices?.[0]?.message?.content;
 ```
 
-## Streaming Chat Pattern
+For streaming and advanced patterns, see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
 
-AppKit's serving plugin provides **transparent SSE streaming** — it proxies the upstream endpoint's Server-Sent Events response directly to the client without buffering. No client-side AI SDK is needed for basic streaming.
-
-- The proxy handles SSE headers and pipes the response stream
-- The Databricks Apps reverse proxy enforces a **120-second timeout** — streaming responses must complete within that window
-- For interactions exceeding 120 seconds, use **WebSockets** instead of SSE — see [Platform Guide](../platform-guide.md)
-- For the latest streaming API details: `npx @databricks/appkit docs`
-
-## AI Gateway & Embeddings
-
-AI Gateway foundation model endpoints (available in the `system.ai` catalog) are called the same way as custom serving endpoints — use the tRPC pattern above with the endpoint name.
-
-**Embeddings vs chat:** Embedding endpoints use a different request shape — `input` field instead of `messages`. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME>` from the `databricks-model-serving` skill to discover the expected input/output schema for any endpoint.
-
-**Storing embeddings:** For similarity search, store embeddings in Lakebase with pgvector — see the **`databricks-lakebase`** skill's pgvector section for `VECTOR` column types, indexes, and query patterns.
+AppKit integrates with **Model Serving endpoints**. To add AI Gateway features (rate limits, usage tracking, guardrails), configure them on the Model Serving endpoint — see [AI Gateway docs](https://docs.databricks.com/aws/en/ai-gateway/overview-beta).
 
 ## Troubleshooting
 
