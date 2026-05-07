@@ -194,7 +194,11 @@ The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new ob
 2. **Grant local access** *(if needed)*: assign `databricks_superuser` via UI (project creators already have access)
 3. **Develop locally**: your credentials get DML access to SP-owned schemas
 
-**If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data. Ask the user to choose: (A) drop and redeploy (destructive), or (B) manually reassign ownership (preserves data).
+**If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data.
+
+Ask the user to choose:
+- **(A) Drop and redeploy:** `databricks psql --project <PROJECT_ID> -- -c "DROP SCHEMA IF EXISTS app CASCADE;"`, then `databricks apps deploy` from the app directory. The SP recreates the schema on startup.
+- **(B) Export first, then drop and redeploy:** export via `pg_dump` or copy tables to a temp schema, then do option A and restore.
 
 ### Other Workflows
 
@@ -256,7 +260,7 @@ Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `serv
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions |
-| `permission denied for schema` | Schema owned by another role. Deploy app first so SP creates/owns it |
+| `permission denied for schema` | Schema owned by another role. If app not yet deployed: deploy first so the SP creates and owns the schema. If deployed but hitting this error (dev ran locally first): warn user about data loss, offer to export first (`pg_dump` or temp schema copy), then `DROP SCHEMA IF EXISTS app CASCADE` + redeploy. |
 | Protected branch won't delete | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
 | Token expired during long query | Tokens expire after 1 hour; implement refresh (see [connectivity.md](references/connectivity.md)) |
