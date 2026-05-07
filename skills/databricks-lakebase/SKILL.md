@@ -1,7 +1,7 @@
 ---
 name: databricks-lakebase
 description: "Databricks Lakebase Postgres: projects, scaling, connectivity, Lakebase synced tables, and Data API. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v0.296.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core

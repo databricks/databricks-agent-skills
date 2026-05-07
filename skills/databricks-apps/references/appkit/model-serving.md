@@ -96,11 +96,12 @@ const answer = result.choices?.[0]?.message?.content;
 
 ## Streaming Chat Pattern
 
-For real-time token streaming in a chat UI, the serving endpoint must be called with streaming enabled. The Databricks Apps reverse proxy enforces a **120-second timeout** on HTTP requests, so streaming responses must complete within that window.
+AppKit's serving plugin provides **transparent SSE streaming** — it proxies the upstream endpoint's Server-Sent Events response directly to the client without buffering. No client-side AI SDK is needed for basic streaming.
 
-- For streaming API details, check `npx @databricks/appkit docs` for the latest streaming support in AppKit
-- If AppKit doesn't provide a built-in streaming pattern, use the OpenAI-compatible streaming API via `fetch` with `stream: true` in the request body and process the SSE response
+- The proxy handles SSE headers and pipes the response stream
+- The Databricks Apps reverse proxy enforces a **120-second timeout** — streaming responses must complete within that window
 - For interactions exceeding 120 seconds, use **WebSockets** instead of SSE — see [Platform Guide](../platform-guide.md)
+- For the latest streaming API details: `npx @databricks/appkit docs`
 
 ## AI Gateway & Embeddings
 

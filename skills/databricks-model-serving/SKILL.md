@@ -1,7 +1,7 @@
 ---
 name: databricks-model-serving
 description: "Manage Databricks Model Serving endpoints via CLI. Use when asked to create, configure, query, or manage model serving endpoints for LLM inference, custom models, or external models."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v0.296.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core

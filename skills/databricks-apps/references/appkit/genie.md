@@ -81,8 +81,6 @@ npm install && npm run dev
 variables:
   genie_space_id:
     description: Genie Space ID
-  genie_space_name:
-    description: Genie Space name
 
 resources:
   apps:
@@ -91,7 +89,6 @@ resources:
         # ... existing resources ...
         - name: genie-space
           genie_space:
-            name: ${var.genie_space_name}
             space_id: ${var.genie_space_id}
             permission: CAN_RUN
 
@@ -99,7 +96,6 @@ targets:
   default:
     variables:
       genie_space_id: <space_id>
-      genie_space_name: <space_name>
 ```
 
 **`app.yaml`** — add env injection:

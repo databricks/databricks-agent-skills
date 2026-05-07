@@ -37,6 +37,8 @@ Where `<BRANCH_NAME>` and `<DATABASE_NAME>` are full resource names (e.g. `proje
 
 Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names before running this command.
 
+> For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
+
 **Get resource names** (if you have an existing project):
 ```bash
 # List branches → use the name field of a READY branch
@@ -60,25 +62,22 @@ my-app/
 
 Note: **No `config/queries/` directory** — Lakebase apps use server-side `pool.query()` calls, not SQL files.
 
-## `createLakebasePool` API
+## Lakebase Plugin API
+
+Access Lakebase through the plugin handle returned by `createApp()`:
 
 ```typescript
-import { createLakebasePool } from "@databricks/lakebase";
-// or: import { createLakebasePool } from "@databricks/appkit";
+import { createApp, server, lakebase } from "@databricks/appkit";
 
-const pool = createLakebasePool({
-  // All fields optional — auto-populated from env vars when deployed
-  host: process.env.PGHOST,              // Lakebase hostname
-  database: process.env.PGDATABASE,      // Database name
-  endpoint: process.env.LAKEBASE_ENDPOINT, // Endpoint resource path
-  user: process.env.PGUSER,             // Service principal client ID
-  max: 10,                               // Connection pool size
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+const AppKit = await createApp({
+  plugins: [server(), lakebase()],
 });
+
+// Query via the plugin handle — handles pooling and token refresh automatically
+const result = await AppKit.lakebase.query("SELECT * FROM users WHERE id = $1", [userId]);
 ```
 
-Call `createLakebasePool()` **once at module level** (server startup), not inside request handlers.
+The `lakebase()` plugin auto-configures from platform-injected env vars at deploy time. No manual pool setup needed.
 
 ## Environment Variables (auto-set when deployed with database resource)
 
@@ -93,42 +92,39 @@ Call `createLakebasePool()` **once at module level** (server startup), not insid
 
 ## tRPC CRUD Pattern
 
-Always use tRPC for Lakebase operations — do NOT call `pool.query()` from the client.
+Always use tRPC for Lakebase operations — do NOT call `AppKit.lakebase.query()` from the client.
 
 ```typescript
 // server/server.ts
-import { initTRPC } from '@trpc/server';
-import { createLakebasePool } from "@databricks/lakebase";
-import { z } from 'zod';
-import superjson from 'superjson'; // requires: npm install superjson
+import { createApp, server, lakebase } from "@databricks/appkit";
 
-const pool = createLakebasePool(); // reads env vars automatically
+const AppKit = await createApp({
+  plugins: [server(), lakebase()],
+});
 
-const t = initTRPC.create({ transformer: superjson });
-const publicProcedure = t.procedure;
-
-export const appRouter = t.router({
-  listItems: publicProcedure.query(async () => {
-    const { rows } = await pool.query(
+// Define routes using AppKit.lakebase.query()
+AppKit.server.router({
+  listItems: AppKit.server.procedure.query(async () => {
+    const { rows } = await AppKit.lakebase.query(
       "SELECT * FROM app_data.items ORDER BY created_at DESC LIMIT 100"
     );
     return rows;
   }),
 
-  createItem: publicProcedure
+  createItem: AppKit.server.procedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const { rows } = await pool.query(
+      const { rows } = await AppKit.lakebase.query(
         "INSERT INTO app_data.items (name) VALUES ($1) RETURNING *",
         [input.name]
       );
       return rows[0];
     }),
 
-  deleteItem: publicProcedure
+  deleteItem: AppKit.server.procedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await pool.query("DELETE FROM app_data.items WHERE id = $1", [input.id]);
+      await AppKit.lakebase.query("DELETE FROM app_data.items WHERE id = $1", [input.id]);
       return { success: true };
     }),
 });
@@ -142,7 +138,7 @@ export const appRouter = t.router({
 
 ```typescript
 // server/server.ts — run once at startup before handling requests
-await pool.query(`
+await AppKit.lakebase.query(`
   CREATE SCHEMA IF NOT EXISTS app_data;
   CREATE TABLE IF NOT EXISTS app_data.items (
     id SERIAL PRIMARY KEY,
@@ -154,7 +150,7 @@ await pool.query(`
 
 ## ORM Integration (Optional)
 
-The pool returned by `createLakebasePool()` is a standard `pg.Pool` — works with any PostgreSQL library:
+The underlying pool is a standard `pg.Pool` — works with any PostgreSQL library:
 
 ```typescript
 // Drizzle ORM
