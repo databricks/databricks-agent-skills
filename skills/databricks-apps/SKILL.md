@@ -179,14 +179,6 @@ databricks apps init --features analytics my-app-name
 databricks apps init --name my-app-name --features analytics --set "..." --profile <PROFILE>
 ```
 
-### Known Issue: Go Template Syntax in Generated Files
-
-`databricks apps init` may generate Go template placeholders like `{{.AppName}}` in `.ts`/`.tsx` files instead of the actual app name. After scaffolding, search generated files for `{{` and replace with the actual app name:
-
-```bash
-grep -r '{{' --include='*.ts' --include='*.tsx' .
-```
-
 ### Directory Naming
 
 `databricks apps init` creates directories in kebab-case matching the app name.

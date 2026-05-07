@@ -18,7 +18,6 @@ For specific products, use dedicated skills:
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
 - **databricks-model-serving** - Model Serving endpoint management and inference
-- **databricks-unity-catalog** - Unity Catalog setup, storage credentials, external locations, and grants
 
 ## Prerequisites
 

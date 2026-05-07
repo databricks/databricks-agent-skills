@@ -133,53 +133,33 @@ For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy 
 
 ### Pattern 5: Off-Platform Apps (TypeScript/Node.js)
 
-For apps running outside Databricks (external servers, local dev, CI/CD) that connect to Lakebase. Uses the `pg` driver with OAuth token from the Databricks REST API.
-
-**Discover Lakebase endpoint (when CLI is unavailable):**
-
-If the Databricks CLI is not installed (sandboxed environments, restricted containers), use `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables to call the REST API directly:
+For apps running outside Databricks (external servers, local dev, CI/CD) that connect to Lakebase. Use the `@databricks/lakebase` package — it works standalone without AppKit.
 
 ```bash
-# List Lakebase projects
-curl -s -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  "https://$DATABRICKS_HOST/api/2.0/postgres/projects" | jq .
-
-# Get endpoint details (host, port)
-curl -s -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  "https://$DATABRICKS_HOST/api/2.0/postgres/endpoints/projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>" | jq .
-
-# Generate database credential (OAuth token for Postgres)
-curl -s -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  "https://$DATABRICKS_HOST/api/2.0/postgres/credentials" \
-  -d '{"endpoint": "projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>"}' | jq .
+npm install @databricks/lakebase
 ```
-
-Use the results to populate `.env.local` with real values (not placeholders).
-
-**TypeScript connection with token refresh:**
 
 ```typescript
-import pg from "pg";
+import { createLakebasePool } from "@databricks/lakebase";
 
-// Token refresh: Lakebase OAuth tokens expire in 1 hour.
-// Refresh every 30-40 minutes via background interval.
-let currentToken = await generateToken();
-setInterval(async () => {
-  currentToken = await generateToken();
-}, 30 * 60 * 1000); // 30 minutes
-
-const pool = new pg.Pool({
+const pool = createLakebasePool({
   host: process.env.PGHOST,
-  port: parseInt(process.env.PGPORT || "5432"),
-  database: process.env.PGDATABASE || "databricks_postgres",
-  user: process.env.PGUSER,
-  password: () => currentToken, // dynamic password via callback
-  ssl: { rejectUnauthorized: false }, // required — see SSL note below
-  max: 10,
+  database: process.env.PGDATABASE,
+  endpoint: process.env.LAKEBASE_ENDPOINT,
+  // Authentication: reads from DATABRICKS_HOST + DATABRICKS_TOKEN,
+  // .databrickscfg, or explicit workspaceClient
 });
+
+// Returns a standard pg.Pool — works with Drizzle, Prisma, or any PostgreSQL library
+const { rows } = await pool.query("SELECT * FROM my_table LIMIT 10");
 ```
 
-**⚠️ SSL gotcha:** The `pg` driver's default `ssl: true` sets `rejectUnauthorized: true`, which fails against Lakebase certificates. Use `ssl: { rejectUnauthorized: false }` or pass `sslmode=require` in the connection string. This also affects Drizzle ORM: if `drizzle-kit migrate` doesn't support custom SSL options, use Drizzle's programmatic `migrate()` API for finer control over the connection.
+**What `@databricks/lakebase` handles automatically:**
+- **OAuth token refresh** — tokens expire after 1 hour; the package refreshes 2 minutes before expiry with request deduplication
+- **SSL** — defaults to `sslmode=require`
+- **Connection pooling** — configurable `max`, `idleTimeoutMillis`, `connectionTimeoutMillis`
+
+**Authentication chain** (in order): explicit `workspaceClient` → Databricks SDK default auth (`DATABRICKS_HOST` + `DATABRICKS_TOKEN`, `.databrickscfg`) → `currentUser.me()` API fallback. For native Postgres password auth (bypassing OAuth), pass `password` directly.
 
 ## Best Practices
 
