@@ -90,7 +90,7 @@ files({
 });
 ```
 
-### Built-in policies
+Built-in policies:
 
 | Helper                      | Allows                                                             |
 | --------------------------- | ------------------------------------------------------------------ |
@@ -98,63 +98,25 @@ files({
 | `files.policy.allowAll()`   | every action                                                       |
 | `files.policy.denyAll()`    | no action (yes — even `list`)                                      |
 
-### Combinators
+Combinators: `policy.all(...)` (AND, short-circuits on deny), `policy.any(...)` (OR, short-circuits on allow), `policy.not(p)` (e.g. `not(publicRead())` = write-only drop-box).
 
-- `files.policy.all(p1, p2, ...)` — AND, short-circuits on first deny
-- `files.policy.any(p1, p2, ...)` — OR, short-circuits on first allow
-- `files.policy.not(p)` — invert (e.g. `not(publicRead())` = write-only drop-box)
-
-### Custom policies
-
-A `FilePolicy` is `(action, resource, user) => boolean | Promise<boolean>`. `READ_ACTIONS` and `WRITE_ACTIONS` are exported `Set<FileAction>` for action-class checks.
+A `FilePolicy` is `(action, resource, user) => boolean | Promise<boolean>`. Exported `READ_ACTIONS` / `WRITE_ACTIONS` are `Set<FileAction>` for action-class checks. `user.id` comes from the `x-forwarded-user` header (HTTP) or `req` (`asUser(req)`); `user.isServicePrincipal === true` when the programmatic API skipped `asUser()`. Full `FileAction` / `FileResource` / `FilePolicyUser` shape: `npx @databricks/appkit docs Files plugin`.
 
 ```typescript
 import { type FilePolicy, WRITE_ACTIONS } from "@databricks/appkit";
 
 const ADMIN_IDS = ["admin@company.com"];
 
+// Writes admin-only; reads open. Wrap with `policy.any(spBypass, adminWrite)` for SP bypass.
 const adminWrite: FilePolicy = (action, _resource, user) => {
   if (WRITE_ACTIONS.has(action)) return ADMIN_IDS.includes(user.id);
-  return true; // reads open to everyone
+  return true;
 };
 
-files({
-  volumes: { reports: { policy: adminWrite } },
-});
+files({ volumes: { reports: { policy: adminWrite } } });
 ```
 
-Mix custom logic with built-ins via combinators — e.g. SP can do anything, users can only read:
-
-```typescript
-files.policy.any(
-  (_action, _resource, user) => !!user.isServicePrincipal,
-  files.policy.publicRead(),
-);
-```
-
-### Policy inputs
-
-```typescript
-type FileAction =
-  | "list" | "read" | "download" | "raw" | "exists" | "metadata" | "preview"
-  | "upload" | "mkdir" | "delete";
-
-interface FileResource {
-  path: string;     // relative path within the volume
-  volume: string;   // volume key
-  size?: number;    // content-length in bytes (uploads only)
-}
-
-interface FilePolicyUser {
-  id: string;                    // from `x-forwarded-user` header (HTTP) or req
-  isServicePrincipal?: boolean;  // true when programmatic API skipped asUser()
-}
-```
-
-### Enforcement
-
-- **HTTP routes**: denied → `403 { error: "Policy denied \"{action}\" on volume \"{volume}\"", plugin: "files" }`.
-- **Programmatic API**: denied → throws `PolicyDeniedError` (importable from `@databricks/appkit`) with `.action` and `.volumeKey` properties. Both `appkit.files("vol").list()` (SP, `isServicePrincipal: true`) and `appkit.files("vol").asUser(req).list()` (user) are gated.
+**Enforcement**: HTTP denial → `403 { error: "Policy denied \"{action}\" on volume \"{volume}\"", plugin: "files" }`. Programmatic denial → throws `PolicyDeniedError` (exported from `@databricks/appkit`, has `.action` / `.volumeKey`). Both SP and `asUser(req)` calls are gated.
 
 ## Server-Side API (Programmatic)
 
@@ -173,39 +135,13 @@ await appkit.files.volume("uploads").asUser(req).list();
 
 **Use `.asUser(req)` in route handlers.** Without it the policy sees `isServicePrincipal: true` and a warning is logged — fine for background jobs, wrong for user-driven endpoints where per-user policy decisions matter. Policy denial throws `PolicyDeniedError`.
 
-**`VolumeAPI` methods**: `list`, `read`, `download`, `exists`, `metadata`, `preview`, `upload`, `createDirectory`, `delete`. `read()` caps files at 10 MB by default — pass `{ maxSize: <bytes> }` or use `download()` for larger files. Paths are absolute (`/Volumes/...`) or relative to the volume root; `../` and null bytes are rejected.
-
-### Execution defaults
-
-Every operation runs through cache/retry/timeout interceptors:
-
-| Tier     | Operations                            | Cache | Retry | Timeout |
-| -------- | ------------------------------------- | ----- | ----- | ------- |
-| Read     | list, read, exists, metadata, preview | 60 s  | 3×    | 30 s    |
-| Download | download, raw                         | —     | 3×    | 30 s    |
-| Write    | upload, mkdir, delete                 | —     | —     | 600 s   |
-
-Cache keys include the volume key (no cross-volume collisions). Write operations auto-invalidate the parent directory's cached `list` entry.
+**`VolumeAPI` methods**: `list`, `read`, `download`, `exists`, `metadata`, `preview`, `upload`, `createDirectory`, `delete`. `read()` caps files at 10 MB by default — pass `{ maxSize: <bytes> }` or use `download()` for larger files. Paths are absolute (`/Volumes/...`) or relative to the volume root; `../` and null bytes are rejected. Reads cache 60 s with 3 retries; writes have a 600 s timeout, no retry, no cache; cache keys include the volume key, and writes auto-invalidate the parent directory's `list` cache. Full method signatures: `npx @databricks/appkit docs Files plugin`.
 
 ## HTTP Routes
 
-Mounted at `/api/files/*`. All routes execute as the service principal; user identity is read from the `x-forwarded-user` header and passed to the volume's policy. Policy denial → `403`.
+Mounted at `/api/files/*`. All routes execute as the service principal; user identity is read from the `x-forwarded-user` header and passed to the volume's policy (denial → `403`). Reads are GET (`list`, `read`, `download`, `raw`, `exists`, `metadata`, `preview`); writes are POST (`upload`, `mkdir`) and DELETE — full route shape, request bodies, and response types: `npx @databricks/appkit docs Files plugin`.
 
-| Method | Path                         | Purpose                                    |
-| ------ | ---------------------------- | ------------------------------------------ |
-| GET    | `/volumes`                   | List configured volume keys                |
-| GET    | `/:volumeKey/list?path=`     | Directory listing                          |
-| GET    | `/:volumeKey/read?path=`     | Read text content                          |
-| GET    | `/:volumeKey/download?path=` | Binary stream (attachment)                 |
-| GET    | `/:volumeKey/raw?path=`      | Inline stream (attachment for unsafe MIME) |
-| GET    | `/:volumeKey/exists?path=`   | Existence check                            |
-| GET    | `/:volumeKey/metadata?path=` | File metadata                              |
-| GET    | `/:volumeKey/preview?path=`  | Preview (text + type flags)                |
-| POST   | `/:volumeKey/upload?path=`   | Upload (raw body)                          |
-| POST   | `/:volumeKey/mkdir`          | Create directory (`body.path`)             |
-| DELETE | `/:volumeKey?path=`          | Delete file                                |
-
-Path validation: non-empty, ≤ 4096 chars, no null bytes, no `../`. The `/raw` endpoint sets `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`; HTML/JS/SVG MIME types are forced to attachment.
+The `/raw` endpoint sets `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`; HTML/JS/SVG MIME types are forced to attachment.
 
 ## Frontend Components
 
