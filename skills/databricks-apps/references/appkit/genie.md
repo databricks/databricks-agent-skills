@@ -81,6 +81,8 @@ npm install && npm run dev
 variables:
   genie_space_id:
     description: Genie Space ID
+  genie_space_name:
+    description: Genie Space name
 
 resources:
   apps:
@@ -89,6 +91,7 @@ resources:
         # ... existing resources ...
         - name: genie-space
           genie_space:
+            name: ${var.genie_space_name}
             space_id: ${var.genie_space_id}
             permission: CAN_RUN
 
@@ -96,6 +99,7 @@ targets:
   default:
     variables:
       genie_space_id: <space_id>
+      genie_space_name: <space_name>
 ```
 
 **`app.yaml`** — add env injection:
@@ -141,54 +145,7 @@ function GeniePage() {
 
 Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
-## Multiple Genie Spaces
-
-To build an app that lets users switch between multiple Genie spaces (e.g., different datasets or domains):
-
-**`databricks.yml`** — declare multiple Genie resources with distinct aliases:
-
-```yaml
-variables:
-  genie_space_sales_id:
-    description: Sales Genie Space ID
-  genie_space_support_id:
-    description: Support Genie Space ID
-
-resources:
-  apps:
-    app:
-      resources:
-        - name: genie-sales
-          genie_space:
-            space_id: ${var.genie_space_sales_id}
-            permission: CAN_RUN
-        - name: genie-support
-          genie_space:
-            space_id: ${var.genie_space_support_id}
-            permission: CAN_RUN
-```
-
-**`app.yaml`** — inject each space ID as a separate env var:
-
-```yaml
-env:
-  - name: GENIE_SPACE_SALES
-    valueFrom: genie-sales
-  - name: GENIE_SPACE_SUPPORT
-    valueFrom: genie-support
-```
-
-**`server/server.ts`** — register the genie plugin once; it reads space IDs from env vars. Each alias becomes a separate `/api/genie/:alias/messages` endpoint. The client-side space selector routes messages to the correct alias.
-
-**Frontend** — build a selector that switches between spaces:
-
-```tsx
-const spaces = [
-  { alias: "sales", label: "Sales Analytics" },
-  { alias: "support", label: "Support Metrics" },
-];
-// Route to /api/genie/{alias}/messages based on user selection
-```
+For multi-space apps (switching between Genie spaces), see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
 
 ## Frontend
 

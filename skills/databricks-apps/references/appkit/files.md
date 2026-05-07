@@ -244,16 +244,6 @@ resources:
             permission: WRITE_VOLUME
 ```
 
-The files plugin requires OBO user token passthrough for user-level file access. Add `user_api_scopes` to `databricks.yml`:
-
-```yaml
-resources:
-  apps:
-    my_app:
-      user_api_scopes:
-        - files.files
-```
-
 Wire the env var in `app.yaml`:
 
 ```yaml

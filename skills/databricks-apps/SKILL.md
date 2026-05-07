@@ -1,7 +1,7 @@
 ---
 name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
-compatibility: Requires databricks CLI (>= v0.296.0)
+compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"
 parent: databricks-core

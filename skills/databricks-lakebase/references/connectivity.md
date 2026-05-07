@@ -11,7 +11,7 @@
 
 ## Connection Patterns (Python)
 
-> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity fully auto-injected via `createLakebasePool()` — see the **`databricks-apps`** skill.
+> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity via the `lakebase()` plugin — see the **`databricks-apps`** skill's [Lakebase guide](../../databricks-apps/references/appkit/lakebase.md).
 
 ### Pattern 1: Direct Connection (Scripts/Notebooks)
 
