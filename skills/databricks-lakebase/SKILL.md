@@ -1,10 +1,10 @@
 ---
 name: databricks-lakebase
-description: "Databricks Lakebase Postgres: projects, scaling, connectivity, Lakebase synced tables, and Data API. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
+description: "Create and manage Databricks Lakebase Postgres projects, configure scaling and connectivity, set up Lakebase synced tables, and query via the Data API. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
-parent: databricks-core
+  parent: databricks-core
 ---
 
 # Lakebase Postgres Autoscaling
@@ -17,17 +17,7 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 
 **Compliance:** Supports HIPAA, C5, TISAX, or None.
 
-## Capabilities
-
-- **Project lifecycle** -- create, update, delete Lakebase Postgres Autoscaling projects
-- **Branching** -- copy-on-write branches with TTL, point-in-time recovery, and reset
-- **Compute scaling** -- autoscale 0.5--32 CU, fixed 36--112 CU, scale-to-zero
-- **High availability** -- 1 primary + 1--3 secondaries, automatic failover
-- **PostgreSQL connectivity** -- OAuth token refresh, connection pooling, SSL
-- **Data API** -- PostgREST-compatible HTTP CRUD (Autoscaling only)
-- **Lakebase synced tables** -- sync Unity Catalog Delta tables into Postgres (previously known as Reverse ETL)
-- **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow
-- **Cloud support** -- AWS and Azure (GA)
+**Capabilities:** Project lifecycle, copy-on-write branching (TTL, point-in-time recovery), autoscale 0.5--112 CU with scale-to-zero, HA with 1--3 secondaries, OAuth-based Postgres connectivity, PostgREST Data API, Lakebase synced tables (Delta-to-Postgres), Databricks App integration, AWS and Azure (GA).
 
 **Reference docs:**
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
@@ -144,22 +134,9 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 
 **Delete:** Protected branches must be unprotected first (`update-branch` to set `spec.is_protected` to `false`). Cannot delete branches with children. **Never delete the `production` branch.**
 
-## Key Differences from Lakebase Provisioned
+## Provisioned vs Autoscaling
 
-> All new instances default to Autoscaling as of March 2026. Automatic migration of Provisioned instances begins June 2026.
-
-| Aspect | Provisioned | Autoscaling |
-|--------|-------------|-------------|
-| CLI group | `databricks database` | `databricks postgres` |
-| Top-level resource | Instance | Project |
-| Capacity | CU_1--CU_8 (16 GB/CU) | 0.5--112 CU (2 GB/CU) |
-| Branching | Not supported | Full support |
-| Scale-to-zero | Not supported | Configurable |
-| HA | Readable secondaries | 1--3 secondaries + read replicas |
-| Data API | Not available | PostgREST HTTP API |
-| Cloud | AWS only | AWS and Azure |
-
-**Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
+All new instances default to Autoscaling (March 2026). Provisioned uses `databricks database` CLI; Autoscaling uses `databricks postgres`. Autoscaling adds branching, scale-to-zero, Data API, and Azure support. Automatic migration begins June 2026.
 
 ## What's Next
 
