@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-05-07T14:09:14Z",
+  "updated_at": "2026-05-11T10:23:09Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "experimental": false,
-      "updated_at": "2026-05-07T14:08:13Z",
+      "updated_at": "2026-05-11T10:22:57Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -33,7 +33,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-05-07T14:08:19Z",
+      "updated_at": "2026-05-11T10:22:59Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -66,7 +66,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-05-07T13:50:17Z",
+      "updated_at": "2026-05-07T15:19:50Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -78,7 +78,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-05-07T14:09:06Z",
+      "updated_at": "2026-05-11T10:23:05Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -93,7 +93,7 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": false,
-      "updated_at": "2026-05-05T15:31:42Z",
+      "updated_at": "2026-05-07T15:19:45Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -105,7 +105,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-05-07T13:50:27Z",
+      "updated_at": "2026-05-07T15:19:55Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -152,7 +152,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-05-05T15:31:42Z",
+      "updated_at": "2026-05-07T15:19:59Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

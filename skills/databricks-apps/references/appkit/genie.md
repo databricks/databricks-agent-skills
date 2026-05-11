@@ -145,7 +145,7 @@ function GeniePage() {
 
 Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
-For multi-space apps (switching between Genie spaces), see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
+For advanced Genie plugin usage, see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
 
 ## Frontend
 

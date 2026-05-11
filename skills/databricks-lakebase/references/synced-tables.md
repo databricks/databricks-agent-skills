@@ -190,6 +190,8 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 
 Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS and Azure.
 
+> **Important:** Tables must reside in the `databricks_postgres` database for Lakehouse Sync to work.
+
 **Lakehouse Sync enablement is a UI-only action** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog. When automating CDC workflows, treat this as a manual post-automation step and inform the user.
 
 **Prerequisites:**

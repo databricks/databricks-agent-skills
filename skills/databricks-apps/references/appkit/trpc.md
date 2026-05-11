@@ -43,7 +43,7 @@ databricks apps manifest --profile <PROFILE>
 **Key plugins to check for:**
 
 - **analytics** — provides SQL warehouse query execution (do NOT reimplement with tRPC)
-- **lakebase** — provides `createLakebasePool` for PostgreSQL CRUD (use pool in tRPC routes, don't create raw connections)
+- **lakebase** — provides Lakebase plugin for PostgreSQL CRUD (use plugin in tRPC routes, don't create raw connections)
 - **genie** — provides Genie AI-powered data exploration (check before building custom natural-language-to-SQL routes)
 - **files** — provides file storage and retrieval helpers (check before writing custom file upload/download routes)
 

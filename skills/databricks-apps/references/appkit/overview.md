@@ -126,7 +126,7 @@ Do not guess paths — run without args first, then pick from the index.
 | Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
 | Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
-| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — createLakebasePool, tRPC patterns, schema init |
+| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, tRPC patterns, schema init |
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — resource declaration, tRPC query pattern |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
