@@ -52,7 +52,7 @@ databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --
 ```
 my-app/
 ├── server/
-│   └── server.ts       # Backend with Lakebase pool + tRPC routes
+│   └── server.ts       # Backend with Lakebase plugin + Express routes
 ├── client/
 │   └── src/
 │       └── App.tsx     # React frontend
@@ -60,21 +60,21 @@ my-app/
 └── package.json        # Includes @databricks/lakebase dependency
 ```
 
-Note: **No `config/queries/` directory** — Lakebase apps use server-side `pool.query()` calls, not SQL files.
+Note: **No `config/queries/` directory** — Lakebase apps use server-side `appkit.lakebase.query()` calls, not SQL files.
 
 ## Lakebase Plugin API
 
 Scaffolding with `--features lakebase` (see above) generates this pattern. Access Lakebase through the plugin handle returned by `createApp()`:
 
 ```typescript
-import { createApp, server, lakebase } from "@databricks/appkit";
+import { createApp, lakebase } from "@databricks/appkit";
 
-const AppKit = await createApp({
-  plugins: [server(), lakebase()],
+const appkit = await createApp({
+  plugins: [lakebase()],
 });
 
 // Query via the plugin handle — handles pooling and token refresh automatically
-const result = await AppKit.lakebase.query("SELECT * FROM users WHERE id = $1", [userId]);
+const result = await appkit.lakebase.query("SELECT * FROM users WHERE id = $1", [userId]);
 ```
 
 The `lakebase()` plugin auto-configures from platform-injected env vars at deploy time. No manual pool setup needed.
@@ -90,55 +90,70 @@ The `lakebase()` plugin auto-configures from platform-injected env vars at deplo
 | `PGSSLMODE` | SSL mode (`require`) |
 | `LAKEBASE_ENDPOINT` | Endpoint resource path |
 
-## tRPC CRUD Pattern
+## CRUD Routes Pattern
 
-Always use tRPC for Lakebase operations — do NOT call `AppKit.lakebase.query()` from the client.
+Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `server.extend()` to register Express routes:
 
 ```typescript
 // server/server.ts
 import { createApp, server, lakebase } from "@databricks/appkit";
+import { z } from 'zod';
 
-const AppKit = await createApp({
-  plugins: [server(), lakebase()],
-});
-
-// Define routes using AppKit.lakebase.query()
-AppKit.server.router({
-  listItems: AppKit.server.procedure.query(async () => {
-    const { rows } = await AppKit.lakebase.query(
-      "SELECT * FROM app_data.items ORDER BY created_at DESC LIMIT 100"
-    );
-    return rows;
-  }),
-
-  createItem: AppKit.server.procedure
-    .input(z.object({ name: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      const { rows } = await AppKit.lakebase.query(
-        "INSERT INTO app_data.items (name) VALUES ($1) RETURNING *",
-        [input.name]
+createApp({
+  plugins: [server({ autoStart: false }), lakebase()],
+})
+  .then(async (appkit) => {
+    // Schema init (runs once at startup)
+    await appkit.lakebase.query(`
+      CREATE SCHEMA IF NOT EXISTS app_data;
+      CREATE TABLE IF NOT EXISTS app_data.items (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
       );
-      return rows[0];
-    }),
+    `);
 
-  deleteItem: AppKit.server.procedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
-      await AppKit.lakebase.query("DELETE FROM app_data.items WHERE id = $1", [input.id]);
-      return { success: true };
-    }),
-});
+    // CRUD routes via Express
+    appkit.server.extend((app) => {
+      app.get('/api/items', async (_req, res) => {
+        const { rows } = await appkit.lakebase.query(
+          "SELECT * FROM app_data.items ORDER BY created_at DESC LIMIT 100"
+        );
+        res.json(rows);
+      });
+
+      app.post('/api/items', async (req, res) => {
+        const parsed = z.object({ name: z.string().min(1) }).safeParse(req.body);
+        if (!parsed.success) { res.status(400).json({ error: 'Invalid input' }); return; }
+        const { rows } = await appkit.lakebase.query(
+          "INSERT INTO app_data.items (name) VALUES ($1) RETURNING *",
+          [parsed.data.name]
+        );
+        res.status(201).json(rows[0]);
+      });
+
+      app.delete('/api/items/:id', async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
+        await appkit.lakebase.query("DELETE FROM app_data.items WHERE id = $1", [id]);
+        res.status(204).send();
+      });
+    });
+
+    await appkit.server.start();
+  })
+  .catch(console.error);
 ```
 
 > **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
 
 ## Schema Initialization
 
-**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables on server startup:
+**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `.then()` callback before registering routes (see CRUD pattern above):
 
 ```typescript
-// server/server.ts — run once at startup before handling requests
-await AppKit.lakebase.query(`
+// Inside onPluginsReady — runs once at startup before handling requests
+await appkit.lakebase.query(`
   CREATE SCHEMA IF NOT EXISTS app_data;
   CREATE TABLE IF NOT EXISTS app_data.items (
     id SERIAL PRIMARY KEY,
@@ -150,20 +165,20 @@ await AppKit.lakebase.query(`
 
 ## ORM Integration (Optional)
 
-The plugin exposes the raw `pg.Pool` via `AppKit.lakebase.pool` — works with any PostgreSQL library:
+The plugin exposes the raw `pg.Pool` via `appkit.lakebase.pool` — works with any PostgreSQL library:
 
 ```typescript
 // Drizzle ORM
 import { drizzle } from "drizzle-orm/node-postgres";
-const db = drizzle(AppKit.lakebase.pool);
+const db = drizzle(appkit.lakebase.pool);
 
 // Prisma (with @prisma/adapter-pg)
 import { PrismaPg } from "@prisma/adapter-pg";
-const adapter = new PrismaPg(AppKit.lakebase.pool);
+const adapter = new PrismaPg(appkit.lakebase.pool);
 const prisma = new PrismaClient({ adapter });
 ```
 
-For ORM-compatible config: `AppKit.lakebase.getOrmConfig()`.
+For ORM-compatible config: `appkit.lakebase.getOrmConfig()`.
 
 ## Reading from Lakebase synced tables
 
@@ -171,7 +186,7 @@ Lakebase synced tables materialize Delta/UC tables into Lakebase Postgres for lo
 
 **Architecture:**
 ```
-Delta gold tables  →  Synced tables (read-only)  →  App reads via AppKit.lakebase.query()
+Delta gold tables  →  Synced tables (read-only)  →  App reads via appkit.lakebase.query()
 App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync → Delta
 ```
 
@@ -181,7 +196,7 @@ App writes         →  Lakebase OLTP tables        →  optional Lakehouse Sync
 
 ### How It Works
 
-Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `AppKit.lakebase.query()` pattern but **read-only**.
+Synced tables (created via `databricks postgres create-synced-table`) appear as regular Postgres tables. From the app's perspective, use the same `appkit.lakebase.query()` pattern but **read-only**.
 
 **Key differences from CRUD tables:**
 
@@ -195,19 +210,20 @@ Synced tables (created via `databricks postgres create-synced-table`) appear as 
 
 **Permission grant required:** The app's SP has `CAN_CONNECT_AND_CREATE` but does **not** have `pg_read_all_data`. To read synced tables, the project owner must grant access — see the **`databricks-lakebase`** skill's SKILL.md "Grant app SP access to synced tables" section for the SQL commands and psql connection steps.
 
-**Example tRPC route reading synced taxi data:**
+**Example Express route reading synced taxi data:**
 
 ```typescript
-topPickups: publicProcedure.query(async () => {
-  const { rows } = await AppKit.lakebase.query(`
+// Inside onPluginsReady → appkit.server.extend((app) => { ... })
+app.get('/api/top-pickups', async (_req, res) => {
+  const { rows } = await appkit.lakebase.query(`
     SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
     FROM public.nyc_trips
     GROUP BY pickup_zip
     ORDER BY trip_count DESC
     LIMIT 10
   `);
-  return rows;
-}),
+  res.json(rows);
+});
 ```
 
 > **Do not write to synced tables.** The sync pipeline manages the data — direct writes corrupt the sync state. For mixed read/write patterns, read from synced tables and write to separate app-owned tables. To create synced tables and grant the app's SP read access, see the **`databricks-lakebase`** skill's [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md) and the "Grant app SP access to synced tables" section in its SKILL.md.
@@ -217,8 +233,8 @@ topPickups: publicProcedure.query(async () => {
 | | Analytics | Lakebase |
 |--|-----------|---------|
 | SQL dialect | Databricks SQL (Spark SQL) | Standard PostgreSQL |
-| Query location | `config/queries/*.sql` files | `pool.query()` in tRPC routes |
-| Data retrieval | `useAnalyticsQuery` hook | tRPC query procedure |
+| Query location | `config/queries/*.sql` files | `appkit.lakebase.query()` in Express routes |
+| Data retrieval | `useAnalyticsQuery` hook | Express route via `server.extend()` |
 | Date functions | `CURRENT_TIMESTAMP()`, `DATEDIFF(DAY, ...)` | `NOW()`, `AGE(...)` |
 | Auto-increment | N/A | `SERIAL` or `GENERATED ALWAYS AS IDENTITY` |
 | Insert pattern | N/A | `INSERT ... VALUES ($1) RETURNING *` |
