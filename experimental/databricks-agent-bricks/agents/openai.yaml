@@ -1,7 +1,7 @@
 interface:
   display_name: "Databricks Agent Bricks"
-  short_description: "Create and manage Databricks Agent Bricks: Knowledge Assistants (KA) for document Q&A, Genie Spaces for SQL exploration, and Supervisor Agents (MAS) for multi-agent orchestration."
+  short_description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS). For Genie Spaces, see databricks-genie skill."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
-  default_prompt: "Use $databricks-agent-bricks for create and manage databricks agent bricks: knowledge assistants (ka) for document q&a, genie spaces for sql exploration, and supervisor agents (mas) for multi-agent orchestration."
+  default_prompt: "Use $databricks-agent-bricks for create agent bricks: knowledge assistants (ka) for document q&a and supervisor agents for multi-agent orchestration (mas). for genie spaces, see databricks-genie skill."

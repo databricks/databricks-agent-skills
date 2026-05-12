@@ -68,12 +68,11 @@ See the root [README](../README.md) for details on the stable install path.
 
 ### 🚀 Development & Deployment
 - **databricks-bundles** - DABs for multi-environment deployments
-- **databricks-apps-python** - Python web apps (Dash, Streamlit, Flask) with foundation model integration
+- **databricks-apps-python** - Databricks apps. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required
 - **databricks-python-sdk** - Python SDK, Connect, CLI, REST API
 - **databricks-config** - Profile authentication setup
 - **databricks-execution-compute** - Execute on Databricks compute
 - **databricks-lakebase-autoscale** - Autoscaling for Lakebase
-- **databricks-lakebase-provisioned** - Managed PostgreSQL for OLTP workloads
 
 ### 📚 Reference
 - **databricks-docs** - Documentation index via llms.txt
@@ -83,16 +82,34 @@ See the root [README](../README.md) for details on the stable install path.
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
-**Source SHA**: [`2228c3e`](https://github.com/databricks-solutions/ai-dev-kit/commit/2228c3e880fbadd871882a5f99628300dcb9f2f1)
-on the `add_appkit` branch (5 commits ahead of `origin/main` at the time
-of import). Divergence from public main is small but meaningful: the
-`databricks-app-python` → `databricks-apps-python` rename had not yet been
-merged upstream, and importing from the renamed version is what prevents a
-3rd skill name collision with d-a-s's own `databricks-apps`. A few other
-local commits touch `databricks-bundles/SKILL.md` (2 lines),
-`databricks-lakebase-provisioned/SKILL.md` (2 lines), and
-`databricks-apps-python/SKILL.md` (64 lines). The full set of local
-deltas is tracked by the import commit on this branch.
+**Source SHA**: [`9c7a5b3`](https://github.com/databricks-solutions/ai-dev-kit/commit/9c7a5b3a3bf187c2b19d0b777768ecb52dd2de22)
+on the `appkit-on-experimental` branch of `jamesbroadhead/ai-dev-kit` —
+the head of [a-d-k PR #533](https://github.com/databricks-solutions/ai-dev-kit/pull/533),
+which targets a-d-k's `experimental` branch. One commit ahead of
+`origin/experimental` at import time. Divergence from `experimental`
+is the PR #533 change set:
+
+- `databricks-app-python` → `databricks-apps-python` rename (folder,
+  baselines, manifests, install scripts, cross-skill mentions). The
+  rename prevents a 3rd skill-name collision with d-a-s's own
+  `databricks-apps` — alongside the two we already handle for
+  `databricks-jobs` and `databricks-model-serving`.
+- `databricks-apps-python/SKILL.md` leads with AppKit (TypeScript +
+  React SDK) as the recommended approach for new apps; Python
+  frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) are
+  demoted to an explicit alternative.
+- `install.sh` / `install.ps1` upstream changes wiring a-d-k to
+  install d-a-s skills via a single GitHub tree call (out of scope
+  for this snapshot, not imported here).
+
+**Note**: the `experimental` branch of a-d-k previously removed
+`databricks-lakebase-provisioned`, which is why it is not present in
+this import. `databricks-model-serving` and
+`databricks-spark-declarative-pipelines` are intentionally excluded
+from this snapshot — see TODOs #1b and #5 on the import PR.
+
+The full set of paths brought in is tracked by the import commit on
+this branch.
 
 **Transition phase (until `ai-dev-kit` skills are locked):**
 - Source of truth is **upstream `ai-dev-kit`**. New work and bug fixes go there.
