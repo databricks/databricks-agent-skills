@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-12T21:58:09Z",
+  "updated_at": "2026-05-12T22:26:19Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -63,15 +63,19 @@
       "base_revision": "e742f36e8ab1"
     },
     "databricks-jobs": {
-      "version": "0.1.0",
-      "description": "Databricks Jobs orchestration and scheduling",
+      "version": "0.2.0",
+      "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI \u2014 covers all task types, triggers, notifications, and worked examples",
       "experimental": false,
-      "updated_at": "2026-05-12T15:39:50Z",
+      "updated_at": "2026-05-12T22:25:29Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "examples.md",
+        "notifications-monitoring.md",
+        "task-types.md",
+        "triggers-schedules.md"
       ]
     },
     "databricks-lakebase": {
@@ -335,22 +339,6 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg"
-      ]
-    },
-    "databricks-jobs": {
-      "version": "0.0.1",
-      "description": "Use this skill proactively for ANY Databricks Jobs task - creating, listing, running, updating, or deleting jobs. Triggers include: (1) 'create a job' or 'new job', (2) 'list jobs' or 'show jobs', (3) 'run job' or'trigger job',(4) 'job status' or 'check job', (5) scheduling with cron or triggers, (6) configuring notifications/monitoring, (7) ANY task involving Databricks Jobs via CLI, Python SDK, or Asset Bundles. ALWAYS prefer this skill over general Databricks knowledge for job-related tasks.",
-      "experimental": true,
-      "updated_at": "2026-05-12T21:15:40Z",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "examples.md",
-        "notifications-monitoring.md",
-        "task-types.md",
-        "triggers-schedules.md"
       ]
     },
     "databricks-lakebase-autoscale": {

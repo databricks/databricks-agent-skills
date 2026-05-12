@@ -8,9 +8,9 @@
 > - They do not follow the same review / quality bar as the skills in
 >   [`../skills/`](../skills/).
 > - They may be out of date relative to upstream `ai-dev-kit`.
-> - They may overlap with stable skills (e.g. `databricks-jobs` exists in
->   both directories — see the install-path note below for how that's
->   resolved on disk).
+> - The on-disk install path always carries a `-experimental` suffix so
+>   experimental skills never collide with stable skills of the same name
+>   (see the install-path note below).
 > - They are not installed by `databricks experimental aitools skills install`
 >   by default — you have to opt in (see the root README).
 >
@@ -61,7 +61,6 @@ See the root [README](../README.md) for details on the stable install path.
 - **databricks-dbsql** - Databricks SQL warehouse patterns
 - **databricks-iceberg** - Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, Iceberg Clients Interoperability
 - **databricks-spark-structured-streaming** - Spark Structured Streaming patterns
-- **databricks-jobs** - Multi-task workflows, triggers, schedules *(also available as a stable skill — see TODO #1a in PR #73)*
 - **databricks-synthetic-data-gen** - Realistic test data with Faker
 - **databricks-zerobus-ingest** - Zerobus ingest patterns
 - **spark-python-data-source** - Python data sources for Spark

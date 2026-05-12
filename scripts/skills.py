@@ -27,7 +27,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-jobs": {
-        "description": "Databricks Jobs orchestration and scheduling",
+        "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI — covers all task types, triggers, notifications, and worked examples",
         "experimental": False,
     },
     "databricks-lakebase": {

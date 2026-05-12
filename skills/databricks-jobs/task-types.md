@@ -25,7 +25,7 @@ from databricks.sdk.service.jobs import Task, NotebookTask, Source
 Task(
     task_key="run_notebook",
     notebook_task=NotebookTask(
-        notebook_path="/Workspace/Users/user@example.com/etl_notebook",
+        notebook_path="/Workspace/Shared/etl_notebook",
         source=Source.WORKSPACE,
         base_parameters={
             "env": "prod",
@@ -54,7 +54,7 @@ tasks:
 {
   "task_key": "run_notebook",
   "notebook_task": {
-    "notebook_path": "/Workspace/Users/user@example.com/etl_notebook",
+    "notebook_path": "/Workspace/Shared/etl_notebook",
     "source": "WORKSPACE",
     "base_parameters": {
       "env": "prod",
@@ -98,7 +98,7 @@ from databricks.sdk.service.jobs import Task, SparkPythonTask
 Task(
     task_key="run_python",
     spark_python_task=SparkPythonTask(
-        python_file="/Workspace/Users/user@example.com/scripts/process.py",
+        python_file="/Workspace/Shared/scripts/process.py",
         parameters=["--env", "prod", "--date", "2024-01-15"]
     )
 )
@@ -124,7 +124,7 @@ tasks:
 {
   "task_key": "run_python",
   "spark_python_task": {
-    "python_file": "/Workspace/Users/user@example.com/scripts/process.py",
+    "python_file": "/Workspace/Shared/scripts/process.py",
     "parameters": ["--env", "prod", "--date", "2024-01-15"]
   }
 }
@@ -260,7 +260,7 @@ Task(
     sql_task=SqlTask(
         warehouse_id="1234567890abcdef",
         file=SqlTaskFile(
-            path="/Workspace/Users/user@example.com/queries/transform.sql",
+            path="/Workspace/Shared/queries/transform.sql",
             source=Source.WORKSPACE
         )
     )
@@ -309,7 +309,7 @@ from databricks.sdk.service.jobs import Task, DbtTask
 Task(
     task_key="run_dbt",
     dbt_task=DbtTask(
-        project_directory="/Workspace/Users/user@example.com/dbt_project",
+        project_directory="/Workspace/Shared/dbt_project",
         commands=["dbt deps", "dbt run", "dbt test"],
         warehouse_id="1234567890abcdef",
         catalog="main",

@@ -1,9 +1,9 @@
 ---
 name: databricks-jobs
-description: Develop and deploy Lakeflow Jobs on Databricks. Use when creating data engineering jobs with notebooks, Python wheels, or SQL tasks. Invoke BEFORE starting implementation.
+description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation.
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 parent: databricks-core
 ---
 
@@ -11,7 +11,16 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands.
 
-Lakeflow Jobs are scheduled workflows that run notebooks, Python scripts, SQL queries, and other tasks on Databricks.
+Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Asset Bundles (DABs), Python SDK, or CLI.
+
+## Reference Files
+
+| Use Case | Reference File |
+|----------|----------------|
+| Configure task types (notebook, Python, SQL, dbt, pipeline, JAR, run_job, for_each) | [task-types.md](task-types.md) |
+| Set up triggers and schedules (cron, periodic, file arrival, table update, continuous) | [triggers-schedules.md](triggers-schedules.md) |
+| Configure notifications, health rules, retries, timeouts, queues | [notifications-monitoring.md](notifications-monitoring.md) |
+| Complete worked examples (ETL, warehouse refresh, event-driven, ML training, multi-env, streaming, cross-job) | [examples.md](examples.md) |
 
 ## Scaffolding a New Job Project
 
@@ -61,111 +70,302 @@ my-job-project/
 │       └── main.py
 ├── tests/
 │   └── test_main.py
-└── pyproject.toml               # Python project config (if using wheels)
+└── pyproject.toml              # Python project config (if using wheels)
 ```
 
-## Configuring Tasks
+## Quick Start
 
-Edit `resources/<job_name>.job.yml` to configure tasks:
+### Asset Bundles (DABs) — recommended
 
 ```yaml
+# resources/jobs.yml
 resources:
   jobs:
-    my_job:
-      name: my_job
-
+    my_etl_job:
+      name: "[${bundle.target}] My ETL Job"
       tasks:
-        - task_key: my_notebook
+        - task_key: extract
           notebook_task:
-            notebook_path: ../src/my_notebook.ipynb
-
-        - task_key: my_python
-          depends_on:
-            - task_key: my_notebook
-          python_wheel_task:
-            package_name: my_package
-            entry_point: main
+            notebook_path: ../src/notebooks/extract.py
 ```
 
-Task types: `notebook_task`, `python_wheel_task`, `spark_python_task`, `pipeline_task`, `sql_task`
+### Python SDK
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.jobs import Task, NotebookTask, Source
+
+w = WorkspaceClient()
+
+job = w.jobs.create(
+    name="my-etl-job",
+    tasks=[
+        Task(
+            task_key="extract",
+            notebook_task=NotebookTask(
+                notebook_path="/Workspace/Shared/etl/extract",
+                source=Source.WORKSPACE,
+            ),
+        ),
+    ],
+)
+print(f"Created job: {job.job_id}")
+```
+
+### CLI
+
+```bash
+databricks jobs create --json '{
+  "name": "my-etl-job",
+  "tasks": [{
+    "task_key": "extract",
+    "notebook_task": {
+      "notebook_path": "/Workspace/Shared/etl/extract",
+      "source": "WORKSPACE"
+    }
+  }]
+}'
+```
+
+## Core Concepts
+
+### Multi-Task Workflows
+
+Jobs support DAG-based task dependencies:
+
+```yaml
+tasks:
+  - task_key: extract
+    notebook_task:
+      notebook_path: ../src/extract.py
+
+  - task_key: transform
+    depends_on:
+      - task_key: extract
+    notebook_task:
+      notebook_path: ../src/transform.py
+
+  - task_key: load
+    depends_on:
+      - task_key: transform
+    run_if: ALL_SUCCESS  # Only run if all dependencies succeed
+    notebook_task:
+      notebook_path: ../src/load.py
+```
+
+**run_if conditions:**
+
+- `ALL_SUCCESS` (default) — run when all dependencies succeed
+- `ALL_DONE` — run when all dependencies complete (success or failure)
+- `AT_LEAST_ONE_SUCCESS` — run when at least one dependency succeeds
+- `NONE_FAILED` — run when no dependencies failed
+- `ALL_FAILED` — run when all dependencies failed
+- `AT_LEAST_ONE_FAILED` — run when at least one dependency failed
+
+### Task Types Summary
+
+| Task Type | Use Case | Reference |
+|-----------|----------|-----------|
+| `notebook_task` | Run notebooks | [task-types.md#notebook-task](task-types.md#notebook-task) |
+| `spark_python_task` | Run Python scripts | [task-types.md#spark-python-task](task-types.md#spark-python-task) |
+| `python_wheel_task` | Run Python wheels | [task-types.md#python-wheel-task](task-types.md#python-wheel-task) |
+| `sql_task` | Run SQL queries/files/dashboards/alerts | [task-types.md#sql-task](task-types.md#sql-task) |
+| `dbt_task` | Run dbt projects | [task-types.md#dbt-task](task-types.md#dbt-task) |
+| `pipeline_task` | Trigger SDP (formerly DLT) pipelines | [task-types.md#pipeline-task](task-types.md#pipeline-task) |
+| `spark_jar_task` | Run Spark JARs | [task-types.md#spark-jar-task](task-types.md#spark-jar-task) |
+| `run_job_task` | Trigger other jobs | [task-types.md#run-job-task](task-types.md#run-job-task) |
+| `for_each_task` | Loop over inputs | [task-types.md#for-each-task](task-types.md#for-each-task) |
+
+### Trigger Types Summary
+
+| Trigger Type | Use Case | Reference |
+|--------------|----------|-----------|
+| `schedule` | Cron-based scheduling | [triggers-schedules.md#cron-schedule](triggers-schedules.md#cron-schedule) |
+| `trigger.periodic` | Interval-based | [triggers-schedules.md#periodic-trigger](triggers-schedules.md#periodic-trigger) |
+| `trigger.file_arrival` | File arrival events | [triggers-schedules.md#file-arrival-trigger](triggers-schedules.md#file-arrival-trigger) |
+| `trigger.table_update` | Unity Catalog table change events | [triggers-schedules.md#table-update-trigger](triggers-schedules.md#table-update-trigger) |
+| `continuous` | Always-running jobs | [triggers-schedules.md#continuous-jobs](triggers-schedules.md#continuous-jobs) |
+
+## Compute Configuration
+
+### Job Clusters (recommended)
+
+Define reusable cluster configurations shared across tasks:
+
+```yaml
+job_clusters:
+  - job_cluster_key: shared_cluster
+    new_cluster:
+      spark_version: "15.4.x-scala2.12"
+      node_type_id: "i3.xlarge"
+      num_workers: 2
+      spark_conf:
+        spark.speculation: "true"
+
+tasks:
+  - task_key: my_task
+    job_cluster_key: shared_cluster
+    notebook_task:
+      notebook_path: ../src/notebook.py
+```
+
+### Autoscaling Clusters
+
+```yaml
+new_cluster:
+  spark_version: "15.4.x-scala2.12"
+  node_type_id: "i3.xlarge"
+  autoscale:
+    min_workers: 2
+    max_workers: 8
+```
+
+### Existing Cluster
+
+```yaml
+tasks:
+  - task_key: my_task
+    existing_cluster_id: "0123-456789-abcdef12"
+    notebook_task:
+      notebook_path: ../src/notebook.py
+```
+
+### Serverless Compute
+
+For notebook and Python tasks, omit cluster configuration to use serverless:
+
+```yaml
+tasks:
+  - task_key: serverless_task
+    notebook_task:
+      notebook_path: ../src/notebook.py
+    # No cluster config = serverless
+```
 
 ## Job Parameters
 
 Parameters defined at job level are passed to ALL tasks (no need to repeat per task):
 
 ```yaml
-resources:
-  jobs:
-    my_job:
-      parameters:
-        - name: catalog
-          default: ${var.catalog}
-        - name: schema
-          default: ${var.schema}
+parameters:
+  - name: env
+    default: "dev"
+  - name: date
+    default: "{{start_date}}"  # Dynamic value reference
 ```
 
-Access parameters in notebooks with `dbutils.widgets.get("catalog")`.
-
-## Writing Notebook Code
+Access in notebooks:
 
 ```python
-# Read parameters
-catalog = dbutils.widgets.get("catalog")
-schema = dbutils.widgets.get("schema")
-
-# Read tables
-df = spark.read.table(f"{catalog}.{schema}.my_table")
-
-# SQL queries
-result = spark.sql(f"SELECT * FROM {catalog}.{schema}.my_table LIMIT 10")
-
-# Write output
-df.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.output_table")
+catalog = dbutils.widgets.get("env")
+load_date = dbutils.widgets.get("date")
 ```
 
-## Scheduling
+Pass to specific tasks:
+
+```yaml
+tasks:
+  - task_key: my_task
+    notebook_task:
+      notebook_path: ../src/notebook.py
+      base_parameters:
+        env: "{{job.parameters.env}}"
+        custom_param: "value"
+```
+
+## Common Operations
+
+### Python SDK
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# List jobs
+jobs = w.jobs.list()
+
+# Get job details
+job = w.jobs.get(job_id=12345)
+
+# Run job now
+run = w.jobs.run_now(job_id=12345)
+
+# Run with parameters
+run = w.jobs.run_now(
+    job_id=12345,
+    job_parameters={"env": "prod", "date": "2024-01-15"},
+)
+
+# Cancel run
+w.jobs.cancel_run(run_id=run.run_id)
+
+# Delete job
+w.jobs.delete(job_id=12345)
+```
+
+### CLI
+
+```bash
+# List jobs
+databricks jobs list
+
+# Get job details
+databricks jobs get 12345
+
+# Run job
+databricks jobs run-now 12345
+
+# Run with parameters (must use --json with job_id inside)
+databricks jobs run-now --json '{"job_id": 12345, "job_parameters": {"env": "prod"}}'
+
+# Cancel run
+databricks jobs cancel-run 67890
+
+# Delete job
+databricks jobs delete 12345
+```
+
+### Asset Bundle Operations
+
+```bash
+# Validate configuration
+databricks bundle validate --profile <profile>
+
+# Deploy to a target
+databricks bundle deploy -t dev --profile <profile>
+
+# Run a job
+databricks bundle run <job_name> -t dev --profile <profile>
+
+# Check run status
+databricks jobs get-run --run-id <id> --profile <profile>
+
+# Destroy resources
+databricks bundle destroy --auto-approve
+```
+
+## Permissions (DABs)
 
 ```yaml
 resources:
   jobs:
     my_job:
-      trigger:
-        periodic:
-          interval: 1
-          unit: DAYS
+      name: "My Job"
+      permissions:
+        - level: CAN_VIEW
+          group_name: "data-analysts"
+        - level: CAN_MANAGE_RUN
+          group_name: "data-engineers"
+        - level: CAN_MANAGE
+          user_name: "admin@example.com"
 ```
 
-Or with cron:
+**Permission levels:**
 
-```yaml
-      schedule:
-        quartz_cron_expression: "0 0 2 * * ?"
-        timezone_id: "UTC"
-```
-
-## Multi-Task Jobs with Dependencies
-
-```yaml
-resources:
-  jobs:
-    my_pipeline_job:
-      tasks:
-        - task_key: extract
-          notebook_task:
-            notebook_path: ../src/extract.ipynb
-
-        - task_key: transform
-          depends_on:
-            - task_key: extract
-          notebook_task:
-            notebook_path: ../src/transform.ipynb
-
-        - task_key: load
-          depends_on:
-            - task_key: transform
-          notebook_task:
-            notebook_path: ../src/load.ipynb
-```
+- `CAN_VIEW` — view job and run history
+- `CAN_MANAGE_RUN` — view, trigger, and cancel runs
+- `CAN_MANAGE` — full control including edit and delete
 
 ## Unit Testing
 
@@ -182,8 +382,28 @@ uv run pytest
 3. **Run**: `databricks bundle run <job_name> -t dev --profile <profile>`
 4. **Check run status**: `databricks jobs get-run --run-id <id> --profile <profile>`
 
+## Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Job cluster startup slow | Use job clusters with `job_cluster_key` for reuse across tasks |
+| Task dependencies not working | Verify `task_key` references match exactly in `depends_on` |
+| Schedule not triggering | Check `pause_status: UNPAUSED` and valid timezone |
+| File arrival not detecting | Ensure path has proper permissions and uses cloud storage URL |
+| Table update trigger missing events | Verify Unity Catalog table and proper grants |
+| Parameter not accessible | Use `dbutils.widgets.get()` in notebooks |
+| `admins` group error | Cannot modify admins permissions on jobs |
+| Serverless task fails | Ensure task type supports serverless (notebook, Python) |
+
+## Related Skills
+
+- **databricks-dabs** — DABs configuration patterns shared by jobs and pipelines
+- **databricks-pipelines** — SDP (formerly DLT) pipelines triggered by `pipeline_task`
+
 ## Documentation
 
-- Lakeflow Jobs: https://docs.databricks.com/jobs
-- Task types: https://docs.databricks.com/jobs/configure-task
-- Declarative Automation Bundles: https://docs.databricks.com/dev-tools/bundles/
+- [Lakeflow Jobs](https://docs.databricks.com/jobs)
+- [Task types](https://docs.databricks.com/jobs/configure-task)
+- [Declarative Automation Bundles](https://docs.databricks.com/dev-tools/bundles/)
+- [Jobs API Reference](https://docs.databricks.com/api/workspace/jobs)
+- [Bundle Examples Repository](https://github.com/databricks/bundle-examples)
