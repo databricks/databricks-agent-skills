@@ -54,7 +54,6 @@ See the root [README](../README.md) for details on the stable install path.
 ### 🔧 Data Engineering
 - **databricks-dbsql** - Databricks SQL warehouse patterns
 - **databricks-iceberg** - Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, Iceberg Clients Interoperability
-- **databricks-spark-declarative-pipelines** - SDP (formerly DLT) in SQL/Python
 - **databricks-spark-structured-streaming** - Spark Structured Streaming patterns
 - **databricks-jobs** - Multi-task workflows, triggers, schedules *(also available as stable skill)*
 - **databricks-synthetic-data-gen** - Realistic test data with Faker

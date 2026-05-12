@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-12T16:40:45Z",
+  "updated_at": "2026-05-12T16:43:58Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -436,33 +436,6 @@
         "examples/3-sql-and-warehouses.py",
         "examples/4-unity-catalog.py",
         "examples/5-serving-and-vector-search.py"
-      ]
-    },
-    "databricks-spark-declarative-pipelines": {
-      "version": "0.0.0",
-      "description": "Creates, configures, and updates Databricks Lakeflow Spark Declarative Pipelines (SDP/LDP) using serverless compute. Handles data ingestion with streaming tables, materialized views, CDC, SCD Type 2, and Auto Loader ingestion patterns. Use when building data pipelines, working with Delta Live Tables, ingesting streaming data, implementing change data capture, or when the user mentions SDP, LDP, DLT, Lakeflow pipelines, streaming tables, or bronze/silver/gold medallion architectures.",
-      "experimental": true,
-      "updated_at": "2026-05-12T16:40:45Z",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "references/1-project-initialization.md",
-        "references/2-mcp-approach.md",
-        "references/3-advanced-configuration.md",
-        "references/4-dlt-migration.md",
-        "references/python/1-syntax-basics.md",
-        "references/python/2-ingestion.md",
-        "references/python/3-streaming-patterns.md",
-        "references/python/4-cdc-patterns.md",
-        "references/python/5-performance.md",
-        "references/sql/1-syntax-basics.md",
-        "references/sql/2-ingestion.md",
-        "references/sql/3-streaming-patterns.md",
-        "references/sql/4-cdc-patterns.md",
-        "references/sql/5-performance.md",
-        "scripts/exploration_notebook.py"
       ]
     },
     "databricks-spark-structured-streaming": {
