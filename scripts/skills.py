@@ -92,7 +92,10 @@ def extract_version_from_skill(skill_path: Path) -> str:
     if version_match:
         return version_match.group(1).strip()
 
-    return "0.0.0"
+    # Floor: skills without an explicit version in SKILL.md frontmatter
+    # get 0.0.1 in the manifest. Avoids 0.0.0 which several install tools
+    # treat as "unset" rather than "first release".
+    return "0.0.1"
 
 
 def iter_skill_files(skill_path: Path):
