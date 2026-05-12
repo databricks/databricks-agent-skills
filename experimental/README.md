@@ -77,6 +77,17 @@ See the root [README](../README.md) for details on the stable install path.
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
+**Source SHA**: [`2228c3e`](https://github.com/databricks-solutions/ai-dev-kit/commit/2228c3e880fbadd871882a5f99628300dcb9f2f1)
+on the `add_appkit` branch (5 commits ahead of `origin/main` at the time
+of import). Divergence from public main is small but meaningful: the
+`databricks-app-python` → `databricks-apps-python` rename had not yet been
+merged upstream, and importing from the renamed version is what prevents a
+3rd skill name collision with d-a-s's own `databricks-apps`. A few other
+local commits touch `databricks-bundles/SKILL.md` (2 lines),
+`databricks-lakebase-provisioned/SKILL.md` (2 lines), and
+`databricks-apps-python/SKILL.md` (64 lines). The full set of local
+deltas is tracked by the import commit on this branch.
+
 **Transition phase (until `ai-dev-kit` skills are locked):**
 - Source of truth is **upstream `ai-dev-kit`**. New work and bug fixes go there.
 - This directory receives **periodic manual re-syncs** — someone opens a PR
