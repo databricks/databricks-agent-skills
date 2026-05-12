@@ -207,6 +207,70 @@ def extract_description_from_skill(skill_path: Path) -> str:
     return match.group(1).strip() if match else ""
 
 
+# Markers that separate the "what this skill does" lead-in from the
+# "Use when ..." trigger list. The Codex marketplace short_description should
+# only contain the lead-in.
+_SHORT_DESC_MARKERS = (". Use when", ". Use this", ". Triggers", ". ALWAYS")
+
+
+def synthesize_short_description(skill_path: Path) -> str:
+    """Derive a short marketplace blurb from the SKILL.md frontmatter."""
+    desc = extract_description_from_skill(skill_path)
+    for marker in _SHORT_DESC_MARKERS:
+        idx = desc.find(marker)
+        if idx >= 0:
+            desc = desc[:idx] + "."
+            break
+    if len(desc) > 200:
+        desc = desc[:197].rstrip() + "..."
+    return desc.strip()
+
+
+def synthesize_openai_yaml(skill_name: str, short_description: str) -> str:
+    """Build the Codex marketplace metadata for an experimental skill."""
+    display_name = " ".join(p.capitalize() for p in skill_name.split("-"))
+    short = short_description.replace('"', '\\"')
+    prompt_blurb = short_description.rstrip(".").lower().replace('"', '\\"')
+    return (
+        "interface:\n"
+        f'  display_name: "{display_name}"\n'
+        f'  short_description: "{short}"\n'
+        '  icon_small: "./assets/databricks.svg"\n'
+        '  icon_large: "./assets/databricks.png"\n'
+        '  brand_color: "#FF3621"\n'
+        f'  default_prompt: "Use ${skill_name} for {prompt_blurb}."\n'
+    )
+
+
+def ensure_experimental_codex_metadata(repo_root: Path) -> int:
+    """Synthesize agents/openai.yaml and copy shared assets for experimental skills.
+
+    Only writes when files are missing — upstream ai-dev-kit can override by
+    shipping its own agents/openai.yaml or assets/ in the skill. Returns the
+    number of files written.
+    """
+    written = 0
+    for skill_dir in iter_experimental_skill_dirs(repo_root):
+        for asset_rel in SHARED_ASSETS:
+            source = repo_root / asset_rel
+            dest = skill_dir / asset_rel
+            if dest.exists():
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, dest)
+            written += 1
+
+        openai_path = skill_dir / "agents" / "openai.yaml"
+        if openai_path.exists():
+            continue
+        openai_path.parent.mkdir(parents=True, exist_ok=True)
+        openai_path.write_text(
+            synthesize_openai_yaml(skill_dir.name, synthesize_short_description(skill_dir))
+        )
+        written += 1
+    return written
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
     manifest_path = repo_root / "manifest.json"
@@ -376,10 +440,14 @@ def main() -> None:
         case "sync":
             synced = sync_assets(repo_root)
             print(f"Synced {synced} asset(s)")
+            generated = ensure_experimental_codex_metadata(repo_root)
+            print(f"Generated {generated} experimental Codex metadata file(s)")
 
         case "generate":
             synced = sync_assets(repo_root)
             print(f"Synced {synced} asset(s)")
+            generated = ensure_experimental_codex_metadata(repo_root)
+            print(f"Generated {generated} experimental Codex metadata file(s)")
 
             manifest = generate_manifest(repo_root)
             manifest_path = repo_root / "manifest.json"

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Metric Views"
+  short_description: "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-metric-views for unity catalog metric views: define, create, query, and manage governed business metrics in yaml."

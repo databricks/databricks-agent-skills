@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Vector Search"
+  short_description: "Patterns for Databricks Vector Search: create endpoints and indexes, query with filters, manage embeddings."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-vector-search for patterns for databricks vector search: create endpoints and indexes, query with filters, manage embeddings."

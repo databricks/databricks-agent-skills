@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Lakebase Provisioned"
+  short_description: "Patterns and best practices for Lakebase Provisioned (Databricks managed PostgreSQL) for OLTP workloads."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-lakebase-provisioned for patterns and best practices for lakebase provisioned (databricks managed postgresql) for oltp workloads."

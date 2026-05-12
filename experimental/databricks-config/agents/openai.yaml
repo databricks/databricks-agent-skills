@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Config"
+  short_description: "Manage Databricks workspace connections: check current workspace, switch profiles, list available workspaces, or authenticate to a new workspace."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-config for manage databricks workspace connections: check current workspace, switch profiles, list available workspaces, or authenticate to a new workspace."

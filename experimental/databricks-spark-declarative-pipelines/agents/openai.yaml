@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Spark Declarative Pipelines"
+  short_description: "Creates, configures, and updates Databricks Lakeflow Spark Declarative Pipelines (SDP/LDP) using serverless compute. Handles data ingestion with streaming tables, materialized views, CDC, SCD Type..."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-spark-declarative-pipelines for creates, configures, and updates databricks lakeflow spark declarative pipelines (sdp/ldp) using serverless compute. handles data ingestion with streaming tables, materialized views, cdc, scd type."

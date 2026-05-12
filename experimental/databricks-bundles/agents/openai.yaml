@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Bundles"
+  short_description: "Create and configure Declarative Automation Bundles (formerly Asset Bundles) with best practices for multi-environment deployments (CICD)."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-bundles for create and configure declarative automation bundles (formerly asset bundles) with best practices for multi-environment deployments (cicd)."
