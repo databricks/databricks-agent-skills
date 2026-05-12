@@ -246,6 +246,8 @@ Check the response for the `active_deployment` field. If it exists with `status.
 
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
+> **First deploy with `lakebase`:** confirm `databricks.yml` declares a `database` resource on the app (alongside `sql_warehouse`, `genie_space`, etc.). Apps platform auto-creates the SP's Postgres role only when the database is attached as an app resource — without it, the deployed app fails with `password authentication failed for user '<UUID>'`. If the resource is missing, re-run `databricks apps init` with `--set lakebase.postgres.branch=...` and `--set lakebase.postgres.database=...`; if you can't (shared Lakebase, custom permissions), use the manual SQL fallback in the **`databricks-lakebase`** skill's **Grant app SP for AppKit / CRUD apps** section.
+
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
 ```bash
@@ -261,10 +263,17 @@ Then create `server/.env` with the values from the endpoint response:
 PGHOST=<host from endpoint>
 PGPORT=5432
 PGDATABASE=<your database name>
-PGUSER=<your service principal client ID>
+PGUSER=<see note below>
 PGSSLMODE=require
 LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
 ```
+
+> **`PGUSER` must match the credentials the AppKit dev server uses.** The Postgres role in `PGUSER` has to correspond to the principal that produced `PGPASSWORD` (the OAuth token).
+>
+> - **Default (personal Databricks profile):** AppKit's local server authenticates as your Databricks user, so `PGUSER` is your Databricks username/email. Tables created locally will be owned by your user, not the SP — that's why the deploy-first workflow exists.
+> - **Testing the deployed flow locally:** export `DATABRICKS_CLIENT_ID=<SP_CLIENT_ID>` and `DATABRICKS_CLIENT_SECRET=...` so the dev server authenticates as the SP. Then `PGUSER=<SP_CLIENT_ID>` matches.
+>
+> If `PGUSER` and the OAuth token disagree, Postgres rejects the connection with `password authentication failed for user '<UUID>'`.
 
 Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=server/.env`). Never commit `.env` files — add `server/.env` to `.gitignore`.
 
@@ -276,5 +285,6 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | **Ask the user before dropping** — `DROP SCHEMA` deletes all data. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
 | Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | **Ask the user before dropping** — warn about data loss, then deploy first. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
+| `password authentication failed for user '<UUID>'` | App's `databricks.yml` is missing a `database` resource — Apps platform never auto-created the SP's Postgres role on attach | Add the missing `database` resource (re-run `databricks apps init` with `--set lakebase.postgres.branch=...` and `--set lakebase.postgres.database=...`), redeploy. Manual SQL fallback: see **`databricks-lakebase`**'s **Grant app SP for AppKit / CRUD apps** |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |

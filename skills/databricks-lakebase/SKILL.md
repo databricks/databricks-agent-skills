@@ -211,22 +211,21 @@ databricks postgres create-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID> <
 ```
 
 **Run SQL against Lakebase** (GRANT, CREATE INDEX, etc.):
+
+Preferred — `databricks psql` wrapper handles auth, host discovery, and TLS in one call:
 ```bash
-# 1. Get endpoint host
-databricks postgres get-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> --profile <PROFILE>
+databricks psql --profile <PROFILE> --project <PROJECT_ID> --branch <BRANCH_ID> --endpoint <ENDPOINT_ID> \
+  -- -d databricks_postgres -f path/to/script.sql
 
-# 2. Generate OAuth token
-databricks postgres generate-database-credential \
-  projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID> \
-  --profile <PROFILE>
-
-# 3. Connect (use token from step 2 as password, host from step 1)
-PGPASSWORD='<TOKEN>' psql "host=<HOST> user=<USERNAME> dbname=databricks_postgres sslmode=require"
+# One-off statement
+databricks psql --profile <PROFILE> --project <PROJECT_ID> -- -d databricks_postgres -c "SELECT 1"
 ```
 
-> **Note:** `generate-database-credential` requires the **endpoint** resource path (`.../endpoints/<ENDPOINT_ID>`), not a database or branch path.
+> **`--profile` placement.** All `databricks` flags (including `--profile`) MUST come before the `--` separator. Anything after `--` is forwarded verbatim to `psql`, which doesn't understand `--profile` and will exit with `psql: error: unrecognized option`.
 
-**Scriptable version** (single copy-paste, useful for agents):
+Requires `psql` on `PATH` (the wrapper shells out to it). Branch/endpoint default to the only one when there is just one.
+
+Manual form (use when the wrapper isn't available):
 ```bash
 EP=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
 # get-endpoint JSON shape: {"status": {"hosts": {"host": "<HOSTNAME>"}, ...}, ...}
@@ -237,13 +236,53 @@ TOKEN=$(databricks postgres generate-database-credential $EP --profile <PROFILE>
 PGPASSWORD="$TOKEN" psql "host=$HOST user=<USERNAME> dbname=databricks_postgres sslmode=require"
 ```
 
-**Grant app SP access to synced tables** (run as project owner after sync is ONLINE and app is deployed):
+> **Note:** `generate-database-credential` requires the **endpoint** resource path (`.../endpoints/<ENDPOINT_ID>`), not a database or branch path.
+
+**Grant app SP access to synced tables** (read-only) — run as project owner after sync is ONLINE and app is deployed:
 ```sql
 GRANT USAGE ON SCHEMA public TO "<SP_CLIENT_ID>";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "<SP_CLIENT_ID>";
 ```
-For least-privilege, consider syncing into a dedicated schema instead of `public` so the grant is scoped to synced data only.
+
+> **Default privileges caveat.** `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` only applies to tables created by the role running this statement. If sync pipelines create new tables under a different role, re-run `GRANT SELECT ON ALL TABLES IN SCHEMA public TO "<SP_CLIENT_ID>"` after each new table appears, or add `FOR ROLE <pipeline_role>` once you know which role the sync runs as.
+
+**Grant app SP for AppKit / CRUD apps** (full DML).
+
+> **First check: is the Lakebase declared as an app resource?** When the Apps platform attaches a `database` resource (declared in the app's `databricks.yml` under `resources.apps.<app>.resources`) to an app on deploy, it auto-creates the SP's Postgres role with `CAN_CONNECT_AND_CREATE`. If the SP is failing to connect with `password authentication failed for user '<SP_CLIENT_ID>'`, the most likely cause is a missing `database` resource — fix that first, redeploy, and the auto-grant fires. See the `databricks-apps` skill (Scaffolding) for verifying every required plugin resource is declared.
+>
+> The SQL block below is the **fallback** for cases the resource form doesn't cover: granting access to an existing Lakebase the app spec doesn't own (shared across apps, pre-existing schema with custom permissions, post-hoc grants for additional tables/sequences).
+
+Manual fallback — create the role and grant DML, in one psql round-trip:
+```sql
+CREATE EXTENSION IF NOT EXISTS databricks_auth;
+
+DO $$
+DECLARE
+  sp TEXT := '<SP_CLIENT_ID>';   -- from `databricks apps get <APP> -o json | jq -r .service_principal_client_id`
+BEGIN
+  PERFORM databricks_create_role(sp, 'SERVICE_PRINCIPAL');
+  EXECUTE format('GRANT CONNECT ON DATABASE "databricks_postgres" TO %I', sp);
+  EXECUTE format('GRANT ALL ON SCHEMA public TO %I', sp);
+  EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO %I', sp);
+  EXECUTE format('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO %I', sp);
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO %I', sp);
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO %I', sp);
+END $$;
+```
+Pipe through `databricks psql` (above). The block is idempotent; re-running is safe.
+
+The role-creation step alone has a CLI form too (useful when granting privileges separately):
+```bash
+databricks postgres create-role projects/<PROJECT_ID>/branches/<BRANCH_ID> \
+  --role-id <SP_CLIENT_ID> \
+  --json '{"spec":{"identity_type":"SERVICE_PRINCIPAL","postgres_role":"<SP_CLIENT_ID>","auth_method":"LAKEBASE_OAUTH_V1"}}' \
+  --profile <PROFILE>
+```
+
+> **Least privilege.** The example creates the role with default privileges only — grant database/schema/table access via the explicit `GRANT` statements above. Don't add `membership_roles: ["DATABRICKS_SUPERUSER"]` for an app SP unless broad administrative access is intentional; superuser membership lets the app role read every Lakebase database, not just its own.
+
+> **CLI body shape.** `databricks postgres create-role`'s `--json` flag binds to the inner `Role` object — fields go directly under `spec`, **not** wrapped in `{"role": ...}`. The error `Field 'role' is required and must contain at least one subfield with a non-default value` means the inner Role had no recognized fields (often because someone wrapped the body, which the CLI strips with `Warning: unknown field: role` and ships an empty body). The CLI also doesn't yet expose convenience flags like `--spec.identity-type` ([cmd/workspace/postgres/postgres.go](https://github.com/databricks/cli/blob/main/cmd/workspace/postgres/postgres.go) marks `spec` as TODO), so you must hand-craft the JSON.
 
 Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `service_principal_client_id` field.
 
@@ -257,6 +296,8 @@ Get SP client ID: `databricks apps get <APP_NAME> --profile <PROFILE>` → `serv
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions |
 | `permission denied for schema` | Schema owned by another role. Deploy app first so SP creates/owns it |
+| `password authentication failed for user '<UUID>'` (deployed app) | SP has no Postgres role on the branch yet. Run the **Grant app SP for AppKit / CRUD apps** SQL block above, then restart the app |
+| `Field 'role' is required` from `databricks postgres create-role` | `--json` binds to the inner `Role`. Pass fields directly under `spec` (no `{"role": ...}` wrapper). See the CLI body-shape note in **Grant app SP for AppKit / CRUD apps** |
 | Protected branch won't delete | `update-branch` to set `spec.is_protected` to `false` first |
 | Long-running operation timeout | Use `--no-wait` and poll with `get-operation` |
 | Token expired during long query | Tokens expire after 1 hour; implement refresh (see [connectivity.md](references/connectivity.md)) |
