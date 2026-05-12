@@ -8,8 +8,9 @@
 > - They do not follow the same review / quality bar as the skills in
 >   [`../skills/`](../skills/).
 > - They may be out of date relative to upstream `ai-dev-kit`.
-> - They may overlap or conflict with the stable skills (e.g.
->   `databricks-jobs`, `databricks-model-serving` exist in both directories).
+> - They may overlap with stable skills (e.g. `databricks-jobs` exists in
+>   both directories — see the install-path note below for how that's
+>   resolved on disk).
 > - They are not installed by `databricks experimental aitools skills install`
 >   by default — you have to opt in (see the root README).
 >
@@ -30,9 +31,14 @@ These experimental skills are **not** installed by default. To install them via 
 # Install all experimental skills at once
 databricks experimental aitools skills install --experimental
 
-# Install a single experimental skill by name
-databricks experimental aitools skills install databricks-iceberg
+# Install a single experimental skill by name (note the -experimental suffix)
+databricks experimental aitools skills install databricks-iceberg-experimental --experimental
 ```
+
+The names in this directory don't carry the `-experimental` suffix — that's
+added at install time so the on-disk skills directory unambiguously
+distinguishes experimental from stable. e.g. `databricks-iceberg` in this
+repo installs to `~/.claude/skills/databricks-iceberg-experimental/`.
 
 See the root [README](../README.md) for details on the stable install path.
 
@@ -55,7 +61,7 @@ See the root [README](../README.md) for details on the stable install path.
 - **databricks-dbsql** - Databricks SQL warehouse patterns
 - **databricks-iceberg** - Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, Iceberg Clients Interoperability
 - **databricks-spark-structured-streaming** - Spark Structured Streaming patterns
-- **databricks-jobs** - Multi-task workflows, triggers, schedules *(also available as stable skill)*
+- **databricks-jobs** - Multi-task workflows, triggers, schedules *(also available as a stable skill — see TODO #1a in PR #73)*
 - **databricks-synthetic-data-gen** - Realistic test data with Faker
 - **databricks-zerobus-ingest** - Zerobus ingest patterns
 - **spark-python-data-source** - Python data sources for Spark
