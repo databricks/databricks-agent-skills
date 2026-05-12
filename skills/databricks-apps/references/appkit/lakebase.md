@@ -260,6 +260,8 @@ Check the response for the `active_deployment` field. If it exists with `status.
 
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
+Lakebase project creators already have database access after the first deploy. Collaborators need `databricks_superuser` granted by the project creator via Branch Overview.
+
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
 ```bash
@@ -287,8 +289,8 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | Error | Cause | Solution |
 |-------|-------|---------|
 | `permission denied for schema public` | SP cannot access `public` schema | Create custom schema: `CREATE SCHEMA IF NOT EXISTS app_data` and qualify all table names with `app_data.` |
-| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | **Ask the user before dropping** — `DROP SCHEMA` deletes all data. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
-| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP can't access schemas it doesn't own | **Ask the user before dropping** — warn about data loss, then deploy first. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for options |
+| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Schema owned by wrong role. To preserve data: export first (`pg_dump` or temp schema copy). **Ask the user before dropping.** Then drop + redeploy. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for full steps. |
+| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP cannot access schemas it does not own | Schema owned by wrong role — see row above for export + drop + redeploy steps |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |
