@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agent Memory (LangGraph)"
+  short_description: "Add memory to a LangGraph agent"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $agent-langgraph-memory for adding memory and conversation persistence to a LangGraph agent."

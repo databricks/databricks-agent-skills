@@ -1,0 +1,7 @@
+interface:
+  display_name: "Long-Running Server"
+  short_description: "Background task support for agents"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $long-running-server for enabling long-running background tasks in an agent server."

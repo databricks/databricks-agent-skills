@@ -1,12 +1,72 @@
 {
   "version": "2",
-  "updated_at": "2026-04-30T11:02:41Z",
+  "updated_at": "2026-05-12T20:26:42Z",
   "skills": {
+    "add-tools-langgraph": {
+      "version": "0.0.1",
+      "description": "Add tools and permissions to a LangGraph agent (MCP, Genie, vector search, UC functions)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "add-tools-openai": {
+      "version": "0.0.1",
+      "description": "Add tools and permissions to an OpenAI Agents SDK agent (MCP, Genie, vector search, UC functions)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "agent-langgraph-memory": {
+      "version": "0.0.1",
+      "description": "Add memory capabilities (checkpointing, long-term store) to a LangGraph agent",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "agent-openai-memory": {
+      "version": "0.0.1",
+      "description": "Add memory capabilities (sessions) to an OpenAI Agents SDK agent",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "create-tools": {
+      "version": "0.0.1",
+      "description": "Create Databricks resources (Genie spaces, vector search indexes, UC functions, MCP servers) for use as agent tools",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "experimental": false,
-      "updated_at": "2026-04-30T11:00:26Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -33,7 +93,7 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -48,7 +108,7 @@
       "version": "0.0.0",
       "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -66,7 +126,7 @@
       "version": "0.1.0",
       "description": "Databricks Jobs orchestration and scheduling",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -78,7 +138,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-04-30T11:02:37Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -93,7 +153,7 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -105,7 +165,7 @@
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-04-23T13:47:44Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -152,7 +212,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-04-24T15:10:23Z",
+      "updated_at": "2026-05-12T20:25:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -163,6 +223,150 @@
         "references/configuration-guide.md",
         "references/networking-and-security.md",
         "references/streaming-migration.md"
+      ]
+    },
+    "deploy": {
+      "version": "0.0.1",
+      "description": "Deploy an agent to Databricks Apps via Databricks Asset Bundles (DAB)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "discover-tools": {
+      "version": "0.0.1",
+      "description": "Discover available tools and resources (MCP servers, Genie spaces, UC functions, vector search) in a Databricks workspace",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "lakebase-setup": {
+      "version": "0.0.1",
+      "description": "Configure Lakebase as storage for agent memory (checkpoints, sessions, long-term store)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "load-testing": {
+      "version": "0.0.1",
+      "description": "Load test a Databricks App to find its maximum QPS",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "long-running-server": {
+      "version": "0.0.1",
+      "description": "Enable long-running background task support in an agent server (LongRunningAgentServer)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "migrate-from-model-serving": {
+      "version": "0.0.1",
+      "description": "Migrate an MLflow ResponsesAgent from Databricks Model Serving to Databricks Apps",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "modify-langgraph-agent": {
+      "version": "0.0.1",
+      "description": "Modify agent code, add tools, or change configuration in a LangGraph template",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "modify-openai-agent": {
+      "version": "0.0.1",
+      "description": "Modify agent code, add tools, or change configuration in an OpenAI Agents SDK template",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "quickstart": {
+      "version": "0.0.1",
+      "description": "Set up a Databricks agent development environment (authentication, .env, MLflow experiment)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "run-locally": {
+      "version": "0.0.1",
+      "description": "Run and test an agent locally with curl examples and hot-reload",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "supervisor-api": {
+      "version": "0.0.1",
+      "description": "Use the Databricks Supervisor API to run the agent loop server-side with hosted tools",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ]
+    },
+    "supervisor-api-background-mode": {
+      "version": "0.0.1",
+      "description": "Run long-lived agent tasks via Supervisor API background mode (polling pattern)",
+      "experimental": true,
+      "updated_at": "2026-05-12T20:26:11Z",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
       ]
     }
   }

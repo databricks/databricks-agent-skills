@@ -1,0 +1,7 @@
+interface:
+  display_name: "Discover Tools"
+  short_description: "Discover available workspace tools"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $discover-tools for discovering MCP servers, Genie spaces, UC functions, and vector search indexes in a Databricks workspace."

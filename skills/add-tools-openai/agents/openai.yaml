@@ -1,0 +1,7 @@
+interface:
+  display_name: "Add Tools (OpenAI)"
+  short_description: "Add tools and permissions for OpenAI agents"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $add-tools-openai for adding tools and permissions to an OpenAI Agents SDK agent."

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Supervisor API (Background)"
+  short_description: "Long-running tasks via Supervisor API"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $supervisor-api-background-mode for running long-lived agent tasks via Supervisor API background mode."

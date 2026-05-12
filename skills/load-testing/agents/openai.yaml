@@ -1,0 +1,7 @@
+interface:
+  display_name: "Load Testing"
+  short_description: "Load test a Databricks App"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $load-testing for load testing a Databricks App to find max QPS."

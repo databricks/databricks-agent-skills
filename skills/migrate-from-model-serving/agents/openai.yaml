@@ -1,0 +1,7 @@
+interface:
+  display_name: "Migrate from Model Serving"
+  short_description: "Migrate ResponsesAgent to Apps"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $migrate-from-model-serving for migrating an MLflow ResponsesAgent from Model Serving to Databricks Apps."

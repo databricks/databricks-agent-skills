@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agent Memory (OpenAI)"
+  short_description: "Add memory to an OpenAI agent"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $agent-openai-memory for adding memory and conversation persistence to an OpenAI Agents SDK agent."

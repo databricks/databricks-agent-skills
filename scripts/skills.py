@@ -48,6 +48,75 @@ SKILL_METADATA = {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
         "experimental": False,
     },
+    # Skills imported from databricks/app-templates (.claude/skills/). ML-63273.
+    "add-tools-langgraph": {
+        "description": "Add tools and permissions to a LangGraph agent (MCP, Genie, vector search, UC functions)",
+        "experimental": True,
+    },
+    "add-tools-openai": {
+        "description": "Add tools and permissions to an OpenAI Agents SDK agent (MCP, Genie, vector search, UC functions)",
+        "experimental": True,
+    },
+    "agent-langgraph-memory": {
+        "description": "Add memory capabilities (checkpointing, long-term store) to a LangGraph agent",
+        "experimental": True,
+    },
+    "agent-openai-memory": {
+        "description": "Add memory capabilities (sessions) to an OpenAI Agents SDK agent",
+        "experimental": True,
+    },
+    "create-tools": {
+        "description": "Create Databricks resources (Genie spaces, vector search indexes, UC functions, MCP servers) for use as agent tools",
+        "experimental": True,
+    },
+    "deploy": {
+        "description": "Deploy an agent to Databricks Apps via Databricks Asset Bundles (DAB)",
+        "experimental": True,
+    },
+    "discover-tools": {
+        "description": "Discover available tools and resources (MCP servers, Genie spaces, UC functions, vector search) in a Databricks workspace",
+        "experimental": True,
+    },
+    "lakebase-setup": {
+        "description": "Configure Lakebase as storage for agent memory (checkpoints, sessions, long-term store)",
+        "experimental": True,
+    },
+    "load-testing": {
+        "description": "Load test a Databricks App to find its maximum QPS",
+        "experimental": True,
+    },
+    "long-running-server": {
+        "description": "Enable long-running background task support in an agent server (LongRunningAgentServer)",
+        "experimental": True,
+    },
+    "migrate-from-model-serving": {
+        "description": "Migrate an MLflow ResponsesAgent from Databricks Model Serving to Databricks Apps",
+        "experimental": True,
+    },
+    "modify-langgraph-agent": {
+        "description": "Modify agent code, add tools, or change configuration in a LangGraph template",
+        "experimental": True,
+    },
+    "modify-openai-agent": {
+        "description": "Modify agent code, add tools, or change configuration in an OpenAI Agents SDK template",
+        "experimental": True,
+    },
+    "quickstart": {
+        "description": "Set up a Databricks agent development environment (authentication, .env, MLflow experiment)",
+        "experimental": True,
+    },
+    "run-locally": {
+        "description": "Run and test an agent locally with curl examples and hot-reload",
+        "experimental": True,
+    },
+    "supervisor-api": {
+        "description": "Use the Databricks Supervisor API to run the agent loop server-side with hosted tools",
+        "experimental": True,
+    },
+    "supervisor-api-background-mode": {
+        "description": "Run long-lived agent tasks via Supervisor API background mode (polling pattern)",
+        "experimental": True,
+    },
 }
 
 

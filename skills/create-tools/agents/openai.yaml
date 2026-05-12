@@ -1,0 +1,7 @@
+interface:
+  display_name: "Create Tools"
+  short_description: "Create Databricks resources to use as tools"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $create-tools for creating Databricks resources (Genie spaces, vector search, UC functions) for use as agent tools."
