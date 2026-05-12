@@ -24,6 +24,23 @@ Run this command in chat:
 
 - **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
 
+See [`skills/`](./skills/) for the full list of supported skills.
+
+## Experimental Skills
+
+The [`experimental/`](./experimental/) directory contains additional skills
+imported from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
+on a **best-effort basis**.
+
+- Experimental skills are **not officially supported** — they may be used, but
+  do not follow the same review / quality bar as the stable skills under
+  [`skills/`](./skills/).
+- They are **not installed by default** by `databricks experimental aitools
+  skills install`. Pass `--experimental` to install all of them, or install a
+  specific one by name.
+- See [`experimental/README.md`](./experimental/README.md) for the full list
+  and caveats.
+
 ## Structure
 
 Each skill follows the [Agent Skills Specification](https://agentskills.io/specification):

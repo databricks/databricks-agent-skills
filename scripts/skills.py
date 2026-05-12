@@ -51,9 +51,11 @@ SKILL_METADATA = {
 }
 
 
-def iter_skill_dirs(repo_root: Path):
-    """Yield skill directories that contain SKILL.md."""
-    skills_dir = repo_root / "skills"
+def iter_skill_dirs(repo_root: Path, parent: str = "skills"):
+    """Yield skill directories under `parent` that contain SKILL.md."""
+    skills_dir = repo_root / parent
+    if not skills_dir.exists():
+        return
     for item in sorted(skills_dir.iterdir()):
         if not item.is_dir():
             continue
@@ -62,6 +64,11 @@ def iter_skill_dirs(repo_root: Path):
         if not (item / "SKILL.md").exists():
             continue
         yield item
+
+
+def iter_experimental_skill_dirs(repo_root: Path):
+    """Yield experimental skill directories (under `experimental/`)."""
+    yield from iter_skill_dirs(repo_root, parent="experimental")
 
 
 def extract_version_from_skill(skill_path: Path) -> str:
@@ -184,13 +191,45 @@ def check_assets_synced(repo_root: Path) -> list[str]:
 # Manifest generation
 # ---------------------------------------------------------------------------
 
+def extract_description_from_skill(skill_path: Path) -> str:
+    """Best-effort extraction of `description:` from SKILL.md frontmatter."""
+    skill_md = skill_path / "SKILL.md"
+    if not skill_md.exists():
+        return ""
+    content = skill_md.read_text()
+    if not content.startswith("---"):
+        return ""
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return ""
+    frontmatter = content[3:end_idx]
+    match = re.search(r'description:\s*["\']?(.+?)["\']?\s*$', frontmatter, re.MULTILINE)
+    return match.group(1).strip() if match else ""
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
     manifest_path = repo_root / "manifest.json"
-    existing_skills = {}
+    existing = {}
     if manifest_path.exists():
-        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
+        existing = json.loads(manifest_path.read_text())
 
+    skills = _build_stable_skills(repo_root, existing.get("skills", {}))
+    experimental_skills = _build_experimental_skills(
+        repo_root, existing.get("experimental_skills", {})
+    )
+
+    manifest = {
+        "version": "2",
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "skills": skills,
+    }
+    if experimental_skills:
+        manifest["experimental_skills"] = experimental_skills
+    return manifest
+
+
+def _build_stable_skills(repo_root: Path, existing_skills: dict) -> dict:
     skills = {}
     for skill_dir in iter_skill_dirs(repo_root):
         files = sorted(
@@ -228,12 +267,34 @@ def generate_manifest(repo_root: Path) -> dict:
             skill_entry["base_revision"] = existing["base_revision"]
 
         skills[skill_dir.name] = skill_entry
+    return skills
 
-    return {
-        "version": "2",
-        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "skills": skills,
-    }
+
+# Experimental skills have a looser contract than stable: no agents/openai.yaml,
+# no shared-asset sync, no SKILL_METADATA entry required. Description is
+# scraped from SKILL.md frontmatter on a best-effort basis.
+def _build_experimental_skills(repo_root: Path, existing_skills: dict) -> dict:
+    skills = {}
+    for skill_dir in iter_experimental_skill_dirs(repo_root):
+        files = sorted(
+            str(f.relative_to(skill_dir))
+            for f in iter_skill_files(skill_dir)
+        )
+
+        skill_entry = {
+            "version": extract_version_from_skill(skill_dir),
+            "description": extract_description_from_skill(skill_dir),
+            "experimental": True,
+            "updated_at": get_skill_updated_at(skill_dir),
+            "files": files,
+        }
+
+        existing = existing_skills.get(skill_dir.name, {})
+        if "base_revision" in existing:
+            skill_entry["base_revision"] = existing["base_revision"]
+
+        skills[skill_dir.name] = skill_entry
+    return skills
 
 
 # ---------------------------------------------------------------------------
@@ -245,15 +306,22 @@ def normalize_manifest(manifest: dict) -> dict:
     normalized = manifest.copy()
     normalized.pop("updated_at", None)
 
-    skills = {}
-    for name, skill in manifest.get("skills", {}).items():
+    normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
+    if "experimental_skills" in manifest:
+        normalized["experimental_skills"] = _normalize_skill_map(
+            manifest["experimental_skills"]
+        )
+    return normalized
+
+
+def _normalize_skill_map(skill_map: dict) -> dict:
+    out = {}
+    for name, skill in skill_map.items():
         skill_copy = skill.copy()
         skill_copy.pop("updated_at", None)
         skill_copy.pop("base_revision", None)
-        skills[name] = skill_copy
-
-    normalized["skills"] = skills
-    return normalized
+        out[name] = skill_copy
+    return out
 
 
 def validate_manifest(repo_root: Path) -> bool:
