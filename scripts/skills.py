@@ -194,8 +194,17 @@ def check_assets_synced(repo_root: Path) -> list[str]:
 # Manifest generation
 # ---------------------------------------------------------------------------
 
+_BLOCK_SCALAR_INDICATORS = {"|", "|-", "|+", ">", ">-", ">+"}
+
+
 def extract_description_from_skill(skill_path: Path) -> str:
-    """Best-effort extraction of `description:` from SKILL.md frontmatter."""
+    """Best-effort extraction of `description:` from SKILL.md frontmatter.
+
+    Handles plain (`description: foo`), quoted (`description: "foo"`), and
+    block-scalar (`description: >-` followed by indented lines) values. The
+    regex-only version captured the block-scalar indicator verbatim, which
+    corrupted manifest entries and Codex marketplace metadata.
+    """
     skill_md = skill_path / "SKILL.md"
     if not skill_md.exists():
         return ""
@@ -205,9 +214,24 @@ def extract_description_from_skill(skill_path: Path) -> str:
     end_idx = content.find("---", 3)
     if end_idx == -1:
         return ""
-    frontmatter = content[3:end_idx]
-    match = re.search(r'description:\s*["\']?(.+?)["\']?\s*$', frontmatter, re.MULTILINE)
-    return match.group(1).strip() if match else ""
+    lines = content[3:end_idx].splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r'^description:\s*(.*?)\s*$', line)
+        if not m:
+            continue
+        value = m.group(1)
+        if value in _BLOCK_SCALAR_INDICATORS:
+            collected = []
+            for cont in lines[i + 1:]:
+                if cont and not cont[0].isspace():
+                    break
+                stripped = cont.strip()
+                if stripped:
+                    collected.append(stripped)
+            joiner = " " if value.startswith(">") else "\n"
+            return joiner.join(collected)
+        return value.strip().strip('"').strip("'")
+    return ""
 
 
 # Markers that separate the "what this skill does" lead-in from the
