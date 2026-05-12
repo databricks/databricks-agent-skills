@@ -23,6 +23,7 @@ Run this command in chat:
 ## Available Skills
 
 - **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
+- **databricks-serverless-migration** - Migrate classic-compute workloads (notebooks, jobs, pipelines) to serverless compute. Detects compatibility blockers, provides concrete fixes, and produces an anonymized failure report you can file as a GitHub issue when migration cannot complete. Also installable inside a Databricks workspace via Genie Code Agent mode — see [the install reference](skills/databricks-serverless-migration/references/install-in-databricks-genie-code.md).
 
 ## Structure
 

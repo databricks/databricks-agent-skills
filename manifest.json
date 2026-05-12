@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-04-30T11:02:41Z",
+  "updated_at": "2026-05-12T07:54:37Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -152,7 +152,7 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "experimental": false,
-      "updated_at": "2026-04-24T15:10:23Z",
+      "updated_at": "2026-05-12T07:54:37Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -161,6 +161,8 @@
         "references/code-patterns.md",
         "references/compatibility-checks.md",
         "references/configuration-guide.md",
+        "references/failure-reporting.md",
+        "references/install-in-databricks-genie-code.md",
         "references/networking-and-security.md",
         "references/streaming-migration.md"
       ]
