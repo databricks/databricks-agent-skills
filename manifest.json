@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-12T21:53:00Z",
+  "updated_at": "2026-05-12T21:58:09Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -253,7 +253,7 @@
     },
     "databricks-config": {
       "version": "0.0.1",
-      "description": "Manage Databricks workspace connections: check current workspace, switch profiles, list available workspaces, or authenticate to a new workspace. Use when the user mentions \\\"switch workspace\\\", \\\"which workspace\\\", \\\"current profile\\\", \\\"databrickscfg\\\", \\\"connect to workspace\\\", or \\\"databricks auth\\\".",
+      "description": "Manage Databricks workspace connections: check current workspace, switch profiles, list available workspaces, or authenticate to a new workspace. Use when the user mentions \"switch workspace\", \"which workspace\", \"current profile\", \"databrickscfg\", \"connect to workspace\", or \"databricks auth\".",
       "experimental": true,
       "updated_at": "2026-05-12T21:15:40Z",
       "files": [
