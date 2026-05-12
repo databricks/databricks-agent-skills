@@ -73,9 +73,17 @@ See the root [README](../README.md) for details on the stable install path.
 ### 📚 Reference
 - **databricks-docs** - Documentation index via llms.txt
 
-## Provenance
+## Provenance & sync model
 
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
-Upstream changes are not automatically synced — see the
-[contributing notes](../CONTRIBUTING.md) for the current sync process.
+
+**Transition phase (until `ai-dev-kit` skills are locked):**
+- Source of truth is **upstream `ai-dev-kit`**. New work and bug fixes go there.
+- This directory receives **periodic manual re-syncs** — someone opens a PR
+  to bring drift from upstream into `experimental/`.
+
+**Post-lock (after `ai-dev-kit` skill contributions are stopped):**
+- Source of truth is **this repo**. New work and bug fixes go directly to
+  `experimental/<skill>/`.
+- `ai-dev-kit/databricks-skills/` becomes read-only and points here.
