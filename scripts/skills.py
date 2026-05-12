@@ -6,7 +6,6 @@ import json
 import re
 import shutil
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -100,8 +99,8 @@ def iter_skill_files(skill_path: Path):
     """Yield tracked files in a skill directory, skipping VCS-ignored noise.
 
     Filters out dot-prefixed paths (.DS_Store, .git, etc.), __pycache__
-    directories, and *.pyc files so manifest output and updated_at timestamps
-    stay reproducible across machines.
+    directories, and *.pyc files so manifest output stays reproducible
+    across machines.
     """
     for file_path in skill_path.rglob("*"):
         if not file_path.is_file():
@@ -116,22 +115,6 @@ def iter_skill_files(skill_path: Path):
         yield file_path
 
 
-def get_skill_updated_at(skill_path: Path) -> str:
-    """Get the most recent modification time of any file in the skill directory."""
-    latest_mtime = 0.0
-    for file_path in iter_skill_files(skill_path):
-        mtime = file_path.stat().st_mtime
-        if mtime > latest_mtime:
-            latest_mtime = mtime
-
-    if latest_mtime == 0.0:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    return datetime.fromtimestamp(latest_mtime, timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-
-
 # ---------------------------------------------------------------------------
 # Sync
 # ---------------------------------------------------------------------------
@@ -140,7 +123,7 @@ def sync_assets(repo_root: Path) -> int:
     """Copy shared assets from repo root into each skill directory.
 
     Only writes when content differs. Uses shutil.copy2 to preserve mtime
-    from the source so that skill updated_at timestamps stay stable.
+    from the source.
 
     Returns count of files written.
     """
@@ -328,7 +311,6 @@ def generate_manifest(repo_root: Path) -> dict:
 
     return {
         "version": "2",
-        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "skills": skills,
     }
 
@@ -368,7 +350,6 @@ def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, di
         "version": extract_version_from_skill(skill_dir),
         "description": metadata.get("description", ""),
         "repo_dir": STABLE_REPO_DIR,
-        "updated_at": get_skill_updated_at(skill_dir),
         "files": files,
     }
 
@@ -392,7 +373,6 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
         "version": extract_version_from_skill(skill_dir),
         "description": extract_description_from_skill(skill_dir),
         "repo_dir": EXPERIMENTAL_REPO_DIR,
-        "updated_at": get_skill_updated_at(skill_dir),
         "files": files,
     }
 
@@ -410,7 +390,6 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
 def normalize_manifest(manifest: dict) -> dict:
     """Normalize manifest for comparison by excluding volatile fields."""
     normalized = manifest.copy()
-    normalized.pop("updated_at", None)
     normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
     return normalized
 
@@ -419,7 +398,6 @@ def _normalize_skill_map(skill_map: dict) -> dict:
     out = {}
     for name, skill in skill_map.items():
         skill_copy = skill.copy()
-        skill_copy.pop("updated_at", None)
         skill_copy.pop("base_revision", None)
         out[name] = skill_copy
     return out

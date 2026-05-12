@@ -1,12 +1,10 @@
 {
   "version": "2",
-  "updated_at": "2026-05-22T20:18:49Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.2",
       "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "repo_dir": "skills",
-      "updated_at": "2026-05-22T15:54:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -33,7 +31,6 @@
       "version": "0.1.0",
       "description": "Core Databricks skill for CLI, auth, and data exploration",
       "repo_dir": "skills",
-      "updated_at": "2026-05-15T09:44:24Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -48,7 +45,6 @@
       "version": "0.0.1",
       "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
       "repo_dir": "skills",
-      "updated_at": "2026-05-12T15:39:50Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -66,7 +62,6 @@
       "version": "0.2.0",
       "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI \u2014 covers all task types, triggers, notifications, and worked examples",
       "repo_dir": "skills",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -82,7 +77,6 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "repo_dir": "skills",
-      "updated_at": "2026-05-22T15:54:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -101,7 +95,6 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "repo_dir": "skills",
-      "updated_at": "2026-05-22T15:54:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -114,7 +107,6 @@
       "version": "0.1.0",
       "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
       "repo_dir": "skills",
-      "updated_at": "2026-05-12T15:39:50Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -161,7 +153,6 @@
       "version": "0.1.0",
       "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
       "repo_dir": "skills",
-      "updated_at": "2026-05-12T15:39:50Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -178,7 +169,6 @@
       "version": "0.0.1",
       "description": "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS).",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:18:49Z",
       "files": [
         "1-knowledge-assistants.md",
         "2-supervisor-agents.md",
@@ -192,7 +182,6 @@
       "version": "0.0.1",
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 chunk \u2192 index \u2192 query).",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "1-task-functions.md",
         "2-ai-query.md",
@@ -208,7 +197,6 @@
       "version": "0.0.1",
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "1-widget-specifications.md",
         "2-advanced-widget-specifications.md",
@@ -225,7 +213,6 @@
       "version": "0.0.1",
       "description": "Builds Databricks applications. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required. Handles OAuth authorization, app resources, SQL warehouse and Lakebase connectivity, model serving, foundation model APIs, and deployment. Use when building web apps, dashboards, ML demos, or REST APIs for Databricks, or when the user mentions AppKit, Streamlit, Dash, Gradio, Flask, FastAPI, Reflex, or Databricks app.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "1-authorization.md",
         "2-app-resources.md",
@@ -247,7 +234,6 @@
       "version": "0.0.1",
       "description": "Databricks SQL (DBSQL) advanced features and SQL warehouse capabilities. This skill MUST be invoked when the user mentions: \"DBSQL\", \"Databricks SQL\", \"SQL warehouse\", \"SQL scripting\", \"stored procedure\", \"CALL procedure\", \"materialized view\", \"CREATE MATERIALIZED VIEW\", \"pipe syntax\", \"|>\", \"geospatial\", \"H3\", \"ST_\", \"spatial SQL\", \"collation\", \"COLLATE\", \"ai_query\", \"ai_classify\", \"ai_extract\", \"ai_gen\", \"AI function\", \"http_request\", \"remote_query\", \"read_files\", \"Lakehouse Federation\", \"recursive CTE\", \"WITH RECURSIVE\", \"multi-statement transaction\", \"temp table\", \"temporary view\", \"pipe operator\". SHOULD also invoke when the user asks about SQL best practices, data modeling patterns, or advanced SQL features on Databricks.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -264,7 +250,6 @@
       "version": "0.0.1",
       "description": "Databricks documentation reference via llms.txt index. Use when other skills do not cover a topic, looking up unfamiliar Databricks features, or needing authoritative docs on APIs, configurations, or platform capabilities.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -276,7 +261,6 @@
       "version": "0.0.1",
       "description": "Execute code and manage compute on Databricks. Use this skill when the user mentions: \"run code\", \"execute\", \"run on databricks\", \"serverless\", \"no cluster\", \"run python\", \"run scala\", \"run sql\", \"run R\", \"run file\", \"push and run\", \"notebook run\", \"batch script\", \"model training\", \"run script on cluster\", \"create cluster\", \"new cluster\", \"resize cluster\", \"modify cluster\", \"delete cluster\", \"terminate cluster\", \"create warehouse\", \"new warehouse\", \"resize warehouse\", \"delete warehouse\", \"node types\", \"runtime versions\", \"DBR versions\", \"spin up compute\", \"provision cluster\".",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:57:09Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -292,7 +276,6 @@
       "version": "0.0.1",
       "description": "Apache Iceberg tables on Databricks \u2014 Managed Iceberg tables, External Iceberg Reads (fka Uniform), Compatibility Mode, Iceberg REST Catalog (IRC), Iceberg v3, Snowflake interop, PyIceberg, OSS Spark, external engine access and credential vending. Use when creating Iceberg tables, enabling External Iceberg Reads (uniform) on Delta tables (including Streaming Tables and Materialized Views via compatibility mode), configuring external engines to read Databricks tables via Unity Catalog IRC, integrating with Snowflake catalog to read Foreign Iceberg tables",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "1-managed-iceberg-tables.md",
         "2-uniform-and-compatibility.md",
@@ -309,7 +292,6 @@
       "version": "0.0.1",
       "description": "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -323,7 +305,6 @@
       "version": "0.0.1",
       "description": "MLflow 3 GenAI agent evaluation. Use when writing mlflow.genai.evaluate() code, creating @scorer functions, using built-in scorers (Guidelines, Correctness, Safety, RetrievalGroundedness), building eval datasets from traces, setting up trace ingestion and production monitoring, aligning judges with MemAlign from domain expert feedback, or running optimize_prompts() with GEPA for automated prompt improvement.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -346,7 +327,6 @@
       "version": "0.0.1",
       "description": "Databricks development guidance including Python SDK, Databricks Connect, CLI, and REST API. Use when working with databricks-sdk, databricks-connect, or Databricks APIs.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -364,7 +344,6 @@
       "version": "0.0.1",
       "description": "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -385,7 +364,6 @@
       "version": "0.0.1",
       "description": "Generate realistic synthetic data using Spark + Faker (strongly recommended). Supports serverless execution, multiple output formats (Parquet/JSON/CSV/Delta), and scales from thousands to millions of rows. For small datasets (<10K rows), can optionally generate locally and upload to volumes. Use when user mentions 'synthetic data', 'test data', 'generate data', 'demo dataset', 'Faker', or 'sample data'.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -400,7 +378,6 @@
       "version": "0.0.1",
       "description": "Unity Catalog system tables and volumes. Use when querying system tables (audit, lineage, billing) or working with volume file operations (upload, download, list files in /Volumes/).",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "5-system-tables.md",
         "6-volumes.md",
@@ -415,7 +392,6 @@
       "version": "0.0.1",
       "description": "Generate PDF documents from HTML and upload to Unity Catalog volumes. Use for creating test PDFs, demo documents, reports, or evaluation datasets.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -428,7 +404,6 @@
       "version": "0.0.1",
       "description": "Patterns for Databricks Vector Search: create endpoints and indexes, query with filters, manage embeddings. Use when building RAG applications, semantic search, or similarity matching. Covers both storage-optimized and standard endpoints.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -444,7 +419,6 @@
       "version": "0.0.1",
       "description": "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC. Use when creating producers that write directly to Unity Catalog tables without a message bus, working with the Zerobus Ingest SDK in Python/Java/Go/TypeScript/Rust, generating Protobuf schemas from UC tables, or implementing stream-based ingestion with ACK handling and retry logic.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "1-setup-and-authentication.md",
         "2-python-client.md",
@@ -461,7 +435,6 @@
       "version": "0.0.1",
       "description": "Build custom Python data sources for Apache Spark using the PySpark DataSource API \u2014 batch and streaming readers/writers for external systems. Use this skill whenever someone wants to connect Spark to an external system (database, API, message queue, custom protocol), build a Spark connector or plugin in Python, implement a DataSourceReader or DataSourceWriter, pull data from or push data to a system via Spark, or work with the PySpark DataSource API in any way. Even if they just say \"read from X in Spark\" or \"write DataFrame to Y\" and there's no native connector, this skill applies.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T20:17:46Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
