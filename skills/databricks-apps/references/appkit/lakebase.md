@@ -275,8 +275,8 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | Error | Cause | Solution |
 |-------|-------|---------|
 | `permission denied for schema public` | SP cannot access `public` schema | Create custom schema: `CREATE SCHEMA IF NOT EXISTS app_data` and qualify all table names with `app_data.` |
-| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Schema owned by wrong role. To preserve data: export first via `pg_dump` or copy tables to a temp schema. **Ask the user before dropping.** Then drop (**deletes all data**) and redeploy: `databricks psql --project <PROJECT_ID> -- -c "DROP SCHEMA IF EXISTS app CASCADE;"` + `databricks apps deploy`. The SP recreates the schema. (PostgreSQL schema ownership is tied to the role that created it and cannot be reassigned by regular users.) |
-| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP cannot access schemas it does not own | Same as above |
+| `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Schema owned by wrong role. To preserve data: export first (`pg_dump` or temp schema copy). **Ask the user before dropping.** Then drop + redeploy. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for full steps. |
+| Works locally but `permission denied` after deploy | Local credentials created the schema; the SP cannot access schemas it does not own | Schema owned by wrong role — see row above for export + drop + redeploy steps |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
 | `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |
