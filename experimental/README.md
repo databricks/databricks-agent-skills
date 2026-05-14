@@ -81,12 +81,10 @@ See the root [README](../README.md) for details on the stable install path.
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
-**Source SHA**: [`9c7a5b3`](https://github.com/databricks-solutions/ai-dev-kit/commit/9c7a5b3a3bf187c2b19d0b777768ecb52dd2de22)
-on the `appkit-on-experimental` branch of `jamesbroadhead/ai-dev-kit` —
-the head of [a-d-k PR #533](https://github.com/databricks-solutions/ai-dev-kit/pull/533),
-which targets a-d-k's `experimental` branch. One commit ahead of
-`origin/experimental` at import time. Divergence from `experimental`
-is the PR #533 change set:
+**Source SHA**: [`7b07f18`](https://github.com/databricks-solutions/ai-dev-kit/commit/7b07f18b6efb7ff0ac011d3fe81b435eb3cd793a)
+on the `experimental` branch of `databricks-solutions/ai-dev-kit` —
+the merge commit of [a-d-k PR #533](https://github.com/databricks-solutions/ai-dev-kit/pull/533)
+into `experimental`. The PR #533 change set, now part of `experimental`:
 
 - `databricks-app-python` → `databricks-apps-python` rename (folder,
   baselines, manifests, install scripts, cross-skill mentions). The
@@ -99,7 +97,8 @@ is the PR #533 change set:
   demoted to an explicit alternative.
 - `install.sh` / `install.ps1` upstream changes wiring a-d-k to
   install d-a-s skills via a single GitHub tree call (out of scope
-  for this snapshot, not imported here).
+  for this snapshot, not imported here — only `databricks-skills/`
+  content is mirrored).
 
 **Note**: the `experimental` branch of a-d-k previously removed
 `databricks-lakebase-provisioned`, which is why it is not present in
