@@ -39,6 +39,8 @@ Use the `databricks-lakebase` skill to create a Lakebase project and discover br
 
 > For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
 
+**Naming conventions:** Use domain names for user-facing code (`ItemsPage.tsx`, `/api/items`, `item-routes.ts`). Keep `lakebase` naming only for infrastructure config (`lakebase()` plugin, `LAKEBASE_ENDPOINT`, `postgres` app resource).
+
 **Get resource names** (if you have an existing project):
 ```bash
 # List branches → use the name field of a READY branch
@@ -180,6 +182,78 @@ const prisma = new PrismaClient({ adapter });
 
 For ORM-compatible config: `appkit.lakebase.getOrmConfig()`.
 
+## Chat Persistence Pattern
+
+Save AI chat conversations to Lakebase so users can resume sessions and scroll full message history.
+
+**Schema** — create in a separate `chat` schema (not `app`) so the deploy-first ownership model stays clean:
+
+```sql
+CREATE SCHEMA IF NOT EXISTS chat;
+
+CREATE TABLE IF NOT EXISTS chat.chats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat.messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id UUID NOT NULL REFERENCES chat.chats(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('system', 'user', 'assistant', 'tool')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at
+  ON chat.messages(chat_id, created_at);
+```
+
+**Bootstrap** — run setup in `onPluginsReady` so tables exist before the server accepts requests:
+
+```typescript
+await createApp({
+  plugins: [server(), lakebase()],
+  async onPluginsReady(appkit) {
+    await setupChatTables(appkit);
+    // then register routes via appkit.server.extend(...)
+  },
+});
+```
+
+**Persistence helpers** — use parameterized queries:
+
+```typescript
+export async function createChat(appkit, input: { userId: string; title: string }) {
+  const result = await appkit.lakebase.query(
+    `INSERT INTO chat.chats (user_id, title) VALUES ($1, $2)
+     RETURNING id, user_id, title, created_at, updated_at`,
+    [input.userId, input.title],
+  );
+  return result.rows[0];
+}
+
+export async function appendMessage(appkit, input: { chatId: string; role: string; content: string }) {
+  const result = await appkit.lakebase.query(
+    `INSERT INTO chat.messages (chat_id, role, content) VALUES ($1, $2, $3)
+     RETURNING id, chat_id, role, content, created_at`,
+    [input.chatId, input.role, input.content],
+  );
+  return result.rows[0];
+}
+```
+
+**User identity**: In deployed apps, use `req.header("x-forwarded-email")`. For local dev, hardcode a test user ID.
+
+**History endpoints**:
+- `GET /api/chats` — list chats for current user
+- `GET /api/chats/:chatId/messages` — load ordered history
+- `DELETE /api/chats/:chatId` — delete chat (messages cascade)
+
+**AI SDK v6 integration**: Use `setMessages()` from `useChat` return value for history loading (NOT `initialMessages`). To read response headers like `X-Chat-Id`, pass a custom `fetch` wrapper on the `TextStreamChatTransport` constructor.
+
 ## Reading from Lakebase synced tables
 
 Lakebase synced tables materialize Delta/UC tables into Lakebase Postgres for low-latency app reads. The lakehouse remains the source of truth; Lakebase serves as a read-optimized index.
@@ -261,6 +335,8 @@ Check the response for the `active_deployment` field. If it exists with `status.
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
 Lakebase project creators already have database access after the first deploy. Collaborators need `databricks_superuser` granted by the project creator via Branch Overview.
+
+> **Project-owner note:** If you are the Lakebase project owner, `databricks_create_role` may fail with "role already exists" and `GRANT databricks_superuser` may fail with "permission denied to grant role" — both errors are safe to ignore; the project owner already has the necessary access.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 

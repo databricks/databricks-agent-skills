@@ -231,12 +231,14 @@ const handleCreateDirectory = async (name: string) => {
 
 ## Resource Requirements
 
-Each volume key requires a resource with `WRITE_VOLUME` permission. Declare in `databricks.yml`:
+Each volume key requires a resource with `WRITE_VOLUME` permission and `user_api_scopes` for on-behalf-of (OBO) token access. Declare in `databricks.yml`:
 
 ```yaml
 resources:
   apps:
     my_app:
+      user_api_scopes:
+        - files.files        # Required for OBO token access in production
       resources:
         - name: uploads-volume
           volume:
