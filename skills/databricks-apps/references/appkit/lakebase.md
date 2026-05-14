@@ -245,7 +245,7 @@ export async function appendMessage(appkit, input: { chatId: string; role: strin
 }
 ```
 
-**User identity**: In deployed apps, use `req.header("x-forwarded-email")`. For local dev, hardcode a test user ID.
+**User identity**: In deployed apps, use `req.header("x-forwarded-email")` (injected by the Databricks Apps platform proxy; for off-platform deployments, use your own auth middleware). For local dev, hardcode a test user ID.
 
 **History endpoints**:
 - `GET /api/chats` — list chats for current user

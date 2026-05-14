@@ -116,7 +116,7 @@ const baseSchema = z.object({
   PGPORT: z.coerce.number().default(5432),
   PGDATABASE: z.string().min(1),
   PGUSER: z.string().min(1),
-  PGSSLMODE: z.enum(["require", "prefer", "disable"]).default("require"),
+  PGSSLMODE: z.enum(["require", "verify-full", "verify-ca", "prefer", "disable"]).default("require"),
   DATABRICKS_TOKEN: z.string().optional(),
   DATABRICKS_CLIENT_ID: z.string().optional(),
   DATABRICKS_CLIENT_SECRET: z.string().optional(),
@@ -298,3 +298,9 @@ export default defineConfig({
 **Commands:**
 - Generate (local, no DB connection): `npx drizzle-kit generate`
 - Migrate (needs credentials): `npx dotenv -e .env.local -- npx tsx scripts/db-migrate.ts`
+
+## Cross-references
+
+- For on-platform connection patterns, see [connectivity.md](connectivity.md)
+- For vector similarity search with pgvector, see [pgvector.md](pgvector.md)
+- For AppKit-based Lakebase integration, see the `databricks-apps` skill's [lakebase.md](../../databricks-apps/references/appkit/lakebase.md)

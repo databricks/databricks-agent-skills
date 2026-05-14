@@ -159,6 +159,8 @@ This section covers the **deployment-specific patterns** for multi-space Genie a
 variables:
   genie_space_id:
     description: Default Genie space ID (required by AppKit)
+  genie_space_name:
+    description: Default Genie space name
   genie_space_sales_id:
     description: Sales Genie space ID
   genie_space_support_id:
@@ -190,6 +192,7 @@ targets:
   default:
     variables:
       genie_space_id: <any-space-id>
+      genie_space_name: <space-name>
       genie_space_sales_id: <sales-space-id>
       genie_space_support_id: <support-space-id>
 ```

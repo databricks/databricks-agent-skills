@@ -56,7 +56,7 @@ env:
 
 The injected value is the endpoint **name** (not a URL). Use it in server-side code to call the endpoint.
 
-## Non-Streaming Query Pattern
+## Non-Streaming Query Pattern (tRPC)
 
 Always use tRPC for model serving calls — do NOT call endpoints directly from the client.
 
@@ -94,11 +94,11 @@ const result = await trpc.queryModel.query({ prompt: userInput });
 const answer = result.choices?.[0]?.message?.content;
 ```
 
-For AppKit's built-in serving plugin streaming (SSE via `stream()` and `useServingStream`), see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`. The patterns below are for direct AI SDK v6 integration with Databricks AI Gateway.
+For AppKit's built-in serving plugin streaming (SSE via `stream()` and `useServingStream`), see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`. The patterns below are for apps deployed **outside** Databricks Apps (e.g., Vercel, AWS, standalone Node.js servers) using direct AI SDK v6 integration with Databricks AI Gateway. For AppKit-based apps, use the built-in serving plugin above.
 
 ## AI SDK v6 Streaming Pattern
 
-Use this pattern for streaming AI chat with Databricks AI Gateway and Vercel AI SDK v6.
+Use this pattern for streaming AI chat with Databricks AI Gateway and Vercel AI SDK v6 in off-platform apps.
 
 **Dependencies:** `ai@6`, `@ai-sdk/react@3`, `@ai-sdk/openai`, `@databricks/sdk-experimental`
 
@@ -151,9 +151,10 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     const token = await getDatabricksToken();
-    const endpoint = process.env.DATABRICKS_ENDPOINT || "<your-endpoint>";
+    const endpoint = process.env.DATABRICKS_ENDPOINT || "<ENDPOINT_NAME>";
 
     // AI Gateway URL uses /mlflow/v1 path, NOT /openai/v1
+    // URL varies by cloud: .cloud.databricks.com (AWS), .azuredatabricks.net (Azure), .gcp.databricks.com (GCP)
     const databricks = createOpenAI({
       baseURL: `https://${process.env.DATABRICKS_WORKSPACE_ID}.ai-gateway.cloud.databricks.com/mlflow/v1`,
       apiKey: token,

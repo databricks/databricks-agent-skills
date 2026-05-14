@@ -144,7 +144,7 @@ COMMIT;
 
 - Partitioned tables are not supported
 - Disabling and re-enabling sync does **not** re-snapshot — missing changes are lost permanently
-- AWS only (Beta). Azure support is not yet available.
+- Available on AWS, Azure, and GCP.
 
 ## Cross-references
 

@@ -69,7 +69,7 @@ If the user's app description implies storing or persisting data — forms, CRUD
 2. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
 3. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
 
-This is not optional — any app that writes user-generated data needs Lakebase.
+This rule governs **state storage** only. For how the app reads existing lakehouse data, proceed to the Decision Gate below. This is not optional — any app that writes user-generated data needs Lakebase.
 
 ## Development Workflow (FOLLOW THIS ORDER)
 

@@ -196,7 +196,7 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 
 ## Lakehouse Sync (Beta)
 
-Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS and Azure.
+Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS, Azure, and GCP.
 
 > **Important:** Tables must reside in the `databricks_postgres` database for Lakehouse Sync to work.
 

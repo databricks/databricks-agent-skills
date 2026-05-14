@@ -72,12 +72,12 @@ export async function setupVectorTables(appkit: AppKitWithLakebase) {
       throw err;
     }
   }
+  await appkit.lakebase.query(`CREATE SCHEMA IF NOT EXISTS vectors`);
   const { rows } = await appkit.lakebase.query(
     `SELECT 1 FROM information_schema.tables
      WHERE table_schema = 'vectors' AND table_name = 'documents'`,
   );
   if (rows.length > 0) return;
-  await appkit.lakebase.query(`CREATE SCHEMA IF NOT EXISTS vectors`);
   await appkit.lakebase.query(`
     CREATE TABLE IF NOT EXISTS vectors.documents (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
