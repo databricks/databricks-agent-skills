@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Genie"
+  short_description: "Create and query Databricks Genie Spaces for natural language SQL exploration."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-genie for create and query databricks genie spaces for natural language sql exploration."

@@ -4,17 +4,22 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
-**For Claude Code:**
-
 ```bash
 databricks experimental aitools install
 ```
 
-This installs skills to `~/.claude/skills/` for use with Claude Code.
+This auto-detects your coding agent(s) and installs the stable skills to the
+right location:
 
-**For Cursor:**
+- **Claude Code** → `~/.claude/skills/`
+- **Cursor**, **Codex CLI**, **OpenCode**, **GitHub Copilot**, **Antigravity**
+  → their respective skill directories
 
-Run this command in chat:
+For finer control, use the `aitools skills install` subcommand directly — it
+accepts a positional skill name and an `--experimental` flag (see the
+[Experimental Skills](#experimental-skills) section).
+
+**For Cursor (plugin marketplace alternative):**
 
 ```text
 /add-plugin databricks-skills
@@ -22,7 +27,32 @@ Run this command in chat:
 
 ## Available Skills
 
-- **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
+Stable skills shipped from [`skills/`](./skills/):
+
+- **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
+- **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
+- **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
+- **databricks-jobs** — Lakeflow Jobs orchestration: task types, triggers, schedules, notifications.
+- **databricks-lakebase** — Lakebase Postgres: projects, branching, autoscaling, synced tables, Data API.
+- **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
+- **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
+- **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
+
+## Experimental Skills
+
+The [`experimental/`](./experimental/) directory contains additional skills
+imported from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
+on a **best-effort basis**.
+
+- Experimental skills are **not officially supported** — they may be used, but
+  do not follow the same review / quality bar as the stable skills under
+  [`skills/`](./skills/).
+- They are **not installed by default** by `databricks experimental aitools
+  skills install`. Pass `--experimental` to install all of them, or install
+  a specific one by name (with the `-experimental` suffix and the flag —
+  e.g. `databricks-iceberg-experimental --experimental`).
+- See [`experimental/README.md`](./experimental/README.md) for the full list
+  and caveats.
 
 ## Structure
 
@@ -38,21 +68,24 @@ skill-name/
 
 ### Adding New Skills
 
-When experimenting with new skill variations, create a "subskill" that references the main skill and adds specific guidance:
+For a narrower variation of an existing skill, create a subskill that declares
+its parent via frontmatter. This is how the stable skills are organized today
+— each product skill sets `parent: databricks-core`.
 
 ```markdown
 ---
-name: "ai-databricks-apps"
-description: "Databricks apps with AI features"
+name: "databricks-apps-chatbots"
+description: "Databricks apps with chatbot features"
+parent: databricks-apps
 ---
 
-# AI powered Databricks Apps
+# Chatbot Apps
 
-First, load the base databricks-apps skill for foundational guidance.
+**FIRST**: Use the parent `databricks-apps` skill for app development basics.
 
-Then apply these additional patterns:
-- Custom pattern 1
-- Custom pattern 2
+Then apply these patterns:
+- Pattern 1
+- Pattern 2
 ```
 
 This approach:

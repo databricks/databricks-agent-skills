@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import yaml
+
 
 SHARED_ASSETS = [
     "assets/databricks.svg",
@@ -25,7 +27,7 @@ SKILL_METADATA = {
         "experimental": False,
     },
     "databricks-jobs": {
-        "description": "Databricks Jobs orchestration and scheduling",
+        "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI — covers all task types, triggers, notifications, and worked examples",
         "experimental": False,
     },
     "databricks-lakebase": {
@@ -51,9 +53,11 @@ SKILL_METADATA = {
 }
 
 
-def iter_skill_dirs(repo_root: Path):
-    """Yield skill directories that contain SKILL.md."""
-    skills_dir = repo_root / "skills"
+def iter_skill_dirs(repo_root: Path, parent: str = "skills"):
+    """Yield skill directories under `parent` that contain SKILL.md."""
+    skills_dir = repo_root / parent
+    if not skills_dir.exists():
+        return
     for item in sorted(skills_dir.iterdir()):
         if not item.is_dir():
             continue
@@ -62,6 +66,11 @@ def iter_skill_dirs(repo_root: Path):
         if not (item / "SKILL.md").exists():
             continue
         yield item
+
+
+def iter_experimental_skill_dirs(repo_root: Path):
+    """Yield experimental skill directories (under `experimental/`)."""
+    yield from iter_skill_dirs(repo_root, parent="experimental")
 
 
 def extract_version_from_skill(skill_path: Path) -> str:
@@ -85,7 +94,10 @@ def extract_version_from_skill(skill_path: Path) -> str:
     if version_match:
         return version_match.group(1).strip()
 
-    return "0.0.0"
+    # Floor: skills without an explicit version in SKILL.md frontmatter
+    # get 0.0.1 in the manifest. Avoids 0.0.0 which several install tools
+    # treat as "unset" rather than "first release".
+    return "0.0.1"
 
 
 def iter_skill_files(skill_path: Path):
@@ -184,13 +196,109 @@ def check_assets_synced(repo_root: Path) -> list[str]:
 # Manifest generation
 # ---------------------------------------------------------------------------
 
+def extract_description_from_skill(skill_path: Path) -> str:
+    """Best-effort extraction of `description:` from SKILL.md frontmatter."""
+    skill_md = skill_path / "SKILL.md"
+    if not skill_md.exists():
+        return ""
+    content = skill_md.read_text()
+    if not content.startswith("---"):
+        return ""
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return ""
+    parsed = yaml.safe_load(content[3:end_idx]) or {}
+    description = parsed.get("description", "")
+    return description.strip() if isinstance(description, str) else ""
+
+
+# Markers that separate the "what this skill does" lead-in from the
+# "Use when ..." trigger list. The Codex marketplace short_description should
+# only contain the lead-in.
+_SHORT_DESC_MARKERS = (". Use when", ". Use this", ". Triggers", ". ALWAYS")
+
+
+def synthesize_short_description(skill_path: Path) -> str:
+    """Derive a short marketplace blurb from the SKILL.md frontmatter."""
+    desc = extract_description_from_skill(skill_path)
+    for marker in _SHORT_DESC_MARKERS:
+        idx = desc.find(marker)
+        if idx >= 0:
+            desc = desc[:idx] + "."
+            break
+    if len(desc) > 200:
+        desc = desc[:197].rstrip() + "..."
+    return desc.strip()
+
+
+def synthesize_openai_yaml(skill_name: str, short_description: str) -> str:
+    """Build the Codex marketplace metadata for an experimental skill."""
+    display_name = " ".join(p.capitalize() for p in skill_name.split("-"))
+    short = short_description.replace('"', '\\"')
+    prompt_blurb = short_description.rstrip(".").lower().replace('"', '\\"')
+    return (
+        "interface:\n"
+        f'  display_name: "{display_name}"\n'
+        f'  short_description: "{short}"\n'
+        '  icon_small: "./assets/databricks.svg"\n'
+        '  icon_large: "./assets/databricks.png"\n'
+        '  brand_color: "#FF3621"\n'
+        f'  default_prompt: "Use ${skill_name} for {prompt_blurb}."\n'
+    )
+
+
+def ensure_experimental_codex_metadata(repo_root: Path) -> int:
+    """Synthesize agents/openai.yaml and copy shared assets for experimental skills.
+
+    Only writes when files are missing — upstream ai-dev-kit can override by
+    shipping its own agents/openai.yaml or assets/ in the skill. Returns the
+    number of files written.
+    """
+    written = 0
+    for skill_dir in iter_experimental_skill_dirs(repo_root):
+        for asset_rel in SHARED_ASSETS:
+            source = repo_root / asset_rel
+            dest = skill_dir / asset_rel
+            if dest.exists():
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, dest)
+            written += 1
+
+        openai_path = skill_dir / "agents" / "openai.yaml"
+        if openai_path.exists():
+            continue
+        openai_path.parent.mkdir(parents=True, exist_ok=True)
+        openai_path.write_text(
+            synthesize_openai_yaml(skill_dir.name, synthesize_short_description(skill_dir))
+        )
+        written += 1
+    return written
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories."""
     manifest_path = repo_root / "manifest.json"
-    existing_skills = {}
+    existing = {}
     if manifest_path.exists():
-        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
+        existing = json.loads(manifest_path.read_text())
 
+    skills = _build_stable_skills(repo_root, existing.get("skills", {}))
+    experimental_skills = _build_experimental_skills(
+        repo_root, existing.get("experimental_skills", {})
+    )
+
+    manifest = {
+        "version": "2",
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "skills": skills,
+    }
+    if experimental_skills:
+        manifest["experimental_skills"] = experimental_skills
+    return manifest
+
+
+def _build_stable_skills(repo_root: Path, existing_skills: dict) -> dict:
     skills = {}
     for skill_dir in iter_skill_dirs(repo_root):
         files = sorted(
@@ -228,12 +336,34 @@ def generate_manifest(repo_root: Path) -> dict:
             skill_entry["base_revision"] = existing["base_revision"]
 
         skills[skill_dir.name] = skill_entry
+    return skills
 
-    return {
-        "version": "2",
-        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "skills": skills,
-    }
+
+# Experimental skills have a looser contract than stable: no agents/openai.yaml,
+# no shared-asset sync, no SKILL_METADATA entry required. Description is
+# scraped from SKILL.md frontmatter on a best-effort basis.
+def _build_experimental_skills(repo_root: Path, existing_skills: dict) -> dict:
+    skills = {}
+    for skill_dir in iter_experimental_skill_dirs(repo_root):
+        files = sorted(
+            str(f.relative_to(skill_dir))
+            for f in iter_skill_files(skill_dir)
+        )
+
+        skill_entry = {
+            "version": extract_version_from_skill(skill_dir),
+            "description": extract_description_from_skill(skill_dir),
+            "experimental": True,
+            "updated_at": get_skill_updated_at(skill_dir),
+            "files": files,
+        }
+
+        existing = existing_skills.get(skill_dir.name, {})
+        if "base_revision" in existing:
+            skill_entry["base_revision"] = existing["base_revision"]
+
+        skills[skill_dir.name] = skill_entry
+    return skills
 
 
 # ---------------------------------------------------------------------------
@@ -245,15 +375,22 @@ def normalize_manifest(manifest: dict) -> dict:
     normalized = manifest.copy()
     normalized.pop("updated_at", None)
 
-    skills = {}
-    for name, skill in manifest.get("skills", {}).items():
+    normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
+    if "experimental_skills" in manifest:
+        normalized["experimental_skills"] = _normalize_skill_map(
+            manifest["experimental_skills"]
+        )
+    return normalized
+
+
+def _normalize_skill_map(skill_map: dict) -> dict:
+    out = {}
+    for name, skill in skill_map.items():
         skill_copy = skill.copy()
         skill_copy.pop("updated_at", None)
         skill_copy.pop("base_revision", None)
-        skills[name] = skill_copy
-
-    normalized["skills"] = skills
-    return normalized
+        out[name] = skill_copy
+    return out
 
 
 def validate_manifest(repo_root: Path) -> bool:
@@ -308,10 +445,14 @@ def main() -> None:
         case "sync":
             synced = sync_assets(repo_root)
             print(f"Synced {synced} asset(s)")
+            generated = ensure_experimental_codex_metadata(repo_root)
+            print(f"Generated {generated} experimental Codex metadata file(s)")
 
         case "generate":
             synced = sync_assets(repo_root)
             print(f"Synced {synced} asset(s)")
+            generated = ensure_experimental_codex_metadata(repo_root)
+            print(f"Generated {generated} experimental Codex metadata file(s)")
 
             manifest = generate_manifest(repo_root)
             manifest_path = repo_root / "manifest.json"

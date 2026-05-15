@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Unity Catalog"
+  short_description: "Unity Catalog system tables and volumes."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-unity-catalog for unity catalog system tables and volumes."

@@ -6,4 +6,21 @@
 /skills/databricks-model-serving/ @databricks/eng-apps-devex
 /skills/databricks-jobs/ @lennartkats-db @camielstee-db
 /skills/databricks-pipelines/ @lennartkats-db @camielstee-db
+
+# Experimental skills imported from databricks-solutions/ai-dev-kit on a
+# best-effort basis. The merge gate is the same as the rest of the repo
+# (the existing writers from the `*` line above) so changes here can't be
+# self-approved by a-d-k contributors.
+#
+# The top a-d-k contributors (>=10 commits at import time) are granted
+# repo-level write access so they can push branches and open PRs, but they
+# are deliberately NOT Code Owners on this path — that means their review
+# alone does not satisfy the Required-Code-Owner-Review branch protection.
+# They are the natural suggested reviewers for `/experimental/` changes:
+#   @calreynolds @dustinvannoy-db @malcolndandaro @auschoi96 @jacksandom
+#   @QuentinAmbard @NatyraB @jiteshsoni @scottDBX1886 @alexmillerdb
+# All confirmed Databricks employees via Slack lookup at import time
+# (Field Engineering / SSA / Strategy & Execution).
+/experimental/ @lennartkats-db @simonfaltum @databricks/eng-apps-devex
+
 /.github/CODEOWNERS @lennartkats-db @simonfaltum @fjakobs
