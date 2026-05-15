@@ -36,7 +36,6 @@ resources:
       name: operational_analytics
       catalog: <CATALOG_NAME>
       schema: <SCHEMA_NAME>
-      development: true
       serverless: true
       libraries:
         - file:
@@ -51,18 +50,18 @@ For each entity, create `src/silver_<entity>.sql`:
 CREATE OR REFRESH MATERIALIZED VIEW silver_<entity>
 COMMENT "Current state of <entity> records, deduplicated from CDC history"
 AS
-SELECT * EXCEPT (rn, _change_type, _lsn, _commit_timestamp)
+SELECT * EXCEPT (rn, _pg_change_type, _pg_lsn, _pg_xid, _timestamp, _sort_by)
 FROM (
   SELECT *,
     ROW_NUMBER() OVER (
       PARTITION BY <primary_key>
-      ORDER BY _lsn DESC
+      ORDER BY _pg_lsn DESC
     ) AS rn
   FROM <CATALOG_NAME>.<BRONZE_SCHEMA>.lb_<entity>_history
-  WHERE _change_type IN ('insert', 'update_postimage', 'delete')
+  WHERE _pg_change_type IN ('insert', 'update_postimage', 'delete')
 )
 WHERE rn = 1
-  AND _change_type != 'delete'
+  AND _pg_change_type != 'delete'
 ```
 
 Replace `<primary_key>`, `<CATALOG_NAME>.<BRONZE_SCHEMA>`, and `<entity>` with your values.
@@ -134,11 +133,11 @@ Deploy: `databricks bundle deploy -t dev --profile <PROFILE>`
 |-------|-----|
 | Silver table returns no rows | Verify bronze history table has data: `SELECT COUNT(*) FROM lb_<entity>_history` |
 | `TABLE_OR_VIEW_NOT_FOUND` for bronze table | Use fully-qualified name: `<CATALOG>.<SCHEMA>.lb_<entity>_history` |
-| Gold aggregation includes deleted records | Confirm silver layer filters `_change_type != 'delete'` |
+| Gold aggregation includes deleted records | Confirm silver layer filters `_pg_change_type != 'delete'` |
 | Pipeline fails on deploy | Run `databricks bundle validate` first to catch config errors |
 | Incremental refresh not picking up changes | Verify Lakehouse Sync is active and bronze table is updating |
 
 ## Cross-references
 
-- For Lakehouse Sync setup, see the `databricks-lakebase` skill's [lakehouse-sync.md](../../databricks-lakebase/references/lakehouse-sync.md)
-- For synced tables (UC → Lakebase direction), see [synced-tables.md](../../databricks-lakebase/references/synced-tables.md)
+- For Lakehouse Sync setup, see [lakehouse-sync.md](lakehouse-sync.md)
+- For synced tables (UC → Lakebase direction), see [synced-tables.md](synced-tables.md)

@@ -127,7 +127,7 @@ Call `setupVectorTables(appkit)` from `onPluginsReady` before starting the serve
 |----------|----------|---------|
 | `<=>` | Cosine | Text similarity (default) |
 | `<->` | L2 (Euclidean) | Spatial data |
-| `<#>` | Inner product | Normalized embeddings |
+| `<#>` | Negative inner product | Normalized embeddings (smaller = more similar) |
 
 Similarity score: `1 - (embedding <=> $1::vector) AS similarity` (0 = unrelated, 1 = identical).
 

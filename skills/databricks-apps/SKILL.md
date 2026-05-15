@@ -1,6 +1,6 @@
 ---
 name: databricks-apps
-description: "Build apps on Databricks Apps platform. Auto-detects need for Lakebase when app stores state; evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
+description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Auto-detects need for Lakebase when app stores state; evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.1"

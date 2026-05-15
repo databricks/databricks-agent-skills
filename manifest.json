@@ -1,12 +1,12 @@
 {
   "version": "2",
-  "updated_at": "2026-05-13T16:06:21Z",
+  "updated_at": "2026-05-15T12:14:35Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
       "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
       "experimental": false,
-      "updated_at": "2026-05-13T16:05:34Z",
+      "updated_at": "2026-05-15T09:46:18Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -78,7 +78,7 @@
       "version": "0.1.0",
       "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
       "experimental": false,
-      "updated_at": "2026-05-13T16:02:53Z",
+      "updated_at": "2026-05-15T12:07:06Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -87,6 +87,7 @@
         "references/computes-and-scaling.md",
         "references/connectivity.md",
         "references/lakehouse-sync.md",
+        "references/medallion-from-cdc.md",
         "references/off-platform.md",
         "references/pgvector.md",
         "references/synced-tables.md"
@@ -96,19 +97,20 @@
       "version": "0.1.0",
       "description": "Databricks Model Serving endpoint management",
       "experimental": false,
-      "updated_at": "2026-05-13T16:06:15Z",
+      "updated_at": "2026-05-15T09:16:06Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/off-platform-streaming.md"
       ]
     },
     "databricks-pipelines": {
       "version": "0.1.0",
       "description": "Databricks Pipelines (DLT) for ETL and streaming",
       "experimental": false,
-      "updated_at": "2026-05-13T16:03:14Z",
+      "updated_at": "2026-05-15T12:14:27Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -128,7 +130,6 @@
         "references/materialized-view-python.md",
         "references/materialized-view-sql.md",
         "references/materialized-view.md",
-        "references/medallion-from-cdc.md",
         "references/options-avro.md",
         "references/options-csv.md",
         "references/options-json.md",

@@ -39,12 +39,14 @@ const pool = createLakebasePool({
 - OpenTelemetry metrics: `lakebase.token.refresh.duration`, `lakebase.query.duration`, pool connection gauges
 - Logging: `{ debug, info, warn, error }` boolean flags or custom logger instance
 
+> **Lakebase Autoscaling only.** This package is not compatible with Lakebase Provisioned. For the full config reference, see the [`@databricks/lakebase` README](https://github.com/databricks/appkit/tree/main/packages/lakebase).
+
 **ORM integration:**
 
 ```typescript
 // Drizzle
 import { drizzle } from "drizzle-orm/node-postgres";
-const db = drizzle(pool);
+const db = drizzle({ client: pool });
 
 // Prisma
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -63,7 +65,7 @@ import { getLakebaseOrmConfig } from "@databricks/lakebase";
 | Variable | Description | How to find |
 |----------|-------------|-------------|
 | `PGHOST` | Lakebase endpoint host | `databricks postgres list-endpoints projects/<project>/branches/production --profile <PROFILE> -o json` → `status.hosts.host` |
-| `PGDATABASE` | Postgres database name | `databricks postgres list-databases projects/<project>/branches/production --profile <PROFILE> -o json` → `status.postgres_database` |
+| `PGDATABASE` | Postgres database name | Default is `databricks_postgres`. Verify via psql: `SELECT datname FROM pg_database WHERE datistemplate = false;` |
 | `LAKEBASE_ENDPOINT` | Endpoint resource path | Same `list-endpoints` command → `name` field |
 | `PGUSER` | Username | Your Databricks email (local dev) or service principal application ID (M2M) |
 | `PGSSLMODE` | SSL mode | `require` (default) |

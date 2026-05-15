@@ -21,11 +21,13 @@ lb_<table_name>_history
 
 Each row includes CDC metadata columns:
 
-| Column | Description |
-|--------|-------------|
-| `_change_type` | `insert`, `update_preimage`, `update_postimage`, or `delete` |
-| `_lsn` | Log Sequence Number for ordering changes |
-| `_commit_timestamp` | When the change was captured |
+| Column | Type | Description |
+|--------|------|-------------|
+| `_pg_change_type` | TEXT | `insert`, `update_preimage`, `update_postimage`, or `delete` |
+| `_pg_lsn` | BIGINT | Postgres Log Sequence Number for ordering changes |
+| `_pg_xid` | INTEGER | Postgres Transaction ID |
+| `_timestamp` | TIMESTAMP | When the sync processed the change (without timezone) |
+| `_sort_by` | BIGINT | Monotonic sort key for ordering all changes |
 
 ## Enablement
 
@@ -102,12 +104,12 @@ SELECT * FROM wal2delta.tables;
 SELECT *
 FROM (
   SELECT *,
-    ROW_NUMBER() OVER (PARTITION BY <primary_key> ORDER BY _lsn DESC) AS rn
+    ROW_NUMBER() OVER (PARTITION BY <primary_key> ORDER BY _pg_lsn DESC) AS rn
   FROM <catalog>.<schema>.lb_<table_name>_history
-  WHERE _change_type IN ('insert', 'update_postimage', 'delete')
+  WHERE _pg_change_type IN ('insert', 'update_postimage', 'delete')
 )
 WHERE rn = 1
-  AND _change_type != 'delete';
+  AND _pg_change_type != 'delete';
 ```
 
 **Full change history for a record:**
@@ -116,12 +118,12 @@ WHERE rn = 1
 SELECT *
 FROM <catalog>.<schema>.lb_<table_name>_history
 WHERE <primary_key> = <value>
-ORDER BY _lsn;
+ORDER BY _pg_lsn;
 ```
 
 ## Schema Changes
 
-If you need to change a synced table's schema in Postgres, use the rename-and-swap pattern:
+If you need to change a synced table's schema in Postgres, you can use the rename-and-swap pattern. Note: this is community guidance — the official behavior is that column changes (add, drop, type change) trigger a full resnapshot of the affected table.
 
 ```sql
 CREATE TABLE <table>_v2 (

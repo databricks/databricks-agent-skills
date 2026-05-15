@@ -269,4 +269,3 @@ Detailed reference guides for each pipeline API. **Read the relevant guide befor
 - [Expectations](references/expectations.md) — Define and enforce data quality constraints ([Python](references/expectations-python.md), [SQL](references/expectations-sql.md))
 - [Sinks](references/sink.md) — Write to Kafka, Event Hubs, external Delta tables ([Python](references/sink-python.md))
 - [ForEachBatch Sinks](references/foreach-batch-sink.md) — Custom streaming sink with per-batch Python logic ([Python](references/foreach-batch-sink-python.md))
-- [Medallion from CDC](references/medallion-from-cdc.md) — Build Silver/Gold layers from Lakehouse Sync CDC history tables
