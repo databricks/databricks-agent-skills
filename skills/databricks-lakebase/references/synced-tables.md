@@ -223,7 +223,7 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 - Partitioned tables are not supported
 - Disabling and re-enabling sync does **not** re-snapshot — missing changes are lost permanently
 
-For the full Lakehouse Sync reference, see [lakehouse-sync.md](lakehouse-sync.md). For building medallion pipelines from CDC history, see the `databricks-pipelines` skill's [medallion-from-cdc.md](../../databricks-pipelines/references/medallion-from-cdc.md).
+For the full Lakehouse Sync reference, see [lakehouse-sync.md](lakehouse-sync.md). For building medallion pipelines from CDC history, see [medallion-from-cdc.md](medallion-from-cdc.md).
 
 ## Use Cases
 

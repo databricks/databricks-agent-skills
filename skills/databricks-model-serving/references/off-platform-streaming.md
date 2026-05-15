@@ -153,9 +153,11 @@ Key differences from AI SDK v5: use `sendMessage({ text })` (NOT `append`), rend
 Generate text embeddings using a Databricks AI Gateway endpoint.
 
 ```typescript
-import { getWorkspaceClient } from "@databricks/appkit";
+import { WorkspaceClient } from "@databricks/sdk-experimental";
 
-const workspaceClient = getWorkspaceClient({});
+const workspaceClient = new WorkspaceClient({
+  host: process.env.DATABRICKS_HOST,
+});
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   const endpoint =

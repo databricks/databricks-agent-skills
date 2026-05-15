@@ -243,6 +243,7 @@ function initAlias(): string {
     if (savedAlias) localStorage.setItem("appkit:genie:alias", savedAlias);
     clearConversationUrl();
   }
+  // SPACES: array of {alias, spaceId} defined in your component
   return localStorage.getItem("appkit:genie:alias") ?? SPACES[0]?.alias ?? "";
 }
 ```
