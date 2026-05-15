@@ -138,105 +138,6 @@ export const env = validateAuth(baseSchema.parse(process.env));
 
 Import `env` at the top of your server entry point for fast-fail on missing variables.
 
-## Manual Token Management
-
-> **Prefer `@databricks/lakebase`** for Node.js apps — it handles everything below automatically. Use this section only for non-Node.js apps or custom token flows.
-
-Lakebase requires a **two-token system**: a workspace token + a short-lived Lakebase Postgres credential.
-
-```typescript
-const REFRESH_BUFFER_MS = 2 * 60 * 1000; // Refresh 2 minutes before expiry
-
-type CachedToken = { value: string; expiresAt: number };
-
-let cachedWorkspaceToken: CachedToken | null = null;
-let workspaceRefreshPromise: Promise<CachedToken> | null = null;
-let cachedLakebaseToken: CachedToken | null = null;
-let lakebaseRefreshPromise: Promise<CachedToken> | null = null;
-
-function isFresh(token: CachedToken | null): token is CachedToken {
-  return token !== null && Date.now() < token.expiresAt - REFRESH_BUFFER_MS;
-}
-```
-
-**M2M OIDC flow** (production):
-
-```typescript
-async function fetchWorkspaceTokenM2M(host: string, clientId: string, clientSecret: string): Promise<CachedToken> {
-  const response = await fetch(`${host}/oidc/v1/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "all-apis",
-    }),
-  });
-  if (!response.ok) throw new Error(`M2M token request failed: ${response.status}`);
-  const data = await response.json() as { access_token: string; expires_in: number };
-  return { value: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 };
-}
-```
-
-**Lakebase credential** (exchange workspace token for Postgres password):
-
-```typescript
-async function fetchLakebaseCredential(host: string, workspaceToken: string): Promise<CachedToken> {
-  const response = await fetch(`${host}/api/2.0/postgres/credentials`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${workspaceToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ endpoint: env.LAKEBASE_ENDPOINT }),
-  });
-  if (!response.ok) throw new Error(`Lakebase credential request failed: ${response.status}`);
-  const data = await response.json() as { token: string; expire_time: string };
-  return { value: data.token, expiresAt: new Date(data.expire_time).getTime() };
-}
-```
-
-**Concurrent deduplication** — use a singleton promise pattern to avoid duplicate refresh calls:
-
-```typescript
-export async function getLakebasePostgresToken(): Promise<string> {
-  if (isFresh(cachedLakebaseToken)) return cachedLakebaseToken.value;
-  if (!lakebaseRefreshPromise) {
-    lakebaseRefreshPromise = (async () => {
-      const auth = authStrategyFromEnv();
-      const workspaceToken = await getWorkspaceToken(auth);
-      return fetchLakebaseCredential(env.DATABRICKS_HOST.replace(/\/$/, ""), workspaceToken);
-    })()
-      .then((token) => { cachedLakebaseToken = token; return token; })
-      .finally(() => { lakebaseRefreshPromise = null; });
-  }
-  return (await lakebaseRefreshPromise).value;
-}
-```
-
-**Local dev refresh script** (`scripts/refresh-lakebase-token.ts`):
-
-```typescript
-import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-
-const envFile = process.argv[2] ?? ".env.local";
-const profile = process.env.DATABRICKS_CONFIG_PROFILE ?? "DEFAULT";
-const raw = execSync(`databricks auth token --profile "${profile}" -o json`, { encoding: "utf-8" });
-const parsed = JSON.parse(raw) as { access_token?: string };
-if (!parsed.access_token) throw new Error("Failed to get access token from Databricks CLI");
-if (!existsSync(envFile)) throw new Error(`Env file not found: ${envFile}`);
-
-const content = readFileSync(envFile, "utf-8");
-const tokenLine = `DATABRICKS_TOKEN="${parsed.access_token}"`;
-const updated = content.includes("DATABRICKS_TOKEN=")
-  ? content.replace(/^DATABRICKS_TOKEN=.*/m, tokenLine)
-  : `${content.trimEnd()}\n${tokenLine}\n`;
-writeFileSync(envFile, updated);
-console.log(`Updated DATABRICKS_TOKEN in ${envFile}`);
-```
-
 ## Drizzle ORM Integration
 
 **With `@databricks/lakebase`** (recommended):
@@ -262,27 +163,22 @@ export const items = pgTable("items", {
 });
 ```
 
-**Migration with Lakebase credentials** — `drizzle-kit` cannot use `pg` password callbacks. Build a one-time URL:
+**Running migrations** — use Drizzle's programmatic migrator with the Lakebase pool:
 
 ```typescript
 // scripts/db-migrate.ts
-import { execSync } from "node:child_process";
-import { getLakebasePostgresToken } from "@/lib/lakebase/tokens";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { createLakebasePool } from "@databricks/lakebase";
 
-async function runMigrations() {
-  const token = await getLakebasePostgresToken();
-  const databaseUrl =
-    `postgresql://${encodeURIComponent(env.PGUSER)}:${encodeURIComponent(token)}` +
-    `@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}?sslmode=${env.PGSSLMODE}`;
-  execSync("npx drizzle-kit migrate", {
-    stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: databaseUrl },
-  });
-}
-runMigrations().catch((error) => { console.error(error); process.exit(1); });
+const pool = createLakebasePool();
+const db = drizzle({ client: pool });
+await migrate(db, { migrationsFolder: "./src/lib/db/migrations" });
+await pool.end();
+console.log("Migrations applied successfully");
 ```
 
-**`drizzle.config.ts`** — conditional `dbCredentials` (only needed when `DATABASE_URL` is set by migration script):
+**`drizzle.config.ts`** — used by `drizzle-kit generate` (no DB connection needed):
 
 ```typescript
 import { defineConfig } from "drizzle-kit";
@@ -291,15 +187,12 @@ export default defineConfig({
   schema: "./src/lib/*/schema.ts",
   out: "./src/lib/db/migrations",
   dialect: "postgresql",
-  ...(process.env.DATABASE_URL && {
-    dbCredentials: { url: process.env.DATABASE_URL },
-  }),
 });
 ```
 
 **Commands:**
-- Generate (local, no DB connection): `npx drizzle-kit generate`
-- Migrate (needs credentials): `npx dotenv -e .env.local -- npx tsx scripts/db-migrate.ts`
+- Generate: `npx drizzle-kit generate`
+- Migrate: `npx dotenv -e .env.local -- npx tsx scripts/db-migrate.ts`
 
 ## Cross-references
 
