@@ -132,7 +132,7 @@ SET TBLPROPERTIES (
 ## Related Skills
 
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** — catalog/schema management, governance, system tables
-- **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** — SDP pipelines (streaming tables, materialized views with Compatibility Mode)
+- **databricks-pipelines** — SDP pipelines (streaming tables, materialized views with Compatibility Mode)
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** — Python SDK and REST API for Databricks operations
 - **[databricks-dbsql](../databricks-dbsql/SKILL.md)** — SQL warehouse features, query patterns
 

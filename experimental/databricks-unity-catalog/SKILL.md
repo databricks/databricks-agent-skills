@@ -121,8 +121,8 @@ databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
 
 ## Related Skills
 
-- **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** - for pipelines that write to Unity Catalog tables
-- **[databricks-jobs](../databricks-jobs/SKILL.md)** - for job execution data visible in system tables
+- **databricks-pipelines** - for pipelines that write to Unity Catalog tables
+- **databricks-jobs** - for job execution data visible in system tables
 - **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - for generating data stored in Unity Catalog Volumes
 - **[databricks-aibi-dashboards](../databricks-aibi-dashboards/SKILL.md)** - for building dashboards on top of Unity Catalog data
 

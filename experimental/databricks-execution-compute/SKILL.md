@@ -167,5 +167,5 @@ databricks warehouses delete <WAREHOUSE_ID>
 ## Related Skills
 
 - **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** — Data generation using Spark + Faker
-- **[databricks-jobs](../databricks-jobs/SKILL.md)** — Production job orchestration
+- **databricks-jobs** — Production job orchestration
 - **[databricks-dbsql](../databricks-dbsql/SKILL.md)** — SQL warehouse and AI functions

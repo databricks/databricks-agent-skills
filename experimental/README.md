@@ -91,10 +91,12 @@ the merge commit of [a-d-k PR #533](https://github.com/databricks-solutions/ai-d
 into `experimental`. The PR #533 change set, now part of `experimental`:
 
 - `databricks-app-python` → `databricks-apps-python` rename (folder,
-  baselines, manifests, install scripts, cross-skill mentions). The
-  rename prevents a 3rd skill-name collision with d-a-s's own
-  `databricks-apps` — alongside the two we already handle for
-  `databricks-jobs` and `databricks-model-serving`.
+  baselines, manifests, install scripts, cross-skill mentions) so it
+  does not collide with d-a-s's own `databricks-apps`. The other
+  name collisions from this import were resolved by merging or
+  dropping the experimental copy: `databricks-jobs` was merged into
+  the stable skill (TODO #1a), and `databricks-model-serving` was
+  dropped from the import (TODO #1b).
 - `databricks-apps-python/SKILL.md` leads with AppKit (TypeScript +
   React SDK) as the recommended approach for new apps; Python
   frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) are

@@ -385,5 +385,5 @@ If the range is very small relative to the scale (e.g., 83-89% on a 0-100 scale)
 ## Related Skills
 
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - for querying the underlying data and system tables
-- **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** - for building the data pipelines that feed dashboards
-- **[databricks-jobs](../databricks-jobs/SKILL.md)** - for scheduling dashboard data refreshes
+- **databricks-pipelines** - for building the data pipelines that feed dashboards
+- **databricks-jobs** - for scheduling dashboard data refreshes

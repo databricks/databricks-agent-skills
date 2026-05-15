@@ -221,4 +221,4 @@ On `FAILED`, `get-message` populates `.error.error` with the underlying error st
 ## Related Skills
 
 - **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - Generate data for Genie tables
-- **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** - Build bronze/silver/gold tables
+- **databricks-pipelines** - Build bronze/silver/gold tables
