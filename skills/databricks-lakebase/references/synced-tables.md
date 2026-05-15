@@ -190,8 +190,8 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 - **Schema evolution:** Only additive changes (adding columns) for Triggered/Continuous modes
 
 **Cost guidance:**
-- **Continuous mode:** Reuse pipelines for ~10 tables/pipeline (~$204/table/month) vs separate pipelines (~$2,044/table/month)
-- **Cost formula:** `[Rows / (Speed × CUs × 3600)] × DLT Hourly Rate`
+- **Continuous mode:** Reuse pipelines for ~10 tables/pipeline — roughly 10x cheaper per table than separate pipelines
+- **Cost formula:** `[Rows / (Speed × CUs × 3600)] × DLT Hourly Rate` (check current DLT pricing for your cloud/region)
 - **Snapshot vs incremental:** Snapshot is ~10x faster when >10% of data changes per cycle
 
 ## Lakehouse Sync (Beta)

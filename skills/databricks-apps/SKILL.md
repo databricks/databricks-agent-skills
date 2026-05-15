@@ -211,5 +211,5 @@ After deploying, verify the app is running:
 
 ```bash
 databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING
-databricks apps logs <app-name> --profile <PROFILE>           # Stream BUILD/SYSTEM/APP logs
+databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
 ```

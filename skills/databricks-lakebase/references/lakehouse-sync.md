@@ -148,5 +148,5 @@ COMMIT;
 
 ## Cross-references
 
-- For building Silver/Gold layers from CDC history tables, see the `databricks-pipelines` skill's [medallion-from-cdc.md](../../databricks-pipelines/references/medallion-from-cdc.md)
+- For building Silver/Gold layers from CDC history tables, see [medallion-from-cdc.md](medallion-from-cdc.md)
 - For syncing in the reverse direction (UC → Lakebase), see [synced-tables.md](synced-tables.md)

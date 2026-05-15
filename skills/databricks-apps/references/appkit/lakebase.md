@@ -14,30 +14,7 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 ## Scaffolding
 
-**ALWAYS scaffold with the correct feature flags** — do not add Lakebase manually to an analytics-only scaffold.
-
-**Lakebase only** (no analytics SQL warehouse):
-```bash
-databricks apps init --name <NAME> --features lakebase \
-  --set "lakebase.postgres.branch=<BRANCH_NAME>" \
-  --set "lakebase.postgres.database=<DATABASE_NAME>" \
-  --run none --profile <PROFILE>
-```
-
-**Both Lakebase and analytics**:
-```bash
-databricks apps init --name <NAME> --features analytics,lakebase \
-  --set "analytics.sql-warehouse.id=<WAREHOUSE_ID>" \
-  --set "lakebase.postgres.branch=<BRANCH_NAME>" \
-  --set "lakebase.postgres.database=<DATABASE_NAME>" \
-  --run none --profile <PROFILE>
-```
-
-Where `<BRANCH_NAME>` and `<DATABASE_NAME>` are full resource names (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>` and `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
-
-Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names before running this command.
-
-> For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
+Scaffold with `--features lakebase` as described in the parent SKILL.md (State Storage Rule and Scaffolding section). Use the **`databricks-lakebase`** skill to create a Lakebase project and discover branch/database resource names first.
 
 **Naming conventions:** Use domain names for user-facing code (`ItemsPage.tsx`, `/api/items`, `item-routes.ts`). Keep `lakebase` naming only for infrastructure config (`lakebase()` plugin, `LAKEBASE_ENDPOINT`, `postgres` app resource).
 
@@ -94,18 +71,17 @@ The `lakebase()` plugin auto-configures from platform-injected env vars at deplo
 
 ## CRUD Routes Pattern
 
-Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `server.extend()` to register Express routes:
+Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `onPluginsReady` to initialize the schema and register Express routes:
 
 ```typescript
 // server/server.ts
 import { createApp, server, lakebase } from "@databricks/appkit";
 import { z } from 'zod';
 
-createApp({
-  plugins: [server({ autoStart: false }), lakebase()],
-})
-  .then(async (appkit) => {
-    // Schema init (runs once at startup)
+await createApp({
+  plugins: [server(), lakebase()],
+  async onPluginsReady(appkit) {
+    // Schema init (runs once before server accepts requests)
     await appkit.lakebase.query(`
       CREATE SCHEMA IF NOT EXISTS app_data;
       CREATE TABLE IF NOT EXISTS app_data.items (
@@ -141,17 +117,15 @@ createApp({
         res.status(204).send();
       });
     });
-
-    await appkit.server.start();
-  })
-  .catch(console.error);
+  },
+});
 ```
 
 > **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
 
 ## Schema Initialization
 
-**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `.then()` callback before registering routes (see CRUD pattern above):
+**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `onPluginsReady` callback before registering routes (see CRUD pattern above):
 
 ```typescript
 // Inside onPluginsReady — runs once at startup before handling requests
