@@ -14,7 +14,30 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 ## Scaffolding
 
-Scaffold with `--features lakebase` as described in the parent SKILL.md (State Storage Rule and Scaffolding section). Use the **`databricks-lakebase`** skill to create a Lakebase project and discover branch/database resource names first.
+**ALWAYS scaffold with the correct feature flags** — do not add Lakebase manually to an analytics-only scaffold.
+
+**Lakebase only** (no analytics SQL warehouse):
+```bash
+databricks apps init --name <NAME> --features lakebase \
+  --set "lakebase.postgres.branch=<BRANCH_NAME>" \
+  --set "lakebase.postgres.database=<DATABASE_NAME>" \
+  --run none --profile <PROFILE>
+```
+
+**Both Lakebase and analytics**:
+```bash
+databricks apps init --name <NAME> --features analytics,lakebase \
+  --set "analytics.sql-warehouse.id=<WAREHOUSE_ID>" \
+  --set "lakebase.postgres.branch=<BRANCH_NAME>" \
+  --set "lakebase.postgres.database=<DATABASE_NAME>" \
+  --run none --profile <PROFILE>
+```
+
+Where `<BRANCH_NAME>` and `<DATABASE_NAME>` are full resource names (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>` and `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
+
+Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names before running this command.
+
+> For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
 
 **Naming conventions:** Use domain names for user-facing code (`ItemsPage.tsx`, `/api/items`, `item-routes.ts`). Keep `lakebase` naming only for infrastructure config (`lakebase()` plugin, `LAKEBASE_ENDPOINT`, `postgres` app resource).
 
