@@ -237,12 +237,16 @@ Each volume key requires a resource with `WRITE_VOLUME` permission. Declare in `
 resources:
   apps:
     my_app:
+      user_api_scopes:
+        - files.files        # Needed when using .asUser(req) programmatic API
       resources:
         - name: uploads-volume
           volume:
             path: /Volumes/catalog/schema/uploads
             permission: WRITE_VOLUME
 ```
+
+> **Note:** The scaffolded HTTP routes (`/api/files/...`) execute as the service principal and do not require `user_api_scopes`. The scope is needed when using the programmatic `appkit.files("key").asUser(req)` API for per-user Volume access.
 
 Wire the env var in `app.yaml`:
 

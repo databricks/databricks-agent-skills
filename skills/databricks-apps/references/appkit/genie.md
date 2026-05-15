@@ -147,6 +147,107 @@ Update smoke tests if headings or routes changed, then `databricks apps validate
 
 For advanced Genie plugin usage, see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
 
+## Multi-Space Deployment
+
+For the `spaces` map API, `GenieChat alias` prop, and `useGenieChat` hook, see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
+
+This section covers the **deployment-specific patterns** for multi-space Genie apps (databricks.yml, app.yaml, stale conversation cleanup).
+
+**databricks.yml** — add one variable + resource per space, plus target-level values:
+
+```yaml
+variables:
+  genie_space_id:
+    description: Default Genie space ID (required by AppKit)
+  genie_space_name:
+    description: Default Genie space name
+  genie_space_sales_id:
+    description: Sales Genie space ID
+  genie_space_support_id:
+    description: Support Genie space ID
+
+resources:
+  apps:
+    app:
+      user_api_scopes:
+        - dashboards.genie
+      resources:
+        - name: genie-space
+          genie_space:
+            name: ${var.genie_space_name}
+            space_id: ${var.genie_space_id}
+            permission: CAN_RUN
+        - name: genie-space-sales
+          genie_space:
+            name: genie-space-sales
+            space_id: ${var.genie_space_sales_id}
+            permission: CAN_RUN
+        - name: genie-space-support
+          genie_space:
+            name: genie-space-support
+            space_id: ${var.genie_space_support_id}
+            permission: CAN_RUN
+
+targets:
+  default:
+    variables:
+      genie_space_id: <any-space-id>
+      genie_space_name: <space-name>
+      genie_space_sales_id: <sales-space-id>
+      genie_space_support_id: <support-space-id>
+```
+
+**app.yaml** — keep `DATABRICKS_GENIE_SPACE_ID` (AppKit validates it on startup). Add one `valueFrom` per UI space:
+
+```yaml
+env:
+  - name: DATABRICKS_GENIE_SPACE_ID
+    valueFrom: genie-space
+  - name: DATABRICKS_GENIE_SPACE_SALES
+    valueFrom: genie-space-sales
+  - name: DATABRICKS_GENIE_SPACE_SUPPORT
+    valueFrom: genie-space-support
+```
+
+**Critical gotcha**: `DATABRICKS_GENIE_SPACE_ID` must always be set — AppKit validates it on startup even when using a custom `spaces` map.
+
+**Build version stamp** — stamp every build so the page can detect a new deployment and clear stale conversation state:
+
+```typescript
+// client/vite.config.ts
+export default defineConfig({
+  // ... existing config ...
+  define: {
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(Date.now().toString()),
+  },
+});
+```
+
+**Stale conversation cleanup** — `GenieChat` stores conversation IDs in URLs and localStorage that become stale across space switches or redeployments:
+
+```typescript
+function clearConversationUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("conversationId");
+  window.history.replaceState({}, "", url.toString());
+}
+
+function initAlias(): string {
+  const buildVersion = import.meta.env.VITE_APP_VERSION ?? "dev";
+  if (localStorage.getItem("appkit:genie:version") !== buildVersion) {
+    const savedAlias = localStorage.getItem("appkit:genie:alias");
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("appkit:genie:"))
+      .forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem("appkit:genie:version", buildVersion);
+    if (savedAlias) localStorage.setItem("appkit:genie:alias", savedAlias);
+    clearConversationUrl();
+  }
+  // SPACES: array of {alias, spaceId} defined in your component
+  return localStorage.getItem("appkit:genie:alias") ?? SPACES[0]?.alias ?? "";
+}
+```
+
 ## Frontend
 
 **For full component API**: run `npx @databricks/appkit docs "GenieChat"`.
@@ -197,3 +298,6 @@ The plugin mounts SSE endpoints under `/api/genie`:
 | `plugin "genie" has no resource with key "..."` | Wrong `--set` flags during scaffold | Always derive resource keys from `databricks apps manifest` |
 | Chat collapses or renders poorly | No explicit height on container | Give the parent a fixed height |
 | Duplicate routes or import confusion | Old local Genie proxy file | Remove it — use `genie` from `@databricks/appkit` |
+| `does not have required scopes: genie` | Missing API scope | Confirm `user_api_scopes` includes `dashboards.genie` in `databricks.yml` and redeploy |
+| Genie space not found | Wrong space ID | Verify space ID matches the value on the Genie space **About** tab |
+| `valueFrom` mismatch | `app.yaml` value doesn't match `databricks.yml` | `valueFrom` in `app.yaml` must exactly match the resource `name` in `databricks.yml` |

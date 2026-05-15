@@ -62,7 +62,8 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
       "entity_version": "<VERSION>",
       "min_provisioned_throughput": 0,
       "max_provisioned_throughput": 0,
-      "workload_size": "Small"
+      "workload_size": "Small",
+      "scale_to_zero_enabled": true
     }],
     "traffic_config": {
       "routes": [{
@@ -73,7 +74,7 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   }' --profile <PROFILE>
 ```
 
-- Discover available Foundation Models: check the `system.ai` catalog in Unity Catalog.
+- Discover available Foundation Models: check the `system.ai` catalog in Unity Catalog, or use `databricks serving-endpoints list --profile <PROFILE>` to see available endpoints. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect the endpoint's API schema.
 - Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately, then poll:
   ```bash
   databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE>

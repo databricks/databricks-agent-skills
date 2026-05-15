@@ -56,7 +56,7 @@ env:
 
 The injected value is the endpoint **name** (not a URL). Use it in server-side code to call the endpoint.
 
-## tRPC Pattern
+## Non-Streaming Query Pattern (tRPC)
 
 Always use tRPC for model serving calls — do NOT call endpoints directly from the client.
 
@@ -94,9 +94,9 @@ const result = await trpc.queryModel.query({ prompt: userInput });
 const answer = result.choices?.[0]?.message?.content;
 ```
 
-For streaming and advanced patterns, see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
+For AppKit's built-in serving plugin streaming (SSE via `stream()` and `useServingStream`), see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
 
-AppKit integrates with **Model Serving endpoints**. AI Gateway (beta) endpoints are not directly supported — use the underlying Model Serving endpoint name instead. AI Gateway features (rate limits, usage tracking) can be configured on Model Serving endpoints via the `databricks-model-serving` skill.
+For off-platform streaming (AI SDK v6 with Databricks AI Gateway), see the **`databricks-model-serving`** skill.
 
 ## Troubleshooting
 
