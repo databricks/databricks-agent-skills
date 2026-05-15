@@ -252,8 +252,7 @@ class EntityIn(BaseModel):
 
 ## Related Skills
 
-- **[databricks-app-apx](../databricks-app-apx/SKILL.md)** - full-stack apps with FastAPI + React
-- **[databricks-bundles](../databricks-bundles/SKILL.md)** - deploying apps via DABs
+- **databricks-dabs** - deploying apps via DABs (Declarative Automation Bundles)
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - backend SDK integration
-- **[databricks-lakebase-autoscale](../databricks-lakebase-autoscale/SKILL.md)** - adding persistent PostgreSQL state (autoscaling managed PG with branching)
-- **[databricks-model-serving](../databricks-model-serving/SKILL.md)** - serving ML models for app integration
+- **databricks-lakebase** - adding persistent PostgreSQL state (Lakebase Autoscaling, synced tables, OAuth)
+- **databricks-model-serving** - serving ML models for app integration

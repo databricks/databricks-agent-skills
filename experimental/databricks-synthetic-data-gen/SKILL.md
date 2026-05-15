@@ -246,7 +246,7 @@ uv pip install "databricks-connect>=16.4,<17.4" faker numpy pandas holidays
 ## Related Skills
 
 - **databricks-unity-catalog** — Managing catalogs, schemas, and volumes
-- **databricks-bundles** — DABs for production deployment
+- **databricks-dabs** — DABs for production deployment
 
 ## Common Issues
 

@@ -616,10 +616,10 @@ If I'm unsure about a method, I should:
 
 ## Related Skills
 
-- **[databricks-config](../databricks-config/SKILL.md)** - profile and authentication setup
-- **[databricks-bundles](../databricks-bundles/SKILL.md)** - deploying resources via DABs
-- **[databricks-jobs](../databricks-jobs/SKILL.md)** - job orchestration patterns
+- **databricks-core** - CLI install, profile selection, authentication
+- **databricks-dabs** - deploying resources via DABs
+- **databricks-jobs** - job orchestration patterns
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - catalog governance
-- **[databricks-model-serving](../databricks-model-serving/SKILL.md)** - serving endpoint management
+- **databricks-model-serving** - serving endpoint management
 - **[databricks-vector-search](../databricks-vector-search/SKILL.md)** - vector index operations
-- **[databricks-lakebase-autoscale](../databricks-lakebase-autoscale/SKILL.md)** - managed PostgreSQL with autoscaling + branching
+- **databricks-lakebase** - managed PostgreSQL with autoscaling + branching

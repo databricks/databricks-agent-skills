@@ -66,12 +66,16 @@ See the root [README](../README.md) for details on the stable install path.
 - **spark-python-data-source** - Python data sources for Spark
 
 ### 🚀 Development & Deployment
-- **databricks-bundles** - DABs for multi-environment deployments
 - **databricks-apps-python** - Databricks apps. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required
 - **databricks-python-sdk** - Python SDK, Connect, CLI, REST API
-- **databricks-config** - Profile authentication setup
 - **databricks-execution-compute** - Execute on Databricks compute
-- **databricks-lakebase-autoscale** - Autoscaling for Lakebase
+
+> **Use the stable skill instead** for:
+> - **DABs / bundles** — use stable [`databricks-dabs`](../skills/databricks-dabs/)
+> - **Lakebase Postgres** (projects, branching, synced tables, autoscaling) — use stable [`databricks-lakebase`](../skills/databricks-lakebase/)
+> - **CLI auth / profiles / workspace config** — use stable [`databricks-core`](../skills/databricks-core/)
+>
+> Previously experimental copies of these (`databricks-bundles`, `databricks-lakebase-autoscale`, `databricks-config`) were dropped — they duplicated the stable skills without adding new content.
 
 ### 📚 Reference
 - **databricks-docs** - Documentation index via llms.txt

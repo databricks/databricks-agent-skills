@@ -115,7 +115,7 @@ databricks bundle run <resource_key> -t prod
 
 **Key difference from other resources**: environment variables go in `src/app/app.yaml`, not `databricks.yml`.
 
-For complete DABs guidance, use the **databricks-bundles** skill.
+For complete DABs guidance, use the **databricks-dabs** skill.
 
 ---
 
