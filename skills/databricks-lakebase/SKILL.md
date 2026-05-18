@@ -26,7 +26,7 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 - **PostgreSQL connectivity** -- OAuth token refresh, connection pooling, SSL
 - **Data API** -- PostgREST-compatible HTTP CRUD (Autoscaling only)
 - **Lakebase synced tables** -- sync Unity Catalog Delta tables into Postgres (previously known as Reverse ETL)
-- **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow
+- **Databricks App integration** -- scaffold apps with Lakebase feature, deploy-first workflow, Drizzle ORM by default
 - **Cloud support** -- AWS and Azure (GA)
 
 **Reference docs:**

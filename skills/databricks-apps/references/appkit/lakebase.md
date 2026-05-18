@@ -123,15 +123,20 @@ Deploy the app before local development — see *Local Development > Prerequisit
 ```
 my-app/
 ├── server/
-│   └── server.ts       # Backend with Lakebase plugin + Express routes
+│   ├── db/
+│   │   ├── schema.ts    # Drizzle table definitions
+│   │   └── index.ts     # DB init + schema setup
+│   ├── routes/           # Express routes
+│   └── server.ts
 ├── client/
 │   └── src/
-│       └── App.tsx     # React frontend
-├── app.yaml            # Manifest with database resource declaration
-└── package.json        # Includes @databricks/lakebase dependency
+│       └── App.tsx      # React frontend
+├── drizzle.config.ts    # Drizzle Kit config (migrations)
+├── app.yaml             # Manifest with database resource declaration
+└── package.json         # Includes drizzle-orm + @databricks/appkit
 ```
 
-Note: **No `config/queries/` directory** — Lakebase apps use server-side `appkit.lakebase.query()` calls, not SQL files.
+Note: **No `config/queries/` directory** — Lakebase apps use Drizzle ORM for type-safe queries, not SQL files.
 
 ## Lakebase Plugin API
 
@@ -139,16 +144,74 @@ Scaffolding with `--features lakebase` (see above) generates this pattern. Acces
 
 ```typescript
 import { createApp, lakebase } from "@databricks/appkit";
+import * as schema from './db/schema';
 
 const appkit = await createApp({
   plugins: [lakebase()],
 });
 
-// Query via the plugin handle — handles pooling and token refresh automatically
-const result = await appkit.lakebase.query("SELECT * FROM users WHERE id = $1", [userId]);
+// Drizzle ORM (recommended) — type-safe queries
+const db = await appkit.lakebase.drizzle(schema);
+const items = await db.select().from(schema.todos);
+
+// Raw SQL (still available for ad-hoc queries)
+const result = await appkit.lakebase.query("SELECT * FROM app.items WHERE id = $1", [id]);
 ```
 
 The `lakebase()` plugin auto-configures from platform-injected env vars at deploy time. No manual pool setup needed.
+
+## Drizzle ORM (Default)
+
+Apps scaffolded with `--features lakebase` use [Drizzle ORM](https://orm.drizzle.team/) for type-safe database queries.
+
+**Schema definition** (`server/db/schema.ts`):
+
+```typescript
+import { boolean, pgSchema, serial, text, timestamp } from 'drizzle-orm/pg-core';
+
+export const appSchema = pgSchema('app');
+
+export const todos = appSchema.table('todos', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  completed: boolean('completed').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Todo = typeof todos.$inferSelect;
+export type NewTodo = typeof todos.$inferInsert;
+```
+
+**Type-safe CRUD operations:**
+
+```typescript
+import { eq, desc, not } from 'drizzle-orm';
+import { todos } from '../db/schema';
+
+// Select
+const all = await db.select().from(todos).orderBy(desc(todos.createdAt));
+
+// Insert
+const [created] = await db.insert(todos).values({ title: 'New' }).returning();
+
+// Update (toggle boolean)
+const [updated] = await db.update(todos).set({ completed: not(todos.completed) }).where(eq(todos.id, id)).returning();
+
+// Delete
+await db.delete(todos).where(eq(todos.id, id));
+```
+
+**Migrations** (drizzle-kit):
+
+```bash
+npm run db:push       # Push schema directly to database (dev)
+npm run db:generate   # Generate SQL migration files (production)
+npm run db:migrate    # Apply pending migrations (production)
+```
+
+> **Note:** `drizzle-kit` requires password auth. Enable it in the Lakebase UI under Branch Overview → Authentication.
+
+**OBO with Drizzle**: The Drizzle instance wraps AppKit's RoutingPool, which automatically routes queries to the per-user pool inside `asUser(req)`. No extra setup needed.
 
 ## Environment Variables (auto-set when deployed with database resource)
 
@@ -163,118 +226,123 @@ The `lakebase()` plugin auto-configures from platform-injected env vars at deplo
 
 ## CRUD Routes Pattern
 
-Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `onPluginsReady` to initialize the schema and register Express routes:
+Always use server-side routes for Lakebase operations — do NOT call database queries from the client. Use `onPluginsReady` to initialize the schema, create the Drizzle instance, and register Express routes:
 
 ```typescript
 // server/server.ts
 import { createApp, server, lakebase } from "@databricks/appkit";
-import { z } from 'zod';
+import { ensureSchema, initDb } from './db';
+import { setupTodoRoutes } from './routes/lakebase/todo-routes';
 
 await createApp({
   plugins: [server(), lakebase()],
   async onPluginsReady(appkit) {
-    // Schema init (runs once before server accepts requests)
-    await appkit.lakebase.query(`
-      CREATE SCHEMA IF NOT EXISTS app_data;
-      CREATE TABLE IF NOT EXISTS app_data.items (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
+    // Schema init (raw SQL for first deploy, then use drizzle-kit)
+    await ensureSchema(appkit.lakebase.pool);
 
-    // CRUD routes via Express
-    appkit.server.extend((app) => {
-      app.get('/api/items', async (_req, res) => {
-        const { rows } = await appkit.lakebase.query(
-          "SELECT * FROM app_data.items ORDER BY created_at DESC LIMIT 100"
-        );
-        res.json(rows);
-      });
-
-      app.post('/api/items', async (req, res) => {
-        const parsed = z.object({ name: z.string().min(1) }).safeParse(req.body);
-        if (!parsed.success) { res.status(400).json({ error: 'Invalid input' }); return; }
-        const { rows } = await appkit.lakebase.query(
-          "INSERT INTO app_data.items (name) VALUES ($1) RETURNING *",
-          [parsed.data.name]
-        );
-        res.status(201).json(rows[0]);
-      });
-
-      app.delete('/api/items/:id', async (req, res) => {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
-        await appkit.lakebase.query("DELETE FROM app_data.items WHERE id = $1", [id]);
-        res.status(204).send();
-      });
-    });
+    // Create Drizzle instance and register routes
+    const db = await initDb(appkit);
+    setupTodoRoutes(appkit, db);
   },
 });
+```
+
+```typescript
+// server/routes/lakebase/todo-routes.ts
+import { eq, desc, not } from 'drizzle-orm';
+import { z } from 'zod';
+import type { Database } from '../../db';
+import { todos } from '../../db/schema';
+
+const CreateBody = z.object({ title: z.string().min(1) });
+
+export function setupTodoRoutes(appkit, db: Database) {
+  appkit.server.extend((app) => {
+    app.get('/api/lakebase/todos', async (_req, res) => {
+      const result = await db.select().from(todos).orderBy(desc(todos.createdAt));
+      res.json(result);
+    });
+
+    app.post('/api/lakebase/todos', async (req, res) => {
+      const parsed = CreateBody.safeParse(req.body);
+      if (!parsed.success) { res.status(400).json({ error: 'Invalid input' }); return; }
+      const [created] = await db.insert(todos).values({ title: parsed.data.title }).returning();
+      res.status(201).json(created);
+    });
+
+    app.patch('/api/lakebase/todos/:id', async (req, res) => {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
+      const [updated] = await db.update(todos).set({ completed: not(todos.completed) }).where(eq(todos.id, id)).returning();
+      if (!updated) { res.status(404).json({ error: 'Not found' }); return; }
+      res.json(updated);
+    });
+
+    app.delete('/api/lakebase/todos/:id', async (req, res) => {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
+      await db.delete(todos).where(eq(todos.id, id));
+      res.status(204).send();
+    });
+  });
+}
 ```
 
 > **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
 
 ## Schema Initialization
 
-**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `onPluginsReady` callback before registering routes (see CRUD pattern above):
+**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow.
+
+The template uses raw SQL for the initial `CREATE SCHEMA/TABLE` at startup (needed for first deploy). For subsequent schema changes, use drizzle-kit: `npm run db:push` (dev) or `npm run db:generate && npm run db:migrate` (production).
 
 ```typescript
-// Inside onPluginsReady — runs once at startup before handling requests
-await appkit.lakebase.query(`
-  CREATE SCHEMA IF NOT EXISTS app_data;
-  CREATE TABLE IF NOT EXISTS app_data.items (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  );
-`);
+// server/db/index.ts — ensureSchema() runs once at startup in onPluginsReady
+await pool.query(`CREATE SCHEMA IF NOT EXISTS app`);
+await pool.query(`CREATE TABLE IF NOT EXISTS app.todos (...)`);
 ```
 
-## ORM Integration (Optional)
+## Other ORMs
 
-The plugin exposes the raw `pg.Pool` via `appkit.lakebase.pool` — works with any PostgreSQL library:
+Drizzle is the default, but the plugin also exposes the raw `pg.Pool` for other ORMs:
 
 ```typescript
-// Drizzle ORM
-import { drizzle } from "drizzle-orm/node-postgres";
-const db = drizzle(appkit.lakebase.pool);
-
 // Prisma (with @prisma/adapter-pg)
 import { PrismaPg } from "@prisma/adapter-pg";
 const adapter = new PrismaPg(appkit.lakebase.pool);
 const prisma = new PrismaClient({ adapter });
 ```
 
-For ORM-compatible config: `appkit.lakebase.getOrmConfig()`.
+For ORM-compatible config (TypeORM, Sequelize): `appkit.lakebase.getOrmConfig()`.
 
 ## Chat Persistence Pattern
 
 Save AI chat conversations to Lakebase so users can resume sessions and scroll full message history.
 
-**Schema** — create in a separate `chat` schema (not `app`) so the deploy-first ownership model stays clean:
+**Drizzle schema** (`server/db/chat-schema.ts`):
 
-```sql
-CREATE SCHEMA IF NOT EXISTS chat;
+```typescript
+import { pgSchema, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
 
-CREATE TABLE IF NOT EXISTS chat.chats (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL,
-  title TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+export const chatSchema = pgSchema('chat');
 
-CREATE TABLE IF NOT EXISTS chat.messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  chat_id UUID NOT NULL REFERENCES chat.chats(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('system', 'user', 'assistant', 'tool')),
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+export const chats = chatSchema.table('chats', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  title: text('title').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
-CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at
-  ON chat.messages(chat_id, created_at);
+export const messages = chatSchema.table('messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  chatId: uuid('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  chatCreatedIdx: index('idx_messages_chat_id_created_at').on(table.chatId, table.createdAt),
+}));
 ```
 
 **Bootstrap** — run setup in `onPluginsReady` so tables exist before the server accepts requests:
@@ -283,31 +351,31 @@ CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at
 await createApp({
   plugins: [server(), lakebase()],
   async onPluginsReady(appkit) {
-    await setupChatTables(appkit);
+    await ensureChatSchema(appkit.lakebase.pool);
+    const db = await appkit.lakebase.drizzle({ ...schema, ...chatSchema });
     // then register routes via appkit.server.extend(...)
   },
 });
 ```
 
-**Persistence helpers** — use parameterized queries:
+**Persistence helpers** — type-safe Drizzle queries:
 
 ```typescript
-export async function createChat(appkit, input: { userId: string; title: string }) {
-  const result = await appkit.lakebase.query(
-    `INSERT INTO chat.chats (user_id, title) VALUES ($1, $2)
-     RETURNING id, user_id, title, created_at, updated_at`,
-    [input.userId, input.title],
-  );
-  return result.rows[0];
+import { eq, desc } from 'drizzle-orm';
+import { chats, messages } from '../db/chat-schema';
+
+export async function createChat(db, input: { userId: string; title: string }) {
+  const [chat] = await db.insert(chats).values(input).returning();
+  return chat;
 }
 
-export async function appendMessage(appkit, input: { chatId: string; role: string; content: string }) {
-  const result = await appkit.lakebase.query(
-    `INSERT INTO chat.messages (chat_id, role, content) VALUES ($1, $2, $3)
-     RETURNING id, chat_id, role, content, created_at`,
-    [input.chatId, input.role, input.content],
-  );
-  return result.rows[0];
+export async function appendMessage(db, input: { chatId: string; role: string; content: string }) {
+  const [msg] = await db.insert(messages).values(input).returning();
+  return msg;
+}
+
+export async function getChatMessages(db, chatId: string) {
+  return db.select().from(messages).where(eq(messages.chatId, chatId)).orderBy(messages.createdAt);
 }
 ```
 

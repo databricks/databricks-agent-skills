@@ -44,9 +44,10 @@ const pool = createLakebasePool({
 **ORM integration:**
 
 ```typescript
-// Drizzle
+// Drizzle (recommended)
 import { drizzle } from "drizzle-orm/node-postgres";
-const db = drizzle({ client: pool });
+import * as schema from "./db/schema";
+const db = drizzle({ client: pool, schema });
 
 // Prisma
 import { PrismaPg } from "@prisma/adapter-pg";
