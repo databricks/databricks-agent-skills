@@ -19,34 +19,42 @@ SKILL_METADATA = {
     "databricks-core": {
         "description": "Core Databricks skill for CLI, auth, and data exploration",
         "experimental": False,
+        "plugin_keyword": "cli",
     },
     "databricks-apps": {
         "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
         "experimental": False,
+        "plugin_keyword": "apps",
     },
     "databricks-jobs": {
         "description": "Databricks Jobs orchestration and scheduling",
         "experimental": False,
+        "plugin_keyword": "jobs",
     },
     "databricks-lakebase": {
         "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
         "experimental": False,
+        "plugin_keyword": "lakebase",
     },
     "databricks-dabs": {
         "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
         "experimental": False,
+        "plugin_keyword": "dabs",
     },
     "databricks-model-serving": {
         "description": "Databricks Model Serving endpoint management",
         "experimental": False,
+        "plugin_keyword": "model-serving",
     },
     "databricks-pipelines": {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
         "experimental": False,
+        "plugin_keyword": "pipelines",
     },
     "databricks-serverless-migration": {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
         "experimental": False,
+        "plugin_keyword": "serverless",
     },
 }
 
@@ -281,6 +289,69 @@ def validate_manifest(repo_root: Path) -> bool:
     return True
 
 
+def validate_plugin_manifests(repo_root: Path) -> list[str]:
+    """Validate .claude-plugin/plugin.json and .claude-plugin/marketplace.json
+    stay in sync with the set of skills shipped in this repo.
+
+    The two manifests power Claude Code marketplace discovery; if a new skill
+    lands without a corresponding plugin keyword bump, the marketplace listing
+    silently goes stale. This check forces SKILL_METADATA, plugin.json, and
+    marketplace.json to stay aligned.
+
+    Returns a list of error strings (empty means all good).
+    """
+    errors: list[str] = []
+
+    plugin_path = repo_root / ".claude-plugin" / "plugin.json"
+    marketplace_path = repo_root / ".claude-plugin" / "marketplace.json"
+
+    if not plugin_path.exists():
+        errors.append(f"Missing {plugin_path.relative_to(repo_root)}")
+    if not marketplace_path.exists():
+        errors.append(f"Missing {marketplace_path.relative_to(repo_root)}")
+    if errors:
+        return errors
+
+    plugin = json.loads(plugin_path.read_text())
+    marketplace = json.loads(marketplace_path.read_text())
+
+    keywords = {k.lower() for k in plugin.get("keywords", [])}
+
+    for skill_dir in iter_skill_dirs(repo_root):
+        meta = SKILL_METADATA.get(skill_dir.name)
+        if meta is None:
+            continue  # generate_manifest will flag the missing metadata
+        expected_keyword = meta.get("plugin_keyword")
+        if not expected_keyword:
+            errors.append(
+                f"SKILL_METADATA['{skill_dir.name}'] is missing 'plugin_keyword'. "
+                "Add one so .claude-plugin/plugin.json keywords coverage can be validated."
+            )
+            continue
+        if expected_keyword.lower() not in keywords:
+            errors.append(
+                f"Skill '{skill_dir.name}' has no corresponding entry in "
+                f".claude-plugin/plugin.json 'keywords' (looking for '{expected_keyword}'). "
+                "Add it so the Claude marketplace listing stays in sync."
+            )
+
+    plugin_name = plugin.get("name")
+    market_plugins = marketplace.get("plugins", [])
+    market_entry = next((p for p in market_plugins if p.get("name") == plugin_name), None)
+    if market_entry is None:
+        errors.append(
+            f".claude-plugin/marketplace.json has no entry for plugin '{plugin_name}'."
+        )
+    else:
+        if market_entry.get("description") != plugin.get("description"):
+            errors.append(
+                ".claude-plugin/marketplace.json plugin description must match "
+                ".claude-plugin/plugin.json description (they drift independently otherwise)."
+            )
+
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -335,9 +406,22 @@ def main() -> None:
             if not validate_manifest(repo_root):
                 ok = False
 
+            plugin_errors = validate_plugin_manifests(repo_root)
+            if plugin_errors:
+                print(
+                    "ERROR: .claude-plugin manifests are out of sync with skills:",
+                    file=sys.stderr,
+                )
+                for err in plugin_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
             if not ok:
                 print(
-                    "\nRun `python3 scripts/skills.py generate` to fix.",
+                    "\nRun `python3 scripts/skills.py generate` to fix the "
+                    "manifest, and update .claude-plugin/plugin.json + "
+                    "marketplace.json by hand for any plugin-keyword/description "
+                    "mismatches.",
                     file=sys.stderr,
                 )
                 sys.exit(1)
