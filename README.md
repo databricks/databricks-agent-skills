@@ -4,7 +4,14 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
-**For Claude Code:**
+**For Claude Code (as a plugin):**
+
+```text
+/plugin marketplace add databricks/databricks-agent-skills
+/plugin install databricks-skills@databricks-agent-skills
+```
+
+**For Claude Code (via the Databricks CLI):**
 
 ```bash
 databricks experimental aitools install
@@ -22,7 +29,14 @@ Run this command in chat:
 
 ## Available Skills
 
-- **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
+- **databricks-core** — Databricks CLI: auth, profiles, data exploration
+- **databricks-apps** — Build apps on the Databricks Apps platform with AppKit
+- **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles)
+- **databricks-jobs** — Develop and deploy Lakeflow Jobs
+- **databricks-lakebase** — Lakebase Postgres: projects, scaling, connectivity, synced tables
+- **databricks-model-serving** — Create, configure, and query Model Serving endpoints
+- **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT)
+- **databricks-serverless-migration** — Migrate workloads from classic compute to serverless
 
 ## Structure
 
