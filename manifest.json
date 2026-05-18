@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-18T15:58:10Z",
+  "updated_at": "2026-05-18T21:44:44Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -173,15 +173,14 @@
       "version": "0.0.1",
       "description": "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS). For Genie Spaces, see databricks-genie skill.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-15T09:44:54Z",
+      "updated_at": "2026-05-18T21:44:20Z",
       "files": [
         "1-knowledge-assistants.md",
         "2-supervisor-agents.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg",
-        "scripts/mas_manager.py"
+        "assets/databricks.svg"
       ]
     },
     "databricks-ai-functions": {
@@ -204,7 +203,7 @@
       "version": "0.0.1",
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-15T14:49:03Z",
+      "updated_at": "2026-05-18T21:44:20Z",
       "files": [
         "1-widget-specifications.md",
         "2-advanced-widget-specifications.md",
