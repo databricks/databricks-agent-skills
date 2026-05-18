@@ -1,5 +1,5 @@
 {
-  "name": "databricks",
+  "name": "databricks-skills",
   "displayName": "Databricks Skills",
   "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more.",
   "version": "0.1.0",

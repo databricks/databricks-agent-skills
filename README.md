@@ -17,7 +17,7 @@ This installs skills to `~/.claude/skills/` for use with Claude Code.
 Run this command in chat:
 
 ```text
-/add-plugin databricks
+/add-plugin databricks-skills
 ```
 
 ## Available Skills
