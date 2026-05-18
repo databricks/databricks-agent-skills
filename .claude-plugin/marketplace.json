@@ -7,7 +7,7 @@
   },
   "plugins": [
     {
-      "name": "databricks-skills",
+      "name": "databricks",
       "source": ".",
       "category": "development",
       "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."
