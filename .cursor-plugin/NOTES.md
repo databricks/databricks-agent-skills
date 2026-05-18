@@ -17,9 +17,9 @@ Renaming `name` here would change the install identifier Cursor uses to track ex
 
 The Claude Code side has no such constraint — the plugin has never been published to the Anthropic marketplace under any name, so PR #77 freely set the Claude `name` to `databricks` to match the github/gitlab/terraform/linear single-brand-word convention.
 
-## Long-term plan
+## No rename planned
 
-Tracked as [issue #78](https://github.com/databricks/databricks-agent-skills/issues/78). The right time to rename here is during a Cursor-coordinated major-version bump, with Eric Zakariasson (the Cursor engineer who originally added this manifest in [PR #14](https://github.com/databricks/databricks-agent-skills/pull/14)) confirming the rename either auto-redirects or requires a one-time reinstall on the user side.
+A rename to align the Cursor side with the Claude side (`databricks`) was explicitly closed as not planned ([issue #78](https://github.com/databricks/databricks-agent-skills/issues/78)). The breakage cost to existing installs outweighs the consistency win. The asymmetry is permanent; leave it alone.
 
 ## TL;DR for future editors
 
