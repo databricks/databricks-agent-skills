@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'skills/**'
+      - 'experimental/**'
       - 'assets/**'
       - 'scripts/skills.py'
       - 'manifest.json'
