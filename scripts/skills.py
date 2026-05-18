@@ -17,43 +17,41 @@ SHARED_ASSETS = [
     "assets/databricks.png",
 ]
 
+# Stable directory: "skills/<name>/". Experimental: "experimental/<name>/".
+# The wire format carries each entry's source directory in `repo_dir`; consumers
+# derive experimental state from that. No parallel `experimental_skills` map.
+STABLE_REPO_DIR = "skills"
+EXPERIMENTAL_REPO_DIR = "experimental"
+
 SKILL_METADATA = {
     "databricks-core": {
         "description": "Core Databricks skill for CLI, auth, and data exploration",
-        "experimental": False,
     },
     "databricks-apps": {
         "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
-        "experimental": False,
     },
     "databricks-jobs": {
         "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI — covers all task types, triggers, notifications, and worked examples",
-        "experimental": False,
     },
     "databricks-lakebase": {
         "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
-        "experimental": False,
     },
     "databricks-dabs": {
         "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
-        "experimental": False,
     },
     "databricks-model-serving": {
         "description": "Databricks Model Serving endpoint management",
-        "experimental": False,
     },
     "databricks-pipelines": {
         "description": "Databricks Pipelines (DLT) for ETL and streaming",
-        "experimental": False,
     },
     "databricks-serverless-migration": {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
-        "experimental": False,
     },
 }
 
 
-def iter_skill_dirs(repo_root: Path, parent: str = "skills"):
+def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
     """Yield skill directories under `parent` that contain SKILL.md."""
     skills_dir = repo_root / parent
     if not skills_dir.exists():
@@ -70,7 +68,7 @@ def iter_skill_dirs(repo_root: Path, parent: str = "skills"):
 
 def iter_experimental_skill_dirs(repo_root: Path):
     """Yield experimental skill directories (under `experimental/`)."""
-    yield from iter_skill_dirs(repo_root, parent="experimental")
+    yield from iter_skill_dirs(repo_root, parent=EXPERIMENTAL_REPO_DIR)
 
 
 def extract_version_from_skill(skill_path: Path) -> str:
@@ -277,93 +275,100 @@ def ensure_experimental_codex_metadata(repo_root: Path) -> int:
 
 
 def generate_manifest(repo_root: Path) -> dict:
-    """Generate manifest from skill directories."""
+    """Generate manifest from skill directories.
+
+    All skills — stable and experimental — share a single `skills` map. Each
+    entry's `repo_dir` field ("skills" or "experimental") is the source of
+    truth for whether the skill is experimental; consumers derive that state
+    from `repo_dir`.
+    """
     manifest_path = repo_root / "manifest.json"
-    existing = {}
+    existing_skills = {}
     if manifest_path.exists():
-        existing = json.loads(manifest_path.read_text())
+        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
 
-    skills = _build_stable_skills(repo_root, existing.get("skills", {}))
-    experimental_skills = _build_experimental_skills(
-        repo_root, existing.get("experimental_skills", {})
-    )
+    skills: dict = {}
+    for skill_dir in iter_skill_dirs(repo_root):
+        _add_skill(skills, _build_stable_entry(skill_dir, existing_skills))
+    for skill_dir in iter_experimental_skill_dirs(repo_root):
+        _add_skill(skills, _build_experimental_entry(skill_dir, existing_skills))
 
-    manifest = {
+    return {
         "version": "2",
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "skills": skills,
     }
-    if experimental_skills:
-        manifest["experimental_skills"] = experimental_skills
-    return manifest
 
 
-def _build_stable_skills(repo_root: Path, existing_skills: dict) -> dict:
-    skills = {}
-    for skill_dir in iter_skill_dirs(repo_root):
-        files = sorted(
-            str(f.relative_to(skill_dir))
-            for f in iter_skill_files(skill_dir)
+def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
+    name, skill = entry
+    if name in skills:
+        # Stable + experimental copies of the same logical skill can't coexist
+        # in one map. The cli applies a "-experimental" suffix to install-side
+        # keys at install time, but the manifest itself stores the natural
+        # repo-dir name. If a collision shows up, resolve it upstream (rename
+        # one of the two) before regenerating.
+        raise ValueError(
+            f"Duplicate skill name '{name}': present under both '{STABLE_REPO_DIR}/' "
+            f"and '{EXPERIMENTAL_REPO_DIR}/'. Rename one to disambiguate."
+        )
+    skills[name] = skill
+
+
+def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+    if skill_dir.name not in SKILL_METADATA:
+        raise ValueError(
+            f"Missing SKILL_METADATA entry for skill '{skill_dir.name}'. "
+            "Add it to SKILL_METADATA dict."
         )
 
-        if skill_dir.name not in SKILL_METADATA:
-            raise ValueError(
-                f"Missing SKILL_METADATA entry for skill '{skill_dir.name}'. "
-                "Add it to SKILL_METADATA dict."
-            )
-
-        openai_yaml = skill_dir / "agents" / "openai.yaml"
-        if not openai_yaml.exists():
-            raise ValueError(
-                f"Missing agents/openai.yaml in skill '{skill_dir.name}'. "
-                "Each skill must include Codex marketplace metadata."
-            )
-
-        metadata = SKILL_METADATA[skill_dir.name]
-        skill_entry = {
-            "version": extract_version_from_skill(skill_dir),
-            "description": metadata.get("description", ""),
-            "experimental": metadata.get("experimental", False),
-            "updated_at": get_skill_updated_at(skill_dir),
-            "files": files,
-        }
-
-        if metadata.get("min_cli_version"):
-            skill_entry["min_cli_version"] = metadata["min_cli_version"]
-
-        existing = existing_skills.get(skill_dir.name, {})
-        if "base_revision" in existing:
-            skill_entry["base_revision"] = existing["base_revision"]
-
-        skills[skill_dir.name] = skill_entry
-    return skills
-
-
-# Experimental skills have a looser contract than stable: no agents/openai.yaml,
-# no shared-asset sync, no SKILL_METADATA entry required. Description is
-# scraped from SKILL.md frontmatter on a best-effort basis.
-def _build_experimental_skills(repo_root: Path, existing_skills: dict) -> dict:
-    skills = {}
-    for skill_dir in iter_experimental_skill_dirs(repo_root):
-        files = sorted(
-            str(f.relative_to(skill_dir))
-            for f in iter_skill_files(skill_dir)
+    openai_yaml = skill_dir / "agents" / "openai.yaml"
+    if not openai_yaml.exists():
+        raise ValueError(
+            f"Missing agents/openai.yaml in skill '{skill_dir.name}'. "
+            "Each skill must include Codex marketplace metadata."
         )
 
-        skill_entry = {
-            "version": extract_version_from_skill(skill_dir),
-            "description": extract_description_from_skill(skill_dir),
-            "experimental": True,
-            "updated_at": get_skill_updated_at(skill_dir),
-            "files": files,
-        }
+    metadata = SKILL_METADATA[skill_dir.name]
+    files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
-        existing = existing_skills.get(skill_dir.name, {})
-        if "base_revision" in existing:
-            skill_entry["base_revision"] = existing["base_revision"]
+    skill_entry = {
+        "version": extract_version_from_skill(skill_dir),
+        "description": metadata.get("description", ""),
+        "repo_dir": STABLE_REPO_DIR,
+        "updated_at": get_skill_updated_at(skill_dir),
+        "files": files,
+    }
 
-        skills[skill_dir.name] = skill_entry
-    return skills
+    if metadata.get("min_cli_version"):
+        skill_entry["min_cli_version"] = metadata["min_cli_version"]
+
+    existing = existing_skills.get(skill_dir.name, {})
+    if "base_revision" in existing:
+        skill_entry["base_revision"] = existing["base_revision"]
+
+    return skill_dir.name, skill_entry
+
+
+# Experimental skills have a looser contract than stable: no agents/openai.yaml
+# required, no shared-asset sync, no SKILL_METADATA entry required. Description
+# is scraped from SKILL.md frontmatter on a best-effort basis.
+def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+    files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
+
+    skill_entry = {
+        "version": extract_version_from_skill(skill_dir),
+        "description": extract_description_from_skill(skill_dir),
+        "repo_dir": EXPERIMENTAL_REPO_DIR,
+        "updated_at": get_skill_updated_at(skill_dir),
+        "files": files,
+    }
+
+    existing = existing_skills.get(skill_dir.name, {})
+    if "base_revision" in existing:
+        skill_entry["base_revision"] = existing["base_revision"]
+
+    return skill_dir.name, skill_entry
 
 
 # ---------------------------------------------------------------------------
@@ -374,12 +379,7 @@ def normalize_manifest(manifest: dict) -> dict:
     """Normalize manifest for comparison by excluding volatile fields."""
     normalized = manifest.copy()
     normalized.pop("updated_at", None)
-
     normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
-    if "experimental_skills" in manifest:
-        normalized["experimental_skills"] = _normalize_skill_map(
-            manifest["experimental_skills"]
-        )
     return normalized
 
 
