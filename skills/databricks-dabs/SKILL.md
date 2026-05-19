@@ -1,39 +1,69 @@
 ---
 name: databricks-dabs
-description: 'Create, configure, validate, deploy, run, and manage DABs — Declarative Automation Bundles (formerly Databricks Asset Bundles) — for Databricks resources including dashboards, jobs, pipelines, alerts, volumes, and apps'
+description: "Create, configure, validate, deploy, run, and manage DABs -- Declarative Automation Bundles (formerly Databricks Asset Bundles) -- for Databricks resources including dashboards, jobs, pipelines, alerts, volumes, and apps. Use when the user asks about DABs, Databricks bundles, deploying Databricks resources, or managing bundle configurations."
+compatibility: Requires databricks CLI (>= v0.292.0)
+metadata:
+  version: "0.1.0"
 ---
 
 # Declarative Automation Bundles (DABs)
 
-Use this skill for any bundle-related request including creating, configuring, validating, deploying, running, and managing Databricks resources through DABs.
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+
+## Quick-Start Workflow
+
+```bash
+# 1. Create a new bundle project
+databricks bundle init --profile <PROFILE>
+
+# 2. Configure databricks.yml and resource YAML files
+#    Resource files: resources/<name>.<resource_type>.yml
+
+# 3. Validate
+databricks bundle validate --strict --target <target> --profile <PROFILE>
+
+# 4. Deploy
+databricks bundle deploy -t <target> --profile <PROFILE>
+
+# 5. Run a specific resource
+databricks bundle run <RESOURCE> -t <target> --profile <PROFILE>
+```
+
+### Minimal databricks.yml
+
+```yaml
+bundle:
+  name: my-project
+
+workspace:
+  host: https://my-workspace.cloud.databricks.com
+
+variables:
+  catalog:
+    default: dev_catalog
+  schema:
+    default: my_schema
+
+targets:
+  dev:
+    default: true
+  prod:
+    variables:
+      catalog: prod_catalog
+```
+
+## Guidelines
+
+1. **Always validate after changes** -- `bundle validate --strict --target <target>`
+2. **Follow naming conventions** -- Resource files use `<name>.<resource_type>.yml`
+3. **Path resolution is critical** -- Paths differ based on file location (see Bundle Structure reference)
+4. **Preserve existing structure** -- Keep user comments and structure when editing YAML
+5. **Use variables** -- Parameterize catalog, schema, and warehouse for multi-environment support
 
 ## Reference Documentation
 
-The following reference files provide detailed guidance for specific bundle tasks:
-
-- **[Bundle Structure](references/bundle-structure.md)** - Bundle structure, databricks.yml configuration, resource definitions, path resolution, variables, and multi-environment targets
-- **[SDP Pipelines](references/sdp-pipelines.md)** - Spark Declarative Pipeline configurations for DABs
-- **[SQL Alerts](references/alerts.md)** - SQL Alert schemas and configuration (critical - API differs from other resources)
-- **[Deploy and Run](references/deploy-and-run.md)** - Validation, deployment, running resources, monitoring logs, and troubleshooting common issues
-- **[Resource Permissions](references/resource-permissions.md)** - Permission levels and access control for bundle resources, per-resource-type levels, grants vs permissions
-
-## When to Use This Skill
-
-Load this skill for any request involving:
-
-- Creating new bundle projects or resources
-- Configuring databricks.yml or resource YAML files
-- Setting up multi-environment deployments (dev/prod targets)
-- Deploying or running bundle resources
-- Managing permissions for bundle resources
-- Troubleshooting bundle validation or deployment errors
-- Working with specific resource types (dashboards, jobs, pipelines, alerts, volumes, apps)
-
-## General Guidelines
-
-1. **Always validate after configuration changes** - Use `bundle validate --strict --target <target>` after any change
-2. **Use reference documentation** - Consult the appropriate reference file for detailed patterns and examples
-3. **Follow naming conventions** - Resource files should use `<name>.<resource_type>.yml` format
-4. **Path resolution is critical** - Paths differ based on file location (see Bundle Structure reference)
-5. **Preserve existing structure** - Keep user comments and structure when editing YAML files
-6. **Use variables** - Parameterize catalog, schema, and warehouse for multi-environment support
+- **[Bundle Structure](references/bundle-structure.md)** -- databricks.yml configuration, resource definitions, path resolution, variables, multi-environment targets
+- **[SDP Pipelines](references/sdp-pipelines.md)** -- Spark Declarative Pipeline configurations for DABs
+- **[SQL Alerts](references/alerts.md)** -- SQL Alert schemas and configuration (API differs from other resources)
+- **[Deploy and Run](references/deploy-and-run.md)** -- Validation, deployment, running resources, monitoring, troubleshooting
+- **[Resource Permissions](references/resource-permissions.md)** -- Permission levels, access control, grants vs permissions
