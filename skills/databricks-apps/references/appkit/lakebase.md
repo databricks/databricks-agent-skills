@@ -14,7 +14,7 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 ## Scaffolding
 
-**ALWAYS scaffold with the correct feature flags** — do not add Lakebase manually to an analytics-only scaffold.
+**Scaffolding is the fastest way to get started.** If you already have an app, see *Adding Lakebase to an Existing App* below.
 
 **Lakebase only** (no analytics SQL warehouse):
 ```bash
@@ -48,6 +48,76 @@ databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 # List databases → use the name field
 databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
 ```
+
+## Adding Lakebase to an Existing App
+
+**`databricks.yml`** — add Lakebase variables, user_api_scopes, and resource:
+
+```yaml
+variables:
+  lakebase_branch:
+    description: Lakebase branch resource name
+  lakebase_database:
+    description: Lakebase database resource name
+
+resources:
+  apps:
+    app:
+      user_api_scopes:
+        # ... existing scopes ...
+        - postgres
+      resources:
+        # ... existing resources ...
+        - name: postgres
+          postgres:
+            branch: ${var.lakebase_branch}
+            database: ${var.lakebase_database}
+
+targets:
+  default:
+    variables:
+      lakebase_branch: projects/<PROJECT_ID>/branches/<BRANCH_ID>
+      lakebase_database: projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>
+```
+
+Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names.
+
+**`app.yaml`** — add env injection:
+
+```yaml
+env:
+  # ... existing env vars ...
+  - name: LAKEBASE_ENDPOINT
+    valueFrom: postgres
+```
+
+Other Lakebase env vars (`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE`) are auto-injected by the platform when the `postgres` resource is configured. Only `LAKEBASE_ENDPOINT` must be set explicitly.
+
+**`server/server.ts`** — register the plugin:
+
+```typescript
+import { createApp, server, analytics, lakebase } from "@databricks/appkit";
+
+createApp({
+  plugins: [server(), analytics(), lakebase()],
+}).catch(console.error);
+```
+
+Preserve existing plugins and add `lakebase()` to the array.
+
+**`server/.env`** — for local development:
+
+```dotenv
+PGHOST=<host from endpoint>
+PGPORT=5432
+PGDATABASE=<your database name>
+PGSSLMODE=require
+LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
+```
+
+Get connection details from `databricks postgres get-endpoint`. See *Local Development* below for the full workflow.
+
+Run `npm run sync` to update plugin metadata (also runs automatically during `npm run dev` and `npm run build`). Deploy the app before local development — see *Local Development > Prerequisites* below. Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
 ## Project Structure (after `databricks apps init --features lakebase`)
 

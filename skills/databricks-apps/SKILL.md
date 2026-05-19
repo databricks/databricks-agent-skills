@@ -114,7 +114,7 @@ After completing the decision gate above, use this routing table:
 - **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
-- **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
+- **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
