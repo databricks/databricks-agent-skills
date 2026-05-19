@@ -25,5 +25,8 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install Python deps
+        run: pip install pyyaml
+
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
