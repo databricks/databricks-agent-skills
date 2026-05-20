@@ -51,7 +51,7 @@ databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --
 
 ## Adding Lakebase to an Existing App
 
-**`databricks.yml`** — add Lakebase variables, user_api_scopes, and resource:
+**`databricks.yml`** — add Lakebase variables and resource:
 
 ```yaml
 variables:
@@ -63,9 +63,6 @@ variables:
 resources:
   apps:
     app:
-      user_api_scopes:
-        # ... existing scopes ...
-        - postgres
       resources:
         # ... existing resources ...
         - name: postgres
@@ -81,6 +78,8 @@ targets:
 ```
 
 Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names.
+
+For per-user connections (OBO/RLS), also add `postgres` to `user_api_scopes` — see `npx @databricks/appkit docs ./docs/plugins/lakebase.md` for OBO setup.
 
 **`app.yaml`** — add env injection:
 
@@ -117,7 +116,7 @@ LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT
 
 Get connection details from `databricks postgres get-endpoint`. See *Local Development* below for the full workflow.
 
-Run `npm run sync` to update plugin metadata (also runs automatically during `npm run dev` and `npm run build`). Deploy the app before local development — see *Local Development > Prerequisites* below. Update smoke tests if headings or routes changed, then `databricks apps validate`.
+Deploy the app before local development — see *Local Development > Prerequisites* below. Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
 ## Project Structure (after `databricks apps init --features lakebase`)
 

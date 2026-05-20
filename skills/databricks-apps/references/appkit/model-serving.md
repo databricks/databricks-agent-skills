@@ -79,7 +79,7 @@ Preserve existing plugins and add `serving()` to the array.
 DATABRICKS_SERVING_ENDPOINT_NAME=<your-endpoint-name>
 ```
 
-Run `npm run sync` to update plugin metadata (also runs automatically during `npm run dev` and `npm run build`). Update smoke tests if headings or routes changed, then `databricks apps validate`.
+Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
 ## Serving Plugin API
 
