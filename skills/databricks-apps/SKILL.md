@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | **⚠️ STOP — complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | **⚠️ STOP — review the State Storage Guidance and complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
