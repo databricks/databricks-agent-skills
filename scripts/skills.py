@@ -41,7 +41,7 @@ SKILL_METADATA = {
         "description": "Databricks Model Serving endpoint management",
     },
     "databricks-pipelines": {
-        "description": "Databricks Pipelines (DLT) for ETL and streaming",
+        "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
     },
     "databricks-serverless-migration": {
         "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
@@ -326,10 +326,9 @@ def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
     name, skill = entry
     if name in skills:
         # Stable + experimental copies of the same logical skill can't coexist
-        # in one map. The cli applies a "-experimental" suffix to install-side
-        # keys at install time, but the manifest itself stores the natural
-        # repo-dir name. If a collision shows up, resolve it upstream (rename
-        # one of the two) before regenerating.
+        # in one map. The cli installs each entry under its plain skill name,
+        # so a future collision must be resolved upstream (rename one of the
+        # two, or merge them) before regenerating.
         raise ValueError(
             f"Duplicate skill name '{name}': present under both '{STABLE_REPO_DIR}/' "
             f"and '{EXPERIMENTAL_REPO_DIR}/'. Rename one to disambiguate."

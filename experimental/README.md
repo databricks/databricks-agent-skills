@@ -8,11 +8,8 @@
 > - They do not follow the same review / quality bar as the skills in
 >   [`../skills/`](../skills/).
 > - They may be out of date relative to upstream `ai-dev-kit`.
-> - The on-disk install path always carries a `-experimental` suffix so
->   experimental skills never collide with stable skills of the same name
->   (see the install-path note below).
-> - They are not installed by `databricks experimental aitools skills install`
->   by default — you have to opt in (see the root README).
+> - They are not installed by `databricks aitools install` by default —
+>   you have to opt in (see the root README).
 >
 > File issues against this directory in this repo; do not file issues against
 > `ai-dev-kit` for skills installed via `databricks-agent-skills`.
@@ -29,16 +26,11 @@ These experimental skills are **not** installed by default. To install them via 
 
 ```bash
 # Install all experimental skills at once
-databricks experimental aitools skills install --experimental
+databricks aitools install --experimental
 
-# Install a single experimental skill by name (note the -experimental suffix)
-databricks experimental aitools skills install databricks-iceberg-experimental --experimental
+# Install a single experimental skill by name
+databricks aitools install databricks-iceberg --experimental
 ```
-
-The names in this directory don't carry the `-experimental` suffix — that's
-added at install time so the on-disk skills directory unambiguously
-distinguishes experimental from stable. e.g. `databricks-iceberg` in this
-repo installs to `~/.claude/skills/databricks-iceberg-experimental/`.
 
 See the root [README](../README.md) for details on the stable install path.
 
@@ -75,52 +67,18 @@ See the root [README](../README.md) for details on the stable install path.
 > - **Lakebase Postgres** (projects, branching, synced tables, autoscaling) — use stable [`databricks-lakebase`](../skills/databricks-lakebase/)
 > - **CLI auth / profiles / workspace config** — use stable [`databricks-core`](../skills/databricks-core/)
 >
-> Previously experimental copies of these (`databricks-bundles`, `databricks-lakebase-autoscale`, `databricks-config`) were dropped — they duplicated the stable skills without adding new content.
+> Previously experimental copies of these (`databricks-bundles`, `databricks-lakebase-autoscale`, `databricks-config`) were already merged with the stable skills.
 
 ### 📚 Reference
 - **databricks-docs** - Documentation index via llms.txt
 
-## Provenance & sync model
+## Provenance
 
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
 **Source SHA**: [`7b07f18`](https://github.com/databricks-solutions/ai-dev-kit/commit/7b07f18b6efb7ff0ac011d3fe81b435eb3cd793a)
-on the `experimental` branch of `databricks-solutions/ai-dev-kit` —
-the merge commit of [a-d-k PR #533](https://github.com/databricks-solutions/ai-dev-kit/pull/533)
-into `experimental`. The PR #533 change set, now part of `experimental`:
+on the `experimental` branch of `databricks-solutions/ai-dev-kit`.
 
-- `databricks-app-python` → `databricks-apps-python` rename (folder,
-  baselines, manifests, install scripts, cross-skill mentions) so it
-  does not collide with d-a-s's own `databricks-apps`. The other
-  name collisions from this import were resolved by merging or
-  dropping the experimental copy: `databricks-jobs` was merged into
-  the stable skill (TODO #1a), and `databricks-model-serving` was
-  dropped from the import (TODO #1b).
-- `databricks-apps-python/SKILL.md` leads with AppKit (TypeScript +
-  React SDK) as the recommended approach for new apps; Python
-  frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) are
-  demoted to an explicit alternative.
-- `install.sh` / `install.ps1` upstream changes wiring a-d-k to
-  install d-a-s skills via a single GitHub tree call (out of scope
-  for this snapshot, not imported here — only `databricks-skills/`
-  content is mirrored).
-
-**Note**: the `experimental` branch of a-d-k previously removed
-`databricks-lakebase-provisioned`, which is why it is not present in
-this import. `databricks-model-serving` and
-`databricks-spark-declarative-pipelines` are intentionally excluded
-from this snapshot — see TODOs #1b and #5 on the import PR.
-
-The full set of paths brought in is tracked by the import commit on
-this branch.
-
-**Transition phase (until `ai-dev-kit` skills are locked):**
-- Source of truth is **upstream `ai-dev-kit`**. New work and bug fixes go there.
-- This directory receives **periodic manual re-syncs** — someone opens a PR
-  to bring drift from upstream into `experimental/`.
-
-**Post-lock (after `ai-dev-kit` skill contributions are stopped):**
-- Source of truth is **this repo**. New work and bug fixes go directly to
-  `experimental/<skill>/`.
-- `ai-dev-kit/databricks-skills/` becomes read-only and points here.
+While `ai-dev-kit` is the upstream source, this directory receives periodic
+manual re-syncs.

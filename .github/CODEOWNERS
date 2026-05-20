@@ -13,6 +13,6 @@
 # Required-Code-Owner-Review branch protection alongside the d-a-s
 # maintainers. All confirmed Databricks employees via Slack lookup at
 # import time (Field Engineering / SSA / Strategy & Execution).
-/experimental/ @lennartkats-db @simonfaltum @databricks/eng-apps-devex @calreynolds @dustinvannoy-db @malcolndandaro @auschoi96 @jacksandom @QuentinAmbard @NatyraB @jiteshsoni @scottDBX1886 @alexmillerdb
+/experimental/ @lennartkats-db @simonfaltum @databricks/eng-apps-devex @calreynolds @dustinvannoy-db @malcolndandaro @auschoi96 @jacksandom @QuentinAmbard @NatyraB @jiteshsoni @scottDBX1886 @alexmillerdb @cankoklu-db @yogesh-dbx
 
 /.github/CODEOWNERS @lennartkats-db @simonfaltum @fjakobs

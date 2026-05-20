@@ -47,10 +47,10 @@ on a **best-effort basis**.
 - Experimental skills are **not officially supported** — they may be used, but
   do not follow the same review / quality bar as the stable skills under
   [`skills/`](./skills/).
-- They are **not installed by default** by `databricks experimental aitools
-  skills install`. Pass `--experimental` to install all of them, or install
-  a specific one by name (with the `-experimental` suffix and the flag —
-  e.g. `databricks-iceberg-experimental --experimental`).
+- They are **not installed by default** by `databricks aitools install`.
+  Pass `--experimental` to install all of them, or install a specific one
+  by name (with the `--experimental` flag — e.g. `databricks aitools install
+  databricks-iceberg --experimental`).
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 

@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-19T14:54:40Z",
+  "updated_at": "2026-05-20T15:27:57Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.1",
@@ -107,7 +107,7 @@
     },
     "databricks-pipelines": {
       "version": "0.1.0",
-      "description": "Databricks Pipelines (DLT) for ETL and streaming",
+      "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
       "repo_dir": "skills",
       "updated_at": "2026-05-12T15:39:50Z",
       "files": [
@@ -187,7 +187,7 @@
       "version": "0.0.1",
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 chunk \u2192 index \u2192 query).",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-15T09:44:54Z",
+      "updated_at": "2026-05-20T15:27:46Z",
       "files": [
         "1-task-functions.md",
         "2-ai-query.md",
