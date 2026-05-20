@@ -414,6 +414,21 @@
       "repo_dir": "skills",
       "version": "0.1.0"
     },
+    "databricks-serverless-storage-check": {
+      "description": "Detect cross-task file-sharing antipatterns in Databricks serverless jobs (writes to /local_disk0, /tmp, or trustedTemp that are read by sibling or child tasks on potentially different compute node...",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/pattern-catalog.md",
+        "references/remediation-guide.md",
+        "scripts/preflight.py",
+        "scripts/test_preflight.py"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
+    },
     "databricks-spark-structured-streaming": {
       "description": "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance.",
       "files": [

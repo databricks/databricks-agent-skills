@@ -198,7 +198,7 @@ Scan the code for patterns that are incompatible with the serverless compute arc
 | Pattern | Severity | Fix |
 |---------|----------|-----|
 | `dbfs:/` or `/dbfs/` paths (persistent data) | Blocker | Replace with `/Volumes/<your_catalog>/schema/volume/path` |
-| `dbfs:/tmp/`, `/dbfs/tmp/`, paths with `cache`/`scratch`/`temp` | Warning | Use `/tmp/` or `/local_disk0/tmp/` (local driver disk) — do not use Volumes for temp files due to performance |
+| `dbfs:/tmp/`, `/dbfs/tmp/`, paths with `cache`/`scratch`/`temp` | Warning | Use `/tmp/` or `/local_disk0/tmp/` (local driver disk) — do not use Volumes for temp files due to performance. **Per-task scratch only**: if another task (child notebook, sibling job task, or pipeline) needs to read the file, use UC Volumes or `/Workspace` — see [`databricks-serverless-storage-check`](../databricks-serverless-storage-check/SKILL.md). |
 | `file:///dbfs/` FUSE mount paths | Warning | Replace persistent paths with `/Volumes/...`; replace temp paths with `/local_disk0/tmp/` |
 | `dbutils.fs.mount(...)` | Blocker | Create UC external location + external volume |
 | `hive_metastore.db.table` | Warning | Migrate to UC or use HMS Federation: `CREATE FOREIGN CATALOG ... USING CONNECTION hms_connection` |

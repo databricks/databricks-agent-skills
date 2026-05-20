@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Serverless Storage Check"
+  short_description: "Detect cross-task local-disk handoffs in serverless jobs"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-serverless-storage-check to scan a serverless job, notebook, or DAB for cross-task file handoffs through /local_disk0, /tmp, or trustedTemp."
