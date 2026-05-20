@@ -231,17 +231,14 @@ Always use server-side routes for Lakebase operations — do NOT call database q
 ```typescript
 // server/server.ts
 import { createApp, server, lakebase } from "@databricks/appkit";
-import { ensureSchema, initDb } from './db';
+import { initDb, runMigrations } from './db';
 import { setupTodoRoutes } from './routes/lakebase/todo-routes';
 
 await createApp({
   plugins: [server(), lakebase()],
   async onPluginsReady(appkit) {
-    // Schema init (raw SQL for first deploy, then use drizzle-kit)
-    await ensureSchema(appkit.lakebase.pool);
-
-    // Create Drizzle instance and register routes
     const db = await initDb(appkit);
+    await runMigrations(db);
     setupTodoRoutes(appkit, db);
   },
 });
