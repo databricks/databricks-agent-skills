@@ -294,13 +294,22 @@ export function setupTodoRoutes(appkit, db: Database) {
 
 **Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow.
 
-The template uses raw SQL for the initial `CREATE SCHEMA/TABLE` at startup (needed for first deploy). For subsequent schema changes, use drizzle-kit: `npm run db:push` (dev) or `npm run db:generate && npm run db:migrate` (production).
+The template uses Drizzle's native migration system. Schema is defined once in `server/db/schema.ts` using `pgSchema('app')` — Drizzle generates `CREATE SCHEMA "app"` + `CREATE TABLE` SQL automatically via `drizzle-kit generate`. At startup, `migrate(db)` applies unapplied migrations (safe to run every time):
 
 ```typescript
-// server/db/index.ts — ensureSchema() runs once at startup in onPluginsReady
-await pool.query(`CREATE SCHEMA IF NOT EXISTS app`);
-await pool.query(`CREATE TABLE IF NOT EXISTS app.todos (...)`);
+// server/db/index.ts
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+
+export async function runMigrations(db: Database) {
+  await migrate(db, { migrationsFolder: './drizzle' });
+}
 ```
+
+**Workflow:**
+1. Define tables in `server/db/schema.ts` using `pgSchema()` + Drizzle column types
+2. Run `npm run db:generate` — generates migration SQL in `drizzle/` (no DB connection needed)
+3. Deploy — `migrate(db)` at startup applies the migration
+4. For schema changes: edit `schema.ts` → `npm run db:generate` → commit `drizzle/` → deploy
 
 ## Other ORMs
 
