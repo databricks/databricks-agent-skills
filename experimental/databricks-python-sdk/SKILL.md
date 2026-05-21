@@ -616,7 +616,7 @@ If I'm unsure about a method, I should:
 
 ## Related Skills
 
-- **databricks-core** - CLI install, profile selection, authentication
+- **databricks-core** - profile and authentication setup
 - **databricks-dabs** - deploying resources via DABs
 - **databricks-jobs** - job orchestration patterns
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - catalog governance

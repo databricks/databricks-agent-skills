@@ -77,7 +77,7 @@ See the root [README](../README.md) for details on the stable install path.
 These skills are imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
-**Source SHA**: [`7b07f18`](https://github.com/databricks-solutions/ai-dev-kit/commit/7b07f18b6efb7ff0ac011d3fe81b435eb3cd793a)
+**Source SHA**: [`20a92a3`](https://github.com/databricks-solutions/ai-dev-kit/commit/20a92a38144ca5228f1dfe4cc0be46da40ec9177)
 on the `experimental` branch of `databricks-solutions/ai-dev-kit`.
 
 While `ai-dev-kit` is the upstream source, this directory receives periodic
