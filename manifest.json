@@ -104,7 +104,7 @@
       ]
     },
     "databricks-pipelines": {
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
       "repo_dir": "skills",
       "files": [
