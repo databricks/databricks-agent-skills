@@ -6,7 +6,7 @@ These functions require no model endpoint selection. They call pre-configured Fo
 
 ## `ai_analyze_sentiment`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_analyze_sentiment
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_analyze_sentiment
 
 Returns one of: `positive`, `negative`, `neutral`, `mixed`, or `NULL`.
 
@@ -25,7 +25,7 @@ df.withColumn("sentiment", expr("ai_analyze_sentiment(review_text)")).display()
 
 ## `ai_classify`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_classify
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_classify
 
 **Syntax:** `ai_classify(content, labels [, options])`
 - `content`: VARIANT | STRING — raw text, or VARIANT from `ai_parse_document` / `ai_extract`
@@ -76,7 +76,7 @@ df.withColumn(
 
 ## `ai_extract`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_extract
 
 **Syntax:** `ai_extract(content, schema [, options])`
 - `content`: VARIANT | STRING — raw text, or VARIANT from `ai_parse_document`
@@ -133,7 +133,7 @@ df.display()
 
 ## `ai_fix_grammar`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_fix_grammar
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_fix_grammar
 
 **Syntax:** `ai_fix_grammar(content)` — Returns corrected STRING.
 
@@ -153,7 +153,7 @@ df.withColumn("corrected", expr("ai_fix_grammar(user_comment)")).display()
 
 ## `ai_gen`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_gen
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_gen
 
 **Syntax:** `ai_gen(prompt)` — Returns a generated STRING.
 
@@ -178,7 +178,7 @@ df.withColumn(
 
 ## `ai_mask`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_mask
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_mask
 
 **Syntax:** `ai_mask(content, labels)`
 - `content`: STRING — text with sensitive data
@@ -209,7 +209,7 @@ df.withColumn(
 
 ## `ai_similarity`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_similarity
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_similarity
 
 **Syntax:** `ai_similarity(expr1, expr2)` — Returns a FLOAT between 0.0 and 1.0.
 
@@ -238,7 +238,7 @@ df.withColumn(
 
 ## `ai_summarize`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_summarize
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_summarize
 
 **Syntax:** `ai_summarize(content [, max_words])`
 - `content`: STRING — text to summarize
@@ -263,7 +263,7 @@ df.withColumn("summary", expr("ai_summarize(article_body, 30)")).display()
 
 ## `ai_translate`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_translate
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_translate
 
 **Syntax:** `ai_translate(content, to_lang)`
 - `content`: STRING — source text
@@ -298,7 +298,7 @@ df.withColumn(
 
 ## `ai_parse_document`
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_parse_document
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_parse_document
 
 **Requires:** DBR 17.1+
 

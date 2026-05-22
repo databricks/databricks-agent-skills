@@ -1,6 +1,6 @@
 # `ai_query` — Full Reference
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_query
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_query
 
 > Use `ai_query` only when no task-specific function fits. See the function selection table in [SKILL.md](SKILL.md).
 
@@ -30,7 +30,7 @@ ai_query(
 
 | Parameter | Type | Runtime | Description |
 |---|---|---|---|
-| `endpoint` | STRING literal | — | Foundation Model name or custom endpoint name. Never guess — use exact names from the [model serving docs](https://docs.databricks.com/aws/en/machine-learning/foundation-models/supported-models.html). |
+| `endpoint` | STRING literal | — | Foundation Model name or custom endpoint name. Never guess — use exact names from the [model serving docs](https://docs.databricks.com/machine-learning/foundation-models/supported-models.html). |
 | `request` | STRING or STRUCT | — | Prompt string for chat models; STRUCT for custom ML endpoints |
 | `returnType` | DDL schema (optional) | 15.2+ | Structures the parsed response like `from_json` |
 | `failOnError` | BOOLEAN (optional, default `true`) | 15.3+ | If `false`, returns STRUCT `{response, error}` instead of raising on failure |

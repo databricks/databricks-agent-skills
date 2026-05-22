@@ -2,7 +2,7 @@
 
 Databricks Apps supports two complementary authorization models. Use one or both depending on your app's needs.
 
-**Docs**: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/auth
 
 ---
 

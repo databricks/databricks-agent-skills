@@ -74,7 +74,7 @@ Iceberg metadata is generated **asynchronously** after each Delta transaction. T
 
 ### Checking UniForm Status
 
-> See [Check Iceberg metadata generation status](https://docs.databricks.com/aws/en/delta/uniform#check-iceberg-metadata-generation-status) for full details.
+> See [Check Iceberg metadata generation status](https://docs.databricks.com/delta/uniform#check-iceberg-metadata-generation-status) for full details.
 
 
 ### Disabling UniForm

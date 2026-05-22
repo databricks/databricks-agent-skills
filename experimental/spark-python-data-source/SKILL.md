@@ -152,6 +152,6 @@ Write a data source for REST API with OAuth2 authentication and pagination
 - [error-handling.md](references/error-handling.md) — Read when adding retry logic or handling transient failures
 - [testing-patterns.md](references/testing-patterns.md) — Read when writing tests; covers unit, integration, and performance testing
 - [production-patterns.md](references/production-patterns.md) — Read when hardening for production: observability, security, input validation
-- [Official Databricks Documentation](https://docs.databricks.com/aws/en/pyspark/datasources)
+- [Official Databricks Documentation](https://docs.databricks.com/pyspark/datasources)
 - [Apache Spark Python DataSource Tutorial](https://spark.apache.org/docs/latest/api/python/tutorial/sql/python_data_source.html)
 - [awesome-python-datasources](https://github.com/allisonwang-db/awesome-python-datasources) — Directory of community implementations

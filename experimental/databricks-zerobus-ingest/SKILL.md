@@ -10,9 +10,9 @@ Build clients that ingest data directly into Databricks Delta tables via the Zer
 **Status:** GA (Generally Available since February 2026; billed under Lakeflow Jobs Serverless SKU)
 
 **Documentation:**
-- [Zerobus Overview](https://docs.databricks.com/aws/en/ingestion/zerobus-overview)
-- [Zerobus Ingest SDK](https://docs.databricks.com/aws/en/ingestion/zerobus-ingest)
-- [Zerobus Limits](https://docs.databricks.com/aws/en/ingestion/zerobus-limits)
+- [Zerobus Overview](https://docs.databricks.com/ingestion/zerobus-overview)
+- [Zerobus Ingest SDK](https://docs.databricks.com/ingestion/zerobus-ingest)
+- [Zerobus Limits](https://docs.databricks.com/ingestion/zerobus-limits)
 
 ---
 
@@ -131,7 +131,7 @@ You must always follow all the steps in the Workflow
 
 ## Important
 - Never install local packages
-- **Serverless limitation**: The Zerobus SDK cannot pip-install on serverless compute. Use classic compute clusters, or use the [Zerobus REST API](https://docs.databricks.com/aws/en/ingestion/zerobus-rest-api) (Beta) for notebook-based ingestion without the SDK.
+- **Serverless limitation**: The Zerobus SDK cannot pip-install on serverless compute. Use classic compute clusters, or use the [Zerobus REST API](https://docs.databricks.com/ingestion/zerobus-rest-api) (Beta) for notebook-based ingestion without the SDK.
 - **Explicit table grants**: Service principals need explicit `MODIFY` and `SELECT` grants on the target table. Schema-level inherited permissions may not be sufficient for the `authorization_details` OAuth flow.
 
 ---
@@ -228,6 +228,6 @@ The timestamp generation must use microseconds for Databricks.
 
 ## Resources
 
-- [Zerobus Overview](https://docs.databricks.com/aws/en/ingestion/zerobus-overview)
-- [Zerobus Ingest SDK](https://docs.databricks.com/aws/en/ingestion/zerobus-ingest)
-- [Zerobus Limits](https://docs.databricks.com/aws/en/ingestion/zerobus-limits)
+- [Zerobus Overview](https://docs.databricks.com/ingestion/zerobus-overview)
+- [Zerobus Ingest SDK](https://docs.databricks.com/ingestion/zerobus-ingest)
+- [Zerobus Limits](https://docs.databricks.com/ingestion/zerobus-limits)

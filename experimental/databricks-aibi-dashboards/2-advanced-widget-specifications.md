@@ -161,7 +161,7 @@ Displays geographic regions colored by aggregate values. Requires a field with g
 
 ## Other Visualization Types
 
-The following visualization types are available in Databricks AI/BI dashboards but are less commonly used. Refer to [Databricks documentation](https://docs.databricks.com/aws/en/visualizations/visualization-types) for details:
+The following visualization types are available in Databricks AI/BI dashboards but are less commonly used. Refer to [Databricks documentation](https://docs.databricks.com/visualizations/visualization-types) for details:
 
 | Widget Type | Description |
 |-------------|-------------|

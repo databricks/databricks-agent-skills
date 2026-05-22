@@ -397,7 +397,7 @@ ORDER BY ALL
 
 ## Pattern 9: Window Measures (Experimental)
 
-Window measures enable moving averages, running totals, period-over-period changes, and semiadditive measures. Add a `window` block to any measure definition. See [Window Measures Documentation](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures).
+Window measures enable moving averages, running totals, period-over-period changes, and semiadditive measures. Add a `window` block to any measure definition. See [Window Measures Documentation](https://docs.databricks.com/metric-views/data-modeling/window-measures).
 
 ### Window Range Values
 

@@ -2,7 +2,7 @@
 
 Databricks Apps integrate with platform resources via managed connections. Use resources instead of hardcoding IDs for portability and security.
 
-**Docs**: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/resources
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/resources
 
 ---
 

@@ -2,7 +2,7 @@
 
 Lakebase provides low-latency transactional storage for Databricks Apps via a managed PostgreSQL interface.
 
-**Docs**: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/lakebase
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/lakebase
 
 ---
 

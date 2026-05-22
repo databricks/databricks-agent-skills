@@ -82,7 +82,7 @@ measures:
 
 ### Window Measures (Experimental)
 
-Add a `window` block to a measure for windowed, cumulative, or semiadditive aggregations. See [Window Measures Documentation](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures).
+Add a `window` block to a measure for windowed, cumulative, or semiadditive aggregations. See [Window Measures Documentation](https://docs.databricks.com/metric-views/data-modeling/window-measures).
 
 ```yaml
 measures:

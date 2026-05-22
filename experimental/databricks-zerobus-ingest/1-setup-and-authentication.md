@@ -93,7 +93,7 @@ Or with a virtual environment:
 uv pip install databricks-zerobus-ingest-sdk>=1.0.0
 ```
 
-**Note:** The Zerobus SDK cannot be pip-installed on Databricks serverless compute. Use classic compute clusters, or use the [Zerobus REST API](https://docs.databricks.com/aws/en/ingestion/zerobus-rest-api) (Beta) for notebook-based ingestion without the SDK.
+**Note:** The Zerobus SDK cannot be pip-installed on Databricks serverless compute. Use classic compute clusters, or use the [Zerobus REST API](https://docs.databricks.com/ingestion/zerobus-rest-api) (Beta) for notebook-based ingestion without the SDK.
 
 ### Java (8+)
 
@@ -148,7 +148,7 @@ export DATABRICKS_CLIENT_SECRET="<service-principal-client-secret>"
 
 ## 6. Firewall Allowlisting
 
-If your client application sits behind a firewall, you must allowlist the Zerobus IP addresses for your region before testing connectivity. Contact your Databricks representative or consult the [Zerobus documentation](https://docs.databricks.com/aws/en/ingestion/zerobus-overview) for the current IP ranges.
+If your client application sits behind a firewall, you must allowlist the Zerobus IP addresses for your region before testing connectivity. Contact your Databricks representative or consult the [Zerobus documentation](https://docs.databricks.com/ingestion/zerobus-overview) for the current IP ranges.
 
 ---
 

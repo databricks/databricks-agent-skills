@@ -103,7 +103,7 @@ Copy this checklist and verify each item:
 | **Auth (user)** | `x-forwarded-access-token` header — see [1-authorization.md](1-authorization.md) |
 | **Resources** | `valueFrom` in app.yaml — see [2-app-resources.md](2-app-resources.md) |
 | **Cookbook** | https://apps-cookbook.dev/ |
-| **Docs** | https://docs.databricks.com/aws/en/dev-tools/databricks-apps/ |
+| **Docs** | https://docs.databricks.com/dev-tools/databricks-apps/ |
 
 ---
 
@@ -243,12 +243,12 @@ class EntityIn(BaseModel):
 ## Official Documentation
 
 - **[AppKit](https://databricks.github.io/appkit/docs/)** — preferred SDK for new apps (TypeScript + React)
-- **[Databricks Apps Overview](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)** — main docs hub
+- **[Databricks Apps Overview](https://docs.databricks.com/dev-tools/databricks-apps/)** — main docs hub
 - **[Apps Cookbook](https://apps-cookbook.dev/)** — ready-to-use code snippets (Streamlit, Dash, Reflex, FastAPI)
-- **[Authorization](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth)** — app auth and user auth
-- **[Resources](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/resources)** — SQL warehouse, Lakebase, serving, secrets
-- **[app.yaml Reference](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/app-runtime)** — command and env config
-- **[System Environment](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/system-env)** — pre-installed packages, runtime details
+- **[Authorization](https://docs.databricks.com/dev-tools/databricks-apps/auth)** — app auth and user auth
+- **[Resources](https://docs.databricks.com/dev-tools/databricks-apps/resources)** — SQL warehouse, Lakebase, serving, secrets
+- **[app.yaml Reference](https://docs.databricks.com/dev-tools/databricks-apps/app-runtime)** — command and env config
+- **[System Environment](https://docs.databricks.com/dev-tools/databricks-apps/system-env)** — pre-installed packages, runtime details
 
 ## Related Skills
 

@@ -140,9 +140,9 @@ SET TBLPROPERTIES (
 
 ## Resources
 
-- **[Iceberg Overview](https://docs.databricks.com/aws/en/iceberg/)** — main hub for Iceberg on Databricks
-- **[UniForm](https://docs.databricks.com/aws/en/delta/uniform.html)** — Delta Universal Format
-- **[Iceberg REST Catalog](https://docs.databricks.com/aws/en/external-access/iceberg)** — IRC endpoint and external engine access
-- **[Compatibility Mode](https://docs.databricks.com/aws/en/external-access/compatibility-mode)** — UniForm for streaming tables and MVs
-- **[Iceberg v3](https://docs.databricks.com/aws/en/iceberg/iceberg-v3)** — next-gen format features (Beta)
-- **[Foreign Tables](https://docs.databricks.com/aws/en/query-data/foreign-tables.html)** — reading external catalog data
+- **[Iceberg Overview](https://docs.databricks.com/iceberg/)** — main hub for Iceberg on Databricks
+- **[UniForm](https://docs.databricks.com/delta/uniform.html)** — Delta Universal Format
+- **[Iceberg REST Catalog](https://docs.databricks.com/external-access/iceberg)** — IRC endpoint and external engine access
+- **[Compatibility Mode](https://docs.databricks.com/external-access/compatibility-mode)** — UniForm for streaming tables and MVs
+- **[Iceberg v3](https://docs.databricks.com/iceberg/iceberg-v3)** — next-gen format features (Beta)
+- **[Foreign Tables](https://docs.databricks.com/query-data/foreign-tables.html)** — reading external catalog data

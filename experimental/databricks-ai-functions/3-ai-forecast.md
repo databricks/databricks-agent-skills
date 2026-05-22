@@ -1,6 +1,6 @@
 # `ai_forecast` — Full Reference
 
-**Docs:** https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_forecast
+**Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_forecast
 
 > `ai_forecast` is a **table-valued function** — it returns a table of rows, not a scalar. Call it with `SELECT * FROM ai_forecast(...)`.
 

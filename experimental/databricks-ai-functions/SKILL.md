@@ -5,8 +5,8 @@ description: "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_
 
 # Databricks AI Functions
 
-> **Official Docs:** https://docs.databricks.com/aws/en/large-language-models/ai-functions
-> Individual function reference: https://docs.databricks.com/aws/en/sql/language-manual/functions/
+> **Official Docs:** https://docs.databricks.com/large-language-models/ai-functions
+> Individual function reference: https://docs.databricks.com/sql/language-manual/functions/
 
 ## Overview
 

@@ -292,6 +292,6 @@ Metric views work natively with:
 - [Metric Views Documentation](https://docs.databricks.com/en/metric-views/)
 - [YAML Syntax Reference](https://docs.databricks.com/en/metric-views/data-modeling/syntax)
 - [Joins](https://docs.databricks.com/en/metric-views/data-modeling/joins)
-- [Window Measures](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures) (Experimental)
+- [Window Measures](https://docs.databricks.com/metric-views/data-modeling/window-measures) (Experimental)
 - [Materialization](https://docs.databricks.com/en/metric-views/materialization)
 - [MEASURE() Function](https://docs.databricks.com/en/sql/language-manual/functions/measure)

@@ -1,17 +1,16 @@
 ---
 name: databricks-agent-bricks
-description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS). For Genie Spaces, see databricks-genie skill."
+description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS)."
 ---
 
 # Agent Bricks
 
-Agent Bricks are pre-built AI tiles in Databricks that provide conversational interfaces. This skill covers **Knowledge Assistants** and **Supervisor Agents**. For Genie Spaces, use the `databricks-genie` skill.
+Agent Bricks are pre-built AI tiles in Databricks that provide conversational interfaces. This skill covers **Knowledge Assistants** and **Supervisor Agents**.
 
 | Brick | Purpose | This Skill |
 |-------|---------|------------|
 | **Knowledge Assistant (KA)** | Document Q&A using RAG on PDFs/text in Volumes | ✓ |
-| **Supervisor Agent** | Orchestrates multiple agents (KA, Genie, endpoints, UC functions, MCP) | ✓ |
-| **Genie Space** | Natural language to SQL on Unity Catalog tables | `databricks-genie` |
+| **Supervisor Agent** | Orchestrates multiple agents (KA, endpoints, UC functions, MCP) | ✓ |
 
 ---
 
