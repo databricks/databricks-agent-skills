@@ -14,7 +14,7 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 ## Scaffolding
 
-**ALWAYS scaffold with the correct feature flags** — do not add Lakebase manually to an analytics-only scaffold.
+**Scaffolding is the fastest way to get started.** If you already have an app, see *Adding Lakebase to an Existing App* below.
 
 **Lakebase only** (no analytics SQL warehouse):
 ```bash
@@ -39,6 +39,8 @@ Use the `databricks-lakebase` skill to create a Lakebase project and discover br
 
 > For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
 
+**Naming conventions:** Use domain names for user-facing code (`ItemsPage.tsx`, `/api/items`, `item-routes.ts`). Keep `lakebase` naming only for infrastructure config (`lakebase()` plugin, `LAKEBASE_ENDPOINT`, `postgres` app resource).
+
 **Get resource names** (if you have an existing project):
 ```bash
 # List branches → use the name field of a READY branch
@@ -46,6 +48,75 @@ databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 # List databases → use the name field
 databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
 ```
+
+## Adding Lakebase to an Existing App
+
+**`databricks.yml`** — add Lakebase variables and resource:
+
+```yaml
+variables:
+  lakebase_branch:
+    description: Lakebase branch resource name
+  lakebase_database:
+    description: Lakebase database resource name
+
+resources:
+  apps:
+    app:
+      resources:
+        # ... existing resources ...
+        - name: postgres
+          postgres:
+            branch: ${var.lakebase_branch}
+            database: ${var.lakebase_database}
+
+targets:
+  default:
+    variables:
+      lakebase_branch: projects/<PROJECT_ID>/branches/<BRANCH_ID>
+      lakebase_database: projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>
+```
+
+Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names.
+
+For per-user connections (OBO/RLS), also add `postgres` to `user_api_scopes` — see `npx @databricks/appkit docs ./docs/plugins/lakebase.md` for OBO setup.
+
+**`app.yaml`** — add env injection:
+
+```yaml
+env:
+  # ... existing env vars ...
+  - name: LAKEBASE_ENDPOINT
+    valueFrom: postgres
+```
+
+Other Lakebase env vars (`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE`) are auto-injected by the platform when the `postgres` resource is configured. Only `LAKEBASE_ENDPOINT` must be set explicitly.
+
+**`server/server.ts`** — register the plugin:
+
+```typescript
+import { createApp, server, analytics, lakebase } from "@databricks/appkit";
+
+createApp({
+  plugins: [server(), analytics(), lakebase()],
+}).catch(console.error);
+```
+
+Preserve existing plugins and add `lakebase()` to the array.
+
+**`server/.env`** — for local development:
+
+```dotenv
+PGHOST=<host from endpoint>
+PGPORT=5432
+PGDATABASE=<your database name>
+PGSSLMODE=require
+LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
+```
+
+Get connection details from `databricks postgres get-endpoint`. See *Local Development* below for the full workflow.
+
+Deploy the app before local development — see *Local Development > Prerequisites* below. Update smoke tests if headings or routes changed, then `databricks apps validate`.
 
 ## Project Structure (after `databricks apps init --features lakebase`)
 
@@ -92,18 +163,17 @@ The `lakebase()` plugin auto-configures from platform-injected env vars at deplo
 
 ## CRUD Routes Pattern
 
-Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `server.extend()` to register Express routes:
+Always use server-side routes for Lakebase operations — do NOT call `appkit.lakebase.query()` from the client. Use `onPluginsReady` to initialize the schema and register Express routes:
 
 ```typescript
 // server/server.ts
 import { createApp, server, lakebase } from "@databricks/appkit";
 import { z } from 'zod';
 
-createApp({
-  plugins: [server({ autoStart: false }), lakebase()],
-})
-  .then(async (appkit) => {
-    // Schema init (runs once at startup)
+await createApp({
+  plugins: [server(), lakebase()],
+  async onPluginsReady(appkit) {
+    // Schema init (runs once before server accepts requests)
     await appkit.lakebase.query(`
       CREATE SCHEMA IF NOT EXISTS app_data;
       CREATE TABLE IF NOT EXISTS app_data.items (
@@ -139,17 +209,15 @@ createApp({
         res.status(204).send();
       });
     });
-
-    await appkit.server.start();
-  })
-  .catch(console.error);
+  },
+});
 ```
 
 > **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
 
 ## Schema Initialization
 
-**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `.then()` callback before registering routes (see CRUD pattern above):
+**Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `onPluginsReady` callback before registering routes (see CRUD pattern above):
 
 ```typescript
 // Inside onPluginsReady — runs once at startup before handling requests
@@ -179,6 +247,78 @@ const prisma = new PrismaClient({ adapter });
 ```
 
 For ORM-compatible config: `appkit.lakebase.getOrmConfig()`.
+
+## Chat Persistence Pattern
+
+Save AI chat conversations to Lakebase so users can resume sessions and scroll full message history.
+
+**Schema** — create in a separate `chat` schema (not `app`) so the deploy-first ownership model stays clean:
+
+```sql
+CREATE SCHEMA IF NOT EXISTS chat;
+
+CREATE TABLE IF NOT EXISTS chat.chats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat.messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id UUID NOT NULL REFERENCES chat.chats(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('system', 'user', 'assistant', 'tool')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at
+  ON chat.messages(chat_id, created_at);
+```
+
+**Bootstrap** — run setup in `onPluginsReady` so tables exist before the server accepts requests:
+
+```typescript
+await createApp({
+  plugins: [server(), lakebase()],
+  async onPluginsReady(appkit) {
+    await setupChatTables(appkit);
+    // then register routes via appkit.server.extend(...)
+  },
+});
+```
+
+**Persistence helpers** — use parameterized queries:
+
+```typescript
+export async function createChat(appkit, input: { userId: string; title: string }) {
+  const result = await appkit.lakebase.query(
+    `INSERT INTO chat.chats (user_id, title) VALUES ($1, $2)
+     RETURNING id, user_id, title, created_at, updated_at`,
+    [input.userId, input.title],
+  );
+  return result.rows[0];
+}
+
+export async function appendMessage(appkit, input: { chatId: string; role: string; content: string }) {
+  const result = await appkit.lakebase.query(
+    `INSERT INTO chat.messages (chat_id, role, content) VALUES ($1, $2, $3)
+     RETURNING id, chat_id, role, content, created_at`,
+    [input.chatId, input.role, input.content],
+  );
+  return result.rows[0];
+}
+```
+
+**User identity**: In deployed apps, use `req.header("x-forwarded-email")` (injected by the Databricks Apps platform proxy; for off-platform deployments, use your own auth middleware). For local dev, hardcode a test user ID.
+
+**History endpoints**:
+- `GET /api/chats` — list chats for current user
+- `GET /api/chats/:chatId/messages` — load ordered history
+- `DELETE /api/chats/:chatId` — delete chat (messages cascade)
+
+**AI SDK v6 integration**: Use `setMessages()` from `useChat` return value for history loading (NOT `initialMessages`). To read response headers like `X-Chat-Id`, pass a custom `fetch` wrapper on the `TextStreamChatTransport` constructor.
 
 ## Reading from Lakebase synced tables
 
@@ -261,6 +401,8 @@ Check the response for the `active_deployment` field. If it exists with `status.
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
 Lakebase project creators already have database access after the first deploy. Collaborators need `databricks_superuser` granted by the project creator via Branch Overview.
+
+> **Project-owner note:** If you are the Lakebase project owner, `databricks_create_role` may fail with "role already exists" and `GRANT databricks_superuser` may fail with "permission denied to grant role" — both errors are safe to ignore; the project owner already has the necessary access.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 

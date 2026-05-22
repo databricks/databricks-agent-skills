@@ -12,7 +12,7 @@ Before scaffolding, decide which data pattern the app needs:
 | **Lakebase synced tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` (no `--set` flags needed) + sync Delta table via `databricks-lakebase` skill |
 | **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
 | **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
-| **Model Serving** (ML inference) | Chat, AI features, model predictions | Add `serving_endpoint` resource to `databricks.yml` (or `--features serving` if available in manifest) |
+| **Model Serving** (ML inference) | Chat, AI features, model predictions | `--features serving --set serving.serving-endpoint.name=<NAME>` (check manifest) |
 | **Jobs** (trigger Lakeflow Jobs) | Kick off and monitor pre-existing notebooks / Python / SQL / dbt jobs | `--features jobs --set jobs.<resourceKey>.<field>=<JOB_ID>` (check manifest) |
 | **Multiple** | Combine plugins as needed (e.g. dashboard + CRUD, analytics + Genie) | `--features analytics,lakebase,genie,...` with all required `--set` flags per plugin |
 
@@ -128,7 +128,7 @@ Do not guess paths — run without args first, then pick from the index.
 | Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
 | Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, tRPC patterns, schema init |
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
-| Call ML model serving endpoints | [Model Serving](model-serving.md) — resource declaration, tRPC query pattern |
+| Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
 
 ## Critical Rules
@@ -145,5 +145,5 @@ Do not guess paths — run without args first, then pick from the index.
 - **Display data from SQL?**
   - Chart/Table → `BarChart`, `LineChart`, `DataTable` components
   - Custom layout (KPIs, cards) → `useAnalyticsQuery` hook
-- **Call Databricks API?** → tRPC (serving endpoints, MLflow, Jobs)
+- **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or tRPC for other APIs
 - **Modify data?** → tRPC mutations

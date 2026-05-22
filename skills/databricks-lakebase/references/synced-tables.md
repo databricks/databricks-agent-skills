@@ -80,6 +80,9 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
 | `create_database_objects_if_missing` | No | Auto-create Postgres schema/database if missing (default: `false`) |
 | `new_pipeline_spec.storage_catalog` | Yes | A **regular** UC catalog for DLT pipeline metadata (NOT the Lakebase catalog) |
 | `new_pipeline_spec.storage_schema` | Yes | Schema in the storage catalog for pipeline metadata (e.g. `default`) |
+| `timeseries_key` | No | Column for deduplication when source has duplicate PKs (latest wins). Performance penalty. |
+
+> **Note:** Nulls in PK columns are excluded from sync.
 
 Long-running operation; CLI waits by default. Use `--no-wait` to return immediately.
 
@@ -186,9 +189,14 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 - **Naming:** Database, schema, and table names allow `[A-Za-z0-9_]+` only
 - **Schema evolution:** Only additive changes (adding columns) for Triggered/Continuous modes
 
+**Cost guidance:**
+- **Continuous mode:** Reuse pipelines for ~10 tables/pipeline — roughly 10x cheaper per table than separate pipelines
+- **Cost formula:** `[Rows / (Speed × CUs × 3600)] × DLT Hourly Rate` (check current DLT pricing for your cloud/region)
+- **Snapshot vs incremental:** Snapshot is ~10x faster when >10% of data changes per cycle
+
 ## Lakehouse Sync (Beta)
 
-Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS and Azure.
+Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS, Azure, and GCP.
 
 > **Important:** Tables must reside in the `databricks_postgres` database for Lakehouse Sync to work.
 
@@ -215,6 +223,8 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 - Partitioned tables are not supported
 - Disabling and re-enabling sync does **not** re-snapshot — missing changes are lost permanently
 
+For the full Lakehouse Sync reference, see [lakehouse-sync.md](lakehouse-sync.md). For building medallion pipelines from CDC history, see [medallion-from-cdc.md](medallion-from-cdc.md).
+
 ## Use Cases
 
 **Product catalog:** Sync gold-tier product data to Lakebase for low-latency web app reads. Use Triggered mode for hourly/daily updates.
@@ -235,3 +245,4 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 - **Read-only in Postgres:** Only SELECT queries, CREATE INDEX, and DROP TABLE are allowed on synced tables. Any data modifications (INSERT, UPDATE, DELETE) corrupt the sync pipeline.
 - **Null bytes:** Null bytes (0x00) in STRING, ARRAY, MAP, or STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')`.
 - **Unsupported types:** GEOGRAPHY, GEOMETRY, VARIANT, OBJECT columns cannot be synced.
+- **FGAC not propagated:** Fine-grained access control (row filters, column masks) from Unity Catalog is not propagated to synced tables. **Workaround:** Create a view on the source table with the desired filter (`SELECT * FROM table WHERE ...`), then sync the view in Snapshot mode. Caveat: the sync runs as the creator and only sees their visible rows.

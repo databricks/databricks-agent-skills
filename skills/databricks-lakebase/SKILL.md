@@ -33,6 +33,9 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
 - [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
 - [synced-tables.md](references/synced-tables.md) — Lakebase synced tables, data type mapping, capacity planning
+- [lakehouse-sync.md](references/lakehouse-sync.md) — CDC from Lakebase Postgres to Unity Catalog Delta tables
+- [pgvector.md](references/pgvector.md) — Vector similarity search with pgvector extension
+- [off-platform.md](references/off-platform.md) — Off-platform Lakebase: env management, token refresh, Drizzle ORM
 
 ## Resource Hierarchy
 
@@ -89,7 +92,17 @@ After creation, verify:
 ```bash
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 databricks postgres list-endpoints projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
+databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
 ```
+
+**Extract connection values from JSON output:**
+
+| Value | JSON path | Used for |
+|-------|-----------|----------|
+| Endpoint host | `status.hosts.host` | `PGHOST`, `lakebase.postgres.host` |
+| Endpoint resource path | `name` | `LAKEBASE_ENDPOINT`, `lakebase.postgres.endpointPath` |
+| Database resource path | `name` | `lakebase.postgres.database` |
+| PostgreSQL database name | `status.postgres_database` | `PGDATABASE`, `lakebase.postgres.databaseName` |
 
 ### Updating a Project
 
@@ -265,6 +278,8 @@ SELECT * FROM pg_available_extensions ORDER BY name;
 -- Install an extension
 CREATE EXTENSION IF NOT EXISTS <extension_name>;
 ```
+
+For vector embeddings with pgvector, see [pgvector.md](references/pgvector.md).
 
 ## Troubleshooting
 
