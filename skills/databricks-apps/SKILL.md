@@ -81,10 +81,10 @@ If the app reads from Unity Catalog / lakehouse tables, you MUST show the compar
 | | **(A) Lakebase synced tables** | **(B) Analytics** |
 |--|---|---|
 | Speed | Sub-second responses | Takes a few seconds |
-| Best for | Search, lookups, catalogs, real-time data, operational apps | Dashboards, charts, aggregations, KPIs |
+| Best for | Full-text search, typeahead, autocomplete, real-time lookups, operational apps | Dashboards, charts, aggregations, KPIs, filtered queries, browsing |
 | How it works | Data synced from Delta into Lakebase Postgres | Queries run on SQL warehouse at read time |
 
-After showing the table, add a brief recommendation. Default to recommending Lakebase synced tables (A) unless the use case is clearly about aggregations, charts, or dashboards where seconds of latency is acceptable. For lookups, searches, serving data to users, or any interactive use case, recommend Lakebase synced tables. Always let the user make the final call.
+After showing the table, add a brief recommendation. Default to recommending Analytics (B) for most read-only apps — dashboards, charts, filtered queries, browsing, and aggregations. Recommend Lakebase synced tables (A) only when the app needs sub-second latency for full-text search, typeahead/autocomplete, real-time lookups by ID, or operational data serving. Note: "search" or "filter" in a prompt usually means SQL WHERE clauses (Analytics), not full-text search (Lakebase). Always let the user make the final call.
 
 After the user chooses:
 - (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
