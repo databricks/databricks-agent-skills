@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-22T15:54:19Z",
+  "updated_at": "2026-05-22T15:57:13Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.2",
@@ -192,7 +192,7 @@
       "version": "0.0.1",
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 chunk \u2192 index \u2192 query).",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
+      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "1-task-functions.md",
         "2-ai-query.md",
@@ -208,7 +208,7 @@
       "version": "0.0.1",
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
+      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "1-widget-specifications.md",
         "2-advanced-widget-specifications.md",
@@ -276,7 +276,7 @@
       "version": "0.0.1",
       "description": "Execute code and manage compute on Databricks. Use this skill when the user mentions: \"run code\", \"execute\", \"run on databricks\", \"serverless\", \"no cluster\", \"run python\", \"run scala\", \"run sql\", \"run R\", \"run file\", \"push and run\", \"notebook run\", \"batch script\", \"model training\", \"run script on cluster\", \"create cluster\", \"new cluster\", \"resize cluster\", \"modify cluster\", \"delete cluster\", \"terminate cluster\", \"create warehouse\", \"new warehouse\", \"resize warehouse\", \"delete warehouse\", \"node types\", \"runtime versions\", \"DBR versions\", \"spin up compute\", \"provision cluster\".",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
+      "updated_at": "2026-05-22T15:57:09Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -335,7 +335,7 @@
       "version": "0.0.1",
       "description": "MLflow 3 GenAI agent evaluation. Use when writing mlflow.genai.evaluate() code, creating @scorer functions, using built-in scorers (Guidelines, Correctness, Safety, RetrievalGroundedness), building eval datasets from traces, setting up trace ingestion and production monitoring, aligning judges with MemAlign from domain expert feedback, or running optimize_prompts() with GEPA for automated prompt improvement.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
+      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -427,7 +427,7 @@
       "version": "0.0.1",
       "description": "Generate PDF documents from HTML and upload to Unity Catalog volumes. Use for creating test PDFs, demo documents, reports, or evaluation datasets.",
       "repo_dir": "experimental",
-      "updated_at": "2026-05-22T15:54:01Z",
+      "updated_at": "2026-05-22T15:56:43Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

@@ -7,12 +7,6 @@
 /skills/databricks-jobs/ @lennartkats-db @camielstee-db
 /skills/databricks-pipelines/ @lennartkats-db @camielstee-db
 
-# Experimental skills imported from databricks-solutions/ai-dev-kit on a
-# best-effort basis. The top a-d-k contributors (>=10 commits at import
-# time) are Code Owners so their review satisfies the
-# Required-Code-Owner-Review branch protection alongside the d-a-s
-# maintainers. All confirmed Databricks employees via Slack lookup at
-# import time (Field Engineering / SSA / Strategy & Execution).
-/experimental/ @lennartkats-db @simonfaltum @databricks/eng-apps-devex @calreynolds @dustinvannoy-db @malcolndandaro @auschoi96 @jacksandom @QuentinAmbard @NatyraB @jiteshsoni @scottDBX1886 @alexmillerdb @cankoklu-db @yogesh-dbx
+/experimental/ @lennartkats-db @simonfaltum @calreynolds @dustinvannoy-db
 
 /.github/CODEOWNERS @lennartkats-db @simonfaltum @fjakobs

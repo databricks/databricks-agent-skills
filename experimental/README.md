@@ -1,4 +1,4 @@
-> ⚠️ **Experimental — best-effort, not officially supported**
+> ⚠️ **Experimental: best-effort, not officially supported**
 >
 > The skills in this directory are imported from
 > [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)

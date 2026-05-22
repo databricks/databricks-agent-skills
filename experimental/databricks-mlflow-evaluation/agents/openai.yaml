@@ -1,5 +1,5 @@
 interface:
-  display_name: "Databricks Mlflow Evaluation"
+  display_name: "Databricks MLflow Evaluation"
   short_description: "MLflow 3 GenAI agent evaluation."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"

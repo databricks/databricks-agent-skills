@@ -251,9 +251,20 @@ def synthesize_short_description(skill_path: Path) -> str:
     return desc.strip()
 
 
+DISPLAY_NAME_OVERRIDES = {
+    "databricks-ai-functions": "Databricks AI Functions",
+    "databricks-aibi-dashboards": "Databricks AI/BI Dashboards",
+    "databricks-mlflow-evaluation": "Databricks MLflow Evaluation",
+    "databricks-unstructured-pdf-generation": "Databricks Unstructured PDF Generation",
+}
+
+
 def synthesize_openai_yaml(skill_name: str, short_description: str) -> str:
     """Build the Codex marketplace metadata for an experimental skill."""
-    display_name = " ".join(p.capitalize() for p in skill_name.split("-"))
+    display_name = DISPLAY_NAME_OVERRIDES.get(
+        skill_name,
+        " ".join(p.capitalize() for p in skill_name.split("-")),
+    )
     short = short_description.replace('"', '\\"')
     prompt_blurb = short_description.rstrip(".").lower().replace('"', '\\"')
     return (

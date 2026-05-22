@@ -29,6 +29,8 @@ Run code on Databricks. Three execution modes—choose based on workload.
 
 ### Decision Flow
 
+Main decision point: if you're using Declarative Automation Bundles (DABs) then follow the instructions of the [`databricks-dabs` skill](../../skills/databricks-dabs/SKILL.md) first. In short, you can use `databricks bundle run` to run code associated with jobs, pipelines, and other resources. This can be recognized by looking for a `databricks.yml` file in the project root. If these resources don't exist, or if you're not using DABs, then proceed with the below.
+
 Prefer Databricks Connect for all spark-based workload, then serverless.
 ```
 Spark-based code? → Databricks Connect (fastest)
