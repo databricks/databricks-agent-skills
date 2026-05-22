@@ -57,22 +57,23 @@ files({
   customContentTypes: { ".avro": "application/avro" },
   volumes: {
     uploads: { maxUploadSize: 100_000_000 }, // 100 MB override
+    user_data: { auth: "on-behalf-of-user" }, // SDK calls run as end user
     exports: {}, // inherits plugin-level
   },
 });
 ```
 
-Auto-discovered volumes merge with explicit config — `volumes: {}` is only needed for overrides.
+`auth` resolves per volume: `VolumeConfig.auth` > plugin-level `auth` > `"service-principal"`. Auto-discovered volumes merge with explicit config — `volumes: {}` is only needed for overrides.
 
 ## Permission Model
 
 Three layers gate file access — understand all three before deploying:
 
-1. **Unity Catalog grants** — the SP needs `WRITE_VOLUME`. Set at deploy time via `app.yaml` resource bindings; the plugin auto-declares the requirement.
-2. **Execution identity** — HTTP routes **always** run as the service principal. The programmatic API runs as SP by default; `asUser(req)` re-wraps with the request's user identity.
-3. **File policies** — per-volume function `(action, resource, user) → boolean` evaluated **before** every operation. This is the only layer that distinguishes between users on HTTP routes (since HTTP always uses SP credentials).
+1. **Unity Catalog grants** — SP volumes need the SP to hold `WRITE_VOLUME`; OBO volumes need the end user to hold it. Set at deploy time via `app.yaml` resource bindings.
+2. **Execution identity** — set by the volume's `auth` field. `"service-principal"` (default) runs SDK calls as the SP. `"on-behalf-of-user"` runs them as the request's end user via `runInUserContext`, using the `x-forwarded-access-token` header injected by the Databricks Apps reverse proxy. Programmatic `asUser(req)` is a hard override that forces OBO regardless of the volume's `auth`.
+3. **File policies** — per-volume function `(action, resource, user) → boolean` evaluated **before** every operation, on every code path (HTTP and programmatic, SP and OBO).
 
-> Removing a user's UC `WRITE_VOLUME` grant has **no effect on HTTP access** — the SP's grant is what's used. Policies are the only way to restrict per-user access through HTTP routes.
+> On SP volumes, UC grants gate the SP — removing a user's UC grant has no effect on HTTP access, so policies are the only per-user gate. On OBO volumes, UC grants gate the end user directly, and policies stack on top.
 
 ## Access Policies
 
@@ -100,7 +101,7 @@ Built-in policies:
 
 Combinators: `policy.all(...)` (AND, short-circuits on deny), `policy.any(...)` (OR, short-circuits on allow), `policy.not(p)` (e.g. `not(publicRead())` = write-only drop-box).
 
-A `FilePolicy` is `(action, resource, user) => boolean | Promise<boolean>`. Exported `READ_ACTIONS` / `WRITE_ACTIONS` are `Set<FileAction>` for action-class checks. `user.id` comes from the `x-forwarded-user` header (HTTP) or `req` (`asUser(req)`); `user.isServicePrincipal === true` when the programmatic API skipped `asUser()`. Full `FileAction` / `FileResource` / `FilePolicyUser` shape: `npx @databricks/appkit docs Files plugin`.
+A `FilePolicy` is `(action, resource, user) => boolean | Promise<boolean>`. Exported `READ_ACTIONS` / `WRITE_ACTIONS` are `ReadonlySet<FileAction>` for action-class checks. `user.id` comes from the `x-forwarded-user` header (HTTP) or `req` (`asUser(req)`); `user.isServicePrincipal === true` when the programmatic API skipped `asUser()`. Full `FileAction` / `FileResource` / `FilePolicyUser` shape: `npx @databricks/appkit docs Files plugin`.
 
 ```typescript
 import { type FilePolicy, WRITE_ACTIONS } from "@databricks/appkit";
@@ -120,28 +121,28 @@ files({ volumes: { reports: { policy: adminWrite } } });
 
 ## Server-Side API (Programmatic)
 
-Access volumes through the `files()` callable, which returns a `VolumeHandle`. Every method runs as the service principal — `asUser(req)` only changes the user identity passed into the **policy** check (the underlying SDK call still uses SP credentials).
+Access volumes through the `files()` callable, which returns a `VolumeHandle`. Without `asUser(req)`, calls follow the volume's `auth` setting (SP by default). With `asUser(req)`, the call is wrapped in `runInUserContext` — the SDK call runs as the request's end user **and** the policy sees that user, regardless of the volume's `auth`.
 
 ```typescript
-// User identity passed to policy → user.id from req
+// Forced OBO. SDK call runs as user; policy sees user.id from req.
 await appkit.files("uploads").asUser(req).list();
 
-// SP identity passed to policy → user.isServicePrincipal === true; logs a warning
+// Follows the volume's auth. On SP volumes: runs as SP, policy sees isServicePrincipal: true.
 await appkit.files("uploads").list();
 
-// Named accessor equivalent
+// Named accessor equivalent.
 await appkit.files.volume("uploads").asUser(req).list();
 ```
 
-**Use `.asUser(req)` in route handlers.** Without it the policy sees `isServicePrincipal: true` and a warning is logged — fine for background jobs, wrong for user-driven endpoints where per-user policy decisions matter. Policy denial throws `PolicyDeniedError`.
+**Use `.asUser(req)` in user-driven route handlers** when you want UC grants enforced against the actual user. In production, `asUser(req)` throws `AuthenticationError.missingToken` if the `x-forwarded-user` header is missing; in dev (`NODE_ENV === "development"`) it logs a warning and falls back to SP. Policy denial throws `PolicyDeniedError`.
 
 **`VolumeAPI` methods**: `list`, `read`, `download`, `exists`, `metadata`, `preview`, `upload`, `createDirectory`, `delete`. `read()` caps files at 10 MB by default — pass `{ maxSize: <bytes> }` or use `download()` for larger files. Paths are absolute (`/Volumes/...`) or relative to the volume root; `../` and null bytes are rejected. Reads cache 60 s with 3 retries; writes have a 600 s timeout, no retry, no cache; cache keys include the volume key, and writes auto-invalidate the parent directory's `list` cache. Full method signatures: `npx @databricks/appkit docs Files plugin`.
 
 ## HTTP Routes
 
-Mounted at `/api/files/*`. All routes execute as the service principal; user identity is read from the `x-forwarded-user` header and passed to the volume's policy (denial → `403`). Reads are GET (`list`, `read`, `download`, `raw`, `exists`, `metadata`, `preview`); writes are POST (`upload`, `mkdir`) and DELETE — full route shape, request bodies, and response types: `npx @databricks/appkit docs Files plugin`.
+Mounted at `/api/files/*`. Execution identity follows the volume's `auth` field: SP volumes run SDK calls as the service principal; OBO volumes run them as the end user using the token from `x-forwarded-access-token`. User identity (from `x-forwarded-user`) is always passed to the volume's policy (denial → `403`). Reads are GET (`list`, `read`, `download`, `raw`, `exists`, `metadata`, `preview`); writes are POST (`upload`, `mkdir`) and DELETE — full route shape, request bodies, and response types: `npx @databricks/appkit docs Files plugin`.
 
-The `/raw` endpoint sets `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`; HTML/JS/SVG MIME types are forced to attachment.
+The `/raw` endpoint sets `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`. Inline streaming uses an allowlist (images, plain text, CSV, markdown, JSON, PDF); anything else is forced to attachment.
 
 ## Frontend Components
 
@@ -327,7 +328,7 @@ resources:
             permission: WRITE_VOLUME
 ```
 
-> **Note:** The scaffolded HTTP routes (`/api/files/...`) execute as the service principal and do not require `user_api_scopes`. The scope is needed when using the programmatic `appkit.files("key").asUser(req)` API for per-user Volume access.
+> **Note:** `user_api_scopes` is required for OBO volumes (`auth: "on-behalf-of-user"`) and for any `appkit.files("key").asUser(req)` programmatic call. Pure SP volumes accessed only via HTTP routes don't need it.
 
 ```yaml
 # app.yaml
@@ -340,7 +341,7 @@ env:
 
 | Error                                      | Cause                                                                              | Solution                                                                                  |
 | ------------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `Unknown volume key "X"`                   | Volume env var not set or misspelled                                               | Check `DATABRICKS_VOLUME_X` is set in `app.yaml` or `.env`                                |
+| `Unknown volume "X"`                       | Volume env var not set or misspelled                                               | Check `DATABRICKS_VOLUME_X` is set in `app.yaml` or `.env`                                |
 | 413 on upload                              | File exceeds `maxUploadSize`                                                       | Increase `maxUploadSize` in plugin config or per-volume config                            |
 | `read()` rejects large file                | File > 10 MB default limit                                                         | Use `download()` for large files or pass `{ maxSize: <bytes> }`                           |
 | Blocked content type on `/raw`             | Dangerous MIME type (html, js, svg)                                                | Use `/download` instead — these types are forced to attachment                            |
