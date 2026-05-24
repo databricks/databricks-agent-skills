@@ -3,7 +3,7 @@ name: databricks-pipelines
 description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation.
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 parent: databricks-core
 ---
 
@@ -167,6 +167,10 @@ Some features require reading multiple skills together:
 
 
 Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
+
+## Migrating from DLT
+
+If you have an existing DLT pipeline (`import dlt`, `@dlt.table`, `dlt.read(...)`, `dlt.apply_changes(...)`) and want to move to SDP, see [references/dlt-migration.md](references/dlt-migration.md). It covers both migration paths — DLT Python → SDP Python (`from pyspark import pipelines as dp`) and DLT Python → SDP SQL — with side-by-side conversions for the table decorators, reads, expectations, CDC/SCD, and partitioning → liquid clustering.
 
 ## Scaffolding a New Pipeline Project
 
