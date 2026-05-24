@@ -97,7 +97,7 @@ If values don't match expectations, ensure the query is correct, fix the data if
 
 Before writing JSON, plan your dashboard:
 
-1. You must know the expected specific JSON structure. For this, **Read reference files**: [1-widget-specifications.md](1-widget-specifications.md), [3-filters.md](3-filters.md), [4-examples.md](4-examples.md)
+1. You must know the expected specific JSON structure. For this, **Read reference files**: [references/1-widget-specifications.md](references/1-widget-specifications.md), [references/3-filters.md](references/3-filters.md), [references/4-examples.md](references/4-examples.md)
 
 2. Think: **What widgets?** Map each visualization to a dataset:
    | Widget | Type | Dataset | Has filter field? |
@@ -231,11 +231,11 @@ Apply unless user specifies otherwise:
 
 | What are you building? | Reference |
 |------------------------|-----------|
-| Any widget (text, counter, table, chart) | [1-widget-specifications.md](1-widget-specifications.md) |
-| Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
-| Dashboard with filters (global or page-level) | [3-filters.md](3-filters.md) |
-| Need a complete working template to adapt | [4-examples.md](4-examples.md) |
-| Debugging a broken dashboard | [5-troubleshooting.md](5-troubleshooting.md) |
+| Any widget (text, counter, table, chart) | [references/1-widget-specifications.md](references/1-widget-specifications.md) |
+| Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [references/2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
+| Dashboard with filters (global or page-level) | [references/3-filters.md](references/3-filters.md) |
+| Need a complete working template to adapt | [references/4-examples.md](references/4-examples.md) |
+| Debugging a broken dashboard | [references/5-troubleshooting.md](references/5-troubleshooting.md) |
 
 ---
 

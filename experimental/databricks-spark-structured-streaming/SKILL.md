@@ -35,24 +35,24 @@ df.writeStream \
 
 | Pattern | Description | Reference |
 |---------|-------------|-----------|
-| **Kafka Streaming** | Kafka to Delta, Kafka to Kafka, Real-Time Mode | See [kafka-streaming.md](kafka-streaming.md) |
-| **Stream Joins** | Stream-stream joins, stream-static joins | See [stream-stream-joins.md](stream-stream-joins.md), [stream-static-joins.md](stream-static-joins.md) |
-| **Multi-Sink Writes** | Write to multiple tables, parallel merges | See [multi-sink-writes.md](multi-sink-writes.md) |
-| **Merge Operations** | MERGE performance, parallel merges, optimizations | See [merge-operations.md](merge-operations.md) |
+| **Kafka Streaming** | Kafka to Delta, Kafka to Kafka, Real-Time Mode | See [references/kafka-streaming.md](references/kafka-streaming.md) |
+| **Stream Joins** | Stream-stream joins, stream-static joins | See [references/stream-stream-joins.md](references/stream-stream-joins.md), [references/stream-static-joins.md](references/stream-static-joins.md) |
+| **Multi-Sink Writes** | Write to multiple tables, parallel merges | See [references/multi-sink-writes.md](references/multi-sink-writes.md) |
+| **Merge Operations** | MERGE performance, parallel merges, optimizations | See [references/merge-operations.md](references/merge-operations.md) |
 
 ## Configuration
 
 | Topic | Description | Reference |
 |-------|-------------|-----------|
-| **Checkpoints** | Checkpoint management and best practices | See [checkpoint-best-practices.md](checkpoint-best-practices.md) |
-| **Stateful Operations** | Watermarks, state stores, RocksDB configuration | See [stateful-operations.md](stateful-operations.md) |
-| **Trigger & Cost** | Trigger selection, cost optimization, RTM | See [trigger-and-cost-optimization.md](trigger-and-cost-optimization.md) |
+| **Checkpoints** | Checkpoint management and best practices | See [references/checkpoint-best-practices.md](references/checkpoint-best-practices.md) |
+| **Stateful Operations** | Watermarks, state stores, RocksDB configuration | See [references/stateful-operations.md](references/stateful-operations.md) |
+| **Trigger & Cost** | Trigger selection, cost optimization, RTM | See [references/trigger-and-cost-optimization.md](references/trigger-and-cost-optimization.md) |
 
 ## Best Practices
 
 | Topic | Description | Reference |
 |-------|-------------|-----------|
-| **Production Checklist** | Comprehensive best practices | See [streaming-best-practices.md](streaming-best-practices.md) |
+| **Production Checklist** | Comprehensive best practices | See [references/streaming-best-practices.md](references/streaming-best-practices.md) |
 
 ## Production Checklist
 
