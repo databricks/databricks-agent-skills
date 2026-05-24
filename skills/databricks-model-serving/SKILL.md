@@ -3,7 +3,7 @@ name: databricks-model-serving
 description: "Manage Databricks Model Serving endpoints via CLI. Use when asked to create, configure, query, or manage model serving endpoints for LLM inference, custom models, or external models."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 parent: databricks-core
 ---
 
@@ -17,7 +17,7 @@ Model Serving provides managed endpoints for serving LLMs, custom ML models, and
 
 | Type | When to Use | Key Detail |
 |------|-------------|------------|
-| Pay-per-token | Foundation Model APIs (Llama, DBRX, etc.) | Uses `system.ai.*` catalog models, simplest setup |
+| Pay-per-token | Foundation Model APIs (Llama, GPT-5, Claude, Gemini, etc.) | Uses `system.ai.*` catalog models, simplest setup. Endpoint names in [references/fm-api-endpoints.md](references/fm-api-endpoints.md). |
 | Provisioned throughput | Dedicated GPU capacity | Guaranteed throughput, higher cost |
 | Custom model | Your own MLflow models or containers | Deploy any model with an MLflow signature |
 
@@ -74,7 +74,7 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   }' --profile <PROFILE>
 ```
 
-- Discover available Foundation Models: check the `system.ai` catalog in Unity Catalog, or use `databricks serving-endpoints list --profile <PROFILE>` to see available endpoints. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect the endpoint's API schema.
+- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the curated table of pay-per-token endpoint names. You can also check the `system.ai` catalog in Unity Catalog, or run `databricks serving-endpoints list --profile <PROFILE>` to see what's deployed in the workspace. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
 - Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately, then poll:
   ```bash
   databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE>
