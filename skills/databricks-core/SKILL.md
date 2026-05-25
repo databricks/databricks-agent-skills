@@ -123,6 +123,7 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | Error | Solution |
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
+| `OAuth Token not supported for current auth type pat` | You are using PAT auth but the command requires OAuth. Re-authenticate with `databricks auth login --host <URL> --profile <PROFILE>` (OAuth2 browser flow). See [CLI Authentication](databricks-cli-auth.md). |
 | `PERMISSION_DENIED` | Check workspace/UC permissions |
 | `RESOURCE_DOES_NOT_EXIST` | Verify resource name/id and profile |
 

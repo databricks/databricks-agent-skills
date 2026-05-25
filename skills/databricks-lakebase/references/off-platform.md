@@ -1,5 +1,7 @@
 # Off-Platform Lakebase: Connecting from External Apps
 
+> **Off-platform apps are NOT Databricks Apps.** Do NOT use `databricks apps init`, `databricks apps deploy`, `app.yaml`, or any Databricks Apps platform commands. Off-platform apps run on your own infrastructure (Vercel, AWS, local Node.js, etc.) and use standard Node.js tooling (`npm run dev`, `node server.js`).
+
 Connect to Lakebase from apps deployed outside Databricks App Platform (e.g. Vercel, AWS, Netlify, or any Node.js server).
 
 ## Recommended: `@databricks/lakebase` Package
@@ -193,6 +195,20 @@ export default defineConfig({
 **Commands:**
 - Generate: `npx drizzle-kit generate`
 - Migrate: `npx dotenv -e .env.local -- npx tsx scripts/db-migrate.ts`
+
+## Running Locally
+
+Off-platform apps use standard Node.js tooling:
+
+```bash
+# Install dependencies
+npm install
+
+# Run with environment variables from .env.local
+npx dotenv -e .env.local -- npx tsx src/server.ts
+```
+
+Do NOT run `databricks apps deploy` or `databricks apps validate` — those are for Databricks Apps only.
 
 ## Cross-references
 
