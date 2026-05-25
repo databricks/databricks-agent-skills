@@ -1,6 +1,6 @@
 {
   "version": "2",
-  "updated_at": "2026-05-24T21:17:55Z",
+  "updated_at": "2026-05-25T13:52:10Z",
   "skills": {
     "databricks-apps": {
       "version": "0.1.2",
@@ -66,16 +66,16 @@
       "version": "0.2.0",
       "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI \u2014 covers all task types, triggers, notifications, and worked examples",
       "repo_dir": "skills",
-      "updated_at": "2026-05-24T21:16:49Z",
+      "updated_at": "2026-05-25T13:52:04Z",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "examples.md",
-        "notifications-monitoring.md",
-        "task-types.md",
-        "triggers-schedules.md"
+        "references/examples.md",
+        "references/notifications-monitoring.md",
+        "references/task-types.md",
+        "references/triggers-schedules.md"
       ]
     },
     "databricks-lakebase": {
