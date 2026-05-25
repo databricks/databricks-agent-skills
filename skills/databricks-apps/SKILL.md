@@ -222,4 +222,4 @@ databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.
 databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
 ```
 
-> **Note:** `databricks apps logs` requires OAuth authentication. If you see `"OAuth Token not supported for current auth type pat"`, re-authenticate with `databricks auth login --host <URL> --profile <PROFILE>`. Use `databricks apps get` for status checks — it works with all auth types.
+> **Note:** `databricks apps logs` requires OAuth authentication and does not work with PAT. Use `databricks apps get` for status checks if using PAT auth.

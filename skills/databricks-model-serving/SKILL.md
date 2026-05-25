@@ -93,12 +93,7 @@ databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE> -o json
 # Ready when: state.ready == "READY" AND state.config_update == "NOT_UPDATING"
 ```
 
-Typical provisioning times:
-- **Pay-per-token (Foundation Models):** 1--5 minutes
-- **Custom models:** 5--15 minutes (depends on model size and container build)
-- **Provisioned throughput:** 10--30 minutes (GPU allocation)
-
-Queries to endpoints that are not yet `READY` return 404 or 503 errors.
+Provisioning may take several minutes. Provisioned throughput endpoints take the longest (GPU allocation). Queries to endpoints that are not yet `READY` return 404 or 503 errors.
 
 ## Query an Endpoint
 

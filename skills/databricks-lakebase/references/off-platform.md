@@ -196,20 +196,6 @@ export default defineConfig({
 - Generate: `npx drizzle-kit generate`
 - Migrate: `npx dotenv -e .env.local -- npx tsx scripts/db-migrate.ts`
 
-## Running Locally
-
-Off-platform apps use standard Node.js tooling:
-
-```bash
-# Install dependencies
-npm install
-
-# Run with environment variables from .env.local
-npx dotenv -e .env.local -- npx tsx src/server.ts
-```
-
-Do NOT run `databricks apps deploy` or `databricks apps validate` — those are for Databricks Apps only.
-
 ## Cross-references
 
 - For on-platform connection patterns, see [connectivity.md](connectivity.md)
