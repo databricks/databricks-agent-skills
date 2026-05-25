@@ -37,6 +37,7 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
 - **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
 - **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
+- **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
 
 ## Experimental Skills
 

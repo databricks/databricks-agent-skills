@@ -1,9 +1,14 @@
 ---
 name: databricks-vector-search
 description: "Patterns for Databricks Vector Search: create endpoints and indexes, query with filters, manage embeddings. Use when building RAG applications, semantic search, or similarity matching. Covers both storage-optimized and standard endpoints."
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Vector Search
+
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
 Patterns for creating, managing, and querying vector search indexes for RAG and semantic search applications.
 
@@ -184,7 +189,7 @@ results = w.vector_search_indexes.query_index(
 
 ### Hybrid Search (Semantic + Keyword)
 
-Hybrid search combines vector similarity (ANN) with BM25 keyword scoring. Use it when queries contain exact terms that must match — SKUs, error codes, proper nouns, or technical terminology — where pure semantic search might miss keyword-specific results. See [search-modes.md](search-modes.md) for detailed guidance on choosing between ANN and hybrid search.
+Hybrid search combines vector similarity (ANN) with BM25 keyword scoring. Use it when queries contain exact terms that must match — SKUs, error codes, proper nouns, or technical terminology — where pure semantic search might miss keyword-specific results. See [references/search-modes.md](references/search-modes.md) for detailed guidance on choosing between ANN and hybrid search.
 
 ```python
 # Combines vector similarity with keyword matching
@@ -259,10 +264,10 @@ scan_result = w.vector_search_indexes.scan_index(
 
 | Topic | File | Description |
 |-------|------|-------------|
-| Index Types | [index-types.md](index-types.md) | Detailed comparison of Delta Sync (managed/self-managed) vs Direct Access |
-| End-to-End RAG | [end-to-end-rag.md](end-to-end-rag.md) | Complete walkthrough: source table → endpoint → index → query → agent integration |
-| Search Modes | [search-modes.md](search-modes.md) | When to use semantic (ANN) vs hybrid search, decision guide |
-| Operations | [troubleshooting-and-operations.md](troubleshooting-and-operations.md) | Monitoring, cost optimization, capacity planning, migration |
+| Index Types | [references/index-types.md](references/index-types.md) | Detailed comparison of Delta Sync (managed/self-managed) vs Direct Access |
+| End-to-End RAG | [references/end-to-end-rag.md](references/end-to-end-rag.md) | Complete walkthrough: source table → endpoint → index → query → agent integration |
+| Search Modes | [references/search-modes.md](references/search-modes.md) | When to use semantic (ANN) vs hybrid search, decision guide |
+| Operations | [references/troubleshooting-and-operations.md](references/troubleshooting-and-operations.md) | Monitoring, cost optimization, capacity planning, migration |
 
 ## CLI Quick Reference
 

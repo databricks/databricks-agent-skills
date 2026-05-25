@@ -41,7 +41,6 @@ See the root [README](../README.md) for details on the stable install path.
 - **databricks-agent-bricks** - Knowledge Assistants, Genie Spaces, Supervisor Agents
 - **databricks-mlflow-evaluation** - End-to-end agent evaluation workflow
 - **databricks-unstructured-pdf-generation** - Generate synthetic PDFs for RAG
-- **databricks-vector-search** - Vector similarity search for RAG and semantic search
 
 ### 📊 Analytics & Dashboards
 - **databricks-aibi-dashboards** - Databricks AI/BI dashboards (with SQL validation workflow)
