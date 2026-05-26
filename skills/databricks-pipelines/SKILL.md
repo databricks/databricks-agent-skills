@@ -1,7 +1,7 @@
 ---
 name: databricks-pipelines
 description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.3.0"
 parent: databricks-core
@@ -252,7 +252,7 @@ Verify: `databricks -v`
 Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-pipelines` skill for pipeline-specific guidance.
 
-If skills are not available, install them: `databricks experimental aitools install`
+If skills are not available, install them: `databricks aitools install`
 ```
 
 ## Pipeline Structure
