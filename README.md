@@ -4,11 +4,17 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
+There are two equivalent install paths for the **stable** skills. Pick whichever
+fits your workflow — both write skills into the per-agent directory the CLI/plugin
+detects (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
+
+**Via the Databricks CLI (canonical; supports experimental skills):**
+
 ```bash
 databricks aitools install
 ```
 
-This auto-detects your coding agent(s) and installs the stable skills to the
+The CLI auto-detects your coding agent(s) and installs the stable skills to the
 right location:
 
 - **Claude Code** → `~/.claude/skills/`
@@ -19,11 +25,32 @@ For finer control, use the `aitools skills install` subcommand directly — it
 accepts a positional skill name and an `--experimental` flag (see the
 [Experimental Skills](#experimental-skills) section).
 
-**For Cursor (plugin marketplace alternative):**
+**Via the Claude Code plugin marketplace** (stable skills only — installs every
+skill under [`./skills/`](./skills/)):
+
+```text
+/plugin marketplace add databricks/databricks-agent-skills
+/plugin install databricks-skills
+```
+
+**Via the Cursor plugin marketplace:**
 
 ```text
 /add-plugin databricks-skills
 ```
+
+### CLI vs plugin marketplace
+
+| | CLI | Plugin marketplace |
+|---|---|---|
+| Stable skills | ✅ (default) | ✅ |
+| Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
+| Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
+| Updates | `databricks aitools update` | Plugin marketplace update flow |
+| Required outside the agent | Databricks CLI v1.0.0+ | None |
+
+If in doubt, use the CLI — it's the canonical install path and the only one that
+exposes experimental skills.
 
 ## Available Skills
 
