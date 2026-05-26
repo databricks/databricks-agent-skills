@@ -99,8 +99,10 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/fm-api-endpoints.md",
-        "references/off-platform-streaming.md"
+        "references/custom-pyfunc.md",
+        "references/genai-agents.md",
+        "references/off-platform-streaming.md",
+        "references/training-and-serving.md"
       ]
     },
     "databricks-pipelines": {

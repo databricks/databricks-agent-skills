@@ -17,7 +17,7 @@ Model Serving provides managed endpoints for serving LLMs, custom ML models, and
 
 | Type | When to Use | Key Detail |
 |------|-------------|------------|
-| Pay-per-token | Foundation Model APIs (Llama, GPT-5, Claude, Gemini, etc.) | Uses `system.ai.*` catalog models, simplest setup. Discover endpoints at runtime — see [references/fm-api-endpoints.md](references/fm-api-endpoints.md). |
+| Pay-per-token | Foundation Model APIs (Llama, GPT-5, Claude, Gemini, etc.) | Uses `system.ai.*` catalog models, simplest setup. Discover endpoints at runtime — see [references/training-and-serving.md § Foundation Model API endpoints](references/training-and-serving.md#foundation-model-api-endpoints). |
 | Provisioned throughput | Dedicated GPU capacity | Guaranteed throughput, higher cost |
 | Custom model | Your own MLflow models or containers | Deploy any model with an MLflow signature |
 
@@ -74,7 +74,7 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   }' --profile <PROFILE>
 ```
 
-- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the runtime-list snippet and default-picking rules. You can also check the `system.ai` catalog in Unity Catalog, or run `databricks serving-endpoints list --profile <PROFILE>` to see what's deployed in the workspace. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
+- Discover available Foundation Models: see [references/training-and-serving.md § Foundation Model API endpoints](references/training-and-serving.md#foundation-model-api-endpoints) for the runtime-list snippet and default-picking rules. You can also check the `system.ai` catalog in Unity Catalog, or run `databricks serving-endpoints list --profile <PROFILE>` to see what's deployed in the workspace. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
 - Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately, then poll:
   ```bash
   databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE>
@@ -163,6 +163,16 @@ env:
 ```
 
 Then add a tRPC route to call it from your app. For the full app integration pattern, use the **`databricks-apps`** skill and read the [Model Serving Guide](../databricks-apps/references/appkit/model-serving.md).
+
+### Develop & deploy new models
+
+This skill is ops-focused (manage existing endpoints). For the dev-side flow — train a model, register to Unity Catalog, log a PyFunc or `ResponsesAgent`, deploy — see the references below.
+
+| Reference | When to read |
+|---|---|
+| [references/training-and-serving.md](references/training-and-serving.md) | Train + register classical ML with `mlflow.autolog`, alias-based promotion (`@prod`), batch scoring via `spark_udf`, real-time endpoint create + zero-downtime version swap, async deploy via `jobs submit --no-wait`. Includes the Foundation Model API endpoints runtime-list and the gotchas table. |
+| [references/custom-pyfunc.md](references/custom-pyfunc.md) | When `autolog` isn't enough — file-based `PythonModel` ("Models from Code"), `infer_signature`, `code_paths`, pre-deploy validation with `mlflow.models.predict(env_manager="uv")`. |
+| [references/genai-agents.md](references/genai-agents.md) | Hand-rolled `ResponsesAgent` with LangGraph + `UCFunctionToolkit` + `VectorSearchRetrieverTool`. Includes the `create_text_output_item` helper-method gotcha and the `resources=[...]` passthrough-auth list. |
 
 ## Troubleshooting
 
