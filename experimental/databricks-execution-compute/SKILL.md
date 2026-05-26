@@ -13,9 +13,7 @@ description: >-
 
 # Databricks Execution & Compute
 
-Run code on Databricks. Three execution modes—choose based on workload.
-
-> **Path convention:** `<SKILL_ROOT>` in examples below = the directory containing this SKILL.md. Resolve it to the absolute path in your install (e.g. `~/.claude/skills/databricks-execution-compute`). Commands like `python <SKILL_ROOT>/scripts/compute.py ...` work from any cwd.
+Run code on Databricks. Three execution modes—choose based on workload. All examples below use the Databricks CLI; install with `pip install databricks-cli` (or follow the workspace-native `databricks` quickstart) and authenticate with `databricks auth login` (see the parent `databricks-core` skill for profile setup).
 
 ## Execution Mode Decision Matrix
 
@@ -95,10 +93,6 @@ Pure CLI flow: upload a local file as a workspace notebook, fire a one-time run 
 
 Always use `dbutils.notebook.exit(<string>)` in the notebook — `print()` is not captured by `get-run-output`. For JSON results: `dbutils.notebook.exit(json.dumps({...}))` then parse `.notebook_output.result` client-side.
 
-**Convenience wrapper.** `scripts/compute.py execute-code` does upload + submit + wait + cleanup in one command and returns a single tidy JSON:
-
-`python <SKILL_ROOT>/scripts/compute.py execute-code --file /local/path/to/train.py --compute-type serverless --timeout 1500 --environments '[{"environment_key":"ml_env","spec":{"client":"4","dependencies":["scikit-learn==1.5.2","mlflow==2.22.0"]}}]' | jq '{success, state, output, error, run_id, run_page_url, execution_duration_ms}'`
-
 ### Interactive Cluster → [reference](references/3-interactive-cluster.md)
 
 **Avoid by default — prefer Serverless Job.** Only use an interactive cluster when:
@@ -108,14 +102,24 @@ Always use `dbutils.notebook.exit(<string>)` in the notebook — `print()` is no
 
 Interactive clusters are **slow to start (3-8 min)** and cost money while running. Don't start one implicitly.
 
-## CLI Commands
+## CLI Command Map
 
-| Command | Purpose |
-|---------|---------|
-| `python <SKILL_ROOT>/scripts/compute.py execute-code` | Run code on serverless or an existing cluster |
-| `python <SKILL_ROOT>/scripts/compute.py list-compute` | List clusters, node types, Spark versions |
-| `python <SKILL_ROOT>/scripts/compute.py manage-cluster` | Create/start/terminate/delete clusters (see [3-interactive-cluster.md](references/3-interactive-cluster.md)) |
-| `databricks warehouses create/list` | Manage SQL warehouses |
+All compute lifecycle and code-execution actions go through the Databricks CLI. Headline commands:
+
+| Action | Command |
+|--------|---------|
+| Upload local file as workspace notebook | `databricks workspace import <WORKSPACE_PATH> --file <LOCAL> --format SOURCE --language PYTHON --overwrite` |
+| Run serverless code (upload + submit + wait) | `databricks jobs submit --json @submit.json` (see Serverless Job section above; with `--no-wait` for async) |
+| Get run state / wait | `databricks jobs get-run <RUN_ID>` (poll `.state.life_cycle_state`) |
+| Fetch run output | `databricks jobs get-run-output <TASK_RUN_ID>` |
+| List clusters | `databricks clusters list --output json` |
+| Get cluster details | `databricks clusters get <CLUSTER_ID>` |
+| Start / restart / terminate cluster | `databricks clusters start/restart/delete <CLUSTER_ID>` |
+| Permanently delete cluster | `databricks clusters permanent-delete <CLUSTER_ID>` |
+| Create cluster | `databricks clusters create --json '{...}'` (see [3-interactive-cluster.md](references/3-interactive-cluster.md)) |
+| List node types / Spark versions | `databricks clusters list-node-types` / `databricks clusters spark-versions` |
+| Execute code on a running cluster | `databricks api post /api/1.2/contexts/create` + `databricks api post /api/1.2/commands/execute` (see [3-interactive-cluster.md](references/3-interactive-cluster.md)) |
+| SQL warehouses | `databricks warehouses create/list/get/start/stop/edit/delete` (see SQL Warehouses below) |
 
 ### SQL Warehouses
 
