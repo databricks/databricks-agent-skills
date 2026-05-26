@@ -33,9 +33,9 @@ Lakebase is Databricks' serverless Postgres-compatible database, available on bo
 - [computes-and-scaling.md](references/computes-and-scaling.md) — Sizing, endpoint management, scale-to-zero, HA
 - [connectivity.md](references/connectivity.md) — Connection patterns, token refresh, Data API
 - [synced-tables.md](references/synced-tables.md) — Lakebase synced tables, data type mapping, capacity planning
-- [lakehouse-sync.md](references/lakehouse-sync.md) — CDC from Lakebase Postgres to Unity Catalog Delta tables
+- [lakehouse-sync.md](references/lakehouse-sync.md) — CDC from Lakebase Postgres to Unity Catalog Delta tables (**UI-only** — cannot be configured via CLI or API)
 - [pgvector.md](references/pgvector.md) — Vector similarity search with pgvector extension
-- [off-platform.md](references/off-platform.md) — Off-platform Lakebase: env management, token refresh, Drizzle ORM
+- [off-platform.md](references/off-platform.md) — Off-platform Lakebase (NOT Databricks Apps): external Node.js apps connecting via `@databricks/lakebase`, env management, token refresh, Drizzle ORM
 
 ## Resource Hierarchy
 

@@ -222,3 +222,5 @@ After deploying, verify the app is running:
 databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING
 databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
 ```
+
+> **Note:** `databricks apps logs` requires OAuth authentication and does not work with PAT. Use `databricks apps get` for status checks if using PAT auth.
