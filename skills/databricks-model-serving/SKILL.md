@@ -17,7 +17,7 @@ Model Serving provides managed endpoints for serving LLMs, custom ML models, and
 
 | Type | When to Use | Key Detail |
 |------|-------------|------------|
-| Pay-per-token | Foundation Model APIs (Llama, GPT-5, Claude, Gemini, etc.) | Uses `system.ai.*` catalog models, simplest setup. Endpoint names in [references/fm-api-endpoints.md](references/fm-api-endpoints.md). |
+| Pay-per-token | Foundation Model APIs (Llama, GPT-5, Claude, Gemini, etc.) | Uses `system.ai.*` catalog models, simplest setup. Discover endpoints at runtime — see [references/fm-api-endpoints.md](references/fm-api-endpoints.md). |
 | Provisioned throughput | Dedicated GPU capacity | Guaranteed throughput, higher cost |
 | Custom model | Your own MLflow models or containers | Deploy any model with an MLflow signature |
 
@@ -74,7 +74,7 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   }' --profile <PROFILE>
 ```
 
-- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the curated table of pay-per-token endpoint names. You can also check the `system.ai` catalog in Unity Catalog, or run `databricks serving-endpoints list --profile <PROFILE>` to see what's deployed in the workspace. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
+- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the `databricks serving-endpoints list | jq ...` one-liner and runtime-resolved defaults (don't hard-code model names — new endpoints land regularly and old ones retire). The `system.ai` catalog in Unity Catalog is a second source of truth. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
 - Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately, then poll:
   ```bash
   databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE>
