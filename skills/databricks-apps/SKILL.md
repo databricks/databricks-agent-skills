@@ -90,7 +90,7 @@ After the user chooses:
 - (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
 - (B) Analytics → scaffold with `--features analytics`.
 - Both → scaffold with `--features analytics,lakebase` if the app needs both patterns.
-- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
+- If the app does NOT read Unity Catalog data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
 
 **Analytics apps** (`--features analytics`):
 
