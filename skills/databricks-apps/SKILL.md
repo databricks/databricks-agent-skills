@@ -1,6 +1,6 @@
 ---
 name: databricks-apps
-description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Auto-detects need for Lakebase when app stores state; evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
+description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.2"
@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | **⚠️ STOP — evaluate the State Storage Rule and Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | **⚠️ STOP — review the State Storage Guidance and complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -61,15 +61,16 @@ Build apps that deploy to Databricks Apps platform.
 
 Before writing any SQL, use the parent `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
 
-**State Storage Rule (evaluate BEFORE the Decision Gate):**
+**State Storage Guidance (evaluate BEFORE the Decision Gate):**
 
-If the user's app description implies storing or persisting data — forms, CRUD operations, user input, preferences, bookmarks, orders, todos, comments, votes, or any user-generated content — the app needs a Lakebase database. Do not wait for the user to ask for one.
+If the user's app description involves storing or persisting data — forms, CRUD operations, user submissions, orders, todos, or other user-generated content — the app likely needs a Lakebase database.
 
-1. Use the **`databricks-lakebase`** skill to create a Lakebase project (if one doesn't already exist) and obtain the branch and database resource names.
-2. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
-3. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
+1. **Ask the user** whether the app needs persistent storage (Lakebase) before scaffolding. Do not silently add Lakebase.
+2. If confirmed, use the **`databricks-lakebase`** skill to create a Lakebase project and obtain the branch and database resource names.
+3. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
+4. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
 
-This rule governs **state storage** only. For how the app reads existing lakehouse data, proceed to the Decision Gate below. This is not optional — any app that writes user-generated data needs Lakebase.
+Do NOT add Lakebase to analytics, dashboard, or visualization apps unless the user explicitly requests persistent write-back storage. Read-only data display, filters, and preferences do not require a database.
 
 ## Development Workflow (FOLLOW THIS ORDER)
 
@@ -80,16 +81,16 @@ If the app reads from Unity Catalog / lakehouse tables, you MUST show the compar
 | | **(A) Lakebase synced tables** | **(B) Analytics** |
 |--|---|---|
 | Speed | Sub-second responses | Takes a few seconds |
-| Best for | Search, lookups, catalogs, real-time data, operational apps | Dashboards, charts, aggregations, KPIs |
+| Best for | Full-text search, typeahead, autocomplete, real-time lookups, operational apps | Dashboards, charts, aggregations, KPIs, filtered queries, browsing |
 | How it works | Data synced from Delta into Lakebase Postgres | Queries run on SQL warehouse at read time |
 
-After showing the table, add a brief recommendation. Default to recommending Lakebase synced tables (A) unless the use case is clearly about aggregations, charts, or dashboards where seconds of latency is acceptable. For lookups, searches, serving data to users, or any interactive use case, recommend Lakebase synced tables. Always let the user make the final call.
+After showing the table, add a brief recommendation. Default to recommending Analytics (B) for most read-only apps — dashboards, charts, filtered queries, browsing, and aggregations. Recommend Lakebase synced tables (A) only when the app needs sub-second latency for full-text search, typeahead/autocomplete, real-time lookups by ID, or operational data serving. Note: "search" or "filter" in a prompt usually means SQL WHERE clauses (Analytics), not full-text search (Lakebase). Always let the user make the final call.
 
 After the user chooses:
 - (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
 - (B) Analytics → scaffold with `--features analytics`.
 - Both → scaffold with `--features analytics,lakebase` if the app needs both patterns.
-- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this gate. For pure CRUD/state apps, the State Storage Rule above already applies — scaffold with `--features lakebase`. For Genie or Model Serving, scaffold with the corresponding `--features` flag.
+- If the app does NOT read Unity Catalog data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
 
 **Analytics apps** (`--features analytics`):
 
@@ -221,3 +222,5 @@ After deploying, verify the app is running:
 databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING
 databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
 ```
+
+> **Note:** `databricks apps logs` requires OAuth authentication and does not work with PAT. Use `databricks apps get` for status checks if using PAT auth.
