@@ -1,7 +1,7 @@
 ---
 name: databricks-jobs
 description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.2.0"
 parent: databricks-core
@@ -53,7 +53,7 @@ Verify: `databricks -v`
 Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-jobs` skill for job-specific guidance.
 
-If skills are not available, install them: `databricks experimental aitools install`
+If skills are not available, install them: `databricks aitools install`
 ```
 
 ## Project Structure
