@@ -298,16 +298,11 @@ def generate_manifest(repo_root: Path) -> dict:
     truth for whether the skill is experimental; consumers derive that state
     from `repo_dir`.
     """
-    manifest_path = repo_root / "manifest.json"
-    existing_skills = {}
-    if manifest_path.exists():
-        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
-
     skills: dict = {}
     for skill_dir in iter_skill_dirs(repo_root):
-        _add_skill(skills, _build_stable_entry(skill_dir, existing_skills))
+        _add_skill(skills, _build_stable_entry(skill_dir))
     for skill_dir in iter_experimental_skill_dirs(repo_root):
-        _add_skill(skills, _build_experimental_entry(skill_dir, existing_skills))
+        _add_skill(skills, _build_experimental_entry(skill_dir))
 
     return {
         "version": "2",
@@ -329,7 +324,7 @@ def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
     skills[name] = skill
 
 
-def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
     if skill_dir.name not in SKILL_METADATA:
         raise ValueError(
             f"Missing SKILL_METADATA entry for skill '{skill_dir.name}'. "
@@ -356,17 +351,13 @@ def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, di
     if metadata.get("min_cli_version"):
         skill_entry["min_cli_version"] = metadata["min_cli_version"]
 
-    existing = existing_skills.get(skill_dir.name, {})
-    if "base_revision" in existing:
-        skill_entry["base_revision"] = existing["base_revision"]
-
     return skill_dir.name, skill_entry
 
 
 # Experimental skills have a looser contract than stable: no agents/openai.yaml
 # required, no shared-asset sync, no SKILL_METADATA entry required. Description
 # is scraped from SKILL.md frontmatter on a best-effort basis.
-def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+def _build_experimental_entry(skill_dir: Path) -> tuple[str, dict]:
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
     skill_entry = {
@@ -376,10 +367,6 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
         "files": files,
     }
 
-    existing = existing_skills.get(skill_dir.name, {})
-    if "base_revision" in existing:
-        skill_entry["base_revision"] = existing["base_revision"]
-
     return skill_dir.name, skill_entry
 
 
@@ -387,42 +374,43 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
 # Validation
 # ---------------------------------------------------------------------------
 
-def normalize_manifest(manifest: dict) -> dict:
-    """Normalize manifest for comparison by excluding volatile fields."""
-    normalized = manifest.copy()
-    normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
-    return normalized
+def serialize_manifest(manifest: dict) -> str:
+    """Render manifest as its canonical on-disk form.
 
-
-def _normalize_skill_map(skill_map: dict) -> dict:
-    out = {}
-    for name, skill in skill_map.items():
-        skill_copy = skill.copy()
-        skill_copy.pop("base_revision", None)
-        out[name] = skill_copy
-    return out
+    `sort_keys=True` makes the skills map and each entry's keys alphabetical
+    (the `files` arrays are already sorted at generation time). Validation
+    requires the on-disk file to byte-equal this output — drift, hand-edits,
+    or unsorted insertions all fail the check.
+    """
+    return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
 
 def validate_manifest(repo_root: Path) -> bool:
-    """Validate that manifest.json is up to date. Returns True if valid."""
+    """Validate that manifest.json is up to date AND in canonical sorted form."""
     manifest_path = repo_root / "manifest.json"
 
     if not manifest_path.exists():
         print("ERROR: manifest.json does not exist", file=sys.stderr)
         return False
 
-    current_manifest = json.loads(manifest_path.read_text())
+    current_text = manifest_path.read_text()
+    current_manifest = json.loads(current_text)
     expected_manifest = generate_manifest(repo_root)
 
-    current_normalized = normalize_manifest(current_manifest)
-    expected_normalized = normalize_manifest(expected_manifest)
-
-    if current_normalized != expected_normalized:
-        print("ERROR: manifest.json is out of date", file=sys.stderr)
+    if current_manifest != expected_manifest:
+        print("ERROR: manifest.json content is out of date", file=sys.stderr)
         print("\nExpected:", file=sys.stderr)
-        print(json.dumps(expected_normalized, indent=2), file=sys.stderr)
+        print(serialize_manifest(expected_manifest), file=sys.stderr)
         print("\nActual:", file=sys.stderr)
-        print(json.dumps(current_normalized, indent=2), file=sys.stderr)
+        print(serialize_manifest(current_manifest), file=sys.stderr)
+        return False
+
+    if current_text != serialize_manifest(current_manifest):
+        print(
+            "ERROR: manifest.json is not in canonical sorted form. "
+            "Keys must be alphabetical at every level.",
+            file=sys.stderr,
+        )
         return False
 
     return True
@@ -466,7 +454,7 @@ def main() -> None:
 
             manifest = generate_manifest(repo_root)
             manifest_path = repo_root / "manifest.json"
-            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+            manifest_path.write_text(serialize_manifest(manifest))
             print(f"Generated {manifest_path}")
             print(
                 f"Found {len(manifest['skills'])} skill(s): "
