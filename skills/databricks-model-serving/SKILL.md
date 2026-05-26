@@ -74,7 +74,7 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   }' --profile <PROFILE>
 ```
 
-- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the `databricks serving-endpoints list | jq ...` one-liner and runtime-resolved defaults (don't hard-code model names — new endpoints land regularly and old ones retire). The `system.ai` catalog in Unity Catalog is a second source of truth. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
+- Discover available Foundation Models: see [references/fm-api-endpoints.md](references/fm-api-endpoints.md) for the runtime-list snippet and default-picking rules. You can also check the `system.ai` catalog in Unity Catalog, or run `databricks serving-endpoints list --profile <PROFILE>` to see what's deployed in the workspace. Use `databricks serving-endpoints get-open-api <ENDPOINT_NAME> --profile <PROFILE>` to inspect a specific endpoint's API schema.
 - Long-running operation; the CLI waits for completion by default. Use `--no-wait` to return immediately, then poll:
   ```bash
   databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE>
