@@ -72,10 +72,12 @@ echo "$CMD"
 
 ### 3. Poll status and fetch results
 
+The `/api/1.2/commands/status` endpoint takes its parameters in the query string — a JSON body on a GET request gets dropped by the server.
+
 ```bash
+CID="1234-567890-abcdef"
 while :; do
-  STATUS=$(databricks api get /api/1.2/commands/status \
-    --json '{"clusterId":"1234-567890-abcdef","contextId":"'"$CTX"'","commandId":"'"$CMD"'"}')
+  STATUS=$(databricks api get "/api/1.2/commands/status?clusterId=${CID}&contextId=${CTX}&commandId=${CMD}")
   STATE=$(echo "$STATUS" | jq -r '.status')
   [ "$STATE" = "Finished" ] && break
   [ "$STATE" = "Error" ] && break
