@@ -55,8 +55,7 @@
         "references/deploy-and-run.md",
         "references/resource-permissions.md",
         "references/sdp-pipelines.md"
-      ],
-      "base_revision": "e742f36e8ab1"
+      ]
     },
     "databricks-jobs": {
       "version": "0.2.0",
@@ -104,7 +103,7 @@
       ]
     },
     "databricks-pipelines": {
-      "version": "0.1.1",
+      "version": "0.3.0",
       "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
       "repo_dir": "skills",
       "files": [
@@ -118,11 +117,13 @@
         "references/auto-loader-python.md",
         "references/auto-loader-sql.md",
         "references/auto-loader.md",
+        "references/dlt-migration.md",
         "references/expectations-python.md",
         "references/expectations-sql.md",
         "references/expectations.md",
         "references/foreach-batch-sink-python.md",
         "references/foreach-batch-sink.md",
+        "references/kafka.md",
         "references/materialized-view-python.md",
         "references/materialized-view-sql.md",
         "references/materialized-view.md",
@@ -133,10 +134,14 @@
         "references/options-parquet.md",
         "references/options-text.md",
         "references/options-xml.md",
+        "references/performance.md",
+        "references/pipeline-configuration.md",
         "references/python-basics.md",
+        "references/scd-2-querying.md",
         "references/sink-python.md",
         "references/sink.md",
         "references/sql-basics.md",
+        "references/streaming-patterns.md",
         "references/streaming-table-python.md",
         "references/streaming-table-sql.md",
         "references/streaming-table.md",
@@ -145,9 +150,9 @@
         "references/temporary-view.md",
         "references/view-sql.md",
         "references/view.md",
+        "references/workflows.md",
         "references/write-spark-declarative-pipelines.md"
-      ],
-      "base_revision": "5c4b4fb0a82a"
+      ]
     },
     "databricks-serverless-migration": {
       "version": "0.1.0",
