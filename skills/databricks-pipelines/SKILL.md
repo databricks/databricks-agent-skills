@@ -1,9 +1,9 @@
 ---
 name: databricks-pipelines
 description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.1.0"
+  version: "0.3.0"
 parent: databricks-core
 ---
 
@@ -168,18 +168,68 @@ Some features require reading multiple skills together:
 
 Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
 
+## Migrating from DLT
+
+If you have an existing DLT pipeline (`import dlt`, `@dlt.table`, `dlt.read(...)`, `dlt.apply_changes(...)`) and want to move to SDP, see [references/dlt-migration.md](references/dlt-migration.md). It covers both migration paths — DLT Python → SDP Python (`from pyspark import pipelines as dp`) and DLT Python → SDP SQL — with side-by-side conversions for the table decorators, reads, expectations, CDC/SCD, and partitioning → liquid clustering.
+
+## Choose Your Workflow
+
+Three project shapes exist — pick before scaffolding:
+
+| Situation | Workflow |
+|-----------|----------|
+| New standalone pipeline project with its own bundle | **A. Standalone bundle** |
+| Pipeline added to an existing DAB project | **B. Existing bundle** |
+| Quick prototyping, no bundle (yet) | **C. Rapid CLI iteration** |
+
+Default to A for production-bound work and C for exploration. Full details, generated structures, polling patterns, and edit/re-upload flow in [references/workflows.md](references/workflows.md).
+
+## Language Selection (Python vs SQL)
+
+Decide before scaffolding — the choice picks template files (`.py` vs `.sql`) and which reference docs apply. Both can coexist, but pick a primary.
+
+| User signal | Pick |
+|-------------|------|
+| "Python pipeline", UDF, pandas, ML inference, pyspark | **Python** |
+| "SQL pipeline", "SQL files" | **SQL** |
+| "Simple pipeline", "create a table", "an aggregation" | **SQL** (simpler) |
+| Complex parameterized logic, custom UDFs, ML | **Python** |
+
+If ambiguous, ask. Stick with the chosen language unless the user explicitly switches.
+
 ## Scaffolding a New Pipeline Project
 
-Use `databricks bundle init` with a config file to scaffold non-interactively. This creates a project in the `<project_name>/` directory:
+The newer `databricks pipelines init` is focused on pipeline projects:
+
+```bash
+databricks pipelines init --output-dir . --config-file init-config.json
+```
+
+`init-config.json`:
+
+```json
+{
+  "project_name": "my_pipeline",
+  "initial_catalog": "prod_catalog",
+  "use_personal_schema": "no",
+  "initial_language": "sql"
+}
+```
+
+The template-based `databricks bundle init lakeflow-pipelines` also works:
 
 ```bash
 databricks bundle init lakeflow-pipelines --config-file <(echo '{"project_name": "my_pipeline", "language": "python", "serverless": "yes"}') --profile <PROFILE> < /dev/null
 ```
 
+Field constraints:
+
 - `project_name`: letters, numbers, underscores only
-- `language`: `python` or `sql`. Ask the user which they prefer:
+- `language` / `initial_language`: `python` or `sql` (lowercase)
   - SQL: Recommended for straightforward transformations (filters, joins, aggregations)
   - Python: Recommended for complex logic (custom UDFs, ML, advanced processing)
+
+See [references/workflows.md](references/workflows.md) for the full generated structure, `databricks.yml` essentials, and per-target catalog/schema patterns.
 
 After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
 
@@ -202,7 +252,7 @@ Verify: `databricks -v`
 Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
 Read the `databricks-pipelines` skill for pipeline-specific guidance.
 
-If skills are not available, install them: `databricks experimental aitools install`
+If skills are not available, install them: `databricks aitools install`
 ```
 
 ## Pipeline Structure
@@ -259,13 +309,25 @@ resources:
 
 Detailed reference guides for each pipeline API. **Read the relevant guide before writing pipeline code.**
 
+### Project & Lifecycle
+
+- [Workflows](references/workflows.md) — Standalone bundle / existing bundle / rapid CLI iteration; language selection; `pipelines init`; start-update + poll-the-update pattern; edit/re-upload/restart flow
+- [Pipeline Configuration](references/pipeline-configuration.md) — Full JSON config reference (top-level, clusters, event_log, notifications, configuration, restart_window, environment) + variant snippets (dev mode, non-serverless, continuous, notifications, autoscaling, custom event log, serverless Python deps) + multi-schema patterns + platform constraints
+- [Performance Tuning](references/performance.md) — Liquid Clustering by layer (bronze/silver/gold), key-type rules, state-management strategies for streaming, join optimization, pre-aggregation, monitoring
+- [Migrating from DLT](references/dlt-migration.md) — Side-by-side conversions (decorators, reads, expectations, CDC/SCD, partitioning → liquid clustering)
+
+### Datasets, Flows & Quality
+
 - [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) — Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md))
 - [Streaming Tables](references/streaming-table.md) — Continuous data stream processing ([Python](references/streaming-table-python.md), [SQL](references/streaming-table-sql.md))
 - [Materialized Views](references/materialized-view.md) — Physically stored query results with incremental refresh ([Python](references/materialized-view-python.md), [SQL](references/materialized-view-sql.md))
 - [Views](references/view.md) — Reusable query logic published to Unity Catalog ([SQL](references/view-sql.md))
 - [Temporary Views](references/temporary-view.md) — Pipeline-private views ([Python](references/temporary-view-python.md), [SQL](references/temporary-view-sql.md))
 - [Auto Loader](references/auto-loader.md) — Incrementally ingest files from cloud storage ([Python](references/auto-loader-python.md), [SQL](references/auto-loader-sql.md))
+- [Kafka Ingestion](references/kafka.md) — Read from Kafka / Event Hubs with JSON parsing, Secrets-based auth
 - [Auto CDC](references/auto-cdc.md) — Process Change Data Capture feeds, SCD Type 1 & 2 ([Python](references/auto-cdc-python.md), [SQL](references/auto-cdc-sql.md))
+- [SCD Type 2 Querying](references/scd-2-querying.md) — Current-state views, point-in-time queries, joining facts with historical dimensions
+- [Streaming Patterns](references/streaming-patterns.md) — Deduplication, windowed aggregations (tumbling/multi-size/session), late-arriving data, rescue-data quarantine, monitoring lag, anomaly detection
 - [Expectations](references/expectations.md) — Define and enforce data quality constraints ([Python](references/expectations-python.md), [SQL](references/expectations-sql.md))
 - [Sinks](references/sink.md) — Write to Kafka, Event Hubs, external Delta tables ([Python](references/sink-python.md))
 - [ForEachBatch Sinks](references/foreach-batch-sink.md) — Custom streaming sink with per-batch Python logic ([Python](references/foreach-batch-sink-python.md))

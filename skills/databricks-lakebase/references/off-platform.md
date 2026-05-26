@@ -1,5 +1,7 @@
 # Off-Platform Lakebase: Connecting from External Apps
 
+> **Off-platform apps are NOT Databricks Apps.** Do NOT use `databricks apps init`, `databricks apps deploy`, `app.yaml`, or any Databricks Apps platform commands. Off-platform apps run on your own infrastructure (Vercel, AWS, local Node.js, etc.) and use standard Node.js tooling (`npm run dev`, `node server.js`).
+
 Connect to Lakebase from apps deployed outside Databricks App Platform (e.g. Vercel, AWS, Netlify, or any Node.js server).
 
 ## Recommended: `@databricks/lakebase` Package
