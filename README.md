@@ -4,9 +4,14 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
-There are two equivalent install paths for the **stable** skills. Pick whichever
-fits your workflow — both write skills into the per-agent directory the CLI/plugin
-detects (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
+Two install paths cover the **stable** skills. They install to different places
+but end up loaded by the same agents — pick whichever fits your workflow.
+
+- **Databricks CLI** writes SKILL.md files directly into each agent's skill
+  directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
+- **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-skills/`);
+  the agent discovers skills from there.
 
 **Via the Databricks CLI (canonical; supports experimental skills):**
 

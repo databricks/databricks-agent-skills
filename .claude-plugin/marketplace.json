@@ -1,11 +1,9 @@
 {
   "name": "databricks-skills",
+  "description": "Official Databricks agent skills marketplace",
+  "version": "0.1.0",
   "owner": {
     "name": "Databricks"
-  },
-  "metadata": {
-    "description": "Official Databricks agent skills marketplace",
-    "version": "0.1.0"
   },
   "plugins": [
     {
