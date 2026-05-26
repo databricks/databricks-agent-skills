@@ -348,10 +348,6 @@ def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, di
             "Add it to SKILL_METADATA dict."
         )
 
-    # Codex metadata + assets are enforced uniformly by check_codex_metadata
-    # (which runs in validate). generate auto-synthesizes any missing ones
-    # via ensure_codex_metadata before this point.
-
     metadata = SKILL_METADATA[skill_dir.name]
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
