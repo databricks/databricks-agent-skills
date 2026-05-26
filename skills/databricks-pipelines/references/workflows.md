@@ -349,7 +349,7 @@ If the user already has `bronze/`, `silver/`, `gold/` folders without a bundle, 
 
 | Issue | Fix |
 |-------|-----|
-| `Command not found: databricks` | `pip install databricks-cli` |
+| `Command not found: databricks` | Install the Databricks CLI — see the parent `databricks-core` skill (CLI installation reference) |
 | `Invalid catalog name` | `databricks catalogs list` and verify; create with `databricks catalogs create --json '{"name": "..."}'` |
 | `Language option not recognized` | Use lowercase `"sql"` / `"python"`, not `"SQL"` / `"Python"` |
 | Files deploy but pipeline doesn't pick them up | Glob pattern in `libraries` doesn't match — re-check `include` path relative to the resource file |

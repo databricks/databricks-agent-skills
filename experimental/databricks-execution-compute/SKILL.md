@@ -13,7 +13,7 @@ description: >-
 
 # Databricks Execution & Compute
 
-Run code on Databricks. Three execution modes—choose based on workload. All examples below use the Databricks CLI; install with `pip install databricks-cli` (or follow the workspace-native `databricks` quickstart) and authenticate with `databricks auth login` (see the parent `databricks-core` skill for profile setup).
+Run code on Databricks. Three execution modes—choose based on workload. All examples below use the Databricks CLI; see the `databricks-core` skill for install and authentication.
 
 ## Execution Mode Decision Matrix
 
