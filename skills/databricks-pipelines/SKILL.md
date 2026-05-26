@@ -324,7 +324,10 @@ Detailed reference guides for each pipeline API. **Read the relevant guide befor
 - [Views](references/view.md) — Reusable query logic published to Unity Catalog ([SQL](references/view-sql.md))
 - [Temporary Views](references/temporary-view.md) — Pipeline-private views ([Python](references/temporary-view-python.md), [SQL](references/temporary-view-sql.md))
 - [Auto Loader](references/auto-loader.md) — Incrementally ingest files from cloud storage ([Python](references/auto-loader-python.md), [SQL](references/auto-loader-sql.md))
+- [Kafka Ingestion](references/kafka.md) — Read from Kafka / Event Hubs with JSON parsing, Secrets-based auth
 - [Auto CDC](references/auto-cdc.md) — Process Change Data Capture feeds, SCD Type 1 & 2 ([Python](references/auto-cdc-python.md), [SQL](references/auto-cdc-sql.md))
+- [SCD Type 2 Querying](references/scd-2-querying.md) — Current-state views, point-in-time queries, joining facts with historical dimensions
+- [Streaming Patterns](references/streaming-patterns.md) — Deduplication, windowed aggregations (tumbling/multi-size/session), late-arriving data, rescue-data quarantine, monitoring lag, anomaly detection
 - [Expectations](references/expectations.md) — Define and enforce data quality constraints ([Python](references/expectations-python.md), [SQL](references/expectations-sql.md))
 - [Sinks](references/sink.md) — Write to Kafka, Event Hubs, external Delta tables ([Python](references/sink-python.md))
 - [ForEachBatch Sinks](references/foreach-batch-sink.md) — Custom streaming sink with per-batch Python logic ([Python](references/foreach-batch-sink-python.md))
