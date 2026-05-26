@@ -19,6 +19,12 @@ For detailed implementation guides:
 - **Python**: [auto-loader-python.md](auto-loader-python.md)
 - **SQL**: [auto-loader-sql.md](auto-loader-sql.md)
 
+## Related Patterns
+
+- [Rescue-data quarantine](streaming-patterns.md#rescue-data-quarantine) — route rows where Auto Loader rescued malformed fields to a side table instead of dropping them.
+- [Kafka ingestion](kafka.md) — for message-bus sources (Kafka, Event Hubs).
+- [Monitoring lag](streaming-patterns.md#monitoring-lag) — track end-to-end freshness.
+
 ## Format-Specific Options
 
 For format-specific configuration options, refer to:

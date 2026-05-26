@@ -5,7 +5,7 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 ## Installation
 
 ```bash
-databricks experimental aitools install
+databricks aitools install
 ```
 
 This auto-detects your coding agent(s) and installs the stable skills to the
