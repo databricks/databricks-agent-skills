@@ -1,3 +1,57 @@
+## Skill anatomy
+
+Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/`) — ships the same set of files:
+
+```
+<name>/
+├── SKILL.md                         # required: skill prose + frontmatter
+├── references/*.md                  # optional: supporting reference content
+├── agents/openai.yaml               # required: Codex marketplace metadata
+└── assets/
+    ├── databricks.svg               # required: icon (Codex marketplace)
+    └── databricks.png               # required: icon (Codex marketplace)
+```
+
+**`SKILL.md`** is what every coding agent (Claude Code, Cursor, Codex CLI, OpenCode, Copilot, Antigravity) reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`.
+
+**`agents/openai.yaml`** is Codex CLI's plugin-marketplace metadata format: `display_name`, `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt`. It controls how the skill renders in Codex's in-app marketplace. Other agents ignore this file. The repo ships it for every skill so the manifest is a single feed for all agents.
+
+**`assets/databricks.{svg,png}`** are the icons referenced by `agents/openai.yaml`'s `icon_small` / `icon_large`. Identical across all skills (the Databricks logo); `scripts/skills.py` copies them in from the repo-root `/assets/`.
+
+### Adding or updating a skill
+
+`scripts/skills.py generate` (and `sync`) auto-synthesise both `agents/openai.yaml` and the icons for any skill that's missing them. Hand-authored `agents/openai.yaml` is preserved as-is, so you can curate the display name / short description / default prompt before running `generate` — the synthesiser only writes when the file is absent.
+
+If the synthesised display name comes out wrong (e.g. acronyms or product names that get mis-cased by hyphen-titlecasing), add an entry to `DISPLAY_NAME_OVERRIDES` in `scripts/skills.py` rather than hand-authoring the whole `openai.yaml`.
+
+**Workflow for a new skill**:
+
+```bash
+# 1. Create the skill directory + SKILL.md (and references/ if needed).
+mkdir -p skills/databricks-foo/references
+$EDITOR skills/databricks-foo/SKILL.md      # write SKILL.md with frontmatter
+
+# 2. For stable skills only: add a description to scripts/skills.py SKILL_METADATA.
+
+# 3. Generate Codex metadata + icons + manifest in one shot.
+python3 scripts/skills.py generate
+
+# 4. Confirm validate passes (this is what CI runs).
+python3 scripts/skills.py validate
+```
+
+`generate` is idempotent — re-running it never overwrites your `SKILL.md`, `references/`, or hand-edited `agents/openai.yaml`; it only fills in what's missing.
+
+### CI
+
+`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches `skills/**`, `experimental/**`, `assets/**`, `scripts/skills.py`, or `manifest.json`. Validation enforces:
+
+- Every skill has `agents/openai.yaml`.
+- Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
+- `manifest.json` matches what `scripts/skills.py generate` would produce.
+
+If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.

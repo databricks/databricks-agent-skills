@@ -128,19 +128,21 @@ This approach:
 
 ### Manifest Management
 
-Sync assets and generate manifest after adding/updating skills:
+`manifest.json` is **generated** by `scripts/skills.py` from the skill directories and frontmatter. Do not edit it by hand. CI rejects manual changes via two checks: content drift (parsed dict doesn't match what `generate` would produce) and canonical form (on-disk bytes don't match `json.dumps(..., indent=2, sort_keys=True)`).
+
+Sync assets and regenerate the manifest after adding or updating skills:
 
 ```bash
 python3 scripts/skills.py
 ```
 
-Validate that assets and manifest are up to date (for CI):
+Validate that assets and manifest are up to date (used by CI):
 
 ```bash
 python3 scripts/skills.py validate
 ```
 
-The manifest is used by the CLI to discover available skills.
+The manifest is consumed by the CLI to discover available skills.
 
 ## Security
 
