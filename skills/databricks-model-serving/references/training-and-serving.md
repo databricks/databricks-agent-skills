@@ -293,8 +293,8 @@ databricks serving-endpoints list \
 
 ## Related skills
 
-- **[databricks-agent-bricks](../../databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
-- **[databricks-mlflow-evaluation](../../databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
-- **[databricks-vector-search](../../databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
+- **[databricks-agent-bricks](../../../experimental/databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
+- **[databricks-mlflow-evaluation](../../../experimental/databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
+- **[databricks-vector-search](../../../experimental/databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
 - **[databricks-jobs](../../databricks-jobs/SKILL.md)** — async deploy pattern (`--no-wait`, TASK run_id trap).
-- **[databricks-unity-catalog](../../databricks-unity-catalog/SKILL.md)** — UC governs the registered model: permissions, lineage, audit.
+- **[databricks-unity-catalog](../../../experimental/databricks-unity-catalog/SKILL.md)** — UC governs the registered model: permissions, lineage, audit.
