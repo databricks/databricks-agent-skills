@@ -222,7 +222,8 @@
         "assets/databricks.svg",
         "references/1-saas-connectors.md",
         "references/2-database-connectors.md",
-        "references/4-ingestion-decision-tree.md"
+        "references/4-ingestion-decision-tree.md",
+        "references/5-troubleshooting-and-monitoring.md"
       ],
       "repo_dir": "experimental",
       "version": "0.0.1"
