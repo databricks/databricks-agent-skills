@@ -128,10 +128,10 @@ Show a clear specification with **the business story and your assumptions surfac
 
 ### Post-Generation Validation
 
-Use `databricks experimental aitools tools query` to validate generated data (row counts, distributions, referential integrity). Query parquet files directly:
+Use `databricks aitools tools query` to validate generated data (row counts, distributions, referential integrity). Query parquet files directly:
 
 ```bash
-databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
+databricks aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT COUNT(*) FROM parquet.\`/Volumes/CATALOG/SCHEMA/raw_data/customers\`
 "
 ```

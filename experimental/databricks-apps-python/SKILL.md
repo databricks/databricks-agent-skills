@@ -39,7 +39,7 @@ databricks apps deploy
 ### AI-assisted development
 ```bash
 # Install agent skills for AI-powered scaffolding
-databricks experimental aitools skills install
+databricks aitools install
 
 # Query AppKit docs inline
 npx @databricks/appkit docs "your question here"

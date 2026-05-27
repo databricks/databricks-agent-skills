@@ -6,7 +6,7 @@ Build a complete Retrieval-Augmented Generation pipeline: prepare documents, cre
 
 | Command | Step |
 |---------|------|
-| `databricks experimental aitools tools query` | Create source table, insert documents |
+| `databricks aitools tools query` | Create source table, insert documents |
 | `databricks vector-search-endpoints create-endpoint` | Create compute endpoint |
 | `databricks vector-search-indexes create-index` | Create Delta Sync index with managed embeddings |
 | `databricks vector-search-indexes sync-index` | Trigger index sync |
@@ -37,7 +37,7 @@ INSERT INTO catalog.schema.knowledge_base VALUES
 Or via CLI:
 
 ```bash
-databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
+databricks aitools tools query --warehouse WAREHOUSE_ID "
     CREATE TABLE IF NOT EXISTS catalog.schema.knowledge_base (
         doc_id STRING,
         title STRING,

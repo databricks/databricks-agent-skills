@@ -295,7 +295,7 @@ databricks pipelines start-update <pipeline_id>
 Even on `COMPLETED`, verify the data:
 
 ```bash
-databricks experimental aitools tools discover-schema \
+databricks aitools tools discover-schema \
   my_catalog.my_schema.bronze_orders \
   my_catalog.my_schema.silver_orders \
   my_catalog.my_schema.gold_summary

@@ -44,14 +44,14 @@ databricks genie get-space <SPACE_ID> --include-serialized-space --profile <PROF
 Discover warehouse ID with:
 
 ```bash
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+databricks aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
 ## Scaffolding a New Genie App
 
 ```bash
 # 1. Discover warehouse
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+databricks aitools tools get-default-warehouse --profile <PROFILE>
 
 # 2. Create Genie space (see syntax above)
 databricks genie create-space <WAREHOUSE_ID> '<SERIALIZED_SPACE_JSON>' \
