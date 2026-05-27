@@ -1,6 +1,10 @@
 ---
 name: spark-python-data-source
 description: Build custom Python data sources for Apache Spark using the PySpark DataSource API — batch and streaming readers/writers for external systems. Use this skill whenever someone wants to connect Spark to an external system (database, API, message queue, custom protocol), build a Spark connector or plugin in Python, implement a DataSourceReader or DataSourceWriter, pull data from or push data to a system via Spark, or work with the PySpark DataSource API in any way. Even if they just say "read from X in Spark" or "write DataFrame to Y" and there's no native connector, this skill applies.
+compatibility: Requires databricks CLI (>= v0.294.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # spark-python-data-source

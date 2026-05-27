@@ -9,6 +9,10 @@ description: >-
   "delete cluster", "terminate cluster", "create warehouse", "new warehouse",
   "resize warehouse", "delete warehouse", "node types", "runtime versions",
   "DBR versions", "spin up compute", "provision cluster".
+compatibility: Requires databricks CLI (>= v0.294.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Execution & Compute

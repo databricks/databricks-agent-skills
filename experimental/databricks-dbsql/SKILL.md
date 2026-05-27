@@ -12,6 +12,10 @@ description: >-
   "temp table", "temporary view", "pipe operator".
   SHOULD also invoke when the user asks about SQL best practices, data modeling
   patterns, or advanced SQL features on Databricks.
+compatibility: Requires databricks CLI (>= v0.294.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks SQL (DBSQL) - Advanced Features
