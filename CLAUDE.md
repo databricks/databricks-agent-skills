@@ -37,12 +37,14 @@ Then apply these patterns:
 - Pattern 2
 ```
 
+See [CONTRIBUTING.md](./CONTRIBUTING.md#skill-anatomy) for the full per-skill file layout, including the auto-generated Codex metadata (`agents/openai.yaml`) and shared icons (`assets/databricks.{svg,png}`) that every skill ships.
+
 ### Skills management
 
 ```bash
-python3 scripts/skills.py              # sync assets + generate manifest (default)
-python3 scripts/skills.py sync         # copy shared assets into each skill dir
-python3 scripts/skills.py validate     # check assets + manifest are up to date (CI)
+python3 scripts/skills.py              # sync Codex metadata + icons, then generate manifest (default)
+python3 scripts/skills.py sync         # sync Codex metadata + icons only
+python3 scripts/skills.py validate     # check Codex metadata + icons + manifest are up to date (CI)
 ```
 
 ## Security

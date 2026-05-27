@@ -4,11 +4,22 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
+Two install paths cover the **stable** skills. They install to different places
+but end up loaded by the same agents — pick whichever fits your workflow.
+
+- **Databricks CLI** writes SKILL.md files directly into each agent's skill
+  directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
+- **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-skills/`);
+  the agent discovers skills from there.
+
+**Via the Databricks CLI (canonical; supports experimental skills):**
+
 ```bash
 databricks aitools install
 ```
 
-This auto-detects your coding agent(s) and installs the stable skills to the
+The CLI auto-detects your coding agent(s) and installs the stable skills to the
 right location:
 
 - **Claude Code** → `~/.claude/skills/`
@@ -19,11 +30,32 @@ For finer control, use the `aitools skills install` subcommand directly — it
 accepts a positional skill name and an `--experimental` flag (see the
 [Experimental Skills](#experimental-skills) section).
 
-**For Cursor (plugin marketplace alternative):**
+**Via the Claude Code plugin marketplace** (stable skills only — installs every
+skill under [`./skills/`](./skills/)):
+
+```text
+/plugin marketplace add databricks/databricks-agent-skills
+/plugin install databricks-skills
+```
+
+**Via the Cursor plugin marketplace:**
 
 ```text
 /add-plugin databricks-skills
 ```
+
+### CLI vs plugin marketplace
+
+| | CLI | Plugin marketplace |
+|---|---|---|
+| Stable skills | ✅ (default) | ✅ |
+| Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
+| Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
+| Updates | `databricks aitools update` | Plugin marketplace update flow |
+| Required outside the agent | Databricks CLI v1.0.0+ | None |
+
+If in doubt, use the CLI — it's the canonical install path and the only one that
+exposes experimental skills.
 
 ## Available Skills
 
@@ -95,19 +127,21 @@ This approach:
 
 ### Manifest Management
 
-Sync assets and generate manifest after adding/updating skills:
+`manifest.json` is **generated** by `scripts/skills.py` from the skill directories and frontmatter. Do not edit it by hand. CI rejects manual changes via two checks: content drift (parsed dict doesn't match what `generate` would produce) and canonical form (on-disk bytes don't match `json.dumps(..., indent=2, sort_keys=True)`).
+
+Sync assets and regenerate the manifest after adding or updating skills:
 
 ```bash
 python3 scripts/skills.py
 ```
 
-Validate that assets and manifest are up to date (for CI):
+Validate that assets and manifest are up to date (used by CI):
 
 ```bash
 python3 scripts/skills.py validate
 ```
 
-The manifest is used by the CLI to discover available skills.
+The manifest is consumed by the CLI to discover available skills.
 
 ## Security
 

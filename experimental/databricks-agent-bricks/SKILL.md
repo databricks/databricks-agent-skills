@@ -136,5 +136,5 @@ databricks supervisor-agents delete-example supervisor-agents/<id>/examples/<ex_
 
 | Topic | File |
 |-------|------|
-| KA source types, index, troubleshooting | [1-knowledge-assistants.md](1-knowledge-assistants.md) |
-| UC functions, MCP servers, examples | [2-supervisor-agents.md](2-supervisor-agents.md) |
+| KA source types, index, troubleshooting | [references/1-knowledge-assistants.md](references/1-knowledge-assistants.md) |
+| UC functions, MCP servers, examples | [references/2-supervisor-agents.md](references/2-supervisor-agents.md) |

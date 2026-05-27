@@ -96,6 +96,10 @@ databricks workspace list /Users/me
 
 ---
 
+## SDK Reference
+
+For a per-API table of method signatures and direct doc URLs (Clusters, Jobs, SQL warehouses, Unity Catalog, Serving, Vector Search, etc.), see [references/doc-index.md](references/doc-index.md). Worked examples for the main API surfaces live under [`examples/`](examples/).
+
 ## SDK Documentation Architecture
 
 The SDK documentation follows a predictable URL pattern:
