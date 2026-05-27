@@ -1,0 +1,7 @@
+interface:
+  display_name: "Spark Python Data Source"
+  short_description: "Build custom Python data sources for Apache Spark using the PySpark DataSource API — batch and streaming readers/writers for external systems."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $spark-python-data-source for build custom python data sources for apache spark using the pyspark datasource api — batch and streaming readers/writers for external systems."

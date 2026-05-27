@@ -27,74 +27,188 @@ databricks apps init --name <APP_NAME> --features serving \
   --run none --profile <PROFILE>
 ```
 
-**If no `serving` plugin** (add manually to an existing app):
+**If adding to an existing app**, see *Adding Model Serving to an Existing App* below.
 
-Use the `databricks-model-serving` skill to create a serving endpoint first, then follow the resource declaration and tRPC patterns below.
+Use the `databricks-model-serving` skill to create a serving endpoint first if one doesn't exist yet.
 
-## Resource Declaration
+## Adding Model Serving to an Existing App
 
-Add the serving endpoint resource to `databricks.yml`:
+**`databricks.yml`** — add serving endpoint resource and user_api_scopes:
 
 ```yaml
 resources:
   apps:
-    my_app:
+    app:
+      user_api_scopes:
+        # ... existing scopes ...
+        - serving.serving-endpoints
       resources:
-        - name: my-model-endpoint
+        # ... existing resources ...
+        - name: serving-endpoint
           serving_endpoint:
             name: <ENDPOINT_NAME>
-            permission: CAN_QUERY          # auto-granted to SP on deploy
+            permission: CAN_QUERY
 ```
 
-Add environment variable injection in `app.yaml`:
+**`app.yaml`** — add env injection:
 
 ```yaml
 env:
-  - name: SERVING_ENDPOINT
+  # ... existing env vars ...
+  - name: DATABRICKS_SERVING_ENDPOINT_NAME
     valueFrom: serving-endpoint
 ```
 
 The injected value is the endpoint **name** (not a URL). Use it in server-side code to call the endpoint.
 
-## tRPC Pattern
-
-Always use tRPC for model serving calls — do NOT call endpoints directly from the client.
+**`server/server.ts`** — register the plugin:
 
 ```typescript
-// server/server.ts (or server/trpc.ts)
-import { initTRPC } from "@trpc/server";
-import { getExecutionContext } from "@databricks/appkit";
-import { z } from "zod";
-import superjson from "superjson";
+import { createApp, server, analytics, serving } from "@databricks/appkit";
 
-const t = initTRPC.create({ transformer: superjson });
-const publicProcedure = t.procedure;
+createApp({
+  plugins: [server(), analytics(), serving()],
+}).catch(console.error);
+```
 
-export const appRouter = t.router({
-  queryModel: publicProcedure
-    .input(z.object({ prompt: z.string() }))
-    .query(async ({ input: { prompt } }) => {
-      const { serviceDatabricksClient: client } = getExecutionContext();
-      const response = await client.servingEndpoints.query({
-        name: process.env.SERVING_ENDPOINT,
-        messages: [{ role: "user", content: prompt }],
-      });
-      return response;
-    }),
+Preserve existing plugins and add `serving()` to the array.
+
+**`server/.env`** — for local development:
+
+```dotenv
+DATABRICKS_SERVING_ENDPOINT_NAME=<your-endpoint-name>
+```
+
+Update smoke tests if headings or routes changed, then `databricks apps validate`.
+
+## Serving Plugin API
+
+Access model serving through the plugin handle returned by `createApp()`:
+
+```typescript
+import { createApp, server, serving } from "@databricks/appkit";
+
+const appkit = await createApp({
+  plugins: [server(), serving()],
+});
+
+// Non-streaming invocation
+const result = await appkit.serving().invoke({
+  messages: [{ role: "user", content: "Hello" }],
+});
+
+// Streaming invocation
+for await (const chunk of appkit.serving().stream({
+  messages: [{ role: "user", content: "Hello" }],
+})) {
+  console.log(chunk);
+}
+
+// On-behalf-of user (OBO) — uses the requesting user's identity
+const result = await appkit.serving().asUser(req).invoke({
+  messages: [{ role: "user", content: prompt }],
 });
 ```
 
-## Client-side Pattern
+All serving routes execute on behalf of the authenticated user (OBO) by default. For programmatic access via `exports()`, use `.asUser(req)` to run in user context.
+
+## Named Endpoints
+
+Use endpoint aliases to reference multiple serving endpoints by name:
 
 ```typescript
-// client/src/components/ChatComponent.tsx
-import { trpc } from "@/lib/trpc";
-
-const result = await trpc.queryModel.query({ prompt: userInput });
-const answer = result.choices?.[0]?.message?.content;
+serving({
+  endpoints: {
+    llm: { env: "DATABRICKS_SERVING_ENDPOINT_NAME" },
+    classifier: { env: "DATABRICKS_SERVING_ENDPOINT_CLASSIFIER" },
+  },
+  timeout: 120000, // optional, default 2 min
+})
 ```
 
-For streaming and advanced patterns, see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
+Each alias maps to an environment variable holding the actual endpoint name. Access by alias:
+
+```typescript
+const result = await appkit.serving("llm").invoke({ messages });
+const classification = await appkit.serving("classifier").invoke({ inputs: ["text"] });
+```
+
+If an endpoint serves multiple models, use `servedModel` to target a specific model directly:
+
+```typescript
+serving({
+  endpoints: {
+    llm: { env: "DATABRICKS_SERVING_ENDPOINT_NAME", servedModel: "llama-v2" },
+  },
+})
+```
+
+## HTTP Endpoints
+
+The plugin auto-registers routes under `/api/serving`:
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/serving/invoke` | `POST` | Non-streaming (default mode) |
+| `/api/serving/stream` | `POST` | Streaming SSE (default mode) |
+| `/api/serving/:alias/invoke` | `POST` | Non-streaming (named mode) |
+| `/api/serving/:alias/stream` | `POST` | Streaming SSE (named mode) |
+
+## Frontend
+
+Use the built-in React hooks from `@databricks/appkit-ui/react` — do NOT call serving endpoints directly from the client.
+
+**Streaming** (chat, real-time inference):
+
+```tsx
+import { useServingStream } from "@databricks/appkit-ui/react";
+
+function ChatStream() {
+  const { stream, chunks, streaming, error, reset } = useServingStream(
+    { messages: [{ role: "user", content: "Hello" }] },
+    {
+      alias: "llm",
+      onComplete: (finalChunks) => console.log("Done:", finalChunks.length, "chunks"),
+    },
+  );
+
+  return (
+    <>
+      <button onClick={stream} disabled={streaming}>Send</button>
+      <button onClick={reset}>Reset</button>
+      {chunks.map((chunk, i) => <pre key={i}>{JSON.stringify(chunk)}</pre>)}
+      {error && <p>{error}</p>}
+    </>
+  );
+}
+```
+
+**Non-streaming** (one-shot inference, classification):
+
+```tsx
+import { useServingInvoke } from "@databricks/appkit-ui/react";
+
+function Classify() {
+  const { invoke, data, loading, error } = useServingInvoke(
+    { inputs: ["sample text"] },
+    { alias: "classifier" },
+  );
+
+  return (
+    <>
+      <button onClick={() => invoke()} disabled={loading}>Classify</button>
+      {data && <pre>{JSON.stringify(data)}</pre>}
+      {error && <p>{error}</p>}
+    </>
+  );
+}
+```
+
+Both hooks accept `autoStart: true` to invoke automatically on mount.
+
+For the full hook API and type generation details, see `npx @databricks/appkit docs ./docs/plugins/model-serving.md`.
+
+For off-platform streaming (AI SDK v6 with Databricks AI Gateway), see the **`databricks-model-serving`** skill.
 
 AppKit integrates with **Model Serving endpoints**. AI Gateway (beta) endpoints are not directly supported — use the underlying Model Serving endpoint name instead. AI Gateway features (rate limits, usage tracking) can be configured on Model Serving endpoints via the `databricks-model-serving` skill.
 
@@ -103,6 +217,6 @@ AppKit integrates with **Model Serving endpoints**. AI Gateway (beta) endpoints 
 | Error | Cause | Solution |
 |-------|-------|---------|
 | `PERMISSION_DENIED` on query | SP missing CAN_QUERY | Declare `serving_endpoint` resource in `databricks.yml` with `permission: CAN_QUERY` |
-| `SERVING_ENDPOINT` env var empty | Missing env injection | Add `valueFrom: serving-endpoint` to `app.yaml` env section |
+| `DATABRICKS_SERVING_ENDPOINT_NAME` env var empty | Missing env injection | Add `valueFrom: serving-endpoint` to `app.yaml` env section |
 | 504 Gateway Timeout | Inference exceeds 120s proxy limit | Reduce `max_tokens` or use WebSockets — see [Platform Guide](../platform-guide.md) |
-| `getExecutionContext` undefined | Called outside AppKit server context | Ensure call is inside a tRPC procedure on the server side |
+| Unknown serving endpoint alias | Alias not configured or env var not set | Check `serving()` config in `server.ts` and `DATABRICKS_SERVING_ENDPOINT_*` in `app.yaml` / `.env` |

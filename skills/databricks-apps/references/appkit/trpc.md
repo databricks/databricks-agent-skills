@@ -7,7 +7,7 @@
 Use tRPC ONLY for:
 
 - **Mutations**: Creating, updating, or deleting data (INSERT, UPDATE, DELETE)
-- **External APIs**: Calling Databricks APIs (serving endpoints, jobs, MLflow, etc.)
+- **External APIs**: Calling Databricks APIs not covered by a dedicated plugin (MLflow, Workspace API, etc.)
 - **Complex business logic**: Multi-step operations that cannot be expressed in SQL
 - **File operations**: File uploads, processing, transformations
 - **Custom computations**: Operations requiring TypeScript/Node.js logic
@@ -46,6 +46,8 @@ databricks apps manifest --profile <PROFILE>
 - **lakebase** — provides Lakebase plugin for PostgreSQL CRUD (use plugin in tRPC routes, don't create raw connections)
 - **genie** — provides Genie AI-powered data exploration (check before building custom natural-language-to-SQL routes)
 - **files** — provides file storage and retrieval helpers (check before writing custom file upload/download routes)
+- **serving** — provides model serving endpoint proxy with invoke/stream (do NOT reimplement with tRPC)
+- **jobs** — provides Lakeflow Job triggering and monitoring (do NOT reimplement with tRPC)
 
 If a plugin already covers your use case, use the plugin's API instead of writing a custom tRPC route.
 
@@ -69,15 +71,12 @@ const t = initTRPC.create({ transformer: superjson });
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  // Example: Query a serving endpoint
-  queryModel: publicProcedure
-    .input(z.object({ prompt: z.string() }))
-    .query(async ({ input: { prompt } }) => {
+  // Example: Call a Databricks API (e.g. MLflow)
+  getExperiment: publicProcedure
+    .input(z.object({ experimentId: z.string() }))
+    .query(async ({ input: { experimentId } }) => {
       const { serviceDatabricksClient: client } = getExecutionContext();
-      const response = await client.servingEndpoints.query({
-        name: "your-endpoint-name",
-        messages: [{ role: "user", content: prompt }],
-      });
+      const response = await client.experiments.getExperiment({ experiment_id: experimentId });
       return response;
     }),
 
@@ -102,8 +101,8 @@ function MyComponent() {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    trpc.queryModel
-      .query({ prompt: "Hello" })
+    trpc.getExperiment
+      .query({ experimentId: "123" })
       .then(setResult)
       .catch(console.error);
   }, []);
@@ -123,11 +122,10 @@ function MyComponent() {
    - **Custom display (KPIs, cards, lists)?** → Use `useAnalyticsQuery` hook
    - **Never** use tRPC for SQL SELECT statements
 
-2. **Need to call a Databricks API?** → Use tRPC
-   - Serving endpoints (model inference)
-   - MLflow operations
-   - Jobs API
-   - Workspace API
+2. **Need to call a Databricks API?**
+   - Serving endpoints → use `serving()` plugin (see [Model Serving Guide](model-serving.md))
+   - Jobs → use `jobs()` plugin (see [Jobs Guide](jobs.md))
+   - MLflow, Workspace API, other APIs → use tRPC
 
 3. **Need to modify data?** → Use tRPC mutations
    - INSERT, UPDATE, DELETE operations
@@ -142,7 +140,7 @@ function MyComponent() {
 **Summary:**
 
 - ✅ SQL queries → Visualization components or `useAnalyticsQuery`
-- ✅ Databricks APIs → tRPC
+- ✅ Databricks APIs without a plugin → tRPC
 - ✅ Data mutations → tRPC
 - ❌ SQL queries → tRPC (NEVER do this)
 - ❌ Files operations → tRPC (NEVER do this)

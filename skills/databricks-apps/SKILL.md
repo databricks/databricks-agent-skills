@@ -3,7 +3,7 @@ name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 parent: databricks-core
 ---
 
@@ -17,7 +17,7 @@ Build apps that deploy to Databricks Apps platform.
 
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
-| Scaffolding | **⚠️ STOP — complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
+| Scaffolding | **⚠️ STOP — review the State Storage Guidance and complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
@@ -61,6 +61,17 @@ Build apps that deploy to Databricks Apps platform.
 
 Before writing any SQL, use the parent `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
 
+**State Storage Guidance (evaluate BEFORE the Decision Gate):**
+
+If the user's app description involves storing or persisting data — forms, CRUD operations, user submissions, orders, todos, or other user-generated content — the app likely needs a Lakebase database.
+
+1. **Ask the user** whether the app needs persistent storage (Lakebase) before scaffolding. Do not silently add Lakebase.
+2. If confirmed, use the **`databricks-lakebase`** skill to create a Lakebase project and obtain the branch and database resource names.
+3. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
+4. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
+
+Do NOT add Lakebase to analytics, dashboard, or visualization apps unless the user explicitly requests persistent write-back storage. Read-only data display, filters, and preferences do not require a database.
+
 ## Development Workflow (FOLLOW THIS ORDER)
 
 **Data Access Decision Gate (REQUIRED before scaffolding):**
@@ -70,16 +81,16 @@ If the app reads from Unity Catalog / lakehouse tables, you MUST show the compar
 | | **(A) Lakebase synced tables** | **(B) Analytics** |
 |--|---|---|
 | Speed | Sub-second responses | Takes a few seconds |
-| Best for | Search, lookups, catalogs, real-time data, operational apps | Dashboards, charts, aggregations, KPIs |
+| Best for | Full-text search, typeahead, autocomplete, real-time lookups, operational apps | Dashboards, charts, aggregations, KPIs, filtered queries, browsing |
 | How it works | Data synced from Delta into Lakebase Postgres | Queries run on SQL warehouse at read time |
 
-After showing the table, add a brief recommendation. Default to recommending Lakebase synced tables (A) unless the use case is clearly about aggregations, charts, or dashboards where seconds of latency is acceptable. For lookups, searches, serving data to users, or any interactive use case, recommend Lakebase synced tables. Always let the user make the final call.
+After showing the table, add a brief recommendation. Default to recommending Analytics (B) for most read-only apps — dashboards, charts, filtered queries, browsing, and aggregations. Recommend Lakebase synced tables (A) only when the app needs sub-second latency for full-text search, typeahead/autocomplete, real-time lookups by ID, or operational data serving. Note: "search" or "filter" in a prompt usually means SQL WHERE clauses (Analytics), not full-text search (Lakebase). Always let the user make the final call.
 
 After the user chooses:
 - (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
 - (B) Analytics → scaffold with `--features analytics`.
 - Both → scaffold with `--features analytics,lakebase` if the app needs both patterns.
-- If the app does NOT read UC data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
+- If the app does NOT read Unity Catalog data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
 
 **Analytics apps** (`--features analytics`):
 
@@ -104,7 +115,7 @@ After completing the decision gate above, use this routing table:
 - **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
-- **Call ML model endpoint**: Use tRPC — see [Model Serving Guide](references/appkit/model-serving.md)
+- **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
@@ -161,6 +172,14 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
+**Scaffolding Rules Protocol** — `databricks apps manifest` may emit `scaffolding.rules` at the template level (top-level `scaffolding.rules`) and on individual plugins (`plugins[].scaffolding.rules`). Each block has `must` / `should` / `never` arrays of short directive strings. Consume them as follows:
+
+1. **Gather** — for every plugin in your final `--features` list AND every plugin with `requiredByTemplate: true`, read `plugins[].scaffolding.rules`. Union those with the top-level template `scaffolding.rules` into one working set, tagged by source (template vs `<plugin>`).
+2. **Precedence** — manifest rules override the directives baked into this skill. Where the manifest is silent on a topic, this skill's content is the floor.
+3. **Phase ordering** — rules whose text begins with `Before init` MUST be executed before `databricks apps init`. Rules beginning with `After init` MUST be executed after init completes (e.g. migrations, typegen, connectivity checks). Rules without a phase prefix apply throughout the scaffold/develop loop.
+4. **Conflict detection** — if a plugin `must` rule contradicts a template `never` rule on the same target (or vice versa), STOP and ask the user which to follow before proceeding. Do not silently pick one. Treat `must` vs `never` on the same action as a conflict; `should` is advisory and does not block.
+5. **Reporting** — before running `databricks apps init`, surface the merged working set to the user grouped by phase (Before init / After init / Always) and by severity (must / should / never), so the active guardrails are explicit.
+
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
 **Genie Agent Workflow** — when the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
@@ -194,3 +213,14 @@ App names must be lowercase with hyphens only (≤26 chars).
 Databricks Apps supports any framework that runs as an HTTP server. LLMs already know these frameworks — the challenge is Databricks platform integration.
 
 **READ [Other Frameworks Guide](references/other-frameworks.md) BEFORE building any non-AppKit app.** It covers port/host configuration, `app.yaml` and `databricks.yml` setup, dependency management, networking, and framework-specific gotchas.
+
+### Post-Deploy Verification
+
+After deploying, verify the app is running:
+
+```bash
+databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING
+databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
+```
+
+> **Note:** `databricks apps logs` requires OAuth authentication and does not work with PAT. Use `databricks apps get` for status checks if using PAT auth.

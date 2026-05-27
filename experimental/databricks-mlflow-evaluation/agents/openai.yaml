@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks MLflow Evaluation"
+  short_description: "MLflow 3 GenAI agent evaluation."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-mlflow-evaluation for mlflow 3 genai agent evaluation."
