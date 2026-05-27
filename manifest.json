@@ -220,6 +220,7 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
+        "references/1-saas-connectors.md",
         "references/4-ingestion-decision-tree.md"
       ],
       "repo_dir": "experimental",
