@@ -305,6 +305,7 @@ def generate_manifest(repo_root: Path) -> dict:
         _add_skill(skills, _build_experimental_entry(skill_dir))
 
     return {
+        "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
         "version": "2",
         "skills": skills,
     }
