@@ -66,10 +66,10 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "examples.md",
-        "notifications-monitoring.md",
-        "task-types.md",
-        "triggers-schedules.md"
+        "references/examples.md",
+        "references/notifications-monitoring.md",
+        "references/task-types.md",
+        "references/triggers-schedules.md"
       ]
     },
     "databricks-lakebase": {
@@ -190,12 +190,12 @@
       "description": "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS).",
       "repo_dir": "experimental",
       "files": [
-        "1-knowledge-assistants.md",
-        "2-supervisor-agents.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/1-knowledge-assistants.md",
+        "references/2-supervisor-agents.md"
       ]
     },
     "databricks-ai-functions": {
@@ -203,14 +203,14 @@
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 chunk \u2192 index \u2192 query).",
       "repo_dir": "experimental",
       "files": [
-        "1-task-functions.md",
-        "2-ai-query.md",
-        "3-ai-forecast.md",
-        "4-document-processing-pipeline.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/1-task-functions.md",
+        "references/2-ai-query.md",
+        "references/3-ai-forecast.md",
+        "references/4-document-processing-pipeline.md"
       ]
     },
     "databricks-aibi-dashboards": {
@@ -218,15 +218,15 @@
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly.",
       "repo_dir": "experimental",
       "files": [
-        "1-widget-specifications.md",
-        "2-advanced-widget-specifications.md",
-        "3-filters.md",
-        "4-examples.md",
-        "5-troubleshooting.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/1-widget-specifications.md",
+        "references/2-advanced-widget-specifications.md",
+        "references/3-filters.md",
+        "references/4-examples.md",
+        "references/5-troubleshooting.md"
       ]
     },
     "databricks-apps-python": {
@@ -234,12 +234,6 @@
       "description": "Builds Databricks applications. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required. Handles OAuth authorization, app resources, SQL warehouse and Lakebase connectivity, model serving, foundation model APIs, and deployment. Use when building web apps, dashboards, ML demos, or REST APIs for Databricks, or when the user mentions AppKit, Streamlit, Dash, Gradio, Flask, FastAPI, Reflex, or Databricks app.",
       "repo_dir": "experimental",
       "files": [
-        "1-authorization.md",
-        "2-app-resources.md",
-        "3-frameworks.md",
-        "4-deployment.md",
-        "5-lakebase.md",
-        "6-cli-approach.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
@@ -247,7 +241,13 @@
         "examples/fm-minimal-chat.py",
         "examples/fm-parallel-calls.py",
         "examples/fm-structured-outputs.py",
-        "examples/llm_config.py"
+        "examples/llm_config.py",
+        "references/1-authorization.md",
+        "references/2-app-resources.md",
+        "references/3-frameworks.md",
+        "references/4-deployment.md",
+        "references/5-lakebase.md",
+        "references/6-cli-approach.md"
       ]
     },
     "databricks-dbsql": {
@@ -257,13 +257,13 @@
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
-        "ai-functions.md",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "best-practices.md",
-        "geospatial-collations.md",
-        "materialized-views-pipes.md",
-        "sql-scripting.md"
+        "references/ai-functions.md",
+        "references/best-practices.md",
+        "references/geospatial-collations.md",
+        "references/materialized-views-pipes.md",
+        "references/sql-scripting.md"
       ]
     },
     "databricks-docs": {
@@ -297,15 +297,15 @@
       "description": "Apache Iceberg tables on Databricks \u2014 Managed Iceberg tables, External Iceberg Reads (fka Uniform), Compatibility Mode, Iceberg REST Catalog (IRC), Iceberg v3, Snowflake interop, PyIceberg, OSS Spark, external engine access and credential vending. Use when creating Iceberg tables, enabling External Iceberg Reads (uniform) on Delta tables (including Streaming Tables and Materialized Views via compatibility mode), configuring external engines to read Databricks tables via Unity Catalog IRC, integrating with Snowflake catalog to read Foreign Iceberg tables",
       "repo_dir": "experimental",
       "files": [
-        "1-managed-iceberg-tables.md",
-        "2-uniform-and-compatibility.md",
-        "3-iceberg-rest-catalog.md",
-        "4-snowflake-interop.md",
-        "5-external-engine-interop.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/1-managed-iceberg-tables.md",
+        "references/2-uniform-and-compatibility.md",
+        "references/3-iceberg-rest-catalog.md",
+        "references/4-snowflake-interop.md",
+        "references/5-external-engine-interop.md"
       ]
     },
     "databricks-metric-views": {
@@ -317,8 +317,8 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "patterns.md",
-        "yaml-reference.md"
+        "references/patterns.md",
+        "references/yaml-reference.md"
       ]
     },
     "databricks-mlflow-evaluation": {
@@ -352,12 +352,12 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "doc-index.md",
         "examples/1-authentication.py",
         "examples/2-clusters-and-jobs.py",
         "examples/3-sql-and-warehouses.py",
         "examples/4-unity-catalog.py",
-        "examples/5-serving-and-vector-search.py"
+        "examples/5-serving-and-vector-search.py",
+        "references/doc-index.md"
       ]
     },
     "databricks-spark-structured-streaming": {
@@ -369,15 +369,15 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "checkpoint-best-practices.md",
-        "kafka-streaming.md",
-        "merge-operations.md",
-        "multi-sink-writes.md",
-        "stateful-operations.md",
-        "stream-static-joins.md",
-        "stream-stream-joins.md",
-        "streaming-best-practices.md",
-        "trigger-and-cost-optimization.md"
+        "references/checkpoint-best-practices.md",
+        "references/kafka-streaming.md",
+        "references/merge-operations.md",
+        "references/multi-sink-writes.md",
+        "references/stateful-operations.md",
+        "references/stream-static-joins.md",
+        "references/stream-stream-joins.md",
+        "references/streaming-best-practices.md",
+        "references/trigger-and-cost-optimization.md"
       ]
     },
     "databricks-synthetic-data-gen": {
@@ -399,13 +399,13 @@
       "description": "Unity Catalog system tables and volumes. Use when querying system tables (audit, lineage, billing) or working with volume file operations (upload, download, list files in /Volumes/).",
       "repo_dir": "experimental",
       "files": [
-        "5-system-tables.md",
-        "6-volumes.md",
-        "7-data-profiling.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/5-system-tables.md",
+        "references/6-volumes.md",
+        "references/7-data-profiling.md"
       ]
     },
     "databricks-unstructured-pdf-generation": {
@@ -425,15 +425,15 @@
       "description": "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC. Use when creating producers that write directly to Unity Catalog tables without a message bus, working with the Zerobus Ingest SDK in Python/Java/Go/TypeScript/Rust, generating Protobuf schemas from UC tables, or implementing stream-based ingestion with ACK handling and retry logic.",
       "repo_dir": "experimental",
       "files": [
-        "1-setup-and-authentication.md",
-        "2-python-client.md",
-        "3-multilanguage-clients.md",
-        "4-protobuf-schema.md",
-        "5-operations-and-limits.md",
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "references/1-setup-and-authentication.md",
+        "references/2-python-client.md",
+        "references/3-multilanguage-clients.md",
+        "references/4-protobuf-schema.md",
+        "references/5-operations-and-limits.md"
       ]
     },
     "spark-python-data-source": {

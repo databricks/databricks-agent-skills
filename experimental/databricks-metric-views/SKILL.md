@@ -87,8 +87,8 @@ ORDER BY ALL
 
 | Topic | File | Description |
 |-------|------|-------------|
-| YAML Syntax | [yaml-reference.md](yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
-| Patterns & Examples | [patterns.md](patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
+| YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
+| Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
 
 ## SQL Operations
 

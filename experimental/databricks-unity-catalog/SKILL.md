@@ -23,9 +23,9 @@ Use this skill when:
 
 | Topic | File | Description |
 |-------|------|-------------|
-| System Tables | [5-system-tables.md](5-system-tables.md) | Lineage, audit, billing, compute, jobs, query history |
-| Volumes | [6-volumes.md](6-volumes.md) | Volume file operations, permissions, best practices |
-| Data Profiling | [7-data-profiling.md](7-data-profiling.md) | Data profiling, drift detection, profile metrics |
+| System Tables | [references/5-system-tables.md](references/5-system-tables.md) | Lineage, audit, billing, compute, jobs, query history |
+| Volumes | [references/6-volumes.md](references/6-volumes.md) | Volume file operations, permissions, best practices |
+| Data Profiling | [references/7-data-profiling.md](references/7-data-profiling.md) | Data profiling, drift detection, profile metrics |
 
 ## Quick Start
 
