@@ -1,16 +1,16 @@
 {
-  "name": "databricks-skills",
-  "description": "Official Databricks agent skills marketplace",
-  "version": "0.1.0",
+  "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
+  "name": "databricks-agent-skills",
+  "description": "Databricks agent skills for AI coding assistants.",
   "owner": {
     "name": "Databricks"
   },
   "plugins": [
     {
-      "name": "databricks-skills",
+      "name": "databricks",
       "source": "./",
-      "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more. Stable skills only — for experimental skills use `databricks aitools install --experimental`.",
-      "version": "0.1.0"
+      "category": "development",
+      "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."
     }
   ]
 }

@@ -8,6 +8,7 @@ on:
       - 'assets/**'
       - 'scripts/skills.py'
       - 'manifest.json'
+      - '.claude-plugin/**'
   push:
     branches:
       - main
