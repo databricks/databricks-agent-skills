@@ -29,9 +29,9 @@ Use this skill when:
 
 Before authoring a metric view, inspect the source tables. Use `discover-schema` as the default — one call returns columns, types, sample rows, null counts, and row count. If you only know the schema, list tables first with `query "SHOW TABLES IN ..."`.
 
-`databricks aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
+`databricks experimental aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
 
-For dimensions and measures, probe distribution beyond sampling — cardinality of candidate dimensions, min/max/percentiles for measures, top categorical values. Write aggregate SQL through `databricks aitools tools query --warehouse <WH> "..."`. Both commands auto-pick the default warehouse; set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>` to override.
+For dimensions and measures, probe distribution beyond sampling — cardinality of candidate dimensions, min/max/percentiles for measures, top categorical values. Write aggregate SQL through `databricks experimental aitools tools query --warehouse <WH> "..."`. Both commands auto-pick the default warehouse; set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>` to override.
 
 ### Create a Metric View
 
@@ -157,7 +157,7 @@ DROP VIEW IF EXISTS catalog.schema.orders_metrics;
 
 ```bash
 # Execute SQL via CLI
-databricks aitools tools query --warehouse WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
 CREATE OR REPLACE VIEW catalog.schema.orders_metrics
 WITH METRICS
 LANGUAGE YAML

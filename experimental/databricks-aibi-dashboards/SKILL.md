@@ -14,15 +14,15 @@ A dashboard should be showing something relevant for a human, typically some KPI
 | Task | Command |
 |------|---------|
 | List warehouses | `databricks warehouses list` |
-| List tables | `databricks aitools tools query --warehouse WH "SHOW TABLES IN catalog.schema"` |
-| Get schema | `databricks aitools tools discover-schema catalog.schema.table1 catalog.schema.table2` |
-| Test query | `databricks aitools tools query --warehouse WH "SELECT..."` |
+| List tables | `databricks experimental aitools tools query --warehouse WH "SHOW TABLES IN catalog.schema"` |
+| Get schema | `databricks experimental aitools tools discover-schema catalog.schema.table1 catalog.schema.table2` |
+| Test query | `databricks experimental aitools tools query --warehouse WH "SELECT..."` |
 | Create dashboard | `databricks lakeview create --display-name "X" --warehouse-id "WH" --dataset-catalog CATALOG --dataset-schema SCHEMA --serialized-dashboard "$(cat file.json)" --json '{"parent_path": "/Workspace/Users/<you>/path"}'` — `--dataset-catalog` / `--dataset-schema` are **flag-only** (REQUIRED; CLI silently drops them if put in `--json`); `parent_path` is JSON-only (no flag). Queries must use bare table names. |
 | Update dashboard | `databricks lakeview update DASHBOARD_ID --serialized-dashboard "$(cat file.json)"` |
 | Publish | `databricks lakeview publish DASHBOARD_ID --warehouse-id WH` |
 | Delete | `databricks lakeview trash DASHBOARD_ID` |
 
-> **`--warehouse` flag**: if `databricks aitools tools query --warehouse WH "..."` fails with `unknown flag: --warehouse` on your CLI version, set `DATABRICKS_WAREHOUSE_ID=WH` in the environment instead and drop the flag — the command auto-picks it from there.
+> **`--warehouse` flag**: if `databricks experimental aitools tools query --warehouse WH "..."` fails with `unknown flag: --warehouse` on your CLI version, set `DATABRICKS_WAREHOUSE_ID=WH` in the environment instead and drop the flag — the command auto-picks it from there.
 
 ---
 
@@ -57,9 +57,9 @@ A good dashboard comes from knowing the data first. Spend time here — the expl
 
 Use `discover-schema` as the default — one call returns columns, types, sample rows, null counts, and row count. If you only know the schema, list tables first with `query "SHOW TABLES IN ..."`.
 
-`databricks aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
+`databricks experimental aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
 
-Sample rows alone don't tell you what to build. you can write aggregate SQL through `databricks aitools tools query --warehouse <WH> "..."` to probe typically:
+Sample rows alone don't tell you what to build. you can write aggregate SQL through `databricks experimental aitools tools query --warehouse <WH> "..."` to probe typically:
 
 - **Cardinality** of candidate grouping columns → decides chart color-group vs. table (≤8 distinct values for charts, see Cardinality & Readability below).
 - **Top categorical values** → populates filter options and chart legends meaningfully.

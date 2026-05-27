@@ -101,11 +101,11 @@ GROUP BY workspace_id, sku_name;
 
 ## SQL Queries via CLI
 
-Use `databricks aitools tools query` for system table queries:
+Use `databricks experimental aitools tools query` for system table queries:
 
 ```bash
 # Query lineage via CLI
-databricks aitools tools query --warehouse WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
   SELECT source_table_full_name, target_table_full_name
   FROM system.access.table_lineage
   WHERE event_date >= current_date() - 7

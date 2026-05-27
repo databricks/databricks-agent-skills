@@ -19,7 +19,7 @@ Agent Bricks are pre-built AI tiles in Databricks that provide conversational in
 ```bash
 # Find volumes
 databricks volumes list CATALOG SCHEMA
-databricks aitools tools query --warehouse WH "LIST '/Volumes/catalog/schema/volume/'"
+databricks experimental aitools tools query --warehouse WH "LIST '/Volumes/catalog/schema/volume/'"
 
 # Create KA
 databricks knowledge-assistants create-knowledge-assistant "Name" "Description"

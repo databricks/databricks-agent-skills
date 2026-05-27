@@ -293,30 +293,30 @@ WAREHOUSE_ID="your-warehouse-id"
 VOLUME_PATH="/Volumes/CATALOG/SCHEMA/raw_data"
 
 # 1. Check row counts
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT 'customers' as table_name, COUNT(*) as row_count FROM parquet.\`${VOLUME_PATH}/customers\`
 UNION ALL
 SELECT 'orders', COUNT(*) FROM parquet.\`${VOLUME_PATH}/orders\`
 "
 
 # 2. Preview schema and sample data
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 DESCRIBE SELECT * FROM parquet.\`${VOLUME_PATH}/customers\`
 "
 
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT * FROM parquet.\`${VOLUME_PATH}/customers\` LIMIT 5
 "
 
 # 3. Verify distributions
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT tier, COUNT(*) as count, ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as pct
 FROM parquet.\`${VOLUME_PATH}/customers\`
 GROUP BY tier ORDER BY tier
 "
 
 # 4. Check amount statistics
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT
   MIN(amount) as min_amount,
   MAX(amount) as max_amount,
@@ -326,7 +326,7 @@ FROM parquet.\`${VOLUME_PATH}/orders\`
 "
 
 # 5. Check referential integrity
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT COUNT(*) as orphan_orders
 FROM parquet.\`${VOLUME_PATH}/orders\` o
 LEFT JOIN parquet.\`${VOLUME_PATH}/customers\` c ON o.customer_id = c.customer_id
@@ -334,7 +334,7 @@ WHERE c.customer_id IS NULL
 "
 
 # 6. Verify date range
-databricks aitools tools query --warehouse $WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse $WAREHOUSE_ID "
 SELECT MIN(order_date) as min_date, MAX(order_date) as max_date
 FROM parquet.\`${VOLUME_PATH}/orders\`
 "

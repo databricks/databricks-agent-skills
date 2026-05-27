@@ -61,13 +61,13 @@ databricks apps list  # profile not set!
 
 ```bash
 # discover table structure (columns, types, sample data, stats)
-databricks aitools tools discover-schema catalog.schema.table --profile <PROFILE>
+databricks experimental aitools tools discover-schema catalog.schema.table --profile <PROFILE>
 
 # run ad-hoc SQL queries
-databricks aitools tools query "SELECT * FROM table LIMIT 10" --profile <PROFILE>
+databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --profile <PROFILE>
 
 # find the default warehouse
-databricks aitools tools get-default-warehouse --profile <PROFILE>
+databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
 See [Data Exploration](data-exploration.md) for details.
@@ -100,8 +100,8 @@ databricks tables get <CATALOG>.<SCHEMA>.<TABLE> --profile <PROFILE>
 # databricks schemas list --catalog-name <CATALOG>    ← WILL FAIL
 # databricks tables list --catalog <CATALOG>           ← WILL FAIL
 # databricks sql-warehouses list                       ← doesn't exist, use `warehouses list`
-# databricks execute-statement                         ← doesn't exist, use `aitools tools query`
-# databricks sql execute                               ← doesn't exist, use `aitools tools query`
+# databricks execute-statement                         ← doesn't exist, use `experimental aitools tools query`
+# databricks sql execute                               ← doesn't exist, use `experimental aitools tools query`
 
 # When in doubt, check help:
 # databricks schemas list --help

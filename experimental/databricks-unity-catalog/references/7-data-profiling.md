@@ -68,7 +68,7 @@ DROP QUALITY MONITOR catalog.schema.my_table;
 ### Execute via CLI
 
 ```bash
-databricks aitools tools query --warehouse WAREHOUSE_ID "
+databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
 CREATE OR REPLACE QUALITY MONITOR catalog.schema.my_table
 OPTIONS (OUTPUT_SCHEMA 'catalog.schema')
 "
