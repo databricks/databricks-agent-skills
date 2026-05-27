@@ -5,6 +5,19 @@ description: "MLflow 3 GenAI agent evaluation. Use when writing mlflow.genai.eva
 
 # MLflow 3 GenAI Evaluation
 
+## Scope vs upstream `mlflow/skills`
+
+The OSS `mlflow/skills` repo ships [`agent-evaluation`](https://github.com/mlflow/skills/tree/main/agent-evaluation) and related skills (`instrumenting-with-mlflow-tracing`, `analyze-mlflow-trace`, `retrieving-mlflow-traces`, `querying-mlflow-metrics`) that cover the generic MLflow GenAI evaluation workflow — `mlflow.genai.evaluate()`, scorers/judges, datasets, tracing setup, and the 5-step evaluation loop.
+
+This skill **layers Databricks-specific patterns on top of that workflow** rather than restating it. Use this skill when you need any of:
+
+- **Unity Catalog trace ingestion** — production traces written into UC tables, log-based monitoring (`patterns-trace-ingestion.md`).
+- **MemAlign judge alignment via UC SME labeling sessions** — aligning custom judges against domain-expert feedback collected in Databricks (`patterns-judge-alignment.md`).
+- **`optimize_prompts()` GEPA loop** — Databricks' automated prompt-optimization driver running on a UC dataset (`patterns-prompt-optimization.md`).
+- **Databricks-flavored scorer/dataset patterns** — UC-table-backed datasets, tagging traces in the Databricks UI for inclusion (`patterns-datasets.md`, `patterns-scorers.md`).
+
+For everything else — generic `mlflow.genai.evaluate()` calls, scorer authoring patterns, dataset creation outside Databricks, MLflow tracing setup that isn't UC-table-bound — the upstream `mlflow/skills/agent-evaluation` skill is the canonical source and is kept current by the MLflow team.
+
 ## Before Writing Any Code
 
 1. **Read GOTCHAS.md** - 15+ common mistakes that cause failures

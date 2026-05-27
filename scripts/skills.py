@@ -119,56 +119,10 @@ def iter_skill_files(skill_path: Path):
 # Sync
 # ---------------------------------------------------------------------------
 
-def sync_assets(repo_root: Path) -> int:
-    """Copy shared assets from repo root into each skill directory.
-
-    Only writes when content differs. Uses shutil.copy2 to preserve mtime
-    from the source.
-
-    Returns count of files written.
-    """
-    for asset_rel in SHARED_ASSETS:
-        source = repo_root / asset_rel
-        if not source.exists():
-            raise ValueError(f"Missing shared asset '{asset_rel}' at repo root.")
-
-    synced = 0
-    for skill_dir in iter_skill_dirs(repo_root):
-        for asset_rel in SHARED_ASSETS:
-            source = repo_root / asset_rel
-            dest = skill_dir / asset_rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-
-            if dest.exists() and dest.read_bytes() == source.read_bytes():
-                continue
-
-            shutil.copy2(source, dest)
-            synced += 1
-
-    return synced
-
-
-def check_assets_synced(repo_root: Path) -> list[str]:
-    """Validate that all shared assets are present and up-to-date.
-
-    Returns a list of error messages (empty means all good).
-    """
-    errors: list[str] = []
-    for asset_rel in SHARED_ASSETS:
-        source = repo_root / asset_rel
-        if not source.exists():
-            errors.append(f"Missing shared asset '{asset_rel}' at repo root.")
-            continue
-
-        source_bytes = source.read_bytes()
-        for skill_dir in iter_skill_dirs(repo_root):
-            dest = skill_dir / asset_rel
-            if not dest.exists():
-                errors.append(f"Missing '{asset_rel}' in skill '{skill_dir.name}'.")
-            elif dest.read_bytes() != source_bytes:
-                errors.append(f"Stale '{asset_rel}' in skill '{skill_dir.name}'.")
-
-    return errors
+def iter_all_skill_dirs(repo_root: Path):
+    """Yield every skill directory across stable and experimental."""
+    yield from iter_skill_dirs(repo_root, parent=STABLE_REPO_DIR)
+    yield from iter_skill_dirs(repo_root, parent=EXPERIMENTAL_REPO_DIR)
 
 
 # ---------------------------------------------------------------------------
@@ -261,19 +215,40 @@ def synthesize_openai_yaml(skill_name: str, short_description: str) -> str:
     )
 
 
-def ensure_experimental_codex_metadata(repo_root: Path) -> int:
-    """Synthesize agents/openai.yaml and copy shared assets for experimental skills.
+def ensure_codex_metadata(repo_root: Path) -> int:
+    """Ensure every skill has agents/openai.yaml + shared assets.
 
-    Only writes when files are missing — upstream ai-dev-kit can override by
-    shipping its own agents/openai.yaml or assets/ in the skill. Returns the
-    number of files written.
+    Applies uniformly to stable (`skills/`) and experimental (`experimental/`)
+    skills:
+
+    - **assets**: copies `assets/databricks.{svg,png}` from the repo root into
+      each skill's `assets/` directory. Overwrites stale copies (content mismatch
+      against the source) so the bundled icons never drift; preserves source
+      mtime via `shutil.copy2` so skill `updated_at` timestamps stay stable.
+    - **agents/openai.yaml**: synthesises a Codex marketplace metadata file
+      from the SKILL.md frontmatter when one is missing. Hand-authored
+      `openai.yaml` is preserved as-is, so skill authors can curate the
+      display name / short description / default prompt without their work
+      being overwritten on every `generate`.
+
+    Returns the number of files written (assets and openai.yaml combined).
+
+    This is the single source of truth for the "every skill ships icons +
+    Codex metadata" contract. `check_codex_metadata` is its validation
+    counterpart.
     """
     written = 0
-    for skill_dir in iter_experimental_skill_dirs(repo_root):
+    # Source-of-truth assets at the repo root must exist before we copy
+    # anything; surface that as a clean error instead of a per-skill failure.
+    for asset_rel in SHARED_ASSETS:
+        if not (repo_root / asset_rel).exists():
+            raise ValueError(f"Missing shared asset '{asset_rel}' at repo root.")
+
+    for skill_dir in iter_all_skill_dirs(repo_root):
         for asset_rel in SHARED_ASSETS:
             source = repo_root / asset_rel
             dest = skill_dir / asset_rel
-            if dest.exists():
+            if dest.exists() and dest.read_bytes() == source.read_bytes():
                 continue
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, dest)
@@ -290,6 +265,43 @@ def ensure_experimental_codex_metadata(repo_root: Path) -> int:
     return written
 
 
+def check_codex_metadata(repo_root: Path) -> list[str]:
+    """Validate every skill has shared assets + agents/openai.yaml.
+
+    Mirror of `ensure_codex_metadata`: each skill must ship the icons
+    `assets/databricks.{svg,png}` (byte-identical to the repo-root source)
+    and an `agents/openai.yaml` marketplace metadata file. Applies to both
+    stable and experimental skills.
+
+    Returns a list of error messages; empty list means everything is in
+    order. The CI workflow `validate-manifest.yml` runs this on every PR
+    that touches `skills/`, `experimental/`, `assets/`, `scripts/skills.py`,
+    or `manifest.json`.
+    """
+    errors: list[str] = []
+    for asset_rel in SHARED_ASSETS:
+        if not (repo_root / asset_rel).exists():
+            errors.append(f"Missing shared asset '{asset_rel}' at repo root.")
+    if errors:
+        return errors
+
+    for skill_dir in iter_all_skill_dirs(repo_root):
+        for asset_rel in SHARED_ASSETS:
+            source = repo_root / asset_rel
+            dest = skill_dir / asset_rel
+            if not dest.exists():
+                errors.append(f"Missing '{asset_rel}' in skill '{skill_dir.name}'.")
+            elif dest.read_bytes() != source.read_bytes():
+                errors.append(f"Stale '{asset_rel}' in skill '{skill_dir.name}'.")
+
+        if not (skill_dir / "agents" / "openai.yaml").exists():
+            errors.append(
+                f"Missing 'agents/openai.yaml' in skill '{skill_dir.name}'."
+            )
+
+    return errors
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories.
 
@@ -298,18 +310,14 @@ def generate_manifest(repo_root: Path) -> dict:
     truth for whether the skill is experimental; consumers derive that state
     from `repo_dir`.
     """
-    manifest_path = repo_root / "manifest.json"
-    existing_skills = {}
-    if manifest_path.exists():
-        existing_skills = json.loads(manifest_path.read_text()).get("skills", {})
-
     skills: dict = {}
     for skill_dir in iter_skill_dirs(repo_root):
-        _add_skill(skills, _build_stable_entry(skill_dir, existing_skills))
+        _add_skill(skills, _build_stable_entry(skill_dir))
     for skill_dir in iter_experimental_skill_dirs(repo_root):
-        _add_skill(skills, _build_experimental_entry(skill_dir, existing_skills))
+        _add_skill(skills, _build_experimental_entry(skill_dir))
 
     return {
+        "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
         "version": "2",
         "skills": skills,
     }
@@ -329,18 +337,11 @@ def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
     skills[name] = skill
 
 
-def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
     if skill_dir.name not in SKILL_METADATA:
         raise ValueError(
             f"Missing SKILL_METADATA entry for skill '{skill_dir.name}'. "
             "Add it to SKILL_METADATA dict."
-        )
-
-    openai_yaml = skill_dir / "agents" / "openai.yaml"
-    if not openai_yaml.exists():
-        raise ValueError(
-            f"Missing agents/openai.yaml in skill '{skill_dir.name}'. "
-            "Each skill must include Codex marketplace metadata."
         )
 
     metadata = SKILL_METADATA[skill_dir.name]
@@ -356,17 +357,13 @@ def _build_stable_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, di
     if metadata.get("min_cli_version"):
         skill_entry["min_cli_version"] = metadata["min_cli_version"]
 
-    existing = existing_skills.get(skill_dir.name, {})
-    if "base_revision" in existing:
-        skill_entry["base_revision"] = existing["base_revision"]
-
     return skill_dir.name, skill_entry
 
 
 # Experimental skills have a looser contract than stable: no agents/openai.yaml
 # required, no shared-asset sync, no SKILL_METADATA entry required. Description
 # is scraped from SKILL.md frontmatter on a best-effort basis.
-def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[str, dict]:
+def _build_experimental_entry(skill_dir: Path) -> tuple[str, dict]:
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
     skill_entry = {
@@ -376,10 +373,6 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
         "files": files,
     }
 
-    existing = existing_skills.get(skill_dir.name, {})
-    if "base_revision" in existing:
-        skill_entry["base_revision"] = existing["base_revision"]
-
     return skill_dir.name, skill_entry
 
 
@@ -387,42 +380,43 @@ def _build_experimental_entry(skill_dir: Path, existing_skills: dict) -> tuple[s
 # Validation
 # ---------------------------------------------------------------------------
 
-def normalize_manifest(manifest: dict) -> dict:
-    """Normalize manifest for comparison by excluding volatile fields."""
-    normalized = manifest.copy()
-    normalized["skills"] = _normalize_skill_map(manifest.get("skills", {}))
-    return normalized
+def serialize_manifest(manifest: dict) -> str:
+    """Render manifest as its canonical on-disk form.
 
-
-def _normalize_skill_map(skill_map: dict) -> dict:
-    out = {}
-    for name, skill in skill_map.items():
-        skill_copy = skill.copy()
-        skill_copy.pop("base_revision", None)
-        out[name] = skill_copy
-    return out
+    `sort_keys=True` makes the skills map and each entry's keys alphabetical
+    (the `files` arrays are already sorted at generation time). Validation
+    requires the on-disk file to byte-equal this output — drift, hand-edits,
+    or unsorted insertions all fail the check.
+    """
+    return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
 
 def validate_manifest(repo_root: Path) -> bool:
-    """Validate that manifest.json is up to date. Returns True if valid."""
+    """Validate that manifest.json is up to date AND in canonical sorted form."""
     manifest_path = repo_root / "manifest.json"
 
     if not manifest_path.exists():
         print("ERROR: manifest.json does not exist", file=sys.stderr)
         return False
 
-    current_manifest = json.loads(manifest_path.read_text())
+    current_text = manifest_path.read_text()
+    current_manifest = json.loads(current_text)
     expected_manifest = generate_manifest(repo_root)
 
-    current_normalized = normalize_manifest(current_manifest)
-    expected_normalized = normalize_manifest(expected_manifest)
-
-    if current_normalized != expected_normalized:
-        print("ERROR: manifest.json is out of date", file=sys.stderr)
+    if current_manifest != expected_manifest:
+        print("ERROR: manifest.json content is out of date", file=sys.stderr)
         print("\nExpected:", file=sys.stderr)
-        print(json.dumps(expected_normalized, indent=2), file=sys.stderr)
+        print(serialize_manifest(expected_manifest), file=sys.stderr)
         print("\nActual:", file=sys.stderr)
-        print(json.dumps(current_normalized, indent=2), file=sys.stderr)
+        print(serialize_manifest(current_manifest), file=sys.stderr)
+        return False
+
+    if current_text != serialize_manifest(current_manifest):
+        print(
+            "ERROR: manifest.json is not in canonical sorted form. "
+            "Keys must be alphabetical at every level.",
+            file=sys.stderr,
+        )
         return False
 
     return True
@@ -442,9 +436,9 @@ def main() -> None:
         default="generate",
         choices=["sync", "generate", "validate"],
         help=(
-            "sync: copy shared assets into each skill directory. "
-            "generate: sync + create manifest.json (default). "
-            "validate: check assets and manifest are up to date."
+            "sync: ensure every skill has assets + agents/openai.yaml. "
+            "generate: sync + (re)build manifest.json (default). "
+            "validate: check assets, metadata, and manifest are up to date."
         ),
     )
 
@@ -453,20 +447,16 @@ def main() -> None:
 
     match args.mode:
         case "sync":
-            synced = sync_assets(repo_root)
-            print(f"Synced {synced} asset(s)")
-            generated = ensure_experimental_codex_metadata(repo_root)
-            print(f"Generated {generated} experimental Codex metadata file(s)")
+            written = ensure_codex_metadata(repo_root)
+            print(f"Wrote {written} Codex-metadata file(s)")
 
         case "generate":
-            synced = sync_assets(repo_root)
-            print(f"Synced {synced} asset(s)")
-            generated = ensure_experimental_codex_metadata(repo_root)
-            print(f"Generated {generated} experimental Codex metadata file(s)")
+            written = ensure_codex_metadata(repo_root)
+            print(f"Wrote {written} Codex-metadata file(s)")
 
             manifest = generate_manifest(repo_root)
             manifest_path = repo_root / "manifest.json"
-            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+            manifest_path.write_text(serialize_manifest(manifest))
             print(f"Generated {manifest_path}")
             print(
                 f"Found {len(manifest['skills'])} skill(s): "
@@ -476,10 +466,13 @@ def main() -> None:
         case "validate":
             ok = True
 
-            asset_errors = check_assets_synced(repo_root)
-            if asset_errors:
-                print("ERROR: Shared assets are out of sync:", file=sys.stderr)
-                for err in asset_errors:
+            metadata_errors = check_codex_metadata(repo_root)
+            if metadata_errors:
+                print(
+                    "ERROR: Skill assets / Codex metadata are out of sync:",
+                    file=sys.stderr,
+                )
+                for err in metadata_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

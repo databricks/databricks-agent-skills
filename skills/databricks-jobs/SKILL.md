@@ -17,10 +17,10 @@ Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers
 
 | Use Case | Reference File |
 |----------|----------------|
-| Configure task types (notebook, Python, SQL, dbt, pipeline, JAR, run_job, for_each) | [task-types.md](task-types.md) |
-| Set up triggers and schedules (cron, periodic, file arrival, table update, continuous) | [triggers-schedules.md](triggers-schedules.md) |
-| Configure notifications, health rules, retries, timeouts, queues | [notifications-monitoring.md](notifications-monitoring.md) |
-| Complete worked examples (ETL, warehouse refresh, event-driven, ML training, multi-env, streaming, cross-job) | [examples.md](examples.md) |
+| Configure task types (notebook, Python, SQL, dbt, pipeline, JAR, run_job, for_each) | [references/task-types.md](references/task-types.md) |
+| Set up triggers and schedules (cron, periodic, file arrival, table update, continuous) | [references/triggers-schedules.md](references/triggers-schedules.md) |
+| Configure notifications, health rules, retries, timeouts, queues | [references/notifications-monitoring.md](references/notifications-monitoring.md) |
+| Complete worked examples (ETL, warehouse refresh, event-driven, ML training, multi-env, streaming, cross-job) | [references/examples.md](references/examples.md) |
 
 ## Scaffolding a New Job Project
 
@@ -166,25 +166,25 @@ tasks:
 
 | Task Type | Use Case | Reference |
 |-----------|----------|-----------|
-| `notebook_task` | Run notebooks | [task-types.md#notebook-task](task-types.md#notebook-task) |
-| `spark_python_task` | Run Python scripts | [task-types.md#spark-python-task](task-types.md#spark-python-task) |
-| `python_wheel_task` | Run Python wheels | [task-types.md#python-wheel-task](task-types.md#python-wheel-task) |
-| `sql_task` | Run SQL queries/files/dashboards/alerts | [task-types.md#sql-task](task-types.md#sql-task) |
-| `dbt_task` | Run dbt projects | [task-types.md#dbt-task](task-types.md#dbt-task) |
-| `pipeline_task` | Trigger SDP (formerly DLT) pipelines | [task-types.md#pipeline-task](task-types.md#pipeline-task) |
-| `spark_jar_task` | Run Spark JARs | [task-types.md#spark-jar-task](task-types.md#spark-jar-task) |
-| `run_job_task` | Trigger other jobs | [task-types.md#run-job-task](task-types.md#run-job-task) |
-| `for_each_task` | Loop over inputs | [task-types.md#for-each-task](task-types.md#for-each-task) |
+| `notebook_task` | Run notebooks | [references/task-types.md#notebook-task](references/task-types.md#notebook-task) |
+| `spark_python_task` | Run Python scripts | [references/task-types.md#spark-python-task](references/task-types.md#spark-python-task) |
+| `python_wheel_task` | Run Python wheels | [references/task-types.md#python-wheel-task](references/task-types.md#python-wheel-task) |
+| `sql_task` | Run SQL queries/files/dashboards/alerts | [references/task-types.md#sql-task](references/task-types.md#sql-task) |
+| `dbt_task` | Run dbt projects | [references/task-types.md#dbt-task](references/task-types.md#dbt-task) |
+| `pipeline_task` | Trigger SDP (formerly DLT) pipelines | [references/task-types.md#pipeline-task](references/task-types.md#pipeline-task) |
+| `spark_jar_task` | Run Spark JARs | [references/task-types.md#spark-jar-task](references/task-types.md#spark-jar-task) |
+| `run_job_task` | Trigger other jobs | [references/task-types.md#run-job-task](references/task-types.md#run-job-task) |
+| `for_each_task` | Loop over inputs | [references/task-types.md#for-each-task](references/task-types.md#for-each-task) |
 
 ### Trigger Types Summary
 
 | Trigger Type | Use Case | Reference |
 |--------------|----------|-----------|
-| `schedule` | Cron-based scheduling | [triggers-schedules.md#cron-schedule](triggers-schedules.md#cron-schedule) |
-| `trigger.periodic` | Interval-based | [triggers-schedules.md#periodic-trigger](triggers-schedules.md#periodic-trigger) |
-| `trigger.file_arrival` | File arrival events | [triggers-schedules.md#file-arrival-trigger](triggers-schedules.md#file-arrival-trigger) |
-| `trigger.table_update` | Unity Catalog table change events | [triggers-schedules.md#table-update-trigger](triggers-schedules.md#table-update-trigger) |
-| `continuous` | Always-running jobs | [triggers-schedules.md#continuous-jobs](triggers-schedules.md#continuous-jobs) |
+| `schedule` | Cron-based scheduling | [references/triggers-schedules.md#cron-schedule](references/triggers-schedules.md#cron-schedule) |
+| `trigger.periodic` | Interval-based | [references/triggers-schedules.md#periodic-trigger](references/triggers-schedules.md#periodic-trigger) |
+| `trigger.file_arrival` | File arrival events | [references/triggers-schedules.md#file-arrival-trigger](references/triggers-schedules.md#file-arrival-trigger) |
+| `trigger.table_update` | Unity Catalog table change events | [references/triggers-schedules.md#table-update-trigger](references/triggers-schedules.md#table-update-trigger) |
+| `continuous` | Always-running jobs | [references/triggers-schedules.md#continuous-jobs](references/triggers-schedules.md#continuous-jobs) |
 
 ## Compute Configuration
 

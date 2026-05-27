@@ -82,6 +82,19 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
   ```
 - For provisioned throughput or custom model endpoints, run `databricks serving-endpoints create -h` to discover the required JSON fields for your endpoint type.
 
+### Endpoint Readiness
+
+After `create` or `update-config`, the endpoint provisions compute and loads the model. **Do not query the endpoint until it is ready.**
+
+Poll for readiness:
+
+```bash
+databricks serving-endpoints get <ENDPOINT_NAME> --profile <PROFILE> -o json
+# Ready when: state.ready == "READY" AND state.config_update == "NOT_UPDATING"
+```
+
+Provisioning may take several minutes. Provisioned throughput endpoints take the longest (GPU allocation). Queries to endpoints that are not yet `READY` return 404 or 503 errors.
+
 ## Query an Endpoint
 
 ```bash
@@ -180,7 +193,7 @@ This skill is ops-focused (manage existing endpoints). For the dev-side flow —
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
 | `PERMISSION_DENIED` | Check workspace permissions; for apps, ensure `serving_endpoint` resource declared with `CAN_QUERY` |
-| Endpoint stuck in `NOT_READY` | Check `build-logs` for the served model (get entity name from `get` output) |
+| Endpoint stuck in `NOT_READY` | Wait up to 30 min for provisioned throughput. Check build logs: `build-logs <NAME> <ENTITY_NAME>` (get entity name from `get` output → `served_entities[].name`) |
 | `RESOURCE_DOES_NOT_EXIST` | Verify endpoint name with `list` |
 | Query returns 404 | Endpoint may still be provisioning; check `state.ready` via `get` |
 | `RATE_LIMIT_EXCEEDED` (429) | AI Gateway rate limit; check `put-ai-gateway` config or retry after backoff |

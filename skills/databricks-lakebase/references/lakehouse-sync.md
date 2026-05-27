@@ -31,7 +31,7 @@ Each row includes CDC metadata columns:
 
 ## Enablement
 
-**Lakehouse Sync is UI-only** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog.
+**Lakehouse Sync is UI-only — there is NO CLI command or REST API to configure it. Do NOT attempt to automate this step.** It is configured through the Databricks workspace UI: "Lakehouse sync" tab in the branch overview. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog.
 
 Navigate to: **Catalog** → your Autoscaling project → branch → **Lakehouse Sync** → **Start Sync**, then select the source database/schema, destination catalog/schema, and tables.
 

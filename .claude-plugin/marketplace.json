@@ -1,0 +1,16 @@
+{
+  "name": "databricks-skills",
+  "description": "Official Databricks agent skills marketplace",
+  "version": "0.1.0",
+  "owner": {
+    "name": "Databricks"
+  },
+  "plugins": [
+    {
+      "name": "databricks-skills",
+      "source": "./",
+      "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more. Stable skills only — for experimental skills use `databricks aitools install --experimental`.",
+      "version": "0.1.0"
+    }
+  ]
+}
