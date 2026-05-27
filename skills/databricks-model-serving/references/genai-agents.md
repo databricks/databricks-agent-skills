@@ -179,6 +179,20 @@ Anything the agent calls that isn't covered here will hit auth errors at the end
 
 `databricks.agents.deploy()` blocks for ~15 minutes — don't run it inline from the CLI. Submit as a serverless job so the chat session doesn't hold the connection.
 
+**Before submitting, check whether a deploy is already in flight or already done.** Re-submitting on top of a running deploy wastes ~15 min of serverless and can race for the same endpoint name.
+
+```bash
+# 1. Is a deploy_agent run already active for this model? Match on run_name.
+databricks jobs list-runs --active-only --output json \
+  | jq --arg name "deploy_${MODEL_NAME}" '.runs[]? | select(.run_name == $name) | {run_id, state}'
+
+# 2. Does the target endpoint already exist? If READY on the right version, skip the redeploy.
+databricks serving-endpoints get <endpoint_name> 2>/dev/null \
+  | jq '{ready: .state.ready, served: [.config.served_models[] | {name, model_version}]}'
+```
+
+If either check returns a hit, follow the existing run with `jobs get-run <RUN_ID>` instead of submitting a new one.
+
 ```python
 # deploy_agent.py
 import json, sys
