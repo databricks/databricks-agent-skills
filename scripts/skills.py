@@ -20,33 +20,6 @@ SHARED_ASSETS = [
 STABLE_REPO_DIR = "skills"
 EXPERIMENTAL_REPO_DIR = "experimental"
 
-SKILL_METADATA = {
-    "databricks-core": {
-        "description": "Core Databricks skill for CLI, auth, and data exploration",
-    },
-    "databricks-apps": {
-        "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
-    },
-    "databricks-jobs": {
-        "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI — covers all task types, triggers, notifications, and worked examples",
-    },
-    "databricks-lakebase": {
-        "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
-    },
-    "databricks-dabs": {
-        "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
-    },
-    "databricks-model-serving": {
-        "description": "Databricks Model Serving endpoint management",
-    },
-    "databricks-pipelines": {
-        "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
-    },
-    "databricks-serverless-migration": {
-        "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
-    },
-}
-
 
 def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
     """Yield skill directories under `parent` that contain SKILL.md."""
@@ -326,12 +299,6 @@ def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
 
 
 def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
-    if skill_dir.name not in SKILL_METADATA:
-        raise ValueError(
-            f"Missing SKILL_METADATA entry for skill '{skill_dir.name}'. "
-            "Add it to SKILL_METADATA dict."
-        )
-
     openai_yaml = skill_dir / "agents" / "openai.yaml"
     if not openai_yaml.exists():
         raise ValueError(
@@ -339,36 +306,28 @@ def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
             "Each skill must include Codex marketplace metadata."
         )
 
-    metadata = SKILL_METADATA[skill_dir.name]
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
-    skill_entry = {
+    return skill_dir.name, {
         "version": extract_version_from_skill(skill_dir),
-        "description": metadata.get("description", ""),
+        "description": synthesize_short_description(skill_dir),
         "repo_dir": STABLE_REPO_DIR,
         "files": files,
     }
 
-    if metadata.get("min_cli_version"):
-        skill_entry["min_cli_version"] = metadata["min_cli_version"]
-
-    return skill_dir.name, skill_entry
-
 
 # Experimental skills have a looser contract than stable: no agents/openai.yaml
-# required, no shared-asset sync, no SKILL_METADATA entry required. Description
-# is scraped from SKILL.md frontmatter on a best-effort basis.
+# required and no shared-asset sync. Description comes from SKILL.md frontmatter
+# verbatim (including "Use when..." triggers).
 def _build_experimental_entry(skill_dir: Path) -> tuple[str, dict]:
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
-    skill_entry = {
+    return skill_dir.name, {
         "version": extract_version_from_skill(skill_dir),
         "description": extract_description_from_skill(skill_dir),
         "repo_dir": EXPERIMENTAL_REPO_DIR,
         "files": files,
     }
-
-    return skill_dir.name, skill_entry
 
 
 # ---------------------------------------------------------------------------
