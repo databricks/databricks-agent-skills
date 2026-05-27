@@ -48,23 +48,35 @@ User request → What kind of output?
 
 ## Common Traps
 
-- **"Create a table"** without specifying type → ask whether the source is streaming or batch
-- **Materialized View from streaming source** is an error → use a Streaming Table instead, or switch to a batch read
-- **Streaming Table from batch source** is an error → use a Materialized View instead, or switch to a streaming read
-- **Aggregation over streaming table** → use a Materialized View with batch read (`spark.read.table` / `SELECT FROM` without `STREAM`), NOT a Streaming Table. This is the correct pattern for Gold layer aggregation.
-- **Aggregation over batch/historical data** → use a Materialized View, not a Streaming Table. MVs recompute or incrementally refresh aggregates to stay correct; STs are append-only and don't recompute when source data changes.
-- **Preprocessing before Auto CDC** → use a Temporary View to filter/transform the source before feeding into the CDC flow. SQL: the CDC flow reads from the view via `STREAM(view_name)`. Python: use `spark.readStream.table("view_name")`.
-- **Intermediate logic → default to Temporary View** → Use a Temporary View for intermediate/preprocessing logic, even when reused by multiple downstream tables. Only consider a Private MV/ST (`private=True` / `CREATE PRIVATE ...`) when the computation is expensive and materializing once would save significant reprocessing.
-- **View vs Temporary View** → Persistent Views publish to Unity Catalog (SQL only), Temporary Views are pipeline-private
-- **Union of streams** → use multiple Append Flows. Do NOT present UNION as an alternative — it is an anti-pattern for streaming sources.
-- **Changing dataset type** → cannot change ST→MV or MV→ST without manually dropping the existing table first. Full refresh does NOT help. Rename the new dataset instead.
-- **SQL `OR REFRESH`** → Prefer `CREATE OR REFRESH` over bare `CREATE` for SQL dataset definitions. Both work identically, but `OR REFRESH` is the idiomatic convention. For PRIVATE datasets: `CREATE OR REFRESH PRIVATE STREAMING TABLE` / `CREATE OR REFRESH PRIVATE MATERIALIZED VIEW`.
-- **Kafka/Event Hubs sink serialization** → The `value` column is mandatory. Use `to_json(struct(*)) AS value` to serialize the entire row as JSON. Read the sink skill for details.
-- **Multi-column sequencing** in Auto CDC → SQL: `SEQUENCE BY STRUCT(col1, col2)`. Python: `sequence_by=struct("col1", "col2")`. Read the auto-cdc skill for details.
-- **Auto CDC supports TRUNCATE** (SCD Type 1 only) → SQL: `APPLY AS TRUNCATE WHEN condition`. Python: `apply_as_truncates=expr("condition")`. Do NOT say truncate is unsupported.
-- **Python-only features** → Sinks, ForEachBatch Sinks, CDC from snapshots, and custom data sources are Python-only. When the user is working in SQL, explicitly clarify this and suggest switching to Python.
-- **MV incremental refresh** → Materialized Views on **serverless** pipelines support automatic incremental refresh for aggregations. Mention the serverless requirement when discussing incremental refresh.
-- **Recommend ONE clear approach** → Present a single recommended approach. Do NOT present anti-patterns or significantly inferior alternatives — it confuses users. Only mention alternatives if they are genuinely viable for different trade-offs.
+- **Names** → SDP = LDP = Lakeflow Declarative Pipelines = (formerly) DLT. All interchangeable when the user mentions them.
+- **"Create a table" without specifying type** → ask whether the source is streaming or batch. Streaming source → Streaming Table; batch source → Materialized View. Mismatched pairs error at validation.
+- **Aggregation over a streaming source** → use a Materialized View with a batch read (`spark.read.table` / `SELECT FROM` without `STREAM`). STs are append-only and don't recompute aggregates when source rows change; MVs do.
+- **Intermediate logic** → default to a Temporary View. Even for shared logic reused by multiple downstream tables. Use a Private MV/ST (`private=True` / `CREATE PRIVATE ...`) only when materializing once saves significant reprocessing. For preprocessing before Auto CDC, the temp view is required — the CDC flow reads from `STREAM(view_name)` (SQL) or `spark.readStream.table("view_name")` (Python).
+- **Union of streams** → use multiple Append Flows. UNION across streaming sources is an anti-pattern.
+- **Changing dataset type** → cannot change ST→MV or MV→ST in place. Full refresh does NOT help. Drop the existing table manually or rename the new dataset.
+- **`CREATE OR REFRESH` vs `CREATE`** → both parse for SQL datasets, but `CREATE OR REFRESH` is the idiomatic convention. For PRIVATE datasets: `CREATE OR REFRESH PRIVATE STREAMING TABLE` / `... MATERIALIZED VIEW`.
+- **Kafka/Event Hubs sink serialization** → the `value` column is mandatory; serialize the row with `to_json(struct(*)) AS value`. See [sink-python.md](references/sink-python.md).
+- **Multi-column Auto CDC sequencing** → SQL: `SEQUENCE BY STRUCT(col1, col2)`. Python: `sequence_by=struct("col1", "col2")`. See the auto-cdc references.
+- **Auto CDC TRUNCATE** (SCD Type 1 only) → SQL: `APPLY AS TRUNCATE WHEN condition`. Python: `apply_as_truncates=expr("condition")`. Do NOT claim truncate is unsupported.
+- **Python-only features** → Sinks, ForEachBatch Sinks, CDC from snapshots, and custom data sources are Python-only. When the user is working in SQL, clarify this and suggest switching to Python.
+- **Recommend ONE clear approach** → present a single recommended path. Don't list anti-patterns or inferior alternatives — they confuse. Only mention alternatives when they genuinely offer different trade-offs.
+
+## Common Issues
+
+Error → cause/fix mappings agents hit constantly. For DAB-bundle vs CLI-iteration deploy issues, see the workflow-specific reference files.
+
+| Error / symptom | Cause / fix |
+|-----------------|-------------|
+| Rejection of `CREATE OR REPLACE STREAMING TABLE` / `MATERIALIZED VIEW` | `CREATE OR REPLACE` is standard SQL, NOT SDP. Use `CREATE OR REFRESH STREAMING TABLE` / `CREATE OR REFRESH MATERIALIZED VIEW`. |
+| CLI errors on `databricks fs ls /Volumes/...` | The `dbfs:` prefix is required even for UC Volume paths: `databricks fs ls dbfs:/Volumes/<catalog>/<schema>/<volume>/<path>`. |
+| `DELTA_CLUSTERING_COLUMNS_DATATYPE_NOT_SUPPORTED` at first write | A `CLUSTER BY` column is BOOLEAN / ARRAY / MAP / STRUCT / BINARY. SDP doesn't pre-validate — verify with `DESCRIBE` before submitting. Cluster keys must be numeric / string / date / timestamp. Full type rules in [references/performance.md](references/performance.md#cluster-key-data-types). |
+| `Cannot create streaming table from batch query` | In a streaming-table query you wrote `FROM read_files(...)` (batch). Use `FROM STREAM read_files(...)` so Auto Loader kicks in. |
+| `Column not found` at ingest time | `schemaHints` don't match the actual file schema. `DESCRIBE` a sample file and align the hints. |
+| Streaming reads fail with parser error | Use `FROM STREAM read_files(...)` for file ingestion and `FROM stream(table)` (or `FROM STREAM table_name` — legacy DLT, prefer function form) for table-to-table streams. Don't mix. |
+| Pipeline stuck `INITIALIZING` for serverless | Normal — first run takes a few minutes for cold start. Don't kill it. |
+| Materialized View doesn't incrementally refresh | Automatic incremental refresh for aggregations requires **serverless** + Delta row tracking on the source (`delta.enableRowTracking = true`). Without both, falls back to full recompute. Mention the serverless requirement when the user asks about incremental refresh. |
+| SCD2 query returns nothing / "column not found" on `START_AT` | Lakeflow uses `__START_AT` / `__END_AT` (double underscore). Current rows: `WHERE __END_AT IS NULL`. |
+| `error.exceptions[0].message` missing from your events output | Your `jq` is reading `.message` (which is just "Update X is FAILED"). Read `error.exceptions[0].message` for the real cause — see [2-rapid-iteration-with-cli.md](references/2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update). |
 
 ## Publishing Modes
 
@@ -75,259 +87,178 @@ Pipelines use a **default catalog and schema** configured in the pipeline settin
 - **LIVE prefix**: Deprecated. Ignored in the default publishing mode.
 - When reading or defining datasets within the pipeline, use the dataset name only — do NOT use fully-qualified names unless the pipeline already does so or the user explicitly requests a different target catalog/schema.
 
-## Comprehensive API Reference
+## API Reference
 
-**MANDATORY:** Before implementing, editing, or suggesting any code for a feature, you MUST read the linked reference file for that feature. NO exceptions — always look up the reference before writing code.
+**Before writing pipeline code for any feature, read the linked reference file.** Each table below maps the feature to the exact API and to the detail file for that (feature, language).
 
-Some features require reading multiple skills together:
+Some features sit on top of others — read both:
 
-- **Auto Loader** → also read the streaming-table skill (Auto Loader produces a streaming DataFrame, so the target is a streaming table) and look up format-specific options for the file format being loaded
-- **Auto CDC** → also read the streaming-table skill (Auto CDC always targets a streaming table)
-- **Sinks** → also read the streaming-table skill (sinks use streaming append flows)
-- **Expectations** → also read the corresponding dataset definition skill to ensure constraints are correctly placed
+- **Auto Loader** / **Auto CDC** / **Sinks** target a streaming table → also read [streaming-table-python.md](references/streaming-table-python.md) / [streaming-table-sql.md](references/streaming-table-sql.md).
+- **Expectations** attach to a dataset → also read the dataset definition file (streaming-table / materialized-view / temporary-view).
 
 ### Dataset Definition APIs
 
-| Feature                    | Python (current)                     | Python (deprecated)                   | SQL (current)                               | SQL (deprecated)              | Skill (Py)                                                                | Skill (SQL)                                                         |
-| -------------------------- | ------------------------------------ | ------------------------------------- | ------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Streaming Table            | `@dp.table()` returning streaming DF | `@dlt.table()` returning streaming DF | `CREATE OR REFRESH STREAMING TABLE`         | `CREATE STREAMING LIVE TABLE` | [streaming-table-python](streaming-table/streaming-table-python.md)       | [streaming-table-sql](streaming-table/streaming-table-sql.md)       |
-| Materialized View          | `@dp.materialized_view()`            | `@dlt.table()` returning batch DF     | `CREATE OR REFRESH MATERIALIZED VIEW`       | `CREATE LIVE TABLE` (batch)   | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Temporary View             | `@dp.temporary_view()`               | `@dlt.view()`, `@dp.view()`           | `CREATE TEMPORARY VIEW`                     | `CREATE TEMPORARY LIVE VIEW`  | [temporary-view-python](temporary-view/temporary-view-python.md)          | [temporary-view-sql](temporary-view/temporary-view-sql.md)          |
-| Persistent View (UC)       | N/A — SQL only                       | —                                     | `CREATE VIEW`                               | —                             | —                                                                         | [view-sql](view/view-sql.md)                                        |
-| Streaming Table (explicit) | `dp.create_streaming_table()`        | `dlt.create_streaming_table()`        | `CREATE OR REFRESH STREAMING TABLE` (no AS) | —                             | [streaming-table-python](streaming-table/streaming-table-python.md)       | [streaming-table-sql](streaming-table/streaming-table-sql.md)       |
+| Feature                    | Description                                                      | Python                            | SQL                                         | Skill (Py)                                              | Skill (SQL)                                       |
+| -------------------------- | ---------------------------------------------------------------- | --------------------------------- | ------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| Streaming Table            | Continuous incremental processing, exactly-once, append-only.    | `@dp.table()` returning streaming DF | `CREATE OR REFRESH STREAMING TABLE`         | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
+| Materialized View          | Physically stored query result, incrementally refreshed.         | `@dp.materialized_view()`         | `CREATE OR REFRESH MATERIALIZED VIEW`       | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Temporary View             | Pipeline-private, not persisted to Unity Catalog.                | `@dp.temporary_view()`            | `CREATE TEMPORARY VIEW`                     | [temporary-view-python](references/temporary-view-python.md) | [temporary-view-sql](references/temporary-view-sql.md) |
+| Persistent View (UC)       | Published to UC; query runs on access (no storage).              | N/A — SQL only                    | `CREATE VIEW`                               | —                                                       | [view-sql](references/view-sql.md)                |
+| Streaming Table (explicit) | Empty target, populated by separate flows (Append Flow, AUTO CDC). | `dp.create_streaming_table()`     | `CREATE OR REFRESH STREAMING TABLE` (no AS) | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
 
 ### Flow and Sink APIs
 
-| Feature                      | Python (current)             | Python (deprecated)           | SQL (current)                          | SQL (deprecated) | Skill (Py)                                                                   | Skill (SQL)                                                   |
-| ---------------------------- | ---------------------------- | ----------------------------- | -------------------------------------- | ---------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Append Flow                  | `@dp.append_flow()`          | `@dlt.append_flow()`          | `CREATE FLOW ... INSERT INTO`          | —                | [streaming-table-python](streaming-table/streaming-table-python.md)          | [streaming-table-sql](streaming-table/streaming-table-sql.md) |
-| Backfill Flow                | `@dp.append_flow(once=True)` | `@dlt.append_flow(once=True)` | `CREATE FLOW ... INSERT INTO ... ONCE` | —                | [streaming-table-python](streaming-table/streaming-table-python.md)          | [streaming-table-sql](streaming-table/streaming-table-sql.md) |
-| Sink (Delta/Kafka/EH/custom) | `dp.create_sink()`           | `dlt.create_sink()`           | N/A — Python only                      | —                | [sink-python](sink/sink-python.md)                                           | —                                                             |
-| ForEachBatch Sink            | `@dp.foreach_batch_sink()`   | —                             | N/A — Python only                      | —                | [foreach-batch-sink-python](foreach-batch-sink/foreach-batch-sink-python.md) | —                                                             |
+| Feature                      | Description                                                      | Python                       | SQL                                    | Skill (Py)                                                  | Skill (SQL)                                       |
+| ---------------------------- | ---------------------------------------------------------------- | ---------------------------- | -------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------- |
+| Append Flow                  | Fan-in: multiple sources → one streaming table. Use instead of UNION. | `@dp.append_flow()`     | `CREATE FLOW ... INSERT INTO`          | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
+| Backfill Flow                | One-time historical load + ongoing live stream into same table. | `@dp.append_flow(once=True)` | `CREATE FLOW ... INSERT INTO ... ONCE` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
+| Sink (Delta/Kafka/EH/custom) | Write streaming output to external Delta / Kafka / Event Hubs.   | `dp.create_sink()`           | N/A — Python only                      | [sink-python](references/sink-python.md)                    | —                                                 |
+| ForEachBatch Sink            | Custom per-batch Python logic (merge/upsert, multi-destination). Public Preview. | `@dp.foreach_batch_sink()` | N/A — Python only         | [foreach-batch-sink-python](references/foreach-batch-sink-python.md) | —                                       |
 
 ### CDC APIs
 
-| Feature                      | Python (current)                          | Python (deprecated)                         | SQL (current)                   | SQL (deprecated)                     | Skill (Py)                                     | Skill (SQL)                              |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- | ------------------------------- | ------------------------------------ | ---------------------------------------------- | ---------------------------------------- |
-| Auto CDC (streaming source)  | `dp.create_auto_cdc_flow()`               | `dlt.apply_changes()`, `dp.apply_changes()` | `AUTO CDC INTO ... FROM STREAM` | `APPLY CHANGES INTO ... FROM STREAM` | [auto-cdc-python](auto-cdc/auto-cdc-python.md) | [auto-cdc-sql](auto-cdc/auto-cdc-sql.md) |
-| Auto CDC (periodic snapshot) | `dp.create_auto_cdc_from_snapshot_flow()` | `dlt.apply_changes_from_snapshot()`         | N/A — Python only               | —                                    | [auto-cdc-python](auto-cdc/auto-cdc-python.md) | —                                        |
+| Feature                      | Description                                                          | Python                                      | SQL                             | Skill (Py)                                | Skill (SQL)                          |
+| ---------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------------------------------ |
+| Auto CDC (streaming source)  | SCD Type 1 (overwrite) or Type 2 (history) from a CDC feed.          | `dp.create_auto_cdc_flow()`                 | `AUTO CDC INTO ... FROM STREAM` | [auto-cdc-python](references/auto-cdc-python.md) | [auto-cdc-sql](references/auto-cdc-sql.md) |
+| Auto CDC (periodic snapshot) | Compare consecutive full snapshots to detect changes.                | `dp.create_auto_cdc_from_snapshot_flow()`   | N/A — Python only               | [auto-cdc-python](references/auto-cdc-python.md) | —                                    |
+
+For querying SCD Type 2 history tables (`__START_AT` / `__END_AT`, point-in-time, joining facts with historical dimensions), see [scd-2-querying.md](references/scd-2-querying.md).
 
 ### Data Quality APIs
 
-| Feature            | Python (current)             | Python (deprecated)           | SQL (current)                                          | Skill (Py)                                                 | Skill (SQL)                                          |
-| ------------------ | ---------------------------- | ----------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------- |
-| Expect (warn)      | `@dp.expect()`               | `@dlt.expect()`               | `CONSTRAINT ... EXPECT (...)`                          | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
-| Expect or drop     | `@dp.expect_or_drop()`       | `@dlt.expect_or_drop()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION DROP ROW`    | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
-| Expect or fail     | `@dp.expect_or_fail()`       | `@dlt.expect_or_fail()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION FAIL UPDATE` | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
-| Expect all (warn)  | `@dp.expect_all({})`         | `@dlt.expect_all({})`         | Multiple `CONSTRAINT` clauses                          | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
-| Expect all or drop | `@dp.expect_all_or_drop({})` | `@dlt.expect_all_or_drop({})` | Multiple constraints with `DROP ROW`                   | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
-| Expect all or fail | `@dp.expect_all_or_fail({})` | `@dlt.expect_all_or_fail({})` | Multiple constraints with `FAIL UPDATE`                | [expectations-python](expectations/expectations-python.md) | [expectations-sql](expectations/expectations-sql.md) |
+| Feature            | Description                                | Python                       | SQL                                                    | Skill (Py)                                            | Skill (SQL)                                     |
+| ------------------ | ------------------------------------------ | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------- |
+| Expect (warn)      | Log violations, keep all rows.             | `@dp.expect()`               | `CONSTRAINT ... EXPECT (...)`                          | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
+| Expect or drop     | Drop violating rows.                       | `@dp.expect_or_drop()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION DROP ROW`    | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
+| Expect or fail     | Fail the pipeline on first violation.      | `@dp.expect_or_fail()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION FAIL UPDATE` | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
+| Expect all (warn)  | Multiple constraints at once, warn only.   | `@dp.expect_all({})`         | Multiple `CONSTRAINT` clauses                          | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
+| Expect all or drop | Multiple constraints, drop on violation.   | `@dp.expect_all_or_drop({})` | Multiple constraints with `DROP ROW`                   | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
+| Expect all or fail | Multiple constraints, fail on violation.   | `@dp.expect_all_or_fail({})` | Multiple constraints with `FAIL UPDATE`                | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
 
 ### Reading Data APIs
 
-| Feature                           | Python (current)                               | Python (deprecated)                                 | SQL (current)                                    | SQL (deprecated)                   | Skill (Py)                                                          | Skill (SQL)                                                   |
-| --------------------------------- | ---------------------------------------------- | --------------------------------------------------- | ------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Batch read (pipeline dataset)     | `spark.read.table("name")`                     | `dp.read("name")`, `dlt.read("name")`               | `SELECT ... FROM name`                           | `SELECT ... FROM LIVE.name`        | —                                                                   | —                                                             |
-| Streaming read (pipeline dataset) | `spark.readStream.table("name")`               | `dp.read_stream("name")`, `dlt.read_stream("name")` | `SELECT ... FROM STREAM name`                    | `SELECT ... FROM STREAM LIVE.name` | —                                                                   | —                                                             |
-| Auto Loader (cloud files)         | `spark.readStream.format("cloudFiles")`        | —                                                   | `STREAM read_files(...)`                         | —                                  | [auto-loader-python](auto-loader/auto-loader-python.md)             | [auto-loader-sql](auto-loader/auto-loader-sql.md)             |
-| Kafka source                      | `spark.readStream.format("kafka")`             | —                                                   | `STREAM read_kafka(...)`                         | —                                  | —                                                                   | —                                                             |
-| Kinesis source                    | `spark.readStream.format("kinesis")`           | —                                                   | `STREAM read_kinesis(...)`                       | —                                  | —                                                                   | —                                                             |
-| Pub/Sub source                    | `spark.readStream.format("pubsub")`            | —                                                   | `STREAM read_pubsub(...)`                        | —                                  | —                                                                   | —                                                             |
-| Pulsar source                     | `spark.readStream.format("pulsar")`            | —                                                   | `STREAM read_pulsar(...)`                        | —                                  | —                                                                   | —                                                             |
-| Event Hubs source                 | `spark.readStream.format("kafka")` + EH config | —                                                   | `STREAM read_kafka(...)` + EH config             | —                                  | —                                                                   | —                                                             |
-| JDBC / Lakehouse Federation       | `spark.read.format("postgresql")` etc.         | —                                                   | Direct table ref via federation catalog          | —                                  | —                                                                   | —                                                             |
-| Custom data source                | `spark.read[Stream].format("custom")`          | —                                                   | N/A — Python only                                | —                                  | —                                                                   | —                                                             |
-| Static file read (batch)          | `spark.read.format("json"\|"csv"\|...).load()` | —                                                   | `read_files(...)` (no STREAM)                    | —                                  | —                                                                   | —                                                             |
-| Skip upstream change commits      | `.option("skipChangeCommits", "true")`         | —                                                   | `read_stream("name", skipChangeCommits => true)` | —                                  | [streaming-table-python](streaming-table/streaming-table-python.md) | [streaming-table-sql](streaming-table/streaming-table-sql.md) |
+| Feature                           | Description                                            | Python                                         | SQL                                              | Skill (Py)                                              | Skill (SQL)                                       |
+| --------------------------------- | ------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------- |
+| Batch read (pipeline dataset)     | Read a sibling table as a static DataFrame.            | `spark.read.table("name")`                     | `SELECT ... FROM name`                           | —                                                       | —                                                 |
+| Streaming read (pipeline dataset) | Read a sibling table as a streaming DataFrame.         | `spark.readStream.table("name")`               | `SELECT ... FROM STREAM(name)`                   | —                                                       | —                                                 |
+| Auto Loader (cloud files)         | Incrementally ingest new files from cloud storage.     | `spark.readStream.format("cloudFiles")`        | `STREAM read_files(...)`                         | [auto-loader-python](references/auto-loader-python.md)  | [auto-loader-sql](references/auto-loader-sql.md)  |
+| Kafka source                      | Streaming read from Kafka topic.                       | `spark.readStream.format("kafka")`             | `STREAM read_kafka(...)`                         | [kafka](references/kafka.md)                            | [kafka](references/kafka.md)                      |
+| Kinesis source                    | Streaming read from AWS Kinesis.                       | `spark.readStream.format("kinesis")`           | `STREAM read_kinesis(...)`                       | —                                                       | —                                                 |
+| Pub/Sub source                    | Streaming read from GCP Pub/Sub.                       | `spark.readStream.format("pubsub")`            | `STREAM read_pubsub(...)`                        | —                                                       | —                                                 |
+| Pulsar source                     | Streaming read from Apache Pulsar.                     | `spark.readStream.format("pulsar")`            | `STREAM read_pulsar(...)`                        | —                                                       | —                                                 |
+| Event Hubs source                 | Streaming read from Azure Event Hubs (Kafka protocol). | `spark.readStream.format("kafka")` + EH config | `STREAM read_kafka(...)` + EH config             | [kafka](references/kafka.md)                            | [kafka](references/kafka.md)                      |
+| JDBC / Lakehouse Federation       | Batch read from external systems via federation.       | `spark.read.format("postgresql")` etc.         | Direct table ref via federation catalog          | —                                                       | —                                                 |
+| Custom data source                | User-defined Python data source.                       | `spark.read[Stream].format("custom")`          | N/A — Python only                                | —                                                       | —                                                 |
+| Static file read (batch)          | One-shot load of files (no incremental tracking).      | `spark.read.format("json"\|"csv"\|...).load()` | `read_files(...)` (no STREAM)                    | —                                                       | —                                                 |
+| Skip upstream change commits      | Ignore CDC commits on the upstream table.              | `.option("skipChangeCommits", "true")`         | `read_stream("name", skipChangeCommits => true)` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
 
 ### Table/Schema Feature APIs
 
-| Feature                      | Python (current)                                      | SQL (current)                           | Skill (Py)                                                                | Skill (SQL)                                                         |
-| ---------------------------- | ----------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Liquid clustering            | `cluster_by=[...]`                                    | `CLUSTER BY (col1, col2)`               | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Auto liquid clustering       | `cluster_by_auto=True`                                | `CLUSTER BY AUTO`                       | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Partition columns            | `partition_cols=[...]`                                | `PARTITIONED BY (col1, col2)`           | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Table properties             | `table_properties={...}`                              | `TBLPROPERTIES (...)`                   | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Explicit schema              | `schema="col1 TYPE, ..."`                             | `(col1 TYPE, ...) AS`                   | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Generated columns            | `schema="..., col TYPE GENERATED ALWAYS AS (expr)"`   | `col TYPE GENERATED ALWAYS AS (expr)`   | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Row filter (Public Preview)  | `row_filter="ROW FILTER fn ON (col)"`                 | `WITH ROW FILTER fn ON (col)`           | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Column mask (Public Preview) | `schema="..., col TYPE MASK fn USING COLUMNS (col2)"` | `col TYPE MASK fn USING COLUMNS (col2)` | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
-| Private dataset              | `private=True`                                        | `CREATE PRIVATE ...`                    | [materialized-view-python](materialized-view/materialized-view-python.md) | [materialized-view-sql](materialized-view/materialized-view-sql.md) |
+| Feature                      | Description                                                   | Python                                                | SQL                                     | Skill (Py)                                              | Skill (SQL)                                       |
+| ---------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| Liquid clustering            | Adaptive multi-column data layout; replaces PARTITION + Z-ORDER. Prefer Auto clustering when possible | `cluster_by=[...]`                                 | `CLUSTER BY (col1, col2)`               | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Auto liquid clustering       | Databricks picks clustering keys from query patterns.         | `cluster_by_auto=True`                                | `CLUSTER BY AUTO`                       | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Partition columns            | Legacy fixed partitioning. Prefer Liquid Clustering.          | `partition_cols=[...]`                                | `PARTITIONED BY (col1, col2)`           | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Table properties             | Delta table properties (auto-optimize, CDF, retention).       | `table_properties={...}`                              | `TBLPROPERTIES (...)`                   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Explicit schema              | Declare column types up front (vs inferred).                  | `schema="col1 TYPE, ..."`                             | `(col1 TYPE, ...) AS`                   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Generated columns            | Columns computed from other columns at write time.            | `schema="..., col TYPE GENERATED ALWAYS AS (expr)"`   | `col TYPE GENERATED ALWAYS AS (expr)`   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Row filter (Public Preview)  | UC fine-grained access: filter rows by a function.            | `row_filter="ROW FILTER fn ON (col)"`                 | `WITH ROW FILTER fn ON (col)`           | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Column mask (Public Preview) | UC fine-grained access: mask a column with a function.        | `schema="..., col TYPE MASK fn USING COLUMNS (col2)"` | `col TYPE MASK fn USING COLUMNS (col2)` | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+| Private dataset              | Materialized intermediate not published to UC.                | `private=True`                                        | `CREATE PRIVATE ...`                    | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
 
-### Import / Module APIs
+### Legacy DLT Syntax — always migrate
 
-| Current                                           | Deprecated                                                            | Notes                                                                                                  |
-| ------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `from pyspark import pipelines as dp`             | `import dlt`                                                          | Both work. Prefer `dp`. Do NOT change existing `dlt` imports.                                          |
-| `spark.read.table()` / `spark.readStream.table()` | `dp.read()` / `dp.read_stream()` / `dlt.read()` / `dlt.read_stream()` | Deprecated reads still work. Prefer `spark.*`.                                                         |
-| —                                                 | `LIVE.` prefix                                                        | Fully deprecated. NEVER use. Causes errors in newer pipelines.                                         |
-| —                                                 | `CREATE LIVE TABLE` / `CREATE LIVE VIEW`                              | Fully deprecated. Use `CREATE STREAMING TABLE` / `CREATE MATERIALIZED VIEW` / `CREATE TEMPORARY VIEW`. |
+The tables above show **only the modern API**. If you see any of the following in user code, it is the legacy DLT syntax — **always migrate to the modern form**, do not extend it. Read [references/dlt-migration.md](references/dlt-migration.md) before suggesting changes so the conversion is correct (especially around `apply_changes` → `create_auto_cdc_flow` semantics and `partition_cols` → `cluster_by`).
 
-## Language-specific guides
-
-
-Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) is a framework for building batch and streaming data pipelines.
-
-## Migrating from DLT
-
-If you have an existing DLT pipeline (`import dlt`, `@dlt.table`, `dlt.read(...)`, `dlt.apply_changes(...)`) and want to move to SDP, see [references/dlt-migration.md](references/dlt-migration.md). It covers both migration paths — DLT Python → SDP Python (`from pyspark import pipelines as dp`) and DLT Python → SDP SQL — with side-by-side conversions for the table decorators, reads, expectations, CDC/SCD, and partitioning → liquid clustering.
-
-## Choose Your Workflow
-
-Three project shapes exist — pick before scaffolding:
-
-| Situation | Workflow |
-|-----------|----------|
-| New standalone pipeline project with its own bundle | **A. Standalone bundle** |
-| Pipeline added to an existing DAB project | **B. Existing bundle** |
-| Quick prototyping, no bundle (yet) | **C. Rapid CLI iteration** |
-
-Default to A for production-bound work and C for exploration. Full details, generated structures, polling patterns, and edit/re-upload flow in [references/workflows.md](references/workflows.md).
+| If you see…                                                                 | …it's DLT. Migrate to                                                |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `import dlt`                                                                | `from pyspark import pipelines as dp`                                |
+| `@dlt.table(...)`, `@dlt.append_flow(...)`, `@dlt.expect*`                  | Same decorator name on `dp.*` (e.g. `@dp.table`, `@dp.expect_or_drop`). |
+| `@dlt.view(...)` (or `@dp.view(...)` if present in older code)              | `@dp.temporary_view(...)` — the modern API has no `view` decorator, only `temporary_view`. |
+| `dlt.read("name")` / `dlt.read_stream("name")`                              | `spark.read.table("name")` / `spark.readStream.table("name")`        |
+| `dp.read(...)` / `dp.read_stream(...)`                                      | Also legacy — use `spark.read.table(...)` / `spark.readStream.table(...)`. |
+| `dlt.apply_changes(...)` / `dp.apply_changes(...)`                          | `dp.create_auto_cdc_flow(...)`. `sequence_by` accepts a column name (string) or `col(...)`; `stored_as_scd_type` is integer `2` for Type 2 or string `"1"` for Type 1. |
+| `dlt.apply_changes_from_snapshot(...)`                                      | `dp.create_auto_cdc_from_snapshot_flow(...)`                         |
+| `dlt.create_streaming_table(...)`                                           | `dp.create_streaming_table(...)`                                     |
+| `LIVE.<name>` prefix in SQL                                                 | Bare name (`SELECT FROM name` for batch, `SELECT FROM STREAM(name)` for streaming). `LIVE.` will error in modern pipelines. |
+| `CREATE LIVE TABLE` / `CREATE STREAMING LIVE TABLE` | `CREATE OR REFRESH MATERIALIZED VIEW` / `CREATE OR REFRESH STREAMING TABLE`. |
+| `CREATE TEMPORARY LIVE VIEW` (a.k.a. `CREATE LIVE VIEW`) | `CREATE TEMPORARY VIEW`. **Exception**: `CREATE TEMPORARY VIEW` does NOT support `CONSTRAINT` clauses for expectations — for the rare case where you need expectations on a temp view, `CREATE LIVE VIEW` is retained. See [temporary-view-sql.md](references/temporary-view-sql.md#using-expectations-with-temporary-views) and [expectations-sql.md](references/expectations-sql.md). |
+| `APPLY CHANGES INTO ... FROM STREAM ...` (SQL)                              | `AUTO CDC INTO ... FROM STREAM ...`                                  |
+| `partition_cols=[...]` / `PARTITIONED BY (...)` + `ZORDER`                  | `cluster_by=[...]` / `CLUSTER BY (...)` (Liquid Clustering).         |
+| `input_file_name()`                                                         | `_metadata.file_path` (SQL) / `F.col("_metadata.file_path")` (Python). |
+| `target=...` parameter on `create_streaming_table` / pipeline config        | `schema=...`                                                         |
 
 ## Language Selection (Python vs SQL)
 
-Decide before scaffolding — the choice picks template files (`.py` vs `.sql`) and which reference docs apply. Both can coexist, but pick a primary.
+Decide before scaffolding — the choice picks template files (`.py` vs `.sql`) and which reference docs apply. Both can coexist, but pick a primary. When unsure, default to SQL for simplicity.
 
 | User signal | Pick |
 |-------------|------|
 | "Python pipeline", UDF, pandas, ML inference, pyspark | **Python** |
 | "SQL pipeline", "SQL files" | **SQL** |
-| "Simple pipeline", "create a table", "an aggregation" | **SQL** (simpler) |
+| "Simple pipeline", "create a table", "an aggregation" | **SQL** (simpler, use it as default) |
 | Complex parameterized logic, custom UDFs, ML | **Python** |
 
 If ambiguous, ask. Stick with the chosen language unless the user explicitly switches.
 
-## Scaffolding a New Pipeline Project
+## Choose Your Workflow
 
-The newer `databricks pipelines init` is focused on pipeline projects:
+Three project shapes exist — pick before scaffolding. Default to A for production-bound work and C for exploration / demo scaffolding.
 
-```bash
-databricks pipelines init --output-dir . --config-file init-config.json
-```
-
-`init-config.json`:
-
-```json
-{
-  "project_name": "my_pipeline",
-  "initial_catalog": "prod_catalog",
-  "use_personal_schema": "no",
-  "initial_language": "sql"
-}
-```
-
-The template-based `databricks bundle init lakeflow-pipelines` also works:
-
-```bash
-databricks bundle init lakeflow-pipelines --config-file <(echo '{"project_name": "my_pipeline", "language": "python", "serverless": "yes"}') --profile <PROFILE> < /dev/null
-```
-
-Field constraints:
-
-- `project_name`: letters, numbers, underscores only
-- `language` / `initial_language`: `python` or `sql` (lowercase)
-  - SQL: Recommended for straightforward transformations (filters, joins, aggregations)
-  - Python: Recommended for complex logic (custom UDFs, ML, advanced processing)
-
-See [references/workflows.md](references/workflows.md) for the full generated structure, `databricks.yml` essentials, and per-target catalog/schema patterns.
-
-After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
-
-```
-# Declarative Automation Bundles Project
-
-This project uses Declarative Automation Bundles (formerly Databricks Asset Bundles) for deployment.
-
-## Prerequisites
-
-Install the Databricks CLI (>= v0.288.0) if not already installed:
-- macOS: `brew tap databricks/tap && brew install databricks`
-- Linux: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
-- Windows: `winget install Databricks.DatabricksCLI`
-
-Verify: `databricks -v`
-
-## For AI Agents
-
-Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
-Read the `databricks-pipelines` skill for pipeline-specific guidance.
-
-If skills are not available, install them: `databricks aitools install`
-```
+- **A: Standalone new pipeline project (DAB)** — pipeline IS the project, no existing `databricks.yml`. Scaffold with `databricks pipelines init --output-dir . --config-file init-config.json`. → [1-project-initialization-with-dab.md](references/1-project-initialization-with-dab.md)
+- **B: Pipeline in an existing bundle (DAB)** — `databricks.yml` already exists. Add a `resources/<name>.pipeline.yml` pointing at `src/`. → [1-project-initialization-with-dab.md#workflow-b-pipeline-in-existing-bundle](references/1-project-initialization-with-dab.md#workflow-b-pipeline-in-existing-bundle)
+- **C: Rapid CLI iteration (no bundle)** — prototyping. `databricks pipelines create / start-update / list-pipeline-events`; formalise into a bundle later if the work goes to production. → [2-rapid-iteration-with-cli.md](references/2-rapid-iteration-with-cli.md)
 
 ## Pipeline Structure
 
-- Follow the medallion architecture pattern (Bronze → Silver → Gold) unless the user specifies otherwise
-- Use the convention of 1 dataset per file, named after the dataset
-- Place transformation files in a `src/` or `transformations/` folder
+- Follow the medallion pattern (Bronze → Silver → Gold) unless the user says otherwise. Keep it simple by default — just a few tables.
+- One dataset per file, named after the dataset. Transformation files live in `src/` or `transformations/`.
+- **Gold layer: preserve key business dimensions.** When aggregating into Gold, keep the dimensions analysts will filter / slice by (location, department, product line, customer segment, time period). Over-aggregating loses information that can't be recovered downstream. If a dashboard is mentioned, every filter on it needs to be a column in the Gold table. Easier to aggregate further in queries than to recover lost dimensions.
 
-```
-my-pipeline-project/
-├── databricks.yml                        # Bundle configuration
-├── resources/
-│   ├── my_pipeline.pipeline.yml          # Pipeline definition
-│   └── my_pipeline_job.job.yml           # Scheduling job (optional)
-└── src/
-    ├── my_table.py (or .sql)             # One dataset per file
-    ├── another_table.py (or .sql)
-    └── ...
-```
 
-## Scheduling Pipelines
+## Running a Pipeline
 
-To schedule a pipeline, add a job that triggers it in `resources/<name>.job.yml`:
+Picking the right run command depends on the workflow chosen above.
 
-```yaml
-resources:
-  jobs:
-    my_pipeline_job:
-      trigger:
-        periodic:
-          interval: 1
-          unit: DAYS
-      tasks:
-        - task_key: refresh_pipeline
-          pipeline_task:
-            pipeline_id: ${resources.pipelines.my_pipeline.id}
-```
+- **Workflow A / B (DAB)** — Code changes only take effect after `databricks bundle deploy`. Always deploy before any run, dry run, or selective refresh.
+  ```bash
+  databricks bundle validate --profile <profile>
+  databricks bundle deploy -t dev --profile <profile>
+  databricks bundle run <pipeline_name> -t dev --profile <profile>
+  databricks pipelines get <pipeline_id> --profile <profile>      # status
+  ```
+  → Full DAB run + iteration details: [references/1-project-initialization-with-dab.md#running-a-pipeline-workflow-a--b](references/1-project-initialization-with-dab.md#running-a-pipeline-workflow-a--b)
 
-## Running Pipelines
+- **Workflow C (CLI, no bundle)** — Upload files to the workspace, then drive the pipeline directly. Re-upload after every code change.
+  ```bash
+  databricks workspace import-dir ./my_pipeline /Workspace/Users/<user>/my_pipeline --overwrite
+  databricks pipelines start-update <pipeline_id>
+  ```
+  → Full CLI run + polling pattern: [references/2-rapid-iteration-with-cli.md](references/2-rapid-iteration-with-cli.md)
 
-**You must deploy before running.** In local development, code changes only take effect after `databricks bundle deploy`. Always deploy before any run, dry run, or selective refresh.
+**Refresh modes (both workflows):**
 
-- Selective refresh is preferred when you only need to run one table. For selective refresh it is important that dependencies are already materialized.
-- **Full refresh is the most expensive and dangerous option, and can lead to data loss**, so it should be used only when really necessary. Always suggest this as a follow-up that the user explicitly needs to select.
+- **Selective refresh** is preferred when you only need to run one table. Dependencies must already be materialized.
+- **Full refresh** is the most expensive and dangerous option and **can lead to data loss** (it reprocesses streaming sources from scratch, destroying streaming state). Use only when really necessary. Always suggest it as a follow-up the user must explicitly approve.
 
-## Development Workflow
+**Always poll the update**, not top-level pipeline state — see the polling rationale in [2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update](references/2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update). Same rule applies to bundle runs.
 
-1. **Validate**: `databricks bundle validate --profile <profile>`
-2. **Deploy**: `databricks bundle deploy -t dev --profile <profile>`
-3. **Run pipeline**: `databricks bundle run <pipeline_name> -t dev --profile <profile>`
-4. **Check status**: `databricks pipelines get --pipeline-id <id> --profile <profile>`
+## Reference Index
 
-## Pipeline API Reference
+Project & lifecycle:
 
-Detailed reference guides for each pipeline API. **Read the relevant guide before writing pipeline code.**
+- [1-project-initialization-with-dab.md](references/1-project-initialization-with-dab.md) — Workflows A and B.
+- [2-rapid-iteration-with-cli.md](references/2-rapid-iteration-with-cli.md) — Workflow C; start-update + polling + error-extraction.
+- [pipeline-configuration.md](references/pipeline-configuration.md) — Full create/update JSON reference + variant snippets + multi-schema + platform constraints.
+- [performance.md](references/performance.md) — Liquid Clustering, state management, joins, pre-aggregation, monitoring.
+- [dlt-migration.md](references/dlt-migration.md) — DLT → SDP conversions.
 
-### Project & Lifecycle
+Cross-cutting patterns:
 
-- [Workflows](references/workflows.md) — Standalone bundle / existing bundle / rapid CLI iteration; language selection; `pipelines init`; start-update + poll-the-update pattern; edit/re-upload/restart flow
-- [Pipeline Configuration](references/pipeline-configuration.md) — Full JSON config reference (top-level, clusters, event_log, notifications, configuration, restart_window, environment) + variant snippets (dev mode, non-serverless, continuous, notifications, autoscaling, custom event log, serverless Python deps) + multi-schema patterns + platform constraints
-- [Performance Tuning](references/performance.md) — Liquid Clustering by layer (bronze/silver/gold), key-type rules, state-management strategies for streaming, join optimization, pre-aggregation, monitoring
-- [Migrating from DLT](references/dlt-migration.md) — Side-by-side conversions (decorators, reads, expectations, CDC/SCD, partitioning → liquid clustering)
+- [streaming-patterns.md](references/streaming-patterns.md) — Dedup, windowed aggregations, late data, rescue-data quarantine, anomaly detection, lag monitoring.
+- [scd-2-querying.md](references/scd-2-querying.md) — Current-state, point-in-time, joining facts with historical dims.
+- [kafka.md](references/kafka.md) — Kafka / Event Hubs ingestion.
 
-### Datasets, Flows & Quality
+Auto Loader format-specific options: [JSON](references/options-json.md) · [CSV](references/options-csv.md) · [XML](references/options-xml.md) · [Parquet](references/options-parquet.md) · [Avro](references/options-avro.md) · [Text](references/options-text.md) · [ORC](references/options-orc.md).
 
-- [Write Spark Declarative Pipelines](references/write-spark-declarative-pipelines.md) — Core syntax and rules ([Python](references/python-basics.md), [SQL](references/sql-basics.md))
-- [Streaming Tables](references/streaming-table.md) — Continuous data stream processing ([Python](references/streaming-table-python.md), [SQL](references/streaming-table-sql.md))
-- [Materialized Views](references/materialized-view.md) — Physically stored query results with incremental refresh ([Python](references/materialized-view-python.md), [SQL](references/materialized-view-sql.md))
-- [Views](references/view.md) — Reusable query logic published to Unity Catalog ([SQL](references/view-sql.md))
-- [Temporary Views](references/temporary-view.md) — Pipeline-private views ([Python](references/temporary-view-python.md), [SQL](references/temporary-view-sql.md))
-- [Auto Loader](references/auto-loader.md) — Incrementally ingest files from cloud storage ([Python](references/auto-loader-python.md), [SQL](references/auto-loader-sql.md))
-- [Kafka Ingestion](references/kafka.md) — Read from Kafka / Event Hubs with JSON parsing, Secrets-based auth
-- [Auto CDC](references/auto-cdc.md) — Process Change Data Capture feeds, SCD Type 1 & 2 ([Python](references/auto-cdc-python.md), [SQL](references/auto-cdc-sql.md))
-- [SCD Type 2 Querying](references/scd-2-querying.md) — Current-state views, point-in-time queries, joining facts with historical dimensions
-- [Streaming Patterns](references/streaming-patterns.md) — Deduplication, windowed aggregations (tumbling/multi-size/session), late-arriving data, rescue-data quarantine, monitoring lag, anomaly detection
-- [Expectations](references/expectations.md) — Define and enforce data quality constraints ([Python](references/expectations-python.md), [SQL](references/expectations-sql.md))
-- [Sinks](references/sink.md) — Write to Kafka, Event Hubs, external Delta tables ([Python](references/sink-python.md))
-- [ForEachBatch Sinks](references/foreach-batch-sink.md) — Custom streaming sink with per-batch Python logic ([Python](references/foreach-batch-sink-python.md))
+Dataset, flow, CDC, expectation, Auto Loader, and sink references are listed per (feature, language) in the [API Reference tables above](#api-reference).

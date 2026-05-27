@@ -1,82 +1,46 @@
-Temporary Views in Spark Declarative Pipelines create temporary logical datasets without persisting data to storage. Use views for intermediate transformations that drive downstream workloads but don't need materialization.
+# Temporary Views (SQL)
 
-**API Reference:**
-
-**CREATE TEMPORARY VIEW**
-SQL statement to define a temporary view.
+Pipeline-scoped logical datasets — not materialized, not published to UC. Used for shared intermediate transformations that drive multiple downstream tables.
 
 ```sql
 CREATE TEMPORARY VIEW view_name
-  [(col_name [COMMENT col_comment] [, ...])]
-  [COMMENT view_comment]
-  [TBLPROPERTIES (key = value [, ...])]
-AS query
+  [ (col_name [COMMENT 'col_comment'], ...) ]
+  [ COMMENT 'view_comment' ]
+  [ TBLPROPERTIES (key = 'value', ...) ]
+AS query           -- batch or streaming
 ```
 
-Parameters:
-
-- `view_name` (identifier): Name of the temporary view
-- `col_name` (identifier): Optional column name specifications
-- `col_comment` (string): Optional description for individual columns
-- `view_comment` (string): Optional description for the view
-- `TBLPROPERTIES` (key-value pairs): Optional table properties
-- `query` (SELECT statement): Query that defines the view's data
-
-**Common Patterns:**
-
-**Pattern 1: Intermediate transformation layer**
+## Example
 
 ```sql
--- View for shared filtering logic
+-- Shared filtering logic, consumed by multiple downstream MVs
 CREATE TEMPORARY VIEW valid_events
 AS SELECT * FROM raw.events
-WHERE event_type IS NOT NULL
-  AND timestamp IS NOT NULL;
+WHERE event_type IS NOT NULL AND timestamp IS NOT NULL;
 
--- Multiple tables consume the view
-CREATE MATERIALIZED VIEW user_events
-AS SELECT * FROM valid_events
-WHERE event_type = 'user_action';
-
-CREATE MATERIALIZED VIEW system_events
-AS SELECT * FROM valid_events
-WHERE event_type = 'system_event';
+CREATE OR REFRESH MATERIALIZED VIEW user_events
+AS SELECT * FROM valid_events WHERE event_type = 'user_action';
+-- Other downstream MVs follow the same shape.
 ```
 
-**Pattern 2: Views with streaming sources**
+Streaming source: `CREATE TEMPORARY VIEW ... AS SELECT ... FROM STREAM(bronze.events) WHERE ...` — downstream STs read via `FROM STREAM(view_name)`.
+
+## Using Expectations with Temporary Views
+
+`CREATE TEMPORARY VIEW` does NOT support `CONSTRAINT` clauses. For the rare case where you need expectations on a temp view, use `CREATE LIVE VIEW` (older syntax, retained for this purpose):
 
 ```sql
--- Temporary views work with streaming sources too
-CREATE TEMPORARY VIEW streaming_events
-AS SELECT * FROM STREAM(bronze.events)
-WHERE event_id IS NOT NULL;
-
--- Downstream streaming table consuming the view
-CREATE STREAMING TABLE filtered_stream
-AS SELECT * FROM STREAM(streaming_events)
-WHERE event_type = 'critical';
-```
-
-**KEY RULES:**
-
-- Views are not materialized - they're computed on demand when referenced
-- Views exist only during the pipeline execution lifetime and are private to the pipeline
-- Reference views in downstream tables using `FROM view_name` or `FROM STREAM(view_name)` for streaming
-- Views prevent code duplication when multiple downstream tables need the same transformation
-- Temporary views work with both batch and streaming data sources (using `STREAM()` function)
-- Views can share names with catalog objects; within the pipeline, references resolve to the temporary view
-
-**IMPORTANT - Using Expectations with Temporary Views:**
-
-`CREATE TEMPORARY VIEW` does not support CONSTRAINT clauses for expectations. If you need to include expectations (data quality constraints) with a temporary view, use `CREATE LIVE VIEW` syntax instead:
-
-```sql
-CREATE LIVE VIEW view_name(
+CREATE LIVE VIEW view_name (
   CONSTRAINT constraint_name EXPECT (condition) [ON VIOLATION DROP ROW | FAIL UPDATE]
-)
-AS query
+) AS query
 ```
 
-`CREATE LIVE VIEW` is the older syntax for temporary views, retained specifically for this use case. Use `CREATE TEMPORARY VIEW` for views without expectations, and `CREATE LIVE VIEW` when you need to add CONSTRAINT clauses.
+See [expectations-sql.md](expectations-sql.md) for the full constraint semantics. Otherwise, prefer attaching the constraint to a downstream streaming table or MV.
 
-For detailed information on using expectations with temporary views, see the "expectations" API guide.
+## Key rules
+
+- Computed on demand — not materialized.
+- Pipeline-scoped — not published to UC, gone after pipeline run.
+- Reference downstream as `FROM view_name` (batch) or `FROM STREAM(view_name)` (streaming).
+- Temp view name shadows a same-named catalog object inside the pipeline.
+- For UC-published views, use `CREATE VIEW` ([view-sql.md](view-sql.md)).
