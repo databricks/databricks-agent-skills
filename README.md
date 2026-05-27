@@ -149,7 +149,7 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
 ## Integrity
 
-All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+Release tags are annotated (`git tag -a`) so `git tag -v <tag>` can verify them once GPG or Sigstore signing is enabled in the release workflow. See [RELEASING.md](./RELEASING.md) for verification steps and the current signing status.
 
 ## Contributing
 
