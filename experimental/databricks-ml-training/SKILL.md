@@ -1,15 +1,28 @@
-# ML Training & Serving on Databricks
+---
+name: databricks-ml-training
+description: "Classical ML and custom-agent model training, MLflow tracking, and Unity Catalog model registration on Databricks. Use when the user asks to: train models (with MLflow, sklearn, XGBoost, LightGBM, PyTorch, custom pyfunc, etc.); run hyperparameter tuning with Optuna; register models to Unity Catalog and promote versions with `@prod` / `@challenger` aliases; load a registered model for batch scoring via `mlflow.pyfunc.spark_udf`; run inferences as batch, build custom MLflow PyFunc models (Models from Code); author a custom MLflow `ResponsesAgent` (LangGraph, OpenAI-compatible chat) with UC Function or Vector Search tools. NOT for: managing existing serving endpoints (use databricks-model-serving); no-code Knowledge Assistants or Supervisor Agents (use databricks-agent-bricks); MLflow evaluation / scorers (use databricks-mlflow-evaluation)."
+compatibility: Requires databricks CLI (>= v0.294.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
+---
 
-Train with MLflow → register to Unity Catalog → consume the **same artifact** as either a batch Spark UDF over Delta or a real-time REST endpoint (~5–15 min cold start, quota-bound — only when the user asks for per-request low-latency scoring).
+# ML Training on Databricks
+
+**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+
+Train with MLflow → register to Unity Catalog → consume the **same artifact** as either a batch Spark UDF over Delta or (when low-latency is required) a real-time serving endpoint.
 
 > **Always train on Databricks** (serverless job or notebook), never in the local Python process the agent is running in. Local training has no access to the silver tables, no MLflow tracking server, no UC registry path, and dies if the chat session drops — submit `databricks jobs submit --no-wait` (see "Train + deploy as a serverless job" below). Only fall back to local execution if the user explicitly asks for it.
 
+If you need to deploy a real time model serving endpoint **after** the model is registered (creating endpoints, traffic config, version-swapping, querying, Foundation Model API endpoints), see [databricks-model-serving](../../skills/databricks-model-serving/SKILL.md).
+
 | Consumption | When | How |
 |---|---|---|
-| **Batch UDF** | Dashboards, daily/hourly scores, precomputed ~daily predictions, read by Genie/Dashboards, or app (typically synched to a lakebase table) | `mlflow.pyfunc.spark_udf(...)` → `INSERT INTO gold_predictions` |
-| **Real-time endpoint** | Score on a user action (fraud at authorization, rec at page load) — sub-100ms | `mlflow.deployments.get_deploy_client()` (classical) / `agents.deploy()` (agents) |
+| **Batch UDF** | Dashboards, daily/hourly scores, predictions read by Genie/Dashboards or an app (often synced to a Lakebase table) | `mlflow.pyfunc.spark_udf(...)` → `INSERT INTO gold_predictions` |
+| **Real-time endpoint** | Score on a user action (fraud at authorization, rec at page load) — sub-100ms | `mlflow.deployments.get_deploy_client()` (classical) / `agents.deploy()` (agents). Endpoint lifecycle: see [databricks-model-serving](../../skills/databricks-model-serving/SKILL.md). |
 
-## Canonical flow
+## Default Canonical flow
 
 ```
 silver_<features>  +  silver_<labels>
@@ -38,7 +51,26 @@ One notebook, one artifact. Re-running = retraining. Gold is where truth lives �
 databricks workspace mkdirs /Users/me@example.com/turbine_project
 ```
 
+Use the Databricks notebook source format (`# Databricks notebook source` header, `# COMMAND ----------` separators, `# MAGIC %md`/`%sql` magics for markdown/SQL cells):
+
 ```python
+# Databricks notebook source
+# MAGIC %md
+# MAGIC # Turbine failure prediction
+# MAGIC
+# MAGIC Train an XGBoost classifier on engineered turbine telemetry features.
+# MAGIC ## Data exploration
+
+# COMMAND ----------
+
+# (basic data exploration — class balance, schema sanity, etc.)
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## Training the model
+
+# COMMAND ----------
+
 import mlflow, mlflow.xgboost, optuna
 from mlflow.tracking import MlflowClient
 from xgboost import XGBClassifier
@@ -66,7 +98,12 @@ def objective(trial):
 with mlflow.start_run(run_name="hpo"):
     optuna.create_study(direction="maximize").optimize(objective, n_trials=20)
 
-# Move @prod alias to the just-registered version. Stages are deprecated — aliases only.
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## Promote to @prod alias
+
+# COMMAND ----------
+# Stages are deprecated — UC uses movable aliases.
 client = MlflowClient(registry_uri="databricks-uc")
 latest = max(client.search_model_versions(f"name='{FULL_NAME}'"),
              key=lambda v: int(v.version))
@@ -84,10 +121,15 @@ client.set_registered_model_alias(FULL_NAME, "prod", latest.version)
 The cheap, default path. Load the registered model as a Spark UDF and score a Delta table; write predictions to a gold table that downstream consumers read.
 
 ```python
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## Score and save to a gold predictions table
+
+# COMMAND ----------
 import mlflow
 
 # env_manager rules:
-#   "local"     → same runtime as training (same notebook/job). Fastest for the demo, keep that.
+#   "local"     → same runtime as training (same notebook/job). Fastest, default in dev/demo.
 #   "virtualenv"→ different runtime than training; rebuilds the model's env.
 #   "uv"        → same as virtualenv but faster (MLflow ≥ 2.22).
 predict = mlflow.pyfunc.spark_udf(
@@ -108,84 +150,11 @@ For incremental scoring with history, MERGE into the predictions table instead o
 
 ---
 
-## Consume: real-time serving endpoint (only when required)
+## Real-time serving (when required)
 
-Use the MLflow Deployments client. `workload_size: "Small"` + `scale_to_zero_enabled: true` is the default for demos and dev. First deploy can take ~5 min for classical ML
+After registering a model to UC, deploy it behind a Model Serving endpoint. The dev-side call is `mlflow.deployments.get_deploy_client("databricks").create_endpoint(...)` for classical ML or `agents.deploy(...)` for `ResponsesAgent`s. First deploy is ~5 min for classical ML.
 
-```python
-from mlflow.deployments import get_deploy_client
-
-client = get_deploy_client("databricks")
-client.create_endpoint(
-    name="turbine-risk-endpoint",
-    config={
-        "served_entities": [{
-            "entity_name": FULL_NAME,
-            "entity_version": latest.version,
-            "workload_size": "Small",
-            "scale_to_zero_enabled": True, # Always
-        }],
-        # served_model_name = "<model>-<version>"; the API auto-derives it but
-        # you reference this exact string in traffic_config.
-        "traffic_config": {"routes": [
-            {"served_model_name": f"{NAME}-{latest.version}", "traffic_percentage": 100}
-        ]},
-    },
-    # Tags are TOP-LEVEL — NOT inside `config`. Same {key, value} shape used
-    # by `serving-endpoints patch --add-tags`. Tag every demo resource for cleanup.
-    tags=[{"key": "aidevkit_project", "value": "ai-dev-kit"}],
-)
-```
-
-**Zero-downtime version swap.** Repoint the alias *and* call `update_endpoint`:
-
-```python
-client.set_registered_model_alias(FULL_NAME, "prod", new_version)
-client.update_endpoint(endpoint="turbine-risk-endpoint", config={
-    "served_entities": [{"entity_name": FULL_NAME, "entity_version": new_version,
-                        "workload_size": "Small", "scale_to_zero_enabled": True}],
-    "traffic_config": {"routes": [
-        {"served_model_name": f"{NAME}-{new_version}", "traffic_percentage": 100}
-    ]},
-})
-```
-
-### Endpoint management (CLI)
-
-```bash
-databricks serving-endpoints list
-databricks serving-endpoints get turbine-risk-endpoint
-databricks serving-endpoints delete turbine-risk-endpoint
-
-# Query a classical ML endpoint
-databricks serving-endpoints query turbine-risk-endpoint --json '{
-  "dataframe_records": [{"vibration": 0.42, "rpm": 18.3, "temp_c": 71.2}]
-}'
-
-# Query a chat/agent endpoint
-databricks serving-endpoints query my-agent-endpoint --json '{
-  "messages": [{"role":"user","content":"Hello"}], "max_tokens": 500
-}'
-
-# Tag for project tracking
-databricks serving-endpoints patch turbine-risk-endpoint --json '{
-  "add_tags": [{"key": "aidevkit_project", "value": "ai-dev-kit"}]
-}'
-```
-
-### Readiness has TWO state fields
-
-`databricks serving-endpoints get` returns both:
-
-- `state.ready` — `READY` once the endpoint has any working config (first deploy).
-- `state.config_update` — `NOT_UPDATING` once the *current* config update finishes; `IN_PROGRESS` during a version swap.
-
-A loop watching only `state.ready` will say "ready" mid version-swap while the old version is still serving. Poll **both**:
-
-```bash
-databricks serving-endpoints get turbine-risk-endpoint \
-  | jq '{ready: .state.ready, config_update: .state.config_update}'
-```
+For endpoint create / update / version-swap, traffic config, AI Gateway, querying, the `state.ready` + `state.config_update` two-field readiness check, and Foundation Model API endpoints, see **[databricks-model-serving](../../skills/databricks-model-serving/SKILL.md)**.
 
 ---
 
@@ -224,8 +193,7 @@ for _ in $(seq 60); do
 done
 [[ "$STATE" =~ ^(TERMINATED|SKIPPED|INTERNAL_ERROR)$ ]] || { databricks jobs cancel-run "$RUN_ID"; exit 1; }
 
-# life_cycle_state TERMINATED only means "the run ended" — check result_state
-# (SUCCESS / FAILED / TIMEDOUT / CANCELED / SUCCESS_WITH_FAILURES / …) for outcome.
+# life_cycle_state TERMINATED only means "the run ended" — check result_state.
 RESULT=$(databricks jobs get-run "$RUN_ID" | jq -r '.state.result_state // "UNKNOWN"')
 echo "result_state=$RESULT"
 [[ "$RESULT" == "SUCCESS" ]] || { echo "Run did not succeed"; exit 1; }
@@ -236,36 +204,24 @@ databricks jobs get-run-output "$TASK_RUN_ID" | jq '.notebook_output.result'
 # → '{"model_version":"3","val_auc":0.91,"rows_scored":124,"endpoint":"turbine-risk-endpoint"}'
 ```
 
-**Serving UI hides SP-owned endpoints by default.** If the deploy ran as a service principal, the Serving page won't show the new endpoint until you switch from "Owned by me" to "All". Or just `databricks serving-endpoints list`.
-
-For the four `jobs submit` traps (`spec.client: "4"` requirement, TASK-vs-submit run_id, `print()` unreliable, tags rejected) and full debugging flow, see **[databricks-jobs](../../databricks-jobs/SKILL.md#one-time-runs-jobs-submit--async-pattern-for-notebooks)**.
+For the four `jobs submit` traps (`spec.client: "4"` requirement, TASK-vs-submit run_id, `print()` unreliable, tags rejected) and full debugging flow, see **[databricks-jobs](../../skills/databricks-jobs/SKILL.md#one-time-runs-jobs-submit--async-pattern-for-notebooks)**.
 
 ---
 
 ## Custom pyfunc
 
-When sklearn/XGBoost autolog isn't enough — custom preprocessing, multiple sub-models, external API calls, ensemble logic. See **[custom-pyfunc.md](custom-pyfunc.md)** for a full worked example. Two non-obvious things:
+When sklearn/XGBoost autolog isn't enough — custom preprocessing, multiple sub-models, external API calls, ensemble logic. See **[references/custom-pyfunc.md](references/custom-pyfunc.md)** for a full worked example. Two non-obvious things:
 
 - **`python_model="path/to/file.py"`** (file path, not class instance) + `mlflow.models.set_model(MyModel())` at the end of that file. This is the "Models from Code" pattern — the file is logged verbatim, no pickling of the class.
 - **`mlflow.models.predict(model_uri=..., input_data=..., env_manager="uv")`** before deploying. Catches missing deps before the endpoint does.
 
 ---
 
-## Foundation Model API endpoints
+## Custom GenAI agents
 
-Pay-per-token, pre-provisioned in every workspace. New models land regularly and a static skill list goes stale fast — **always list at runtime instead of hard-coding names**. Filter by the `databricks-` name prefix AND by the served entity being in `system.ai.*` (other endpoints like `databricks-app-template-serving` share the prefix but aren't FM API endpoints).
+Hand-rolled `ResponsesAgent` (LangGraph + UC Function tools + Vector Search retrieval) — see **[references/genai-agents.md](references/genai-agents.md)**.
 
-```bash
-# Foundation Model API endpoints in this workspace, grouped by task (chat / embeddings / etc.)
-databricks serving-endpoints list \
-  | jq -r '.[]
-      | select(.name | startswith("databricks-"))
-      | select((.config.served_entities[0].entity_name // "") | startswith("system.ai."))
-      | "\(.task)\t\(.name)"' \
-  | sort
-```
-
-**Defaults when the user doesn't specify**: pick the highest-numbered Claude Sonnet for agents, the highest-numbered `-codex-max` for code, `databricks-gte-large-en` for embeddings — resolve actual names from the live list above.
+Prefer no-code authoring via [databricks-agent-bricks](../databricks-agent-bricks/SKILL.md) (Knowledge Assistants, Supervisor Agents) unless the user explicitly needs a custom LangGraph agent.
 
 ---
 
@@ -274,13 +230,13 @@ databricks serving-endpoints list \
 | Trap | Fix |
 |---|---|
 | Model lands in workspace registry, not UC | `mlflow.set_registry_uri("databricks-uc")` *before* logging |
-| Endpoint returns PERMISSION_DENIED at first query | Pass `resources=[...]` to `log_model` (covers UC functions, VS indexes, other endpoints, Lakebase) — see [genai-agents.md](genai-agents.md#resources-that-need-passthrough-auth) for the full list |
+| Endpoint returns PERMISSION_DENIED at first query | Pass `resources=[...]` to `log_model` (covers UC functions, VS indexes, other endpoints, Lakebase) — see [references/genai-agents.md#resources-that-need-passthrough-auth](references/genai-agents.md#resources-that-need-passthrough-auth) for the full list |
 | Used `transition_model_version_stage` | Stages are deprecated in UC. Use `client.set_registered_model_alias(name, "prod", version)` |
 | `spark_udf` rebuilds a virtualenv on every call | Pass `env_manager="local"` when training+scoring share a runtime |
-| Endpoint version swap says "ready" but old version still serving | Poll **both** `state.ready` AND `state.config_update` — see "Readiness has TWO state fields" |
 | `pip_requirements` mismatch crashes endpoint at load | Pin exact versions; or pull live with `f"mlflow=={get_distribution('mlflow').version}"` |
 | `agents.deploy()` produced a weirdly-named endpoint | Pass `endpoint_name=...` explicitly. Auto-derived name is `agents_<catalog>-<schema>-<model>` |
-| Endpoint missing from Serving UI | UI filter defaults to "Owned by me"; deploy jobs run as SP. Switch to "All" or use `serving-endpoints list` |
+
+Endpoint-lifecycle gotchas (readiness two-state, version-swap, Serving-UI SP filter) live in [databricks-model-serving](../../skills/databricks-model-serving/SKILL.md).
 
 ---
 
@@ -288,13 +244,14 @@ databricks serving-endpoints list \
 
 | File | Contents |
 |---|---|
-| [custom-pyfunc.md](custom-pyfunc.md) | Single end-to-end custom pyfunc example: artifacts, signature, code_paths, log → register → deploy → query. |
-| [genai-agents.md](genai-agents.md) | Edge case: deploying a LangGraph `ResponsesAgent` with UC Function + Vector Search tools. For supervised multi-agent tiles, use **databricks-agent-bricks** instead. |
+| [references/custom-pyfunc.md](references/custom-pyfunc.md) | Single end-to-end custom pyfunc example: artifacts, signature, code_paths, log → register → deploy → query. |
+| [references/genai-agents.md](references/genai-agents.md) | Custom LangGraph `ResponsesAgent` with UC Function + Vector Search tools. `create_text_output_item` gotcha and the `resources=[...]` passthrough-auth list. For no-code agents prefer **databricks-agent-bricks**. |
 
 ## Related skills
 
-- **[databricks-agent-bricks](../../../experimental/databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
-- **[databricks-mlflow-evaluation](../../../experimental/databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
-- **[databricks-vector-search](../../../experimental/databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
-- **[databricks-jobs](../../databricks-jobs/SKILL.md)** — async deploy pattern (`--no-wait`, TASK run_id trap).
-- **[databricks-unity-catalog](../../../experimental/databricks-unity-catalog/SKILL.md)** — UC governs the registered model: permissions, lineage, audit.
+- **[databricks-model-serving](../../skills/databricks-model-serving/SKILL.md)** — serving-endpoint lifecycle (create, query, update-config, version-swap, AI Gateway, Foundation Model API endpoints).
+- **[databricks-agent-bricks](../databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
+- **[databricks-mlflow-evaluation](../databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
+- **[databricks-vector-search](../databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
+- **[databricks-jobs](../../skills/databricks-jobs/SKILL.md)** — async deploy pattern (`--no-wait`, TASK run_id trap).
+- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** — UC governs the registered model: permissions, lineage, audit.

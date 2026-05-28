@@ -226,6 +226,19 @@
       "repo_dir": "experimental",
       "version": "0.0.1"
     },
+    "databricks-ml-training": {
+      "description": "Classical ML and custom-agent model training, MLflow tracking, and Unity Catalog model registration on Databricks. Use when the user asks to: train models (with MLflow, sklearn, XGBoost, LightGBM, PyTorch, custom pyfunc, etc.); run hyperparameter tuning with Optuna; register models to Unity Catalog and promote versions with `@prod` / `@challenger` aliases; load a registered model for batch scoring via `mlflow.pyfunc.spark_udf`; run inferences as batch, build custom MLflow PyFunc models (Models from Code); author a custom MLflow `ResponsesAgent` (LangGraph, OpenAI-compatible chat) with UC Function or Vector Search tools. NOT for: managing existing serving endpoints (use databricks-model-serving); no-code Knowledge Assistants or Supervisor Agents (use databricks-agent-bricks); MLflow evaluation / scorers (use databricks-mlflow-evaluation).",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/custom-pyfunc.md",
+        "references/genai-agents.md"
+      ],
+      "repo_dir": "experimental",
+      "version": "0.1.0"
+    },
     "databricks-mlflow-evaluation": {
       "description": "MLflow 3 GenAI agent evaluation. Use when writing mlflow.genai.evaluate() code, creating @scorer functions, using built-in scorers (Guidelines, Correctness, Safety, RetrievalGroundedness), building eval datasets from traces, setting up trace ingestion and production monitoring, aligning judges with MemAlign from domain expert feedback, or running optimize_prompts() with GEPA for automated prompt improvement.",
       "files": [
@@ -255,13 +268,10 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/custom-pyfunc.md",
-        "references/genai-agents.md",
-        "references/off-platform-streaming.md",
-        "references/training-and-serving.md"
+        "references/off-platform-streaming.md"
       ],
       "repo_dir": "skills",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     "databricks-pipelines": {
       "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
