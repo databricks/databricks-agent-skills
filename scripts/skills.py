@@ -24,6 +24,7 @@ EXPERIMENTAL_REPO_DIR = "experimental"
 # check_plugin_manifest to verify .claude-plugin/plugin.json keywords stay
 # aligned with the shipped skills. Descriptions live in each skill's SKILL.md
 # frontmatter and are synthesized into the manifest via _build_stable_entry.
+SKILL_METADATA = {
     "databricks-core": {"plugin_keyword": "cli"},
     "databricks-apps": {"plugin_keyword": "apps"},
     "databricks-jobs": {"plugin_keyword": "jobs"},
