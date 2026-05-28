@@ -1,6 +1,6 @@
 ---
 name: databricks-vector-search
-description: "Patterns for Databricks Vector Search: create endpoints and indexes, query with filters, manage embeddings. Use when building RAG applications, semantic search, or similarity matching. Covers both storage-optimized and standard endpoints."
+description: "Databricks Vector Search endpoints and indexes for RAG and semantic search; covers index types, search modes, end-to-end RAG patterns"
 metadata:
   version: "0.1.0"
 parent: databricks-core
