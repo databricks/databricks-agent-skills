@@ -1,7 +1,7 @@
 ---
 name: databricks-agent-bricks
 description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS)."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core

@@ -1,7 +1,7 @@
 ---
 name: databricks-unity-catalog
 description: "Unity Catalog system tables and volumes. Use when querying system tables (audit, lineage, billing) or working with volume file operations (upload, download, list files in /Volumes/)."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core

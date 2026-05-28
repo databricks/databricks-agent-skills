@@ -1,7 +1,7 @@
 ---
 name: databricks-unstructured-pdf-generation
 description: "Generate PDF documents from HTML and upload to Unity Catalog volumes. Use for creating test PDFs, demo documents, reports, or evaluation datasets."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core

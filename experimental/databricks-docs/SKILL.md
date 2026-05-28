@@ -1,7 +1,7 @@
 ---
 name: databricks-docs
 description: "Databricks documentation reference via llms.txt index. Use when other skills do not cover a topic, looking up unfamiliar Databricks features, or needing authoritative docs on APIs, configurations, or platform capabilities."
-compatibility: Requires databricks CLI (>= v0.294.0)
+compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
 parent: databricks-core
