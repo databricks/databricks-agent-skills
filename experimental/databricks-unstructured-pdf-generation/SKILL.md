@@ -1,11 +1,11 @@
 ---
 name: databricks-unstructured-pdf-generation
-description: "Build RAG / unstructured-document evaluation datasets on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
+description: "Build RAG / unstructured-document evaluation datasets on Databricks and Generate PDF documents for demos having Knowledge Assistant: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
 ---
 
-# Unstructured-Document Eval Datasets on Databricks
+# Unstructured-Document for Demos and Eval Datasets on Databricks
 
-Workflow for producing **synthetic PDF documents + paired test questions** as a Unity Catalog-resident dataset for RAG / unstructured-document retrieval evaluation on Databricks. The PDF-generation step uses standard local HTML → PDF tooling; the Databricks-specific value is the workflow shape — UC volume layout, paired question files, and integration with downstream Databricks retrieval / `ai_extract` / `ai_parse_document` evaluation.
+Workflow for producing **synthetic PDF documents + paired test questions** as a Unity Catalog-resident dataset for Demos and RAG / unstructured-document retrieval evaluation on Databricks. The PDF-generation step uses standard local HTML → PDF tooling; the Databricks-specific value is the workflow shape — UC volume layout, paired question files, and integration with downstream Databricks retrieval / `ai_extract` / `ai_parse_document` evaluation.
 
 ## Workflow
 
