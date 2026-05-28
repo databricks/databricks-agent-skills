@@ -133,7 +133,7 @@ client.create_endpoint(
     },
     # Tags are TOP-LEVEL — NOT inside `config`. Same {key, value} shape used
     # by `serving-endpoints patch --add-tags`. Tag every demo resource for cleanup.
-    tags=[{"key": "aidevkit_project", "value": "ai-dev-kit"}],
+    tags=[{"key": "project", "value": "demo"}],
 )
 ```
 
@@ -169,7 +169,7 @@ databricks serving-endpoints query my-agent-endpoint --json '{
 
 # Tag for project tracking
 databricks serving-endpoints patch turbine-risk-endpoint --json '{
-  "add_tags": [{"key": "aidevkit_project", "value": "ai-dev-kit"}]
+  "add_tags": [{"key": "project", "value": "demo"}]
 }'
 ```
 
@@ -293,8 +293,8 @@ databricks serving-endpoints list \
 
 ## Related skills
 
-- **[databricks-agent-bricks](../../../experimental/databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
-- **[databricks-mlflow-evaluation](../../../experimental/databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
-- **[databricks-vector-search](../../../experimental/databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
-- **[databricks-jobs](../../databricks-jobs/SKILL.md)** — async deploy pattern (`--no-wait`, TASK run_id trap).
-- **[databricks-unity-catalog](../../../experimental/databricks-unity-catalog/SKILL.md)** — UC governs the registered model: permissions, lineage, audit.
+- **`databricks-agent-bricks`** skill — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
+- **`databricks-mlflow-evaluation`** skill — evaluate model/agent quality before promoting `@prod`.
+- **`databricks-vector-search`** skill — vector indexes used as retrieval tools in agents.
+- **`databricks-jobs`** skill — async deploy pattern (`--no-wait`, TASK run_id trap).
+- **`databricks-unity-catalog`** skill — UC governs the registered model: permissions, lineage, audit.

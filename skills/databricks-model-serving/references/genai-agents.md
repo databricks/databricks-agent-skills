@@ -1,6 +1,6 @@
 # Custom GenAI agents with MLflow ResponsesAgent
 
-Edge case. **For most demos, use [databricks-agent-bricks](../../../experimental/databricks-agent-bricks/SKILL.md)** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
+Edge case. **For most demos, use the `databricks-agent-bricks` skill** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
 
 ## What ResponsesAgent is
 
@@ -204,7 +204,7 @@ endpoint_name = sys.argv[3] if len(sys.argv) > 3 else None
 
 # Always pass endpoint_name explicitly — auto-derived names are
 # `agents_<catalog>-<schema>-<model>` with dots → dashes, which is unpredictable.
-kwargs = {"tags": {"aidevkit_project": "ai-dev-kit"}}
+kwargs = {"tags": {"project": "demo"}}
 if endpoint_name:
     kwargs["endpoint_name"] = endpoint_name
 
