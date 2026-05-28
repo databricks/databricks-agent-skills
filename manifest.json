@@ -249,7 +249,7 @@
       "version": "0.0.1"
     },
     "databricks-model-serving": {
-      "description": "Manage Databricks Model Serving endpoints via CLI.",
+      "description": "Databricks Model Serving (ops) plus MLflow model development (dev): manage serving endpoints, train and register models to Unity Catalog with @prod aliases, batch-score via spark_udf, build custom...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
