@@ -21,7 +21,7 @@
 **Starting a cluster takes 3-8 minutes and costs money.** Always check first:
 
 ```bash
-databricks clusters list --output json | jq '.[] | select(.state == "RUNNING") | {cluster_id, cluster_name, state, cluster_source}'
+databricks clusters list --cluster-sources UI,API --output json | jq '.[] | select(.state == "RUNNING") | {cluster_id, cluster_name, state, cluster_source}'
 ```
 
 If no cluster is running, ask the user:
@@ -160,7 +160,7 @@ All cluster lifecycle goes through `databricks clusters`:
 
 ```bash
 # List all clusters (full output)
-databricks clusters list --output json
+databricks clusters list --cluster-sources UI,API --output json
 
 # Get one cluster's state
 databricks clusters get <CLUSTER_ID> | jq '{state, cluster_id, cluster_name}'
