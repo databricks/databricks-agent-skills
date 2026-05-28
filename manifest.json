@@ -46,7 +46,7 @@
       "version": "0.0.1"
     },
     "databricks-apps": {
-      "description": "Databricks Apps development and deployment (evaluates analytics vs synced tables data access)",
+      "description": "Build apps on Databricks Apps platform.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -93,7 +93,7 @@
       "version": "0.0.1"
     },
     "databricks-core": {
-      "description": "Core Databricks skill for CLI, auth, and data exploration",
+      "description": "Databricks CLI operations: auth, profiles, data exploration, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -107,7 +107,7 @@
       "version": "0.1.0"
     },
     "databricks-dabs": {
-      "description": "Declarative Automation Bundles (DABs) for deploying and managing Databricks resources",
+      "description": "Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles).",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -181,7 +181,7 @@
       "version": "0.0.1"
     },
     "databricks-jobs": {
-      "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI \u2014 covers all task types, triggers, notifications, and worked examples",
+      "description": "Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -196,7 +196,7 @@
       "version": "0.2.0"
     },
     "databricks-lakebase": {
-      "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, synced tables, and Data API",
+      "description": "Databricks Lakebase Postgres: projects, scaling, connectivity, Lakebase synced tables, and Data API.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -249,7 +249,7 @@
       "version": "0.0.1"
     },
     "databricks-model-serving": {
-      "description": "Databricks Model Serving endpoint management",
+      "description": "Manage Databricks Model Serving endpoints via CLI.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -264,7 +264,7 @@
       "version": "0.3.0"
     },
     "databricks-pipelines": {
-      "description": "Databricks Spark Declarative Pipelines (SDP) for ETL and streaming",
+      "description": "Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -333,7 +333,7 @@
       "version": "0.0.1"
     },
     "databricks-serverless-migration": {
-      "description": "Migrate Databricks workloads from classic compute to serverless compute, including compatibility checks and concrete fixes",
+      "description": "Migrate Databricks workloads from classic compute to serverless compute.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
