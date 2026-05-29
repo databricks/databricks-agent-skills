@@ -1,0 +1,453 @@
+# Metric View Patterns — Quick Reference
+
+Key patterns to use as templates when generating metric view suggestions.
+
+## Contents
+
+- [Pattern 1: Simple Single-Table Metrics](#pattern-1-simple-single-table-metrics)
+- [Pattern 2: Composability + Humanized Dimensions](#pattern-2-composability--humanized-dimensions-recommended)
+- [Pattern 3: Star Schema with Joins](#pattern-3-star-schema-with-joins)
+- [Pattern 4: Snowflake Schema (Nested Joins)](#pattern-4-snowflake-schema-nested-joins)
+- [Pattern 5: Materialized Metric View](#pattern-5-materialized-metric-view)
+- [Pattern 6: Window Measures](#pattern-6-window-measures-trailing-cumulative-period-over-period)
+- [Pattern 7: SQL Query as Source](#pattern-7-sql-query-as-source-fallback-for-incompatible-joins)
+- [Deploying and Querying via the CLI](#deploying-and-querying-via-the-cli)
+
+## Pattern 1: Simple Single-Table Metrics
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.product_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Product sales metrics"
+  source: catalog.schema.sales
+  dimensions:
+    - name: Product Name
+      expr: product_name
+      comment: "Name of the product"
+      display_name: "Product Name"
+      synonyms:
+        - 'product'
+        - 'item name'
+    - name: Sale Date
+      expr: sale_date
+      comment: "Date of the sale"
+      display_name: "Sale Date"
+      synonyms:
+        - 'date'
+        - 'transaction date'
+  measures:
+    - name: Units Sold
+      expr: COUNT(1)
+      comment: "Total number of units sold"
+      display_name: "Units Sold"
+      synonyms:
+        - 'quantity'
+        - 'unit count'
+    - name: Total Revenue
+      expr: SUM(price * quantity)
+      comment: "Total revenue from sales"
+      display_name: "Total Revenue"
+      synonyms:
+        - 'total sales'
+        - 'gross revenue'
+    - name: Average Price
+      expr: AVG(price)
+      comment: "Average unit price"
+      display_name: "Average Price"
+      synonyms:
+        - 'avg price'
+        - 'mean price'
+$$
+```
+
+### Query Examples
+
+```sql
+-- Revenue by product
+SELECT `Product Name`, MEASURE(`Total Revenue`) AS revenue, MEASURE(`Units Sold`) AS units
+FROM catalog.schema.product_metrics
+GROUP BY ALL ORDER BY revenue DESC LIMIT 10
+
+-- Monthly trend
+SELECT DATE_TRUNC('MONTH', `Sale Date`) AS month, MEASURE(`Total Revenue`) AS revenue
+FROM catalog.schema.product_metrics
+GROUP BY ALL ORDER BY month
+```
+
+## Pattern 2: Composability + Humanized Dimensions (Recommended)
+
+Atomic measures first, composed measures via `MEASURE()`, and CASE-based dimension value standardization per Databricks best practices.
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.order_status_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Order metrics with status breakdowns, composable ratios, and business-friendly dimensions"
+  source: catalog.schema.orders
+  filter: "order_date > '2020-01-01'"
+
+  dimensions:
+    - name: Order Date
+      expr: order_date
+      comment: "Granular order date for detail-level analysis"
+      display_name: "Order Date"
+    - name: Order Month
+      expr: "DATE_TRUNC('MONTH', order_date)"
+      comment: "Month of order for trend analysis"
+      display_name: "Order Month"
+    - name: Region
+      expr: region
+      comment: "Sales region"
+    - name: Order Status
+      expr: "CASE WHEN status = 'O' THEN 'Open' WHEN status = 'F' THEN 'Fulfilled' WHEN status = 'P' THEN 'Processing' END"
+      comment: "Human-readable order status"
+      display_name: "Order Status"
+      synonyms:
+        - 'status'
+        - 'fulfillment status'
+    - name: Priority Level
+      expr: CASE
+        WHEN priority <= 2 THEN 'High'
+        WHEN priority <= 4 THEN 'Medium'
+        ELSE 'Low'
+        END
+      comment: "Bucketed priority: High (1-2), Medium (3-4), Low (5+)"
+
+  measures:
+    # Step 1: Atomic measures
+    - name: Total Orders
+      expr: COUNT(1)
+    - name: Total Revenue
+      expr: SUM(amount)
+    - name: Unique Customers
+      expr: COUNT(DISTINCT customer_id)
+    - name: Fulfilled Orders
+      expr: COUNT(1) FILTER (WHERE status = 'F')
+      comment: "Orders that have been fulfilled"
+    - name: Open Orders
+      expr: COUNT(1) FILTER (WHERE status = 'O')
+      comment: "Orders not yet fulfilled"
+    - name: Open Revenue
+      expr: SUM(amount) FILTER (WHERE status = 'O')
+      comment: "Revenue at risk from unfulfilled orders"
+
+    # Step 2: Composed measures (backtick-quote multi-word names in MEASURE)
+    - name: Fulfillment Rate
+      expr: "MEASURE(`Fulfilled Orders`) / MEASURE(`Total Orders`)"
+      comment: "Percentage of orders fulfilled"
+    - name: Revenue per Customer
+      expr: "MEASURE(`Total Revenue`) / MEASURE(`Unique Customers`)"
+      comment: "Average revenue per unique customer"
+    - name: Avg Order Value
+      expr: "MEASURE(`Total Revenue`) / MEASURE(`Total Orders`)"
+      comment: "Average order value"
+$$
+```
+
+## Pattern 3: Star Schema with Joins
+
+Join a fact table to dimension tables for richer slicing.
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.sales_analytics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Sales analytics with customer and product dimensions"
+  source: catalog.schema.fact_sales
+
+  joins:
+    - name: customer
+      source: catalog.schema.dim_customer
+      'on': source.customer_id = customer.customer_id
+    - name: product
+      source: catalog.schema.dim_product
+      'on': source.product_id = product.product_id
+    - name: store
+      source: catalog.schema.dim_store
+      'on': source.store_id = store.store_id
+
+  dimensions:
+    - name: Customer Segment
+      expr: customer.segment
+      comment: "Customer tier: Enterprise, Mid-Market, SMB"
+    - name: Product Category
+      expr: product.category
+      comment: "Product category"
+    - name: Store City
+      expr: store.city
+      comment: "Store location city"
+    - name: Sale Month
+      expr: DATE_TRUNC('MONTH', source.sale_date)
+      comment: "Month of sale"
+
+  measures:
+    - name: Total Revenue
+      expr: SUM(source.amount)
+      comment: "Sum of sale amounts"
+    - name: Unique Customers
+      expr: COUNT(DISTINCT source.customer_id)
+      comment: "Number of distinct customers"
+    - name: Average Basket Size
+      expr: SUM(source.amount) / COUNT(DISTINCT source.transaction_id)
+      comment: "Average revenue per transaction"
+$$
+```
+
+## Pattern 4: Snowflake Schema (Nested Joins)
+
+Multi-level dimension hierarchies. Requires DBR 17.1+.
+
+**CRITICAL**: Reference nested join columns using the **full dot-chain path** through parent joins. For example, `nation` is nested under `customer`, so use `customer.nation.n_name` — NOT `nation.n_name`. Using just the join name causes `UNRESOLVED_COLUMN` errors.
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.geo_sales
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Sales with geographic hierarchy"
+  source: catalog.schema.orders
+
+  joins:
+    - name: customer
+      source: catalog.schema.customer
+      'on': source.customer_key = customer.customer_key
+      joins:
+        - name: nation
+          source: catalog.schema.nation
+          'on': customer.nation_key = nation.nation_key
+          joins:
+            - name: region
+              source: catalog.schema.region
+              'on': nation.region_key = region.region_key
+
+  dimensions:
+    - name: Customer Name
+      expr: customer.name
+    - name: Nation
+      expr: customer.nation.name
+      comment: "Full dot-chain: customer -> nation -> name"
+    - name: Region
+      expr: customer.nation.region.name
+      comment: "Full dot-chain: customer -> nation -> region -> name"
+    - name: Order Year
+      expr: EXTRACT(YEAR FROM source.order_date)
+
+  measures:
+    - name: Total Revenue
+      expr: SUM(source.total_price)
+    - name: Order Count
+      expr: COUNT(1)
+$$
+```
+
+## Pattern 5: Materialized Metric View
+
+Pre-compute aggregations for frequently queried dimension/measure combos.
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.ecommerce_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  source: catalog.schema.transactions
+
+  dimensions:
+    - name: Category
+      expr: product_category
+    - name: Day
+      expr: DATE_TRUNC('DAY', transaction_date)
+    - name: Channel
+      expr: sales_channel
+
+  measures:
+    - name: Revenue
+      expr: SUM(amount)
+    - name: Transactions
+      expr: COUNT(1)
+    - name: Unique Buyers
+      expr: COUNT(DISTINCT customer_id)
+
+  materialization:
+    schedule: every 1 hour
+    mode: relaxed
+    materialized_views:
+      - name: daily_category
+        type: aggregated
+        dimensions:
+          - Category
+          - Day
+        measures:
+          - Revenue
+          - Transactions
+      - name: full_model
+        type: unaggregated
+$$
+```
+
+## Pattern 6: Window Measures (Trailing, Cumulative, Period-over-Period)
+
+Time-series patterns using window measures. **Experimental feature.**
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.time_series_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 0.1
+  comment: "Time-series metrics with running totals, trailing windows, and period comparisons. Window measures require version 0.1."
+  source: catalog.schema.orders
+
+  dimensions:
+    - name: Order Date
+      expr: o_orderdate
+      comment: "Granular order date"
+    - name: Order Year
+      expr: EXTRACT(YEAR FROM o_orderdate)
+
+  measures:
+    # Atomic
+    - name: Daily Revenue
+      expr: SUM(o_totalprice)
+    - name: Daily Customers
+      expr: COUNT(DISTINCT o_custkey)
+
+    # Cumulative running total
+    - name: Running Total Revenue
+      expr: SUM(o_totalprice)
+      window:
+        - order: Order Date
+          range: cumulative
+          semiadditive: last
+
+    # Trailing 7-day window (excludes current day)
+    - name: 7-Day Customers
+      expr: COUNT(DISTINCT o_custkey)
+      window:
+        - order: Order Date
+          range: trailing 7 day
+          semiadditive: last
+
+    # Period-over-period: previous day
+    - name: Previous Day Revenue
+      expr: SUM(o_totalprice)
+      window:
+        - order: Order Date
+          range: trailing 1 day
+          semiadditive: last
+
+    # Composed: day-over-day growth
+    - name: Day over Day Growth
+      expr: "(MEASURE(`Daily Revenue`) - MEASURE(`Previous Day Revenue`)) / MEASURE(`Previous Day Revenue`) * 100"
+      comment: "Percentage change from previous day"
+
+    # Year-to-date (two windows)
+    - name: YTD Revenue
+      expr: SUM(o_totalprice)
+      window:
+        - order: Order Date
+          range: cumulative
+          semiadditive: last
+        - order: Order Year
+          range: current
+          semiadditive: last
+
+    # Semiadditive: balance-like measure (latest value across time)
+    - name: Latest Account Balance
+      expr: SUM(o_totalprice)
+      window:
+        - order: Order Date
+          range: current
+          semiadditive: last
+      comment: "Sums across customers but uses latest date value"
+$$
+```
+
+## Pattern 7: SQL Query as Source (Fallback for Incompatible Joins)
+
+When snowflake joins fail (DBR < 17.1) or cross-join references don't resolve, pre-join tables in the source SQL query. **Note:** Joins block is not supported with SQL query sources.
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.pre_joined_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Pre-joined source for environments where snowflake joins are unsupported"
+  source: "(SELECT o.o_orderkey, o.o_totalprice, o.o_orderdate, o.o_orderstatus, o.o_custkey, c.c_mktsegment, n.n_name AS customer_nation, r.r_name AS customer_region FROM catalog.schema.orders o JOIN catalog.schema.customer c ON o.o_custkey = c.c_custkey JOIN catalog.schema.nation n ON c.c_nationkey = n.n_nationkey JOIN catalog.schema.region r ON n.n_regionkey = r.r_regionkey)"
+
+  dimensions:
+    - name: Order Date
+      expr: o_orderdate
+      comment: "Granular order date"
+    - name: Order Month
+      expr: "DATE_TRUNC('MONTH', o_orderdate)"
+      comment: "Month of order"
+    - name: Order Status
+      expr: "CASE WHEN o_orderstatus = 'O' THEN 'Open' WHEN o_orderstatus = 'F' THEN 'Fulfilled' WHEN o_orderstatus = 'P' THEN 'Processing' END"
+      comment: "Human-readable order status"
+    - name: Market Segment
+      expr: c_mktsegment
+    - name: Customer Region
+      expr: customer_region
+    - name: Customer Nation
+      expr: customer_nation
+
+  measures:
+    - name: Total Revenue
+      expr: SUM(o_totalprice)
+    - name: Order Count
+      expr: COUNT(1)
+    - name: Unique Customers
+      expr: COUNT(DISTINCT o_custkey)
+    - name: Avg Order Value
+      expr: "MEASURE(`Total Revenue`) / MEASURE(`Order Count`)"
+    - name: Revenue per Customer
+      expr: "MEASURE(`Total Revenue`) / MEASURE(`Unique Customers`)"
+$$
+```
+
+**When to use:** Prefer native joins; use SQL source only when snowflake joins fail on your DBR version or you need complex join logic. Trade-off: SQL source always scans all joined tables.
+
+## Deploying and Querying via the CLI
+
+Metric views are created, queried, and managed through SQL — see [cli-operations.md](cli-operations.md) for the exact CLI/API commands. There is no dedicated metric-view CLI verb.
+
+### Deploy (create or replace)
+
+Execute the full `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement (one of the patterns above) via the **SQL Statements API** — long DDL with `$$` token-quoting is fragile in shell heredocs:
+
+```bash
+databricks api post /api/2.0/sql/statements --profile <PROFILE> --json '{
+  "warehouse_id": "<warehouse_id>",
+  "wait_timeout": "50s",
+  "statement": "CREATE OR REPLACE VIEW catalog.schema.sales_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.fact_sales\ndimensions:\n  - name: Sale Month\n    expr: DATE_TRUNC(MONTH, source.sale_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(source.amount)\n$$"
+}'
+```
+
+### Query (every measure wrapped in MEASURE(), every dimension in GROUP BY)
+
+```bash
+databricks experimental aitools tools query "
+SELECT \`Customer Segment\`, \`Sale Month\`,
+       MEASURE(\`Total Revenue\`) AS \`Total Revenue\`,
+       MEASURE(\`Order Count\`) AS \`Order Count\`
+FROM catalog.schema.sales_metrics
+WHERE \`Customer Segment\` = 'Enterprise'
+GROUP BY ALL ORDER BY ALL LIMIT 50
+" --profile <PROFILE>
+```
+
+### Grant (least privilege)
+
+```sql
+GRANT SELECT ON VIEW catalog.schema.sales_metrics TO `data-consumers`;
+```
