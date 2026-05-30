@@ -226,7 +226,7 @@
         "references/5-troubleshooting-and-monitoring.md"
       ],
       "repo_dir": "experimental",
-      "version": "0.0.1"
+      "version": "0.1.0"
     },
     "databricks-metric-views": {
       "description": "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools.",

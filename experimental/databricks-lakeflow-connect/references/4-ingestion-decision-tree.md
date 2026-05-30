@@ -9,7 +9,7 @@ The four approaches:
 - **Lakehouse Federation** — query-in-place; the data stays in the source.
 - **Delta Sharing** — the inbound side of someone else's lakehouse; you accept a share rather than build a pipeline.
 
-For event-driven push (the source pushes to you instead of you pulling) the relevant approach is **Zerobus Ingest**, covered separately in the [databricks-zerobus-ingest](../../databricks-zerobus-ingest/SKILL.md) skill.
+For event-driven push (the source pushes to you instead of you pulling) the relevant approach is **Zerobus Ingest**, covered separately in the **databricks-zerobus-ingest** skill.
 
 ---
 
@@ -22,11 +22,11 @@ Pick the row that matches your source type and constraint.
 | SaaS app with a Lakeflow Connect connector (Salesforce, Workday, ServiceNow, GA4, HubSpot, Confluence, etc.) | Yes | Lakeflow Connect | [SKILL.md](../SKILL.md), [1-saas-connectors.md](1-saas-connectors.md) |
 | Operational database (SQL Server, PostgreSQL, MySQL) with a Lakeflow Connect connector | Yes, with CDC | Lakeflow Connect | [2-database-connectors.md](2-database-connectors.md) |
 | Operational database, low query volume, source can absorb the load | No copy needed | Lakehouse Federation | [docs](https://docs.databricks.com/aws/en/query-federation/) |
-| Cloud object storage (S3, ADLS, GCS) with files | Yes | Auto Loader | [databricks-pipelines](../../../skills/databricks-pipelines/SKILL.md) |
+| Cloud object storage (S3, ADLS, GCS) with files | Yes | Auto Loader | **databricks-pipelines** |
 | SaaS file repo (SharePoint, Google Drive, SFTP) | Yes | Lakeflow Connect | [public connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) |
-| Application or device pushing events at you | Yes (push, not pull) | Zerobus Ingest | [databricks-zerobus-ingest](../../databricks-zerobus-ingest/SKILL.md) |
+| Application or device pushing events at you | Yes (push, not pull) | Zerobus Ingest | **databricks-zerobus-ingest** |
 | Another lakehouse / partner data product offering a Delta share | Yes (accept, not build) | Delta Sharing | [docs](https://docs.databricks.com/aws/en/delta-sharing/) |
-| None of the above | — | Hand-rolled Structured Streaming or `read_files` from object storage | [databricks-spark-structured-streaming](../../databricks-spark-structured-streaming/SKILL.md) |
+| None of the above | — | Hand-rolled Structured Streaming or `read_files` from object storage | **databricks-spark-structured-streaming** |
 
 ---
 
@@ -112,7 +112,7 @@ See the [Databricks pricing page](https://www.databricks.com/product/pricing) an
 A few situations where you'll reach for one of the alternatives:
 
 - **The connector for your source isn't in the catalog.** Check the [connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) — if your source isn't listed, use Auto Loader (if it's files), a hand-rolled Structured Streaming job, or wait for the connector to ship.
-- **You need continuous ingestion.** Lakeflow Connect runs triggered only as of May 2026. For sub-minute latency on file sources, use Auto Loader with `Trigger.AvailableNow` on a short interval, or Structured Streaming directly.
+- **You need continuous ingestion.** Lakeflow Connect runs triggered only (no continuous mode). For sub-minute latency on file sources, use Auto Loader with `Trigger.AvailableNow` on a short interval, or Structured Streaming directly.
 - **You need to push instead of pull.** That's Zerobus.
 - **You want zero copy.** That's Lakehouse Federation.
 

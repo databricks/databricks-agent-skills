@@ -25,8 +25,7 @@ A minimal pipeline JSON:
       {"table": {"source_schema": "salesforce", "source_table": "Account",
                  "destination_catalog": "main", "destination_schema": "salesforce_raw"}}
     ]
-  },
-  "channel": "PREVIEW"
+  }
 }
 ```
 
@@ -34,7 +33,7 @@ Keys to know:
 
 - `ingestion_definition.connection_name` — the UC connection name (not URL, not ID).
 - `objects[].table` — one entry per source table. Use `objects[].schema` to ingest a whole source schema in one block.
-- `channel: PREVIEW` is required for connectors not yet fully GA in your region. Switch to `CURRENT` once available.
+- `channel` — omit for GA connectors (defaults to `CURRENT`). Set `channel: PREVIEW` only for connectors still in Public Preview / Beta.
 
 ---
 
@@ -104,7 +103,6 @@ resources:
   pipelines:
     salesforce_ingestion:
       name: salesforce_to_uc
-      channel: PREVIEW
       ingestion_definition:
         connection_name: my_salesforce_oauth_connection
         objects:
@@ -120,7 +118,7 @@ resources:
               destination_schema: salesforce_raw
 ```
 
-Schedule it via a Jobs resource with a `pipeline_task` pointing at this pipeline. See [databricks-dabs](../../../skills/databricks-dabs/SKILL.md) for bundle structure, target overrides, and the recommended layout for multi-pipeline bundles.
+Schedule it via a Jobs resource with a `pipeline_task` pointing at this pipeline. See **databricks-dabs** for bundle structure, target overrides, and the recommended layout for multi-pipeline bundles.
 
 ---
 

@@ -19,7 +19,7 @@ ORDER BY timestamp DESC
 LIMIT 50;
 ```
 
-For event-log table conventions (filtering by `event_type`, joining with metrics, etc.), see [databricks-pipelines](../../../skills/databricks-pipelines/SKILL.md).
+For event-log table conventions (filtering by `event_type`, joining with metrics, etc.), see **databricks-pipelines**.
 
 **Database pipelines have two event logs** — one for the gateway, one for the ingestion pipeline. A symptom on the ingestion side often has its root cause in the gateway side. When debugging database connectors, query both.
 
@@ -49,4 +49,4 @@ When the event log doesn't explain a failure:
 2. **Connector reference** — [per-connector setup](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) is the canonical source for current auth, limits, and supported objects per source.
 3. **Workspace support** — file a support case from Help -> Contact Support inside the workspace; attach the pipeline ID and a relevant `event_log` extract.
 
-For monitoring patterns beyond event-log queries (dashboards, alerting on pipeline state, SLAs), see [databricks-pipelines](../../../skills/databricks-pipelines/SKILL.md).
+For monitoring patterns beyond event-log queries (dashboards, alerting on pipeline state, SLAs), see **databricks-pipelines**.

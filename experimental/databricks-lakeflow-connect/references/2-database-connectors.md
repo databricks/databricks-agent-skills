@@ -85,7 +85,6 @@ resources:
   pipelines:
     sqlserver_gateway:
       name: sqlserver_gateway
-      channel: PREVIEW
       gateway_definition:
         connection_name: my_sqlserver_connection
         gateway_storage_catalog: ${var.catalog}
@@ -94,7 +93,6 @@ resources:
 
     sqlserver_ingestion:
       name: sqlserver_to_uc
-      channel: PREVIEW
       ingestion_definition:
         ingestion_gateway_id: ${resources.pipelines.sqlserver_gateway.id}
         objects:
@@ -129,7 +127,7 @@ The gateway compute itself runs on Databricks-managed VPC infrastructure inside 
 | Gateway requires an instance type unavailable in the region | Default gateway cluster shape not stocked in the target region | Apply a cluster policy override on the gateway pipeline to pin a regionally-available instance type. |
 | Snapshot-only mode silently disabled | Snapshot-only is not supported for CDC sources | Use CT instead, or accept incremental mode. |
 | Pipeline state diverges from source after 30+ days | Staging Volume retention expired | Resnapshot the affected tables. Increase the Volume retention if reprocessing further back is a recurring need. |
-| "Continuous mode not supported" error at create | Lakeflow Connect is triggered-only as of May 2026 | Use `continuous: false` plus a Jobs schedule. |
+| "Continuous mode not supported" error at create | Lakeflow Connect is triggered-only (no continuous mode) | Use `continuous: false` plus a Jobs schedule. |
 | Gateway pipeline succeeds but ingestion pipeline shows no new data | Staging path mismatch between the two pipelines | Confirm `gateway_storage_*` on the gateway matches the staging path the ingestion pipeline reads from. |
 
 ---

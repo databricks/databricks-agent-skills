@@ -1,18 +1,17 @@
 ---
 name: databricks-lakeflow-connect
 description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines. Covers the unified setup pattern (UC connection -> ingestion pipeline -> streaming Delta tables), the gateway pattern for database CDC, DAB-based authoring, and the decision between Lakeflow Connect, Auto Loader, Lakehouse Federation, and Delta Sharing."
+compatibility: Requires databricks CLI (>= v0.294.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Lakeflow Connect
 
 Build managed ingestion pipelines that pull from SaaS apps and databases into Unity Catalog Delta tables, governed end-to-end and powered by serverless Lakeflow Spark Declarative Pipelines.
 
-**Status:** mixed catalog as of May 2026 — 9 GA connectors, plus a Public Preview / Beta / Private Preview pipeline that ships new sources monthly.
-
-**Documentation:**
-- [Lakeflow Connect overview](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect)
-- [Connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors)
-- [Pricing](https://www.databricks.com/product/pricing/lakeflow-connect)
+**Status:** mixed catalog — GA connectors for production use, plus Public Preview, Beta, and Private Preview connectors that expand over time. See the connector catalog below.
 
 ---
 
@@ -53,21 +52,20 @@ Full coverage in this skill.
 | Confluence | SaaS pull | OAuth | [1-saas-connectors.md](references/1-saas-connectors.md) |
 | SQL Server (cloud) | Database CDC | DB user + change tracking / CDC | [2-database-connectors.md](references/2-database-connectors.md) |
 | SQL Server (on-prem) | Database CDC | DB user + ExpressRoute / Direct Connect | [2-database-connectors.md](references/2-database-connectors.md) |
-| Zerobus Ingest | Push (gRPC) | Service principal | See [databricks-zerobus-ingest](../databricks-zerobus-ingest/SKILL.md) |
 
 ### Public Preview connectors
 
 Production-supported. Configuration may evolve before GA. Deep coverage is being added incrementally; until then, see the [public connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) for current setup steps.
 
-| Source | Type | Auth | GA target |
-|--------|------|------|-----------|
-| NetSuite | SaaS pull | OAuth | May 31, 2026 |
-| Dynamics 365 | SaaS pull | OAuth | May 31, 2026 |
-| PostgreSQL CDC | Database CDC | DB user + gateway | Jun 30, 2026 (tentative); ungated PuPr May 29 |
-| MySQL CDC | Database CDC | DB user + gateway | Jul 15, 2026 (tentative); ungated PuPr May 29 |
-| Oracle / Teradata / SQL Server / PG / MySQL (query-based) | Database query | DB user | Jun 30, 2026 |
-| Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog) | Database query | Foreign Catalog | Jun 30, 2026 |
-| SFTP | File pull | Key / password | Jun 30, 2026 |
+| Source | Type | Auth |
+|--------|------|------|
+| NetSuite | SaaS pull | OAuth |
+| Dynamics 365 | SaaS pull | OAuth |
+| PostgreSQL CDC | Database CDC | DB user + gateway |
+| MySQL CDC | Database CDC | DB user + gateway |
+| Oracle / Teradata / SQL Server / PG / MySQL (query-based) | Database query | DB user |
+| Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog) | Database query | Foreign Catalog |
+| SFTP | File pull | Key / password |
 
 ### Beta and Private Preview
 
@@ -113,8 +111,7 @@ databricks pipelines create --json '{
       {"table": {"source_schema": "salesforce", "source_table": "Opportunity",
                  "destination_catalog": "main", "destination_schema": "salesforce_raw"}}
     ]
-  },
-  "channel": "PREVIEW"
+  }
 }'
 ```
 
@@ -142,7 +139,7 @@ For each new ingestion pipeline:
 3. **Create the UC `CONNECTION`** — UI for OAuth U2M, CLI / DAB for everything else.
 4. **Author the pipeline** — `databricks pipelines create --json` for one-offs, DAB YAML for anything shipping to a customer.
 5. **Trigger the first run** and watch the event log; see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md) for the SQL.
-6. **Schedule** via Jobs (`pipeline_task`) or `continuous: false` on the pipeline itself. Lakeflow Connect supports triggered only as of May 2026.
+6. **Schedule** via Jobs (`pipeline_task`) or `continuous: false` on the pipeline itself. Lakeflow Connect supports triggered runs only (no continuous mode).
 
 ---
 
@@ -168,27 +165,17 @@ For each new ingestion pipeline:
 
 ## Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| **Pipeline fails with `APPLY_CHANGES_FROM_SNAPSHOT_ERROR.DUPLICATE_KEY_VIOLATION`** | Primary key collision in the source snapshot. Inspect the source for duplicate rows on the declared PK column. |
-| **Watermark not advancing on a SaaS source** | Cursor field misconfigured. Check the connector reference for the supported cursor column per source object. |
-| **Column added in source but missing from target** | Schema evolution may need to be explicitly re-enabled per connector. Check connector docs. |
-| **Gateway requires an instance type unavailable in your region** | Apply a cluster policy override on the gateway pipeline; see [2-database-connectors.md](references/2-database-connectors.md). |
-| **`channel: PREVIEW` warning at pipeline create** | Expected for new connectors. Switch to `channel: CURRENT` once the connector is GA in your region. |
-| **`databricks pipelines create` succeeds but no data flows** | Confirm UC connection is in `READY` state and the destination schema exists. Check the event log for any `pre-flight` failures. |
-| **Ingestion run shows GB ingested >> source row size** | Expected for CDC sources — change log columns + schema metadata add overhead. |
-
-For a deeper troubleshooting reference, see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md).
+For common errors and their fixes — duplicate-key violations, watermark / cursor problems, schema evolution, gateway region availability, the `channel: PREVIEW` warning, and pipelines that run but land no data — see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md), which also has the event-log queries to diagnose them.
 
 ---
 
 ## Related Skills
 
-- **[databricks-pipelines](../../skills/databricks-pipelines/SKILL.md)** — the SDP runtime that Lakeflow Connect pipelines run on. For Auto Loader and downstream pipeline patterns.
-- **[databricks-zerobus-ingest](../databricks-zerobus-ingest/SKILL.md)** — push-based gRPC ingestion. Sibling to Lakeflow Connect's pull-based connectors.
-- **[databricks-dabs](../../skills/databricks-dabs/SKILL.md)** — author Lakeflow Connect pipelines as IaC.
-- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** — managing catalogs, schemas, and the UC `CONNECTION` objects that LFC credentials live in.
-- **[databricks-jobs](../../skills/databricks-jobs/SKILL.md)** — schedule ingestion pipelines with `pipeline_task`.
+- **databricks-pipelines** — the SDP runtime that Lakeflow Connect pipelines run on. For Auto Loader and downstream pipeline patterns.
+- **databricks-zerobus-ingest** — push-based gRPC ingestion. Sibling to Lakeflow Connect's pull-based connectors.
+- **databricks-dabs** — author Lakeflow Connect pipelines as IaC.
+- **databricks-unity-catalog** — managing catalogs, schemas, and the UC `CONNECTION` objects that LFC credentials live in.
+- **databricks-jobs** — schedule ingestion pipelines with `pipeline_task`.
 
 ---
 
