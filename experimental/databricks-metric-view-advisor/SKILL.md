@@ -367,10 +367,12 @@ Each run creates a timestamped subfolder to preserve previous runs:
 │   ├── suggestions.yaml
 │   ├── order_metrics.sql
 │   └── ...
-└── latest -> run_20260403_161500/   # symlink to most recent
+└── latest.txt                 # plain text file: name of the most recent run folder
 ```
 
-**At the start of each run** (when you first need to save a file): generate a timestamp `run_<YYYYMMDD_HHMMSS>`, create `<target_schema>_output_metric_views/run_<timestamp>/`, and after saving update the `latest` symlink (`ln -sfn run_<timestamp> <target_schema>_output_metric_views/latest`). All paths shown to the user reference the `run_<timestamp>/` folder. This ensures previous runs are never overwritten.
+**At the start of each run** (when you first need to save a file): generate a timestamp `run_<YYYYMMDD_HHMMSS>`, create `<target_schema>_output_metric_views/run_<timestamp>/`. After saving, write the current run folder name into `<target_schema>_output_metric_views/latest.txt` (a single line, e.g. `run_20260403_161500`). All paths shown to the user reference the full `run_<timestamp>/` folder. This ensures previous runs are never overwritten.
+
+> **Do NOT create a `latest` symlink.** Symbolic links work on a local POSIX filesystem but do **not** resolve in the Databricks Workspace filesystem (where Genie Code runs) — the link is created but cannot be navigated or read through. A plain `latest.txt` pointer file works in every environment. To find the newest run, read `latest.txt`; as a fallback, pick the lexicographically-largest `run_*` folder (timestamps sort chronologically).
 
 #### What to do with the suggestions — always do all three
 
