@@ -19,7 +19,6 @@
     "pipelines",
     "dabs",
     "serverless",
-    "metric-view-advisor",
     "data-engineering"
   ],
   "skills": "./skills/"

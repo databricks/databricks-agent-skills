@@ -1,6 +1,6 @@
 # CLI & API Operations
 
-All operations in this skill run through the **Databricks CLI** (see the parent `databricks-core` skill for installation, authentication, and profile selection). This file documents the specific commands the workflow relies on.
+All operations in this skill run through the **Databricks CLI** (>= v0.292.0), authenticated to a workspace profile (`databricks auth login --host <workspace-url> --profile <PROFILE>`). This file documents the specific commands the workflow relies on.
 
 > **Never use `databricks sql execute` or `databricks execute-statement` — those commands do not exist.** Use the `aitools` query tool or the SQL Statements API below.
 

@@ -214,7 +214,7 @@
       "version": "0.1.0"
     },
     "databricks-metric-view-advisor": {
-      "description": "Use this skill when the user wants to create Unity Catalog metric views \u2014 whether starting from gold/fact tables, existing AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets.",
+      "description": "Use this skill when the user wants to create Unity Catalog metric views \u2014 whether starting from gold/fact tables, existing AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets. Triggers on intent like \"formalize our KPIs,\" \"build a metric/semantic layer,\" \"define measures and dimensions from our tables,\" \"standardize aggregations so other teams can reuse them,\" or \"turn our ad-hoc queries into reusable metrics.\" Guides an interactive workflow \u2014 analyzing source assets, generating YAML definitions, checking for overlap with existing views, and deploying. Do NOT use for querying or altering an already-existing metric view, comparing metric view frameworks, creating regular Unity Catalog tables/schemas, or MLflow/model tracking.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -228,7 +228,7 @@
         "references/patterns.md",
         "references/yaml-reference.md"
       ],
-      "repo_dir": "skills",
+      "repo_dir": "experimental",
       "version": "1.0.0"
     },
     "databricks-metric-views": {

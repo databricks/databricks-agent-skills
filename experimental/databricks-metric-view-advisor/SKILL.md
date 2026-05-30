@@ -4,18 +4,17 @@ description: Use this skill when the user wants to create Unity Catalog metric v
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "1.0.0"
-parent: databricks-core
 ---
 
 # Metric View Advisor
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, data exploration, and SQL execution. This skill builds on those primitives.
+**Prerequisite:** a working Databricks CLI (>= v0.292.0) authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
 
 Guide users through analyzing their existing Databricks assets and creating well-structured Unity Catalog metric view definitions. Unlike a single-input "create a metric view" helper, this advisor synthesizes **multiple input sources** (schemas, dashboards, SQL queries, Genie spaces, KPI files) into richer, deduplicated suggestions, checks for overlap with views that already exist, and walks deployment end to end.
 
 ## How tools are used
 
-All operations run through the **Databricks CLI** (per the parent `databricks-core` skill). The mechanics — executing SQL, discovering table schemas, fetching dashboard/Genie definitions, deploying and querying metric views — are documented in **[references/cli-operations.md](references/cli-operations.md)**. Read that file before running any command in the steps below. In short:
+All operations run through the **Databricks CLI**. The mechanics — executing SQL, discovering table schemas, fetching dashboard/Genie definitions, deploying and querying metric views — are documented in **[references/cli-operations.md](references/cli-operations.md)**. Read that file before running any command in the steps below. In short:
 
 - **Run SQL**: `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (long DDL → SQL Statements API, see cli-operations.md)
 - **Inspect a table**: `databricks experimental aitools tools discover-schema <catalog.schema.table> --profile <PROFILE>`
@@ -51,10 +50,10 @@ Ask these questions **sequentially**, waiting for a response after each.
 
 **1a. Databricks workspace / CLI profile**
 
-Defer to the parent `databricks-core` skill for profile selection and authentication:
+Establish the workspace profile and authentication:
 - **NEVER auto-select a profile.** List profiles with `databricks auth profiles`, present them all (with workspace URLs) to the user, and let them choose — even if only one exists.
 - Accept a profile name, or a workspace URL the user types directly.
-- Validate auth before continuing (`databricks auth token --profile <PROFILE>`). If auth fails, follow `databricks-core`'s authentication guidance before proceeding.
+- Validate auth before continuing (`databricks auth token --profile <PROFILE>`). If auth fails, re-authenticate with `databricks auth login --host <workspace-url> --profile <PROFILE>` before proceeding.
 
 **After auth is validated**, discover a SQL warehouse for the session (automatic — not a user question):
 

@@ -66,7 +66,6 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
 - **databricks-jobs** — Lakeflow Jobs orchestration: task types, triggers, schedules, notifications.
 - **databricks-lakebase** — Lakebase Postgres: projects, branching, autoscaling, synced tables, Data API.
-- **databricks-metric-view-advisor** — Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files.
 - **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
 - **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
 - **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
