@@ -430,7 +430,7 @@ The `definition` and `description` fields are both optional. If `definition` is 
 
 1. **Read the KPI file** and parse entries by type (measure vs dimension)
 
-2. **Get schema details** (same as Input 1, step 1)
+2. **Get schema details** (same as Input 1, step 2 — list tables, then `discover-schema` each to get columns/types)
 
 3. **Map each user-provided KPI to schema columns:**
    - For each KPI/measure: identify the source column(s) and aggregation type
