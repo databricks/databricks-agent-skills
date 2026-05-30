@@ -8,9 +8,9 @@ metadata:
 
 # Metric View Advisor
 
-**Prerequisite:** a working Databricks CLI (>= v0.292.0) authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
+Create Unity Catalog metric views from your existing Databricks assets — gold/fact schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files. This advisor guides an interactive workflow that analyzes those sources, synthesizes them into richer, deduplicated suggestions, checks for overlap with views that already exist, and walks deployment end to end. Unlike a single-input "create a metric view" helper, it combines **multiple input sources** into one coherent set of definitions.
 
-Guide users through analyzing their existing Databricks assets and creating well-structured Unity Catalog metric view definitions. Unlike a single-input "create a metric view" helper, this advisor synthesizes **multiple input sources** (schemas, dashboards, SQL queries, Genie spaces, KPI files) into richer, deduplicated suggestions, checks for overlap with views that already exist, and walks deployment end to end.
+**Prerequisite:** a working Databricks CLI (>= v0.292.0) authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
 
 ## How tools are used
 
