@@ -1,0 +1,8 @@
+# MLflow Experiment
+# Use for: Tracing and model logging
+# Note: Already configured in template's databricks.yml
+
+- name: 'my_experiment'
+  experiment:
+    experiment_id: '12349876'
+    permission: 'CAN_MANAGE'

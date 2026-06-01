@@ -1,0 +1,9 @@
+# Unity Catalog Connection
+# Use for: External MCP servers via UC connections
+# MCP URL: {host}/api/2.0/mcp/external/{connection_name}
+
+- name: 'my_connection'
+  uc_securable:
+    securable_full_name: 'my-connection-name'
+    securable_type: 'CONNECTION'
+    permission: 'USE_CONNECTION'

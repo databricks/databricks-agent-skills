@@ -1,0 +1,9 @@
+# Genie Space
+# Use for: Natural language interface to data
+# MCP URL: {host}/api/2.0/mcp/genie/{space_id}
+
+- name: 'my_genie_space'
+  genie_space:
+    name: 'My Genie Space'
+    space_id: '01234567-89ab-cdef'
+    permission: 'CAN_RUN'

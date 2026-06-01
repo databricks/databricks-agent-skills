@@ -1,0 +1,21 @@
+# Lakebase Autoscaling Postgres (for agent memory)
+# Use for: Short-term memory storage with autoscaling Lakebase
+
+# In databricks.yml - add to resources.apps.<app>.resources:
+- name: 'postgres'
+  postgres:
+    branch: "projects/<project-name>/branches/<branch-name>"
+    database: "projects/<project-name>/branches/<branch-name>/databases/<database-id>"
+    permission: CAN_CONNECT_AND_CREATE
+
+# In databricks.yml config block - add to env:
+# - name: LAKEBASE_AUTOSCALING_PROJECT
+#   value: "<project-name>"
+# - name: LAKEBASE_AUTOSCALING_BRANCH
+#   value: "<branch-name>"
+
+# How to find the values:
+# databricks api get /api/2.0/postgres/projects
+# databricks api get /api/2.0/postgres/projects/<project-name>/branches
+# databricks api get /api/2.0/postgres/projects/<project-name>/branches/<branch-name>/databases
+# The database-id is the internal ID (e.g., db-xxxx-xxxxxxxxxx), NOT "databricks_postgres"

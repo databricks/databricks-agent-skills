@@ -47,6 +47,13 @@ python3 scripts/skills.py sync         # sync Codex metadata + icons only
 python3 scripts/skills.py validate     # check Codex metadata + icons + manifest are up to date (CI)
 ```
 
+### Mirrored skills
+
+`skills/app-templates-*` are generated mirrors of
+[databricks/app-templates](https://github.com/databricks/app-templates)
+`.claude/skills/` (the source of truth) — do not hand-edit; see
+[CONTRIBUTING.md](./CONTRIBUTING.md#mirrored-skills-skillsapp-templates-).
+
 ## Security
 
 When documenting examples, obfuscate sensitive info:

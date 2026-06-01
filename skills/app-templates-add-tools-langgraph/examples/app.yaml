@@ -1,0 +1,9 @@
+# Databricks App (for custom MCP servers hosted as Apps)
+# Use for: Granting CAN_USE on another Databricks App (e.g., an mcp-* server app)
+# Requires: CLI v0.298.0+
+
+# In databricks.yml - add to resources.apps.<app>.resources:
+- name: 'mcp_server'
+  app:
+    name: '<target-app-name>'
+    permission: CAN_USE

@@ -52,6 +52,23 @@ python3 scripts/skills.py validate
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
+## Mirrored skills (`skills/app-templates-*`)
+
+Skills whose directory name starts with `app-templates-` are **generated
+mirrors** of the agent-template skills in
+[databricks/app-templates](https://github.com/databricks/app-templates)
+(`.claude/skills/`), which is their source of truth. Each carries a
+`.synced-from` provenance marker.
+
+**Do not hand-edit them here.** Changes are overwritten on the next sync. To
+change one, edit the source skill in app-templates; its
+`sync-skills-to-agent-skills.py` workflow renders the skills into the flat
+`skills/app-templates-<name>/` layout and opens a PR against this repo. The
+flat (not nested) layout is required because Claude Code discovers plugin
+skills only one level deep under `skills/`. The sync runs the usual
+`scripts/skills.py generate`, so mirrored skills get `agents/openai.yaml` +
+icons + a `manifest.json` entry like any other stable skill.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.

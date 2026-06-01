@@ -1,0 +1,7 @@
+interface:
+  display_name: "App Templates Modify Langgraph Agent"
+  short_description: "Modify agent code, add tools, or change configuration."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $app-templates-modify-langgraph-agent for modify agent code, add tools, or change configuration."

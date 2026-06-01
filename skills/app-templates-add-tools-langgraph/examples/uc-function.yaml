@@ -1,0 +1,9 @@
+# Unity Catalog Function
+# Use for: UC functions accessed via MCP server
+# MCP URL: {host}/api/2.0/mcp/functions/{catalog}/{schema}/{function_name}
+
+- name: 'my_uc_function'
+  uc_securable:
+    securable_full_name: 'catalog.schema.function_name'
+    securable_type: 'FUNCTION'
+    permission: 'EXECUTE'

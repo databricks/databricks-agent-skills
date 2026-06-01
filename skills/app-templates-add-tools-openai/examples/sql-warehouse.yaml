@@ -1,0 +1,7 @@
+# SQL Warehouse
+# Use for: SQL query execution
+
+- name: 'my_warehouse'
+  sql_warehouse:
+    sql_warehouse_id: 'abc123def456'
+    permission: 'CAN_USE'

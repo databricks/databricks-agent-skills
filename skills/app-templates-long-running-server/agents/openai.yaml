@@ -1,0 +1,7 @@
+interface:
+  display_name: "App Templates Long Running Server"
+  short_description: "Enable long-running background task support with LongRunningAgentServer."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $app-templates-long-running-server for enable long-running background task support with longrunningagentserver."

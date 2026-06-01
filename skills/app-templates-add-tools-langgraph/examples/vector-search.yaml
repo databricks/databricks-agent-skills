@@ -1,0 +1,9 @@
+# Vector Search Index
+# Use for: RAG applications with unstructured data
+# MCP URL: {host}/api/2.0/mcp/vector-search/{catalog}/{schema}/{index_name}
+
+- name: 'my_vector_index'
+  uc_securable:
+    securable_full_name: 'catalog.schema.index_name'
+    securable_type: 'TABLE'
+    permission: 'SELECT'
