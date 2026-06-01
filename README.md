@@ -10,7 +10,7 @@ but end up loaded by the same agents — pick whichever fits your workflow.
 - **Databricks CLI** writes SKILL.md files directly into each agent's skill
   directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
 - **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
-  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-skills/`);
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-agent-skills/`);
   the agent discovers skills from there.
 
 **Via the Databricks CLI (canonical; supports experimental skills):**
@@ -35,7 +35,7 @@ skill under [`./skills/`](./skills/)):
 
 ```text
 /plugin marketplace add databricks/databricks-agent-skills
-/plugin install databricks-skills
+/plugin install databricks@databricks-agent-skills
 ```
 
 **Via the Cursor plugin marketplace:**
@@ -149,7 +149,9 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
 ## Integrity
 
-All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+Release tags are created by the [Release workflow](./.github/workflows/release.yml)
+and map 1:1 to a published version. (GPG signing is planned once a release signing
+key is provisioned.)
 
 ## Contributing
 
