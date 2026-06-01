@@ -45,7 +45,11 @@ Migration blockers fall into three categories. Focus your effort on category 2 �
 ```
 Workload → Check language
 ├── R code → Category 3: keep on classic
-├── Scala notebook cells → Category 2: port to PySpark/SQL or compile as JAR
+├── Scala notebook cells → Category 2: port to PySpark/SQL, or compile as a JAR job task
+├── Compiled Scala JAR (spark_jar_task, build.sbt/pom.xml/build.gradle) → see references/jar-migration.md
+│     ├── Scala 2.12 build?             → recompile against 2.13.16
+│     ├── Bundles spark-core/spark-sql? → use databricks-connect % Provided
+│     └── Bundles libs on the kernel classpath (jackson, guava, log4j, slf4j, json4s, gson, paranamer, commons-*)? → mark % Provided
 ├── Python / SQL → Continue
     ├── Uses RDD APIs? → Category 2: rewrite to DataFrame API (see fixes below)
     ├── Uses DBFS paths? → Category 2: migrate to UC Volumes
@@ -234,6 +238,7 @@ Scan the code for patterns that are incompatible with the serverless compute arc
 | Pattern | Severity | Fix |
 |---------|----------|-----|
 | JAR libraries in notebooks | Blocker | Compile as JAR job task (Scala 2.13, JDK 17, env version 4+) |
+| Compiled Scala JAR migration (version + dependency conflicts) | Blocker | Recompile against Scala 2.13.16; depend on `databricks-connect` % Provided; mark kernel-bundled deps % Provided. Full procedure + env-4 classpath in [JAR Migration](references/jar-migration.md) |
 | Maven coordinates | Blocker | Replace with PyPI packages in Environments |
 | `%pip install` without version pins | Warning | Pin versions: `%pip install numpy==2.2.2 pandas==2.2.3` |
 | Custom Spark data sources (v1/v2 JARs) | Blocker | Use Lakehouse Federation, Lakeflow Connect, or PySpark custom data sources |
@@ -824,6 +829,7 @@ For detailed workarounds and code examples beyond the quick fixes above:
 - [Multi-source enumeration](references/multi-source-enumeration.md) — Parsing `bundle_config.py` and fetching upstream git sources before per-notebook analysis
 - [Failure Reporting](references/failure-reporting.md) — Redaction checklist + pre-filled GitHub issue URL recipe (for when migration cannot complete)
 - [Install in Databricks Genie Code](references/install-in-databricks-genie-code.md) — Run this skill inside a Databricks workspace
+- [JAR Migration](references/jar-migration.md) — Migrating a compiled Scala JAR (spark_jar_task): Scala 2.13.16, Databricks Connect, dependency conflicts vs the serverless kernel classpath, sbt fixes, build/test/deploy
 
 ## Documentation
 

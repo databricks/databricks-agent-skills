@@ -340,6 +340,7 @@
         "references/configuration-guide.md",
         "references/failure-reporting.md",
         "references/install-in-databricks-genie-code.md",
+        "references/jar-migration.md",
         "references/mlflow-uc-patterns.md",
         "references/multi-source-enumeration.md",
         "references/networking-and-security.md",
