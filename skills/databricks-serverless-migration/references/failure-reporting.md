@@ -147,7 +147,7 @@ This works but skips the issue template's checklist sections. Prefer the browser
 
 ## What we do with reports
 
-Reports are triaged by the skill maintainers (`@lennartkats-db @simonfaltum` plus the migration-skill code owners) and used to:
+Reports are triaged by the skill maintainers listed in the repo's [CODEOWNERS](https://github.com/databricks/databricks-agent-skills/blob/main/CODEOWNERS) file, and used to:
 
 1. Prioritize new patterns to add to `references/compatibility-checks.md`
 2. Identify fixes that don't work in practice and need correction

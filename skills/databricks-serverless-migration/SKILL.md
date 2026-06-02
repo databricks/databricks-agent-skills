@@ -1,6 +1,6 @@
 ---
 name: databricks-serverless-migration
-description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating from classic to serverless, checking serverless code compatibility, or writing new serverless-compatible notebooks and jobs. Scans code for compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
+description: "Migrate Databricks workloads from classic compute to serverless compute. Scans code for serverless compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration to serverless environments. Use for classic-to-serverless migrations, serverless code compatibility checks, or writing new serverless-compatible notebooks and jobs. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
@@ -238,7 +238,7 @@ Scan the code for patterns that are incompatible with the serverless compute arc
 | Custom Spark data sources (v1/v2 JARs) | Blocker | Use Lakehouse Federation, Lakeflow Connect, or PySpark custom data sources |
 | LZO format files | Blocker | Convert to Parquet or Delta |
 | AutoML-trained model loaded via `mlflow.pyfunc.spark_udf(..., env_manager='local')` inside an SDP `.py` library file (E1) | Blocker | The SDP serverless image does not ship `databricks-automl-runtime`; cloudpickle.load raises `ModuleNotFoundError: No module named 'databricks.automl_runtime'`. Auto-emit `%pip install -q databricks-automl-runtime` as the first non-comment line of the SDP `.py` library file. `%pip install` is supported in SDP `.py` library files and runs once per update before SQL flows are planned. Same fix works for non-SDP notebooks loading AutoML-trained models. |
-| AutoML → sklearn rewrite (A3) with pre-existing model-serving endpoint (E2) | Blocker on first redeploy | The rewrite changes model signature (e.g., drops `id` from inputs). A pre-existing endpoint pinned to the old AutoML signature fails create/update with HTTP 400 `Failed to enforce schema of data ... Model is missing inputs ['id']`. Flip the downstream serving notebook's `force_update = False` → `force_update = True` so the endpoint re-binds to the current `prod` (or `Champion`) alias. |
+| AutoML → sklearn rewrite (A3) with pre-existing model-serving endpoint (E2) | Blocker on first redeploy | The rewrite changes model signature (e.g., drops `id` from inputs). A pre-existing endpoint pinned to the old AutoML signature fails create/update with HTTP 400 `Failed to enforce schema of data ... Model is missing inputs ['id']`. In the downstream serving notebook for the **migrated test endpoint** (not a live production endpoint serving real traffic), flip `force_update = False` → `force_update = True` so the endpoint re-binds to the current `prod` (or `Champion`) alias. Before flipping, confirm the endpoint name matches the migrated copy. |
 
 **Category F: Networking**
 
@@ -733,15 +733,32 @@ Before writing the report, scan every string field against this pattern checklis
 
 The `notebook_characteristics` fields are the only safe surface for workload metadata. Do not add new fields without expanding this checklist.
 
-### After generating the report — REQUIRED output template
+### Deterministic post-serialization scrub (required)
 
-**This is not optional.** When the decision tree above says "offer to file", you MUST produce all three of these in your final response to the user, in order:
+The redaction above happens at generation time and depends on the model applying every rule. That is not enough on a path that ends in a public GitHub issue. After serializing the report to JSON:
 
-1. The local report file path (literally include the string `~/.databricks-migration-skill/reports/failure-<timestamp>.json`, with `<timestamp>` filled in).
-2. **Option A** — a complete pre-filled `https://github.com/databricks/databricks-agent-skills/issues/new?template=migration-feedback.md&title=<…>&body=<…>` URL, both parameters URL-encoded.
-3. **Option B** — the literal `gh issue create --repo databricks/databricks-agent-skills …` command, body-file pointing at the local report.
+1. **Re-run the MUST-NOT-CONTAIN regex set as a literal text search over the final JSON file**. Match the same patterns from the table above, plus any catalog/schema/table names that were referenced in the analyzed notebook.
+2. **If any pattern matches, refuse to display the pre-filled URL or the `gh issue create` command**. Print the local file path, list the patterns that matched, and tell the user to redact the file manually before sharing.
+3. Only when the post-serialization scrub is clean may the pre-filled URL be shown.
 
-If you write the JSON inline in your response but skip the URL and the `gh` command, the protocol is **not satisfied**. The whole point is to make filing one click.
+This deterministic check is non-negotiable; do not skip it even when you are confident the generation-time redaction was applied.
+
+### After generating the report — output template
+
+When the decision tree above says "offer to file", the **default output is local-only**. The pre-filled URL and `gh` command are shown only after the user has acknowledged the local file and the post-serialization scrub (see above) is clean.
+
+Default response — always include:
+
+1. The local report file path (`~/.databricks-migration-skill/reports/failure-<timestamp>.json`, with `<timestamp>` filled in).
+2. A one-line note that the report contains pattern IDs and notebook characteristics only, no code or identifiers.
+3. A prompt: *"This is a draft. Open the file, confirm the redaction looks right, then tell me to share it. I'll generate the pre-filled GitHub issue URL once you've confirmed."*
+
+Only after the user explicitly confirms (e.g. *"share it"*, *"file the issue"*, *"looks good"*) AND the deterministic post-serialization scrub above returned clean, then produce:
+
+- **Option A** — a complete pre-filled `https://github.com/databricks/databricks-agent-skills/issues/new?template=migration-feedback.md&title=<…>&body=<…>` URL, both parameters URL-encoded.
+- **Option B** — the literal `gh issue create --repo databricks/databricks-agent-skills …` command, body-file pointing at the local report.
+
+Do not produce the URL or `gh` command in the same turn as the file write. Two turns: write + offer review, then publish after explicit confirmation.
 
 Use this exact wrap-up template, replacing `<…>` placeholders:
 

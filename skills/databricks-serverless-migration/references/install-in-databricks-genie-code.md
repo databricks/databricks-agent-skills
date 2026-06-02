@@ -42,7 +42,7 @@ Add `--profile <YOUR_PROFILE>` if your `databricks` CLI default isn't the target
 
 The `mcp-ai-dev-kit` app deploys once per workspace, pulls skills from a configured GitHub repo on every redeploy, and writes to the workspace-wide `/Workspace/.assistant/skills/` path so every user in the workspace sees them. Recommended if you're rolling this skill out to a team.
 
-This requires workspace admin. Ping `#india-gcc-fe-team` for the latest deploy instructions.
+This requires workspace admin. Ask the workspace admin who owns the Databricks Apps deployment for your workspace, or refer to the public Databricks Apps documentation.
 
 ## Format compatibility
 
@@ -84,4 +84,4 @@ Other notes:
 | This skill's source | https://github.com/databricks/databricks-agent-skills/tree/main/skills/databricks-serverless-migration |
 | Agent Skills spec | https://agentskills.io/specification |
 
-For Genie Code runtime questions, the internal Slack channel is `#eng-genie-code-team`. For the workspace-wide app deployment pattern, `#india-gcc-fe-team`.
+For runtime questions or to report skill issues, file an issue on the public skill repo: https://github.com/databricks/databricks-agent-skills/issues

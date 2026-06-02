@@ -13,12 +13,13 @@ In Step 1.5 ("Enumerate first"), check for a `bundle_config.py` file at the top 
 - A custom upstream-repo list, e.g., `external_repos = [{"url": "https://...", "ref": "main"}]`.
 - S3 paths or workspace paths in any "source" field.
 
-Be permissive in the parse: parse `bundle_config.py` as Python (read its top-level assignments), then scan all top-level dict / list literals for any value that looks like a git URL (`https://github.com/...`, `git@github.com:...`) or a cloud storage path (`s3://`, `abfss://`, `gs://`).
+Parse `bundle_config.py` **statically, via `ast.parse(...)` only**. Walk the resulting AST for top-level `ast.Assign` nodes and use `ast.literal_eval` on right-hand-side literals (`dict`, `list`, `str`) to recover values. **Never `exec`, `eval`, or `import` the file** — it is workload-supplied Python source and may be untrusted; running it would be arbitrary code execution on the host. After recovering top-level literal values, scan them for any string that looks like a git URL (`https://github.com/...`, `git@github.com:...`) or a cloud storage path (`s3://`, `abfss://`, `gs://`).
 
 ## Procedure
 
-1. **Parse `bundle_config.py`** for any upstream-source declarations.
-2. **For each upstream source**:
+1. **Parse `bundle_config.py`** via `ast.parse` for any upstream-source declarations (see safety note above).
+2. **Show the parsed external sources to the user and require explicit confirmation before any fetch.** Print every git URL, S3/ADLS path, and workspace path you found, and wait for the user to approve. Do not auto-fetch without approval — these URLs come from the workload's own config and may point anywhere.
+3. **For each user-approved upstream source**:
    - **Git URL**: `git clone <url>` into a sibling location (e.g., `~/.databricks-migration-skill/scratch/<run-id>/external/<repo-name>/`). Honor the declared branch/ref.
    - **S3/ADLS path**: download via `databricks fs cp -r <path> <local>` into the same sibling location.
    - **Workspace path**: export via `databricks workspace export-dir <path> <local>`.
