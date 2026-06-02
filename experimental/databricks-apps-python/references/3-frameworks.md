@@ -45,6 +45,7 @@ app = dash.Dash(
 **Critical**: Always use `@st.cache_resource` for database connections.
 
 ```python
+import os
 import streamlit as st
 from databricks.sdk.core import Config
 from databricks import sql
@@ -56,7 +57,7 @@ def get_connection():
     cfg = Config()
     return sql.connect(
         server_hostname=cfg.host,
-        http_path="/sql/1.0/warehouses/<id>",
+        http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
         credentials_provider=lambda: cfg.authenticate,
     )
 ```
@@ -93,8 +94,9 @@ cfg = Config()
 
 def predict(message, request: gr.Request):
     user_token = request.headers.get("x-forwarded-access-token")
-    # Query model serving endpoint
-    headers = {**cfg.authenticate(), "Content-Type": "application/json"}
+    # Call the serving endpoint with the USER's token (on-behalf-of) so Unity Catalog
+    # row/column filters are enforced — NOT cfg.authenticate() (the app service-principal token).
+    headers = {"Authorization": f"Bearer {user_token}", "Content-Type": "application/json"}
     resp = requests.post(
         f"https://{cfg.host}/serving-endpoints/my-model/invocations",
         headers=headers,
@@ -130,6 +132,7 @@ demo.launch(server_name="0.0.0.0", server_port=port)
 **Critical**: Deploy with Gunicorn — never use Flask's dev server in production.
 
 ```python
+import os
 from flask import Flask, request, jsonify
 from databricks.sdk.core import Config
 from databricks import sql
@@ -141,12 +144,21 @@ cfg = Config()
 def get_data():
     conn = sql.connect(
         server_hostname=cfg.host,
-        http_path="/sql/1.0/warehouses/<id>",
+        http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
         credentials_provider=lambda: cfg.authenticate,
     )
     with conn.cursor() as cursor:
         cursor.execute("SELECT * FROM catalog.schema.table LIMIT 10")
         return jsonify(cursor.fetchall())
+```
+
+```yaml
+# app.yaml — deploy with Gunicorn (never the Flask dev server); bind to 0.0.0.0:8000.
+# Pass the warehouse ID via valueFrom so it is never hardcoded in source.
+command: ["gunicorn", "app:app", "-w", "4", "-b", "0.0.0.0:8000"]
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
 ```
 
 | Detail | Value |
@@ -169,6 +181,7 @@ def get_data():
 **Critical**: Deploy with uvicorn.
 
 ```python
+import os
 from fastapi import FastAPI, Request
 from databricks.sdk.core import Config
 from databricks import sql
@@ -181,7 +194,7 @@ async def get_data(request: Request):
     user_token = request.headers.get("x-forwarded-access-token")
     conn = sql.connect(
         server_hostname=cfg.host,
-        http_path="/sql/1.0/warehouses/<id>",
+        http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
         access_token=user_token,
     )
     with conn.cursor() as cursor:
@@ -209,6 +222,7 @@ async def get_data(request: Request):
 **Best for**: Full-stack Python apps with reactive UIs, no JavaScript required.
 
 ```python
+import os
 import reflex as rx
 from databricks.sdk.core import Config
 
@@ -221,7 +235,7 @@ class State(rx.State):
         from databricks import sql
         conn = sql.connect(
             server_hostname=cfg.host,
-            http_path="/sql/1.0/warehouses/<id>",
+            http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
             credentials_provider=lambda: cfg.authenticate,
         )
         with conn.cursor() as cursor:
