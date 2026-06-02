@@ -1,6 +1,10 @@
 ---
 name: databricks-apps-python
 description: "Builds Databricks applications. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required. Handles OAuth authorization, app resources, SQL warehouse and Lakebase connectivity, model serving, foundation model APIs, and deployment. Use when building web apps, dashboards, ML demos, or REST APIs for Databricks, or when the user mentions AppKit, Streamlit, Dash, Gradio, Flask, FastAPI, Reflex, or Databricks app."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Applications
@@ -39,7 +43,7 @@ databricks apps deploy
 ### AI-assisted development
 ```bash
 # Install agent skills for AI-powered scaffolding
-databricks experimental aitools skills install
+databricks aitools install
 
 # Query AppKit docs inline
 npx @databricks/appkit docs "your question here"
@@ -100,8 +104,8 @@ Copy this checklist and verify each item:
 | **Runtime** | Python 3.11, Ubuntu 22.04, 2 vCPU, 6 GB RAM |
 | **Pre-installed** | Dash 2.18.1, Streamlit 1.38.0, Gradio 4.44.0, Flask 3.0.3, FastAPI 0.115.0 |
 | **Auth (app)** | Service principal via `Config()` — auto-injected `DATABRICKS_CLIENT_ID`/`DATABRICKS_CLIENT_SECRET` |
-| **Auth (user)** | `x-forwarded-access-token` header — see [1-authorization.md](1-authorization.md) |
-| **Resources** | `valueFrom` in app.yaml — see [2-app-resources.md](2-app-resources.md) |
+| **Auth (user)** | `x-forwarded-access-token` header — see [references/1-authorization.md](references/1-authorization.md) |
+| **Resources** | `valueFrom` in app.yaml — see [references/2-app-resources.md](references/2-app-resources.md) |
 | **Cookbook** | https://apps-cookbook.dev/ |
 | **Docs** | https://docs.databricks.com/dev-tools/databricks-apps/ |
 
@@ -109,17 +113,17 @@ Copy this checklist and verify each item:
 
 ## Detailed Guides
 
-**Authorization**: Use [1-authorization.md](1-authorization.md) when configuring app or user authorization — covers service principal auth, on-behalf-of user tokens, OAuth scopes, and per-framework code examples. (Keywords: OAuth, service principal, user auth, on-behalf-of, access token, scopes)
+**Authorization**: Use [references/1-authorization.md](references/1-authorization.md) when configuring app or user authorization — covers service principal auth, on-behalf-of user tokens, OAuth scopes, and per-framework code examples. (Keywords: OAuth, service principal, user auth, on-behalf-of, access token, scopes)
 
-**App resources**: Use [2-app-resources.md](2-app-resources.md) when connecting your app to Databricks resources — covers SQL warehouses, Lakebase, model serving, secrets, volumes, and the `valueFrom` pattern. (Keywords: resources, valueFrom, SQL warehouse, model serving, secrets, volumes, connections)
+**App resources**: Use [references/2-app-resources.md](references/2-app-resources.md) when connecting your app to Databricks resources — covers SQL warehouses, Lakebase, model serving, secrets, volumes, and the `valueFrom` pattern. (Keywords: resources, valueFrom, SQL warehouse, model serving, secrets, volumes, connections)
 
-**Frameworks**: See [3-frameworks.md](3-frameworks.md) for Databricks-specific patterns per framework — covers Dash, Streamlit, Gradio, Flask, FastAPI, and Reflex with auth integration, deployment commands, and Cookbook links. (Keywords: Dash, Streamlit, Gradio, Flask, FastAPI, Reflex, framework selection)
+**Frameworks**: See [references/3-frameworks.md](references/3-frameworks.md) for Databricks-specific patterns per framework — covers Dash, Streamlit, Gradio, Flask, FastAPI, and Reflex with auth integration, deployment commands, and Cookbook links. (Keywords: Dash, Streamlit, Gradio, Flask, FastAPI, Reflex, framework selection)
 
-**Deployment**: Use [4-deployment.md](4-deployment.md) when deploying your app — covers Databricks CLI, Asset Bundles (DABs), app.yaml configuration, and post-deployment verification. (Keywords: deploy, CLI, DABs, asset bundles, app.yaml, logs)
+**Deployment**: Use [references/4-deployment.md](references/4-deployment.md) when deploying your app — covers Databricks CLI, Asset Bundles (DABs), app.yaml configuration, and post-deployment verification. (Keywords: deploy, CLI, DABs, asset bundles, app.yaml, logs)
 
-**Lakebase**: Use [5-lakebase.md](5-lakebase.md) when using Lakebase (PostgreSQL) as your app's data layer — covers auto-injected env vars, psycopg2/asyncpg patterns, and when to choose Lakebase vs SQL warehouse. (Keywords: Lakebase, PostgreSQL, psycopg2, asyncpg, transactional, PGHOST)
+**Lakebase**: Use [references/5-lakebase.md](references/5-lakebase.md) when using Lakebase (PostgreSQL) as your app's data layer — covers auto-injected env vars, psycopg2/asyncpg patterns, and when to choose Lakebase vs SQL warehouse. (Keywords: Lakebase, PostgreSQL, psycopg2, asyncpg, transactional, PGHOST)
 
-**CLI commands**: Use [6-cli-approach.md](6-cli-approach.md) for managing app lifecycle via CLI — covers creating, deploying, monitoring, and deleting apps. (Keywords: CLI, create app, deploy app, app logs)
+**CLI commands**: Use [references/6-cli-approach.md](references/6-cli-approach.md) for managing app lifecycle via CLI — covers creating, deploying, monitoring, and deleting apps. (Keywords: CLI, create app, deploy app, app logs)
 
 **Foundation Models**: See [examples/llm_config.py](examples/llm_config.py) for calling Databricks foundation model APIs — covers OAuth M2M auth, OpenAI-compatible client wiring, and token caching. (Keywords: foundation model, LLM, OpenAI client, chat completions)
 
@@ -130,11 +134,11 @@ Copy this checklist and verify each item:
 1. Determine the task type:
 
    **New app from scratch?** → Use [AppKit](#appkit-preferred-for-new-apps) (`databricks apps init`). Fall back to [Python Framework Selection](#python-framework-selection) only if Python is required.
-   **Setting up authorization?** → Read [1-authorization.md](1-authorization.md)
-   **Connecting to data/resources?** → Read [2-app-resources.md](2-app-resources.md)
-   **Using Lakebase (PostgreSQL)?** → Read [5-lakebase.md](5-lakebase.md)
-   **Deploying to Databricks?** → Read [4-deployment.md](4-deployment.md)
-   **Using CLI for app lifecycle?** → Read [6-cli-approach.md](6-cli-approach.md)
+   **Setting up authorization?** → Read [references/1-authorization.md](references/1-authorization.md)
+   **Connecting to data/resources?** → Read [references/2-app-resources.md](references/2-app-resources.md)
+   **Using Lakebase (PostgreSQL)?** → Read [references/5-lakebase.md](references/5-lakebase.md)
+   **Deploying to Databricks?** → Read [references/4-deployment.md](references/4-deployment.md)
+   **Using CLI for app lifecycle?** → Read [references/6-cli-approach.md](references/6-cli-approach.md)
    **Calling foundation model/LLM APIs?** → See [examples/llm_config.py](examples/llm_config.py)
 
 2. Follow the instructions in the relevant guide
@@ -252,7 +256,6 @@ class EntityIn(BaseModel):
 
 ## Related Skills
 
-- **databricks-app-apx** - full-stack apps with FastAPI + React
 - **databricks-dabs** - deploying apps via DABs
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - backend SDK integration
 - **databricks-lakebase** - adding persistent PostgreSQL state (autoscaling managed PG with branching)

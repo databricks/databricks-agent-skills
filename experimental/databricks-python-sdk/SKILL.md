@@ -1,6 +1,10 @@
 ---
 name: databricks-python-sdk
 description: "Databricks development guidance including Python SDK, Databricks Connect, CLI, and REST API. Use when working with databricks-sdk, databricks-connect, or Databricks APIs."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Development Guide
@@ -95,6 +99,10 @@ databricks workspace list /Users/me
 ```
 
 ---
+
+## SDK Reference
+
+For a per-API table of method signatures and direct doc URLs (Clusters, Jobs, SQL warehouses, Unity Catalog, Serving, Vector Search, etc.), see [references/doc-index.md](references/doc-index.md). Worked examples for the main API surfaces live under [`examples/`](examples/).
 
 ## SDK Documentation Architecture
 

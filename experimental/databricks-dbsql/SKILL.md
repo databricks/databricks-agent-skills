@@ -12,6 +12,10 @@ description: >-
   "temp table", "temporary view", "pipe operator".
   SHOULD also invoke when the user asks about SQL best practices, data modeling
   patterns, or advanced SQL features on Databricks.
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks SQL (DBSQL) - Advanced Features
@@ -20,21 +24,21 @@ description: >-
 
 | Feature | Key Syntax | Since | Reference |
 |---------|-----------|-------|-----------|
-| SQL Scripting | `BEGIN...END`, `DECLARE`, `IF/WHILE/FOR` | DBR 16.3+ | [sql-scripting.md](sql-scripting.md) |
-| Stored Procedures | `CREATE PROCEDURE`, `CALL` | DBR 17.0+ | [sql-scripting.md](sql-scripting.md) |
-| Recursive CTEs | `WITH RECURSIVE` | DBR 17.0+ | [sql-scripting.md](sql-scripting.md) |
-| Transactions | `BEGIN ATOMIC...END` | Preview | [sql-scripting.md](sql-scripting.md) |
-| Materialized Views | `CREATE MATERIALIZED VIEW` | Pro/Serverless | [materialized-views-pipes.md](materialized-views-pipes.md) |
-| Temp Tables | `CREATE TEMPORARY TABLE` | All | [materialized-views-pipes.md](materialized-views-pipes.md) |
-| Pipe Syntax | `\|>` operator | DBR 16.1+ | [materialized-views-pipes.md](materialized-views-pipes.md) |
-| Geospatial (H3) | `h3_longlatash3()`, `h3_polyfillash3()` | DBR 11.2+ | [geospatial-collations.md](geospatial-collations.md) |
-| Geospatial (ST) | `ST_Point()`, `ST_Contains()`, 80+ funcs | DBR 16.0+ | [geospatial-collations.md](geospatial-collations.md) |
-| Collations | `COLLATE`, `UTF8_LCASE`, locale-aware | DBR 16.1+ | [geospatial-collations.md](geospatial-collations.md) |
-| AI Functions | `ai_query()`, `ai_classify()`, 11+ funcs | DBR 15.1+ | [ai-functions.md](ai-functions.md) |
-| http_request | `http_request(conn, ...)` | Pro/Serverless | [ai-functions.md](ai-functions.md) |
-| remote_query | `SELECT * FROM remote_query(...)` | Pro/Serverless | [ai-functions.md](ai-functions.md) |
-| read_files | `SELECT * FROM read_files(...)` | All | [ai-functions.md](ai-functions.md) |
-| Data Modeling | Star schema, Liquid Clustering | All | [best-practices.md](best-practices.md) |
+| SQL Scripting | `BEGIN...END`, `DECLARE`, `IF/WHILE/FOR` | DBR 16.3+ | [references/sql-scripting.md](references/sql-scripting.md) |
+| Stored Procedures | `CREATE PROCEDURE`, `CALL` | DBR 17.0+ | [references/sql-scripting.md](references/sql-scripting.md) |
+| Recursive CTEs | `WITH RECURSIVE` | DBR 17.0+ | [references/sql-scripting.md](references/sql-scripting.md) |
+| Transactions | `BEGIN ATOMIC...END` | Preview | [references/sql-scripting.md](references/sql-scripting.md) |
+| Materialized Views | `CREATE MATERIALIZED VIEW` | Pro/Serverless | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |
+| Temp Tables | `CREATE TEMPORARY TABLE` | All | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |
+| Pipe Syntax | `\|>` operator | DBR 16.1+ | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |
+| Geospatial (H3) | `h3_longlatash3()`, `h3_polyfillash3()` | DBR 11.2+ | [references/geospatial-collations.md](references/geospatial-collations.md) |
+| Geospatial (ST) | `ST_Point()`, `ST_Contains()`, 80+ funcs | DBR 16.0+ | [references/geospatial-collations.md](references/geospatial-collations.md) |
+| Collations | `COLLATE`, `UTF8_LCASE`, locale-aware | DBR 16.1+ | [references/geospatial-collations.md](references/geospatial-collations.md) |
+| AI Functions | `ai_query()`, `ai_classify()`, 11+ funcs | DBR 15.1+ | [references/ai-functions.md](references/ai-functions.md) |
+| http_request | `http_request(conn, ...)` | Pro/Serverless | [references/ai-functions.md](references/ai-functions.md) |
+| remote_query | `SELECT * FROM remote_query(...)` | Pro/Serverless | [references/ai-functions.md](references/ai-functions.md) |
+| read_files | `SELECT * FROM read_files(...)` | All | [references/ai-functions.md](references/ai-functions.md) |
+| Data Modeling | Star schema, Liquid Clustering | All | [references/best-practices.md](references/best-practices.md) |
 
 ---
 
@@ -280,11 +284,11 @@ Load these for detailed syntax, full parameter lists, and advanced patterns:
 
 | File | Contents | When to Read |
 |------|----------|--------------|
-| [sql-scripting.md](sql-scripting.md) | SQL Scripting, Stored Procedures, Recursive CTEs, Transactions | User needs procedural SQL, error handling, loops, dynamic SQL |
-| [materialized-views-pipes.md](materialized-views-pipes.md) | Materialized Views, Temp Tables/Views, Pipe Syntax | User needs MVs, refresh scheduling, temp objects, pipe operator |
-| [geospatial-collations.md](geospatial-collations.md) | 39 H3 functions, 80+ ST functions, Collation types and hierarchy | User needs spatial analysis, H3 indexing, case/accent handling |
-| [ai-functions.md](ai-functions.md) | 13 AI functions, http_request, remote_query, read_files (all options) | User needs AI enrichment, API calls, federation, file ingestion |
-| [best-practices.md](best-practices.md) | Data modeling, performance, Liquid Clustering, anti-patterns | User needs architecture guidance, optimization, or modeling advice |
+| [references/sql-scripting.md](references/sql-scripting.md) | SQL Scripting, Stored Procedures, Recursive CTEs, Transactions | User needs procedural SQL, error handling, loops, dynamic SQL |
+| [references/materialized-views-pipes.md](references/materialized-views-pipes.md) | Materialized Views, Temp Tables/Views, Pipe Syntax | User needs MVs, refresh scheduling, temp objects, pipe operator |
+| [references/geospatial-collations.md](references/geospatial-collations.md) | 39 H3 functions, 80+ ST functions, Collation types and hierarchy | User needs spatial analysis, H3 indexing, case/accent handling |
+| [references/ai-functions.md](references/ai-functions.md) | 13 AI functions, http_request, remote_query, read_files (all options) | User needs AI enrichment, API calls, federation, file ingestion |
+| [references/best-practices.md](references/best-practices.md) | Data modeling, performance, Liquid Clustering, anti-patterns | User needs architecture guidance, optimization, or modeling advice |
 
 ---
 

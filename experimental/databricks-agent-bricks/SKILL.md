@@ -1,6 +1,10 @@
 ---
 name: databricks-agent-bricks
 description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS)."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Agent Bricks
@@ -136,5 +140,5 @@ databricks supervisor-agents delete-example supervisor-agents/<id>/examples/<ex_
 
 | Topic | File |
 |-------|------|
-| KA source types, index, troubleshooting | [1-knowledge-assistants.md](1-knowledge-assistants.md) |
-| UC functions, MCP servers, examples | [2-supervisor-agents.md](2-supervisor-agents.md) |
+| KA source types, index, troubleshooting | [references/1-knowledge-assistants.md](references/1-knowledge-assistants.md) |
+| UC functions, MCP servers, examples | [references/2-supervisor-agents.md](references/2-supervisor-agents.md) |

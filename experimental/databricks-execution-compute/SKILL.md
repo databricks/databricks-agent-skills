@@ -1,14 +1,10 @@
 ---
 name: databricks-execution-compute
-description: >-
-  Execute code and manage compute on Databricks. Use this skill when the user
-  mentions: "run code", "execute", "run on databricks", "serverless", "no
-  cluster", "run python", "run scala", "run sql", "run R", "run file", "push
-  and run", "notebook run", "batch script", "model training", "run script on
-  cluster", "create cluster", "new cluster", "resize cluster", "modify cluster",
-  "delete cluster", "terminate cluster", "create warehouse", "new warehouse",
-  "resize warehouse", "delete warehouse", "node types", "runtime versions",
-  "DBR versions", "spin up compute", "provision cluster".
+description: "Execute code and manage compute on Databricks: run Python/Scala/SQL/R via serverless, classic, or interactive clusters, and create/resize/delete clusters and SQL warehouses."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Execution & Compute

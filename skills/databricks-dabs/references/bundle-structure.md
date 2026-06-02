@@ -99,6 +99,54 @@ resources:
         timezone_id: 'America/Los_Angeles'
 ```
 
+### Job Resource (Shared Classic Cluster)
+
+When multiple tasks should reuse the same cluster, declare it once under `job_clusters` and reference it via `job_cluster_key`:
+
+```yaml
+resources:
+  jobs:
+    sample_job:
+      name: sample_job
+      tasks:
+        - task_key: notebook_task
+          notebook_task:
+            notebook_path: ../src/sample_notebook.ipynb
+          job_cluster_key: job_cluster
+          libraries:
+            - whl: ../dist/*.whl
+
+        - task_key: main_task
+          depends_on:
+            - task_key: notebook_task
+          python_wheel_task:
+            package_name: my_project
+            entry_point: main
+          job_cluster_key: job_cluster
+          libraries:
+            - whl: ../dist/*.whl
+
+      job_clusters:
+        - job_cluster_key: job_cluster
+          new_cluster:
+            spark_version: 16.4.x-scala2.12
+            node_type_id: i3.xlarge
+            data_security_mode: SINGLE_USER
+            autoscale:
+              min_workers: 1
+              max_workers: 4
+```
+
+## Registered Model Resources
+
+```yaml
+resources:
+  registered_models:
+    customer_churn:
+      name: '${var.catalog}.${var.schema}.customer_churn_model'
+      description: 'Customer churn prediction model'
+```
+
 ## Volume Resources
 
 ```yaml
@@ -176,6 +224,23 @@ databricks bundle generate app <app-name>
 ## Other Resources
 
 DABs supports schemas, models, experiments, clusters, warehouses, etc. Use `databricks bundle schema` to inspect schemas.
+
+## Substitutions
+
+Substitutions are resolved at deploy time and are usable in any string field across `databricks.yml`, resource files, and variable defaults.
+
+| Substitution                            | Resolves to                                            |
+| --------------------------------------- | ------------------------------------------------------ |
+| `${var.my_variable}`                    | User-defined variable from `variables:` block          |
+| `${bundle.name}`                        | The bundle's `bundle.name`                             |
+| `${bundle.target}`                      | The active target (`dev`, `staging`, `prod`, …)        |
+| `${workspace.current_user.userName}`    | Deployer's email                                       |
+| `${workspace.current_user.short_name}`  | Deployer's short name (handle before `@`)              |
+| `${workspace.file_path}`                | Bundle's workspace file path                           |
+| `${resources.jobs.<key>.id}`            | ID of another job in the same bundle                   |
+| `${resources.pipelines.<key>.id}`       | ID of another pipeline in the same bundle              |
+
+Variables themselves are declared in `databricks.yml` (with optional `default:` or `lookup:`) and overridden per target.
 
 ## Key Principles
 

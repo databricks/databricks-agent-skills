@@ -1,6 +1,10 @@
 ---
 name: databricks-metric-views
 description: "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Unity Catalog Metric Views
@@ -87,8 +91,8 @@ ORDER BY ALL
 
 | Topic | File | Description |
 |-------|------|-------------|
-| YAML Syntax | [yaml-reference.md](yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
-| Patterns & Examples | [patterns.md](patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
+| YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
+| Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
 
 ## SQL Operations
 

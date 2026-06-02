@@ -17,6 +17,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
 
       - name: Validate tag format
         env:
@@ -25,6 +32,25 @@ jobs:
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Error: version must match vX.Y.Z format"
             exit 1
+          fi
+
+      - name: Bump plugin manifests and regenerate manifest
+        env:
+          VERSION: ${{ inputs.version }}
+        run: python3 scripts/bump_version.py "$VERSION"
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/plugin.json .cursor-plugin/plugin.json manifest.json
+          if git diff --cached --quiet; then
+            echo "Manifests already at $VERSION; nothing to commit"
+          else
+            git commit -s -m "chore(release): bump plugin manifests to $VERSION"
+            git push origin HEAD:main
           fi
 
       - name: Create tag and release

@@ -1,6 +1,10 @@
 ---
 name: databricks-iceberg
 description: "Apache Iceberg tables on Databricks — Managed Iceberg tables, External Iceberg Reads (fka Uniform), Compatibility Mode, Iceberg REST Catalog (IRC), Iceberg v3, Snowflake interop, PyIceberg, OSS Spark, external engine access and credential vending. Use when creating Iceberg tables, enabling External Iceberg Reads (uniform) on Delta tables (including Streaming Tables and Materialized Views via compatibility mode), configuring external engines to read Databricks tables via Unity Catalog IRC, integrating with Snowflake catalog to read Foreign Iceberg tables"
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Apache Iceberg on Databricks
@@ -95,23 +99,23 @@ SET TBLPROPERTIES (
 
 | File | Summary | Keywords |
 |------|---------|----------|
-| [1-managed-iceberg-tables.md](1-managed-iceberg-tables.md) | Creating and managing native Iceberg tables — DDL, DML, Liquid Clustering, Predictive Optimization, Iceberg v3, limitations | CREATE TABLE USING ICEBERG, CTAS, MERGE, time travel, deletion vectors, VARIANT |
-| [2-uniform-and-compatibility.md](2-uniform-and-compatibility.md) | Making Delta tables readable as Iceberg — UniForm for regular tables, Compatibility Mode for streaming tables and MVs | UniForm, universalFormat, Compatibility Mode, streaming tables, materialized views, SDP |
-| [3-iceberg-rest-catalog.md](3-iceberg-rest-catalog.md) | Exposing Databricks tables to external engines via the IRC endpoint — auth, credential vending, IP access lists | IRC, REST Catalog, credential vending, EXTERNAL USE SCHEMA, PAT, OAuth |
-| [4-snowflake-interop.md](4-snowflake-interop.md) | Bidirectional Snowflake-Databricks integration — catalog integration, foreign catalogs, vended credentials | Snowflake, catalog integration, external volume, vended credentials, REFRESH_INTERVAL_SECONDS |
-| [5-external-engine-interop.md](5-external-engine-interop.md) | Connecting PyIceberg, OSS Spark, AWS EMR, Apache Flink, and Kafka Connect via IRC | PyIceberg, OSS Spark, EMR, Flink, Kafka Connect, pyiceberg.yaml |
+| [references/1-managed-iceberg-tables.md](references/1-managed-iceberg-tables.md) | Creating and managing native Iceberg tables — DDL, DML, Liquid Clustering, Predictive Optimization, Iceberg v3, limitations | CREATE TABLE USING ICEBERG, CTAS, MERGE, time travel, deletion vectors, VARIANT |
+| [references/2-uniform-and-compatibility.md](references/2-uniform-and-compatibility.md) | Making Delta tables readable as Iceberg — UniForm for regular tables, Compatibility Mode for streaming tables and MVs | UniForm, universalFormat, Compatibility Mode, streaming tables, materialized views, SDP |
+| [references/3-iceberg-rest-catalog.md](references/3-iceberg-rest-catalog.md) | Exposing Databricks tables to external engines via the IRC endpoint — auth, credential vending, IP access lists | IRC, REST Catalog, credential vending, EXTERNAL USE SCHEMA, PAT, OAuth |
+| [references/4-snowflake-interop.md](references/4-snowflake-interop.md) | Bidirectional Snowflake-Databricks integration — catalog integration, foreign catalogs, vended credentials | Snowflake, catalog integration, external volume, vended credentials, REFRESH_INTERVAL_SECONDS |
+| [references/5-external-engine-interop.md](references/5-external-engine-interop.md) | Connecting PyIceberg, OSS Spark, AWS EMR, Apache Flink, and Kafka Connect via IRC | PyIceberg, OSS Spark, EMR, Flink, Kafka Connect, pyiceberg.yaml |
 
 ---
 
 ## When to Use
 
-- **Creating a new Iceberg table** → [1-managed-iceberg-tables.md](1-managed-iceberg-tables.md)
-- **Making an existing Delta table readable as Iceberg** → [2-uniform-and-compatibility.md](2-uniform-and-compatibility.md)
-- **Making a streaming table or MV readable as Iceberg** → [2-uniform-and-compatibility.md](2-uniform-and-compatibility.md) (Compatibility Mode section)
-- **Choosing between Managed Iceberg vs UniForm vs Compatibility Mode** → decision table in [2-uniform-and-compatibility.md](2-uniform-and-compatibility.md)
-- **Exposing Databricks tables to external engines via REST API** → [3-iceberg-rest-catalog.md](3-iceberg-rest-catalog.md)
-- **Integrating Databricks with Snowflake (either direction)** → [4-snowflake-interop.md](4-snowflake-interop.md)
-- **Connecting PyIceberg, OSS Spark, Flink, EMR, or Kafka** → [5-external-engine-interop.md](5-external-engine-interop.md)
+- **Creating a new Iceberg table** → [references/1-managed-iceberg-tables.md](references/1-managed-iceberg-tables.md)
+- **Making an existing Delta table readable as Iceberg** → [references/2-uniform-and-compatibility.md](references/2-uniform-and-compatibility.md)
+- **Making a streaming table or MV readable as Iceberg** → [references/2-uniform-and-compatibility.md](references/2-uniform-and-compatibility.md) (Compatibility Mode section)
+- **Choosing between Managed Iceberg vs UniForm vs Compatibility Mode** → decision table in [references/2-uniform-and-compatibility.md](references/2-uniform-and-compatibility.md)
+- **Exposing Databricks tables to external engines via REST API** → [references/3-iceberg-rest-catalog.md](references/3-iceberg-rest-catalog.md)
+- **Integrating Databricks with Snowflake (either direction)** → [references/4-snowflake-interop.md](references/4-snowflake-interop.md)
+- **Connecting PyIceberg, OSS Spark, Flink, EMR, or Kafka** → [references/5-external-engine-interop.md](references/5-external-engine-interop.md)
 
 ---
 

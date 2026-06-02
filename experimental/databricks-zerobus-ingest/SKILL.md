@@ -1,6 +1,9 @@
 ---
 name: databricks-zerobus-ingest
 description: "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC. Use when creating producers that write directly to Unity Catalog tables without a message bus, working with the Zerobus Ingest SDK in Python/Java/Go/TypeScript/Rust, generating Protobuf schemas from UC tables, or implementing stream-based ingestion with ACK handling and retry logic."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
 ---
 
 # Zerobus Ingest
@@ -28,14 +31,14 @@ Zerobus Ingest is a serverless connector that enables direct, record-by-record d
 
 | Scenario | Language | Serialization | Reference |
 |----------|----------|---------------|-----------|
-| Quick prototype / test harness | Python | JSON | [2-python-client.md](2-python-client.md) |
-| Production Python producer | Python | Protobuf | [2-python-client.md](2-python-client.md) + [4-protobuf-schema.md](4-protobuf-schema.md) |
-| JVM microservice | Java | Protobuf | [3-multilanguage-clients.md](3-multilanguage-clients.md) |
-| Go service | Go | JSON or Protobuf | [3-multilanguage-clients.md](3-multilanguage-clients.md) |
-| Node.js / TypeScript app | TypeScript | JSON | [3-multilanguage-clients.md](3-multilanguage-clients.md) |
-| High-performance system service | Rust | JSON or Protobuf | [3-multilanguage-clients.md](3-multilanguage-clients.md) |
-| Schema generation from UC table | Any | Protobuf | [4-protobuf-schema.md](4-protobuf-schema.md) |
-| Retry / reconnection logic | Any | Any | [5-operations-and-limits.md](5-operations-and-limits.md) |
+| Quick prototype / test harness | Python | JSON | [references/2-python-client.md](references/2-python-client.md) |
+| Production Python producer | Python | Protobuf | [references/2-python-client.md](references/2-python-client.md) + [references/4-protobuf-schema.md](references/4-protobuf-schema.md) |
+| JVM microservice | Java | Protobuf | [references/3-multilanguage-clients.md](references/3-multilanguage-clients.md) |
+| Go service | Go | JSON or Protobuf | [references/3-multilanguage-clients.md](references/3-multilanguage-clients.md) |
+| Node.js / TypeScript app | TypeScript | JSON | [references/3-multilanguage-clients.md](references/3-multilanguage-clients.md) |
+| High-performance system service | Rust | JSON or Protobuf | [references/3-multilanguage-clients.md](references/3-multilanguage-clients.md) |
+| Schema generation from UC table | Any | Protobuf | [references/4-protobuf-schema.md](references/4-protobuf-schema.md) |
+| Retry / reconnection logic | Any | Any | [references/5-operations-and-limits.md](references/5-operations-and-limits.md) |
 
 If not specified, default to python.
 
@@ -78,7 +81,7 @@ You must never execute the skill without confirming the below objects are valid:
 3. **The Zerobus server endpoint** for your workspace region
 4. **The Zerobus Ingest SDK** installed for your target language
 
-See [1-setup-and-authentication.md](1-setup-and-authentication.md) for complete setup instructions.
+See [references/1-setup-and-authentication.md](references/1-setup-and-authentication.md) for complete setup instructions.
 
 ---
 
@@ -108,11 +111,11 @@ finally:
 
 | Topic | File | When to Read |
 |-------|------|--------------|
-| Setup & Auth | [1-setup-and-authentication.md](1-setup-and-authentication.md) | Endpoint formats, service principals, SDK install |
-| Python Client | [2-python-client.md](2-python-client.md) | Sync/async Python, JSON and Protobuf flows, reusable client class |
-| Multi-Language | [3-multilanguage-clients.md](3-multilanguage-clients.md) | Java, Go, TypeScript, Rust SDK examples |
-| Protobuf Schema | [4-protobuf-schema.md](4-protobuf-schema.md) | Generate .proto from UC table, compile, type mappings |
-| Operations & Limits | [5-operations-and-limits.md](5-operations-and-limits.md) | ACK handling, retries, reconnection, throughput limits, constraints |
+| Setup & Auth | [references/1-setup-and-authentication.md](references/1-setup-and-authentication.md) | Endpoint formats, service principals, SDK install |
+| Python Client | [references/2-python-client.md](references/2-python-client.md) | Sync/async Python, JSON and Protobuf flows, reusable client class |
+| Multi-Language | [references/3-multilanguage-clients.md](references/3-multilanguage-clients.md) | Java, Go, TypeScript, Rust SDK examples |
+| Protobuf Schema | [references/4-protobuf-schema.md](references/4-protobuf-schema.md) | Generate .proto from UC table, compile, type mappings |
+| Operations & Limits | [references/5-operations-and-limits.md](references/5-operations-and-limits.md) | ACK handling, retries, reconnection, throughput limits, constraints |
 
 ---
 
@@ -121,7 +124,7 @@ You must always follow all the steps in the Workflow
 ## Workflow
 0. **Display the plan of your execution**
 1. **Determine the type of client**
-2. **Get schema** Always use 4-protobuf-schema.md
+2. **Get schema** Always use references/4-protobuf-schema.md
 3. **Write Python code to a local file** following the instructions in the relevant guide (e.g., `scripts/zerobus_ingest.py`)
 4. **Upload to workspace**: `databricks workspace import-dir ./scripts /Workspace/Users/<user>/scripts`
 5. **Execute on Databricks** using a job or notebook
@@ -209,9 +212,9 @@ The timestamp generation must use microseconds for Databricks.
 | **Connection refused** | Verify server endpoint format matches your cloud (AWS vs Azure). Check firewall allowlists. |
 | **Authentication failed** | Confirm service principal client_id/secret. Verify GRANT statements on the target table. |
 | **Schema mismatch** | Ensure record fields match the target table schema exactly. Regenerate .proto if table changed. |
-| **Stream closed unexpectedly** | Implement retry with exponential backoff and stream reinitialization. See [5-operations-and-limits.md](5-operations-and-limits.md). |
+| **Stream closed unexpectedly** | Implement retry with exponential backoff and stream reinitialization. See [references/5-operations-and-limits.md](references/5-operations-and-limits.md). |
 | **Throughput limits hit** | Max 100 MB/s and 15,000 rows/s per stream. Open multiple streams or contact Databricks. |
-| **Region not supported** | Check supported regions in [5-operations-and-limits.md](5-operations-and-limits.md). |
+| **Region not supported** | Check supported regions in [references/5-operations-and-limits.md](references/5-operations-and-limits.md). |
 | **Table not found** | Ensure table is a managed Delta table in a supported region with correct three-part name. |
 | **SDK install fails on serverless** | The Zerobus SDK cannot be pip-installed on serverless compute. Use classic compute clusters or the REST API (Beta) from notebooks. |
 | **Error 4024 / authorization_details** | Service principal lacks explicit table-level grants. Grant `MODIFY` and `SELECT` directly on the target table — schema-level inherited grants may be insufficient. |
