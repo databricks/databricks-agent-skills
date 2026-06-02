@@ -150,8 +150,7 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 ## Integrity
 
 Release tags are created by the [Release workflow](./.github/workflows/release.yml)
-and map 1:1 to a published version. (GPG signing is planned once a release signing
-key is provisioned.)
+and map 1:1 to a published version.
 
 ## Contributing
 
