@@ -1,6 +1,6 @@
 ---
 name: databricks-serverless-migration
-description: "Migrate Databricks workloads from classic compute to serverless compute. Scans code for serverless compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration to serverless environments. Use for classic-to-serverless migrations, serverless code compatibility checks, or writing new serverless-compatible notebooks and jobs. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
+description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating from classic to serverless, checking serverless code compatibility, or writing new serverless-compatible notebooks and jobs. Scans code for compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
