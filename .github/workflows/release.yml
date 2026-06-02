@@ -53,11 +53,24 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - name: Create tag and release
+      - name: Create annotated tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # git identity is already configured by the "Commit version bump"
+          # step above and persists for the job via .git/config.
+          # Annotated tag (objecttype=tag), not lightweight (objecttype=commit):
+          # records tagger metadata and is the prerequisite for `git tag -v`
+          # verification if tag signing is ever enabled.
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
           gh release create "$VERSION" \
             --title "$VERSION" \
-            --generate-notes
+            --generate-notes \
+            --verify-tag

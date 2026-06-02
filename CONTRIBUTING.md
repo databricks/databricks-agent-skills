@@ -74,7 +74,8 @@ triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
    both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` to the
    release version and regenerates `manifest.json`.
 2. Commits the bump to `main`.
-3. Creates the `vX.Y.Z` tag and GitHub release from that commit.
+3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
+   then creates the GitHub release (`gh release create --verify-tag`).
 
 Bumping the plugin `version` on every release is **required**: Claude Code's
 plugin marketplace keys updates on the `version` field, so a release that ships
