@@ -199,7 +199,7 @@ def extracted_line_items():
                 "quantity:DOUBLE, unit_price:DOUBLE, total:DOUBLE>>>"
             )
         )
-        .select("path", "doc_type", "header", "line_items", col("ai_response.error").alias("extraction_error"))
+        .select("path", "doc_type", "header", "line_items", col("ai_response.errorMessage").alias("extraction_error"))
     )
 
 
