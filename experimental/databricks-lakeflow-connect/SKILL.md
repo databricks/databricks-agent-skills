@@ -79,7 +79,7 @@ For the Lakeflow-Connect-vs-Auto-Loader-vs-Federation-vs-Delta-Sharing decision,
 
 - **Databricks CLI v1.0.0+** for `databricks pipelines create` and `databricks connections create`. Verify with `databricks --version`.
 - **Databricks SDK for Python** (`databricks-sdk>=0.85.0`) if you prefer SDK over CLI.
-- **Databricks Asset Bundles** if authoring as IaC (recommended for any pipeline that ships to a customer environment).
+- **Declarative Automation Bundles** if authoring as IaC (recommended for any pipeline that ships to a customer environment).
 
 No extra connector-specific SDK is needed. Lakeflow Connect reuses the pipelines API surface — pipelines are created with an `ingestion_definition` block instead of a `libraries` block, but the API and CLI are otherwise the same.
 

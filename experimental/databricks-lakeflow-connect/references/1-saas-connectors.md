@@ -96,7 +96,7 @@ GA4 ingestion goes **via BigQuery** — Lakeflow Connect reads from the GA4 BigQ
 
 ## DAB pattern for SaaS connectors
 
-The production authoring path is a Databricks Asset Bundle resource. A minimal pipeline resource:
+The production authoring path is a Declarative Automation Bundle resource. A minimal pipeline resource:
 
 ```yaml
 resources:
