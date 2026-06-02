@@ -1,6 +1,6 @@
 ---
 name: databricks-unstructured-pdf-generation
-description: "Build RAG / unstructured-document evaluation datasets on Databricks and Generate PDF documents for demos having Knowledge Assistant: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
+description: "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for Knowledge Assistant) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
