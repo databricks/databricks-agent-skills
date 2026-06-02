@@ -423,17 +423,20 @@ Metric views are created, queried, and managed through SQL — see [cli-operatio
 
 ### Deploy (create or replace)
 
-Execute the full `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement (one of the patterns above) via the **SQL Statements API** — long DDL with `$$` token-quoting is fragile in shell heredocs:
+Write the full `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement (one of the patterns above) to a `.sql` file and submit it with the **`aitools tools statement`** command — `submit` takes a file path, so the `$$` token-quoting, embedded YAML, and single quotes (e.g. `DATE_TRUNC('MONTH', source.sale_date)`) need no shell/JSON escaping:
 
 ```bash
-databricks api post /api/2.0/sql/statements --profile <PROFILE> --json '{
-  "warehouse_id": "<warehouse_id>",
-  "wait_timeout": "50s",
-  "statement": "CREATE OR REPLACE VIEW catalog.schema.sales_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.fact_sales\ndimensions:\n  - name: Sale Year\n    expr: EXTRACT(YEAR FROM source.sale_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(source.amount)\n$$"
-}'
+# 1. Write the full CREATE OR REPLACE VIEW ... statement (any pattern above) to a file, e.g. /tmp/sales_metrics.sql
+
+# 2. Submit it — returns a statement_id immediately
+databricks experimental aitools tools statement submit --file /tmp/sales_metrics.sql \
+  --warehouse <warehouse_id> --profile <PROFILE>
+
+# 3. Block on the statement_id to confirm success
+databricks experimental aitools tools statement get <statement_id> --profile <PROFILE>
 ```
 
-> If an expression contains single quotes (e.g. `DATE_TRUNC('MONTH', source.sale_date)`), escape them for the shell — inside a single-quoted `--json '...'` argument, write each literal quote as `'\''`. For statements with many quotes, write the JSON to a file and pass `--json @payload.json` instead.
+> See [cli-operations.md](cli-operations.md) → *Long DDL* for the full submit/get/status/cancel lifecycle.
 
 ### Query (every measure wrapped in MEASURE(), every dimension in GROUP BY)
 

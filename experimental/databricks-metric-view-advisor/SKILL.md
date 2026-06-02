@@ -1,7 +1,7 @@
 ---
 name: databricks-metric-view-advisor
 description: Use this skill when the user wants to create Unity Catalog metric views — whether starting from gold/fact tables, existing AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets. Triggers on intent like "formalize our KPIs," "build a metric/semantic layer," "define measures and dimensions from our tables," "standardize aggregations so other teams can reuse them," or "turn our ad-hoc queries into reusable metrics." Guides an interactive workflow — analyzing source assets, generating YAML definitions, checking for overlap with existing views, and deploying. Do NOT use for querying or altering an already-existing metric view, comparing metric view frameworks, creating regular Unity Catalog tables/schemas, or MLflow/model tracking.
-compatibility: Requires databricks CLI (>= v0.292.0)
+compatibility: Requires databricks CLI (>= v0.299.1)
 metadata:
   version: "1.0.0"
 ---
@@ -10,13 +10,13 @@ metadata:
 
 Create Unity Catalog metric views from your existing Databricks assets — gold/fact schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files. This advisor guides an interactive workflow that analyzes those sources, synthesizes them into richer, deduplicated suggestions, checks for overlap with views that already exist, and walks deployment end to end. Unlike a single-input "create a metric view" helper, it combines **multiple input sources** into one coherent set of definitions.
 
-**Prerequisite:** a working Databricks CLI (>= v0.292.0) authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
+**Prerequisite:** a working Databricks CLI (>= v0.299.1) authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
 
 ## How tools are used
 
 All operations run through the **Databricks CLI**. The mechanics — executing SQL, discovering table schemas, fetching dashboard/Genie definitions, deploying and querying metric views — are documented in **[references/cli-operations.md](references/cli-operations.md)**. Read that file before running any command in the steps below. In short:
 
-- **Run SQL**: `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (long DDL → SQL Statements API, see cli-operations.md)
+- **Run SQL**: `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (long DDL → `aitools tools statement submit --file`, see cli-operations.md)
 - **Inspect a table**: `databricks experimental aitools tools discover-schema <catalog.schema.table> --profile <PROFILE>`
 - **Default warehouse**: `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`
 - **Fetch a dashboard**: `databricks lakeview get <dashboard_id> --profile <PROFILE>` (draft definition with datasets); **fetch a Genie space / metric-view definition**: `databricks api get ...` (see cli-operations.md)
@@ -53,7 +53,7 @@ Ask these questions **sequentially**, waiting for a response after each.
 Establish the workspace profile and authentication:
 - **NEVER auto-select a profile.** List profiles with `databricks auth profiles`, present them all (with workspace URLs) to the user, and let them choose — even if only one exists.
 - Accept a profile name, or a workspace URL the user types directly.
-- Validate auth before continuing (`databricks auth token --profile <PROFILE>`). If auth fails, re-authenticate with `databricks auth login --host <workspace-url> --profile <PROFILE>` before proceeding.
+- Validate auth before continuing (`databricks auth token --profile <PROFILE>`). If auth fails, re-authenticate with `databricks auth login --profile <PROFILE>` (the host is already stored in the profile — only pass `--host <workspace-url>` when creating a brand-new profile) before proceeding.
 
 **After auth is validated**, discover a SQL warehouse for the session (automatic — not a user question):
 
@@ -61,7 +61,7 @@ Establish the workspace profile and authentication:
 databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
-Store the warehouse id for all SQL execution this session. The `query` / `discover-schema` tools auto-pick the default warehouse, so an explicit id is only needed for the SQL Statements API path. Do NOT ask the user about the warehouse — pick the default automatically.
+Store the warehouse id for all SQL execution this session. The `query` / `discover-schema` tools auto-pick the default warehouse, so an explicit id is only needed for the `statement submit` path (pass `--warehouse <ID>` or set `DATABRICKS_WAREHOUSE_ID`). Do NOT ask the user about the warehouse — pick the default automatically.
 
 **STOP — wait for the user's response.**
 
@@ -493,7 +493,7 @@ Ask the user if they want to deploy:
 
 **STOP — wait for the user's response before deploying.**
 
-Deploy each metric view by executing its `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement via the SQL Statements API (see cli-operations.md — long DDL should use the API path, not the inline `query` tool, to avoid heredoc escaping issues). If the user chose "Replace" for any overlap in Step 3, drop the old view after deploying the new one (`DROP VIEW IF EXISTS <old_view>`). If they chose "Extend", the view is deployed under the existing name via `CREATE OR REPLACE`.
+Deploy each metric view by submitting its saved `<metric_view_name>.sql` file (written in Step 4) with `databricks experimental aitools tools statement submit --file <metric_view_name>.sql --warehouse <warehouse_id>`, then confirming success with `statement get <statement_id>` (see cli-operations.md — long DDL goes through the file-based `statement` path, not the inline `query` tool, to avoid heredoc/JSON escaping issues). If the user opted out of saving SQL files in Step 1, write the statement to a temporary `.sql` file first. If the user chose "Replace" for any overlap in Step 3, drop the old view after deploying the new one (`DROP VIEW IF EXISTS <old_view>`). If they chose "Extend", the view is deployed under the existing name via `CREATE OR REPLACE`.
 
 After creation, verify each metric view with a test query (one dimension + one measure, `LIMIT 5`). Report any errors and help fix them:
 

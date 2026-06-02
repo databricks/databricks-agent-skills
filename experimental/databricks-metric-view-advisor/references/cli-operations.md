@@ -1,8 +1,8 @@
 # CLI & API Operations
 
-All operations in this skill run through the **Databricks CLI** (>= v0.292.0), authenticated to a workspace profile (`databricks auth login --host <workspace-url> --profile <PROFILE>`). This file documents the specific commands the workflow relies on.
+All operations in this skill run through the **Databricks CLI** (>= v0.299.1), authenticated to a workspace profile. To create a **new** profile, run `databricks auth login --host <workspace-url> --profile <PROFILE>`; to re-authenticate an **existing** profile, just run `databricks auth login --profile <PROFILE>` (the host is already stored — passing `--host` again is unnecessary and can error on a mismatch). This file documents the specific commands the workflow relies on.
 
-> **Never use `databricks sql execute` or `databricks execute-statement` — those commands do not exist.** Use the `aitools` query tool or the SQL Statements API below.
+> **Never use `databricks sql execute` or `databricks execute-statement` — those commands do not exist.** Use the `aitools` query tool or the `aitools` statement command below.
 
 ## Contents
 
@@ -24,31 +24,24 @@ databricks experimental aitools tools query "SELECT 1" --profile <PROFILE>
 
 To pin a specific warehouse, set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>`.
 
-### Long DDL (CREATE OR REPLACE VIEW ...) — the SQL Statements API
+### Long DDL (CREATE OR REPLACE VIEW ...) — the AI tools statement command
 
-Long metric-view DDL contains `$$ ... $$` token-quoting and embedded YAML that is fragile in shell heredocs. Prefer the SQL Statements API, which takes the statement as a JSON string:
-
-```bash
-databricks api post /api/2.0/sql/statements --profile <PROFILE> --json '{
-  "statement": "<SQL>",
-  "warehouse_id": "<warehouse_id>",
-  "wait_timeout": "50s"
-}'
-```
-
-**`wait_timeout` constraint:** the API accepts only `"0s"` (disables wait) or `"5s"`–`"50s"`. Any value outside that range errors. **Always use `"50s"`** (the maximum) to give queries the most time to complete synchronously.
-
-**Parse the response:**
-- `status.state` — `"SUCCEEDED"`, `"PENDING"`, or `"RUNNING"`
-- `result.data_array` — array of row arrays (each value is a string)
-- `manifest.schema.columns` — column names and types
-- `manifest.total_row_count` — total rows returned
-
-**If `status.state` is `"PENDING"` or `"RUNNING"`** (query exceeded `wait_timeout`), poll for completion:
+Long metric-view DDL contains `$$ ... $$` token-quoting and embedded YAML that is fragile in shell heredocs and JSON escaping. Write the statement to a `.sql` file and submit it with the `aitools` statement command — `submit` takes a file path, so there is no heredoc/JSON-escaping to get wrong:
 
 ```bash
-databricks api get /api/2.0/sql/statements/<statement_id> --profile <PROFILE>
+# 1. Write the full CREATE OR REPLACE VIEW ... statement to a file (e.g. /tmp/metric_view.sql)
+
+# 2. Submit asynchronously — returns a statement_id immediately
+databricks experimental aitools tools statement submit --file /tmp/metric_view.sql \
+  --warehouse <warehouse_id> --profile <PROFILE>
+
+# 3. Block until the statement reaches a terminal state and emit the result
+databricks experimental aitools tools statement get <statement_id> --profile <PROFILE>
 ```
+
+`submit` returns a JSON object with `statement_id` and `state`. `get` blocks until the statement is terminal, then emits columns and rows on success or an error object on failure. (Set `DATABRICKS_WAREHOUSE_ID` instead of `--warehouse` to pin a warehouse globally.)
+
+To peek at the state without blocking, use `statement status <statement_id>`; to terminate a long-running statement, use `statement cancel <statement_id>`. For "I want results now" on a short statement, use `aitools tools query` instead (see above).
 
 ### Discover a warehouse
 
@@ -83,7 +76,7 @@ For deeper metadata, run SQL via the methods above:
 
 There is no dedicated metric-view CLI verb — operate via SQL:
 
-- **Create / replace:** execute the full `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement using the **SQL Statements API** path above.
+- **Create / replace:** execute the full `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` statement using the **`aitools tools statement submit --file`** path above.
 - **Get definition:** `DESCRIBE TABLE EXTENDED <full_name> AS JSON` — the response includes `view_text` (the YAML definition) and column metadata with `is_measure` flags.
 - **List in a schema:** metric views appear in `information_schema.tables` with `table_type = 'METRIC_VIEW'` (they do NOT show in `SHOW VIEWS`):
   ```sql
