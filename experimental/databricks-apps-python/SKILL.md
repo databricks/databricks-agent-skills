@@ -43,7 +43,7 @@ databricks apps deploy
 ### AI-assisted development
 ```bash
 # Install agent skills for AI-powered scaffolding
-databricks experimental aitools skills install
+databricks aitools install
 
 # Query AppKit docs inline
 npx @databricks/appkit docs "your question here"
@@ -256,7 +256,6 @@ class EntityIn(BaseModel):
 
 ## Related Skills
 
-- **databricks-app-apx** - full-stack apps with FastAPI + React
 - **databricks-dabs** - deploying apps via DABs
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - backend SDK integration
 - **databricks-lakebase** - adding persistent PostgreSQL state (autoscaling managed PG with branching)
