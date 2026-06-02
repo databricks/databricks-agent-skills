@@ -24,18 +24,13 @@
 databricks clusters list --cluster-sources UI,API --output json | jq '.[] | select(.state == "RUNNING") | {cluster_id, cluster_name, state, cluster_source}'
 ```
 
+`--cluster-sources UI,API` restricts the list to user-created clusters and excludes job clusters, which dominate the list on busy workspaces.
+
 If no cluster is running, ask the user:
 > "No running cluster. Options:
 > 1. Start 'my-dev-cluster' (~5 min startup, costs money)
 > 2. Use serverless (instant, no setup)
 > Which do you prefer?"
-
-Filter to user-created clusters (exclude job clusters, which dominate the list on busy workspaces):
-
-```bash
-databricks clusters list --cluster-sources UI,API --output json \
-  | jq '.[] | select(.state == "RUNNING")'
-```
 
 ## Code Execution Flow (1.2 commands API)
 
@@ -49,9 +44,10 @@ The Databricks CLI doesn't ship a single "run code on a cluster" subcommand. Use
 ### 1. Create a context
 
 ```bash
+CID="1234-567890-abcdef"  # target cluster; reused by every call below
 CTX=$(databricks api post /api/1.2/contexts/create --json '{
   "language": "python",
-  "clusterId": "1234-567890-abcdef"
+  "clusterId": "'"$CID"'"
 }' | jq -r '.id')
 echo "$CTX"  # e.g. ctx_abc123
 ```
@@ -63,7 +59,7 @@ Languages: `python`, `scala`, `sql`, `r`. You need one context per language; run
 ```bash
 CMD=$(databricks api post /api/1.2/commands/execute --json '{
   "language": "python",
-  "clusterId": "1234-567890-abcdef",
+  "clusterId": "'"$CID"'",
   "contextId": "'"$CTX"'",
   "command": "import pandas as pd; df = pd.DataFrame({\"a\": [1, 2, 3]}); print(df)"
 }' | jq -r '.id')
@@ -75,7 +71,6 @@ echo "$CMD"
 The `/api/1.2/commands/status` endpoint takes its parameters in the query string — a JSON body on a GET request gets dropped by the server.
 
 ```bash
-CID="1234-567890-abcdef"
 while :; do
   STATUS=$(databricks api get "/api/1.2/commands/status?clusterId=${CID}&contextId=${CTX}&commandId=${CMD}")
   STATE=$(echo "$STATUS" | jq -r '.status')
@@ -99,7 +94,7 @@ State (variables, imports, `%pip install`-ed packages) persists across commands 
 ```bash
 CMD2=$(databricks api post /api/1.2/commands/execute --json '{
   "language": "python",
-  "clusterId": "1234-567890-abcdef",
+  "clusterId": "'"$CID"'",
   "contextId": "'"$CTX"'",
   "command": "print(df.shape)"
 }' | jq -r '.id')
@@ -112,7 +107,7 @@ Contexts auto-expire when the cluster terminates. Destroy explicitly when you're
 
 ```bash
 databricks api post /api/1.2/contexts/destroy --json '{
-  "clusterId": "1234-567890-abcdef",
+  "clusterId": "'"$CID"'",
   "contextId": "'"$CTX"'"
 }'
 ```
