@@ -1,6 +1,6 @@
 ---
 name: databricks-lakeflow-connect
-description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines. Covers the unified setup pattern (UC connection -> ingestion pipeline -> streaming Delta tables), the gateway pattern for database CDC, DAB-based authoring, and the decision between Lakeflow Connect, Auto Loader, Lakehouse Federation, and Delta Sharing."
+description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
@@ -9,7 +9,7 @@ parent: databricks-core
 
 # Lakeflow Connect
 
-Build managed ingestion pipelines that pull from SaaS apps and databases into Unity Catalog Delta tables, governed end-to-end and powered by serverless Lakeflow Spark Declarative Pipelines.
+Build managed ingestion pipelines that pull from SaaS apps and databases into Unity Catalog Delta tables, governed end-to-end and powered by serverless Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT).
 
 **Status:** mixed catalog — GA connectors for production use, plus Public Preview, Beta, and Private Preview connectors that expand over time. See the connector catalog below.
 
@@ -77,7 +77,7 @@ For the Lakeflow-Connect-vs-Auto-Loader-vs-Federation-vs-Delta-Sharing decision,
 
 ## Required Tools
 
-- **Databricks CLI v1.0.0+** for `databricks pipelines create` and `databricks connections create`. Verify with `databricks --version`.
+- **Databricks CLI v0.294.0+** for `databricks pipelines create` and `databricks connections create`. Verify with `databricks --version`.
 - **Databricks SDK for Python** (`databricks-sdk>=0.85.0`) if you prefer SDK over CLI.
 - **Declarative Automation Bundles** if authoring as IaC (recommended for any pipeline that ships to a customer environment).
 
@@ -119,6 +119,28 @@ For a DAB-authored version (the production path), see [1-saas-connectors.md](ref
 
 ---
 
+## Running the pipeline
+
+Once authored, deploy and trigger a run. The bundle path gives the cleanest run-by-key command:
+
+```bash
+databricks bundle deploy -t dev
+databricks bundle run salesforce_ingestion           # KEY = the pipeline resource key in the bundle; waits by default
+databricks bundle run salesforce_ingestion --no-wait
+```
+
+A pipeline created imperatively with `pipelines create --json` has no run-by-name CLI — start and poll an update by pipeline ID instead:
+
+```bash
+databricks pipelines start-update <pipeline-id>             # returns an update_id
+databricks pipelines get-update  <pipeline-id> <update-id>  # poll one update's status
+databricks pipelines list-updates <pipeline-id>             # recent updates and their states
+```
+
+That asymmetry is one more reason to author with a Declarative Automation Bundle.
+
+---
+
 ## Detailed guides
 
 | Topic | File | When to read |
@@ -139,7 +161,42 @@ For each new ingestion pipeline:
 3. **Create the UC `CONNECTION`** — UI for OAuth U2M, CLI / DAB for everything else.
 4. **Author the pipeline** — `databricks pipelines create --json` for one-offs, DAB YAML for anything shipping to a customer.
 5. **Trigger the first run** and watch the event log; see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md) for the SQL.
-6. **Schedule** via Jobs (`pipeline_task`) or `continuous: false` on the pipeline itself. Lakeflow Connect supports triggered runs only (no continuous mode).
+6. **Schedule** the triggered pipeline with a Jobs `pipeline_task` (cron or interval). Lakeflow Connect supports triggered runs only — `continuous: false` selects triggered mode but is not itself a schedule, so the cadence comes from the Jobs trigger.
+
+---
+
+## Anti-patterns
+
+Three forms that look plausible but fail — wrong vs. right:
+
+**1. `CREATE TABLE ... FROM CONNECTION` is Lakehouse Federation, not Lakeflow Connect.**
+
+```sql
+-- WRONG: Federation syntax; no LFC equivalent exists
+CREATE TABLE main.salesforce_raw.account FROM CONNECTION my_salesforce_conn;
+```
+```json
+// RIGHT: author an ingestion_definition (see the Minimal Example above)
+{"ingestion_definition": {"connection_name": "my_salesforce_conn", "objects": [/* ... */]}}
+```
+
+**2. An ingestion pipeline carries `ingestion_definition`, never a `libraries` block.**
+
+```json
+// WRONG: libraries is for a standard SDP pipeline running your notebooks/files
+{"name": "salesforce_to_uc", "libraries": [{"notebook": {"path": "/Repos/.../ingest"}}]}
+// RIGHT:
+{"name": "salesforce_to_uc", "ingestion_definition": {"connection_name": "...", "objects": []}}
+```
+
+**3. `continuous: true` is rejected — Lakeflow Connect is triggered-only.**
+
+```json
+// WRONG: continuous mode fails at create
+{"continuous": true, "ingestion_definition": {/* ... */}}
+// RIGHT: continuous:false (or omit) + schedule with a Jobs pipeline_task
+{"continuous": false, "ingestion_definition": {/* ... */}}
+```
 
 ---
 
@@ -150,6 +207,7 @@ For each new ingestion pipeline:
 - **Salesforce auth is OAuth U2M only** — no machine-to-machine, no basic auth. Connection creation requires a UI walk-through.
 - **Database staging retention is 30 days** by default in the UC Volume between the gateway and the ingestion pipeline.
 - **Limits per pipeline** — most SaaS connectors cap at 250 tables per pipeline. Split across multiple pipelines if needed.
+- **This lands raw tables** — Lakeflow Connect writes source-faithful tables (the ingestion landing zone). Build the medallion Bronze/Silver/Gold transforms on top of them with **databricks-pipelines**.
 
 ---
 
@@ -158,14 +216,14 @@ For each new ingestion pipeline:
 - **UC `CONNECTION` is the credential anchor** — every Lakeflow Connect pipeline points at a UC connection. The connection owns the auth; the pipeline references it by name.
 - **Serverless ingestion pipeline + (optional) classic gateway** — SaaS connectors are pure serverless. Database connectors split into a customer-network gateway (classic) and a serverless ingestion pipeline (Delta-bound).
 - **CDC and schema evolution are built in** — for sources that support change tracking or CDC, the connector applies changes incrementally and evolves the target schema. Data-type changes typically require a full snapshot reload.
-- **Streaming Delta output** — destination tables are governed Delta tables with `applyAsChangesFrom` semantics for CDC sources. Compatible with downstream materialized views and Spark streaming.
-- **OAuth U2M is UI-only** — DAB / CLI cannot bootstrap OAuth U2M connections. Plan for a one-time human step.
+- **Streaming Delta output** — destination tables are governed Delta tables; CDC sources are applied with change semantics (`APPLY CHANGES` / AUTO CDC, or `apply_changes_from_snapshot` for snapshot sources). Compatible with downstream materialized views and Spark streaming.
+- **OAuth U2M is UI-only** — DAB / CLI cannot bootstrap OAuth U2M connections. Hand the one-time browser step to a human (Catalog Explorer > External Data > Connections > Create connection > pick the source > sign in), then resume once `databricks connections get <connection_name>` reports `READY`.
 
 ---
 
 ## Common Issues
 
-For common errors and their fixes — duplicate-key violations, watermark / cursor problems, schema evolution, gateway region availability, the `channel: PREVIEW` warning, and pipelines that run but land no data — see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md), which also has the event-log queries to diagnose them.
+For common errors and their fixes — duplicate-key violations, watermark / cursor problems, schema evolution, gateway region availability, the `channel` runtime-channel setting, and pipelines that run but land no data — see [5-troubleshooting-and-monitoring.md](references/5-troubleshooting-and-monitoring.md), which also has the event-log queries to diagnose them.
 
 ---
 

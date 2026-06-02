@@ -12,7 +12,7 @@ The event log is a Delta table on the pipeline. Query it through SQL:
 
 ```sql
 SELECT timestamp, level, message, error
-FROM event_log("<pipeline-id-or-name>")
+FROM event_log("<pipeline-id>")
 WHERE level IN ('ERROR', 'WARN')
   AND timestamp > current_timestamp() - INTERVAL 1 DAY
 ORDER BY timestamp DESC
@@ -37,7 +37,7 @@ For event-log table conventions (filtering by `event_type`, joining with metrics
 | Gateway pipeline fails: instance type unavailable in region | Default gateway cluster shape isn't stocked in the target region. | Apply a cluster policy override on the gateway pipeline to pin a regionally-available instance type. |
 | Pipeline runs but the destination table never updates | UC `CONNECTION` not in `READY` state, OR destination schema missing. | `DESCRIBE CONNECTION <name>` — state must be `READY`. Verify the destination schema exists and the pipeline's service principal has `CREATE TABLE` + `MODIFY`. |
 | OAuth U2M connection refreshes fail after weeks of working | Refresh token expired or revoked at the SaaS source. | Re-open the connection in Catalog Explorer and re-authorize. Plan for periodic re-auth if the SaaS source enforces a refresh-token lifetime. |
-| `channel: PREVIEW` warning at pipeline create | Expected for connectors not yet GA in your region. | Switch to `CURRENT` once the connector is GA where the pipeline runs. |
+| Connector requires `channel: PREVIEW` at pipeline create | The connector runs only on the preview SDP runtime channel. | Set `channel: PREVIEW` as the connector's docs instruct — it selects the runtime channel, not the connector's GA status. GA connectors run on `CURRENT` (omit it); if gateway startup is slow, `CURRENT` is faster where supported. |
 
 ---
 

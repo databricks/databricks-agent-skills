@@ -214,7 +214,7 @@
       "version": "0.1.0"
     },
     "databricks-lakeflow-connect": {
-      "description": "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines. Covers the unified setup pattern (UC connection -> ingestion pipeline -> streaming Delta tables), the gateway pattern for database CDC, DAB-based authoring, and the decision between Lakeflow Connect, Auto Loader, Lakehouse Federation, and Delta Sharing.",
+      "description": "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

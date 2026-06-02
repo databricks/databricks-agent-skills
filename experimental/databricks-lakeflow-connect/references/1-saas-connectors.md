@@ -12,7 +12,7 @@ Three steps for every SaaS connector:
    - **OAuth U2M** connections (Salesforce, ServiceNow, HubSpot, Confluence) must be created in Catalog Explorer — the OAuth handshake requires a browser. CLI and DAB cannot bootstrap U2M.
    - **API-key / basic / refresh-token** connections (Workday Reports, GA4 via service account, ServiceNow basic) can be created with `databricks connections create` or a DAB resource.
 2. **Create the ingestion pipeline** with `databricks pipelines create --json` (or DAB). The pipeline carries the `ingestion_definition` block that names the connection and lists the source objects to land.
-3. **Schedule the pipeline**. Lakeflow Connect supports triggered runs only — schedule with a Jobs `pipeline_task` or with the pipeline's own `continuous: false` cron block.
+3. **Schedule the pipeline**. Lakeflow Connect supports triggered runs only — schedule with a Jobs `pipeline_task` (cron or interval). The pipeline's `continuous: false` setting selects triggered mode but does not itself carry a schedule.
 
 A minimal pipeline JSON:
 
@@ -33,7 +33,7 @@ Keys to know:
 
 - `ingestion_definition.connection_name` — the UC connection name (not URL, not ID).
 - `objects[].table` — one entry per source table. Use `objects[].schema` to ingest a whole source schema in one block.
-- `channel` — omit for GA connectors (defaults to `CURRENT`). Set `channel: PREVIEW` only for connectors still in Public Preview / Beta.
+- `channel` — selects the SDP runtime release channel (`CURRENT` = default GA runtime; `PREVIEW` = preview runtime). Some preview/beta connectors run only on the preview runtime, so their docs require `channel: PREVIEW`. GA connectors run on `CURRENT`, so omit `channel`. It selects a runtime, not a connector's GA status — preview-channel builds also have longer startup times.
 
 ---
 
@@ -130,5 +130,5 @@ Schedule it via a Jobs resource with a `pipeline_task` pointing at this pipeline
 | Duplicate-key error after a snapshot reload | Source has duplicate PKs (Salesforce composite keys, ServiceNow merged records) | Inspect the source for the duplicates; the connector won't auto-resolve. |
 | New source column missing from the target | Schema evolution disabled or not yet propagated | Re-enable schema evolution on the destination table and trigger a snapshot run. |
 | OAuth connection stuck in `PENDING` | U2M authorization not completed in Catalog Explorer | Re-open the connection in Catalog Explorer and complete the browser flow. |
-| `channel: PREVIEW` warning at create time | Expected for connectors not yet GA in your region | Switch to `CURRENT` once the connector is GA where the pipeline runs. |
+| Connector requires `channel: PREVIEW` at create time | The connector runs only on the preview SDP runtime channel | Set `channel: PREVIEW` as the connector's docs instruct. `channel` picks the runtime, not the connector's GA status; GA connectors run on `CURRENT` (omit it). If gateway startup is slow, `CURRENT` is faster where the connector supports it. |
 | Pipeline succeeds but no rows land | Destination schema missing, or the connection account lacks read on the source object | Check the event log; pre-flight errors are surfaced there. |

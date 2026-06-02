@@ -74,7 +74,7 @@ Most pipelines start with CT and switch to CDC only when audit or SCD2 demands i
 Prerequisites:
 
 1. **SQL Server 2012+** (cloud-managed: Azure SQL DB, Azure SQL MI, RDS for SQL Server).
-2. **A dedicated database user** with `db_owner` on the source database, or the minimum grants for CT/CDC (see the connector reference).
+2. **A dedicated database user** for the connector's ongoing reads, granted the minimum CT/CDC privileges for the source (see the connector reference). `db_owner` is the broad, simple alternative but is over-privileged for steady-state ingestion — if you use it, keep it to a DBA enabling CDC transiently, not the connector's read account.
 3. **CT or CDC enabled** on the source tables (`ALTER DATABASE ... SET CHANGE_TRACKING = ON` for CT; `sys.sp_cdc_enable_table` for CDC).
 4. **Network reachability** — the gateway compute must reach the source database. For cloud SQL Server this is usually VPC peering or PrivateLink.
 

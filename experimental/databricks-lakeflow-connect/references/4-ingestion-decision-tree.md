@@ -57,7 +57,7 @@ Both let you work with data that lives outside your lakehouse, but the differenc
 - You need a governed Delta copy in your lakehouse for performance, ML training, or downstream pipelines.
 - Query volume against the source data is high.
 - The source is performance-sensitive (you don't want to add query load to your production OLTP).
-- You need point-in-time history (CDC into a Delta table with `applyAsChangesFrom`).
+- You need point-in-time history (CDC applied into a Delta table with `APPLY CHANGES` / AUTO CDC semantics).
 
 **Lakehouse Federation wins when:**
 - Data should stay in the source for governance or residency reasons.
