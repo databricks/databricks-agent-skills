@@ -74,7 +74,15 @@ pipe.fit(pdf[numeric_cols + categorical_cols], pdf["is_fraud"])
 
 model_full_name = f"{catalog}.{db}.dbdemos_fsi_fraud"
 with mlflow.start_run(run_name="serverless_sklearn_rewrite") as run:
-    mlflow.sklearn.log_model(pipe, artifact_path="model")  # no registered_model_name= (see M1)
+    # UC requires signature= on every log_model (see M3 below)
+    from mlflow.models.signature import infer_signature
+    X_sample = pdf[numeric_cols + categorical_cols].head(100)
+    signature = infer_signature(X_sample, pipe.predict(X_sample))
+    mlflow.sklearn.log_model(
+        pipe,
+        artifact_path="model",
+        signature=signature,
+    )  # no registered_model_name= (see M1)
 
 r = mlflow.register_model(
     model_uri=f"runs:/{run.info.run_id}/model",
