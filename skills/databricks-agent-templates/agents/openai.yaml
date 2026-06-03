@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Agent Templates"
+  short_description: "Build, run, and ship AI agents on the Databricks Apps platform from the agent templates (LangGraph and OpenAI Agents SDK)."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-agent-templates for build, run, and ship ai agents on the databricks apps platform from the agent templates (langgraph and openai agents sdk)."

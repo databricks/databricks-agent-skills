@@ -1,7 +1,0 @@
-interface:
-  display_name: "Databricks Agent Load Testing"
-  short_description: "Load test a Databricks App to find its maximum QPS."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $databricks-agent-load-testing for load test a databricks app to find its maximum qps."

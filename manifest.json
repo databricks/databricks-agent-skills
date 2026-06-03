@@ -14,228 +14,59 @@
       "repo_dir": "experimental",
       "version": "0.1.0"
     },
-    "databricks-agent-create-tools": {
-      "description": "Create Databricks resources that agents connect to as tools.",
+    "databricks-agent-templates": {
+      "description": "Build, run, and ship AI agents on the Databricks Apps platform from the agent templates (LangGraph and OpenAI Agents SDK).",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "examples/genie-space.md",
-        "examples/local-python-tools.md",
-        "examples/uc-connection.md",
-        "examples/uc-function.md",
-        "examples/vector-search-index.md"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-deploy": {
-      "description": "Deploy agent to Databricks Apps using DAB (Databricks Asset Bundles).",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-discover-tools": {
-      "description": "Discover available tools and resources in Databricks workspace.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-lakebase-setup": {
-      "description": "Configure Lakebase for agent memory storage.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-load-testing": {
-      "description": "Load test a Databricks App to find its maximum QPS.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "examples/mock_openai_client.py"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-long-running-server": {
-      "description": "Enable long-running background task support with LongRunningAgentServer.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-memory-langgraph": {
-      "description": "Add memory capabilities to your agent.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "examples/memory_tools.py"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-memory-openai": {
-      "description": "Add memory capabilities to your agent.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-migrate-from-model-serving": {
-      "description": "Migrate an MLflow ResponsesAgent from Databricks Model Serving to Databricks Apps.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-modify-langgraph": {
-      "description": "Modify agent code, add tools, or change configuration.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-modify-openai": {
-      "description": "Modify agent code, add tools, or change configuration.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-quickstart": {
-      "description": "Set up Databricks agent development environment.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-run-locally": {
-      "description": "Run and test the agent locally.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-supervisor-api": {
-      "description": "Replace the client-side agent loop with Databricks Supervisor API (hosted tools + client-side function tools).",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-supervisor-api-background-mode": {
-      "description": "Enable Supervisor API background mode for long-running agent tasks.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-supervisor-api-client-function-calling": {
-      "description": "Add client-side function tools to the Supervisor API.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-tools-langgraph": {
-      "description": "Add tools to your agent and grant required permissions in databricks.yml.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "examples/app.yaml",
-        "examples/custom-mcp-server.md",
-        "examples/experiment.yaml",
-        "examples/genie-space.yaml",
-        "examples/lakebase-autoscaling.yaml",
-        "examples/lakebase.yaml",
-        "examples/serving-endpoint.yaml",
-        "examples/sql-warehouse.yaml",
-        "examples/uc-connection.yaml",
-        "examples/uc-function.yaml",
-        "examples/vector-search.yaml"
-      ],
-      "repo_dir": "skills",
-      "version": "0.0.1"
-    },
-    "databricks-agent-tools-openai": {
-      "description": "Add tools to your agent and grant required permissions in databricks.yml.",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "assets/databricks.png",
-        "assets/databricks.svg",
-        "examples/app.yaml",
-        "examples/custom-mcp-server.md",
-        "examples/experiment.yaml",
-        "examples/genie-space.yaml",
-        "examples/lakebase-autoscaling.yaml",
-        "examples/serving-endpoint.yaml",
-        "examples/sql-warehouse.yaml",
-        "examples/uc-connection.yaml",
-        "examples/uc-function.yaml",
-        "examples/vector-search.yaml"
+        "references/add-tools-langgraph/add-tools-langgraph.md",
+        "references/add-tools-langgraph/examples/app.yaml",
+        "references/add-tools-langgraph/examples/custom-mcp-server.md",
+        "references/add-tools-langgraph/examples/experiment.yaml",
+        "references/add-tools-langgraph/examples/genie-space.yaml",
+        "references/add-tools-langgraph/examples/lakebase-autoscaling.yaml",
+        "references/add-tools-langgraph/examples/lakebase.yaml",
+        "references/add-tools-langgraph/examples/serving-endpoint.yaml",
+        "references/add-tools-langgraph/examples/sql-warehouse.yaml",
+        "references/add-tools-langgraph/examples/uc-connection.yaml",
+        "references/add-tools-langgraph/examples/uc-function.yaml",
+        "references/add-tools-langgraph/examples/vector-search.yaml",
+        "references/add-tools-openai/add-tools-openai.md",
+        "references/add-tools-openai/examples/app.yaml",
+        "references/add-tools-openai/examples/custom-mcp-server.md",
+        "references/add-tools-openai/examples/experiment.yaml",
+        "references/add-tools-openai/examples/genie-space.yaml",
+        "references/add-tools-openai/examples/lakebase-autoscaling.yaml",
+        "references/add-tools-openai/examples/serving-endpoint.yaml",
+        "references/add-tools-openai/examples/sql-warehouse.yaml",
+        "references/add-tools-openai/examples/uc-connection.yaml",
+        "references/add-tools-openai/examples/uc-function.yaml",
+        "references/add-tools-openai/examples/vector-search.yaml",
+        "references/agent-langgraph-memory/agent-langgraph-memory.md",
+        "references/agent-langgraph-memory/examples/memory_tools.py",
+        "references/agent-openai-memory/agent-openai-memory.md",
+        "references/create-tools/create-tools.md",
+        "references/create-tools/examples/genie-space.md",
+        "references/create-tools/examples/local-python-tools.md",
+        "references/create-tools/examples/uc-connection.md",
+        "references/create-tools/examples/uc-function.md",
+        "references/create-tools/examples/vector-search-index.md",
+        "references/deploy/deploy.md",
+        "references/discover-tools/discover-tools.md",
+        "references/lakebase-setup/lakebase-setup.md",
+        "references/load-testing/examples/mock_openai_client.py",
+        "references/load-testing/load-testing.md",
+        "references/long-running-server/long-running-server.md",
+        "references/migrate-from-model-serving/migrate-from-model-serving.md",
+        "references/modify-langgraph-agent/modify-langgraph-agent.md",
+        "references/modify-openai-agent/modify-openai-agent.md",
+        "references/quickstart/quickstart.md",
+        "references/run-locally/run-locally.md",
+        "references/supervisor-api-background-mode/supervisor-api-background-mode.md",
+        "references/supervisor-api-client-function-calling/supervisor-api-client-function-calling.md",
+        "references/supervisor-api/supervisor-api.md"
       ],
       "repo_dir": "skills",
       "version": "0.0.1"

@@ -1,7 +1,0 @@
-interface:
-  display_name: "Databricks Agent Supervisor API"
-  short_description: "Replace the client-side agent loop with Databricks Supervisor API (hosted tools + client-side function tools)."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $databricks-agent-supervisor-api for replace the client-side agent loop with databricks supervisor api (hosted tools + client-side function tools)."

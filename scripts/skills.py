@@ -182,18 +182,6 @@ DISPLAY_NAME_OVERRIDES = {
     "databricks-aibi-dashboards": "Databricks AI/BI Dashboards",
     "databricks-mlflow-evaluation": "Databricks MLflow Evaluation",
     "databricks-unstructured-pdf-generation": "Databricks Unstructured PDF Generation",
-    # Mirrored agent-template skills (from databricks/app-templates): fix the
-    # framework/acronym casing the auto-titlecase would mangle (Langgraph,
-    # Openai, Api).
-    "databricks-agent-tools-langgraph": "Databricks Agent Tools (LangGraph)",
-    "databricks-agent-tools-openai": "Databricks Agent Tools (OpenAI)",
-    "databricks-agent-memory-langgraph": "Databricks Agent Memory (LangGraph)",
-    "databricks-agent-memory-openai": "Databricks Agent Memory (OpenAI)",
-    "databricks-agent-modify-langgraph": "Databricks Agent Modify (LangGraph)",
-    "databricks-agent-modify-openai": "Databricks Agent Modify (OpenAI)",
-    "databricks-agent-supervisor-api": "Databricks Agent Supervisor API",
-    "databricks-agent-supervisor-api-background-mode": "Databricks Agent Supervisor API Background Mode",
-    "databricks-agent-supervisor-api-client-function-calling": "Databricks Agent Supervisor API Client Function Calling",
 }
 
 

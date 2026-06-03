@@ -1,7 +1,0 @@
-interface:
-  display_name: "Databricks Agent Lakebase Setup"
-  short_description: "Configure Lakebase for agent memory storage."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $databricks-agent-lakebase-setup for configure lakebase for agent memory storage."

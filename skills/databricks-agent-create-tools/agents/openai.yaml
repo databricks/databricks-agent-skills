@@ -1,7 +1,0 @@
-interface:
-  display_name: "Databricks Agent Create Tools"
-  short_description: "Create Databricks resources that agents connect to as tools."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $databricks-agent-create-tools for create databricks resources that agents connect to as tools."
