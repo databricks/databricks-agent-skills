@@ -179,9 +179,11 @@ databricks clusters resize <CLUSTER_ID> --num-workers 4
 ### Create with a full spec
 
 ```bash
-# SPARK_VERSION is positional. custom_tags recommended for resource tracking.
-databricks clusters create 15.4.x-scala2.12 --json '{
+# With --json, every field goes in the body — including spark_version (no positional arg).
+# custom_tags recommended for resource tracking.
+databricks clusters create --json '{
   "cluster_name": "my-cluster",
+  "spark_version": "15.4.x-scala2.12",
   "node_type_id": "i3.xlarge",
   "num_workers": 2,
   "autotermination_minutes": 60,
