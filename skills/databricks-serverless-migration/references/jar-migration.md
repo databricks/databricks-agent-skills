@@ -20,6 +20,10 @@ Route into this flow when any of these are true:
 | 3 | **Dependency conflict / shadowing** | Jackson/Guava/log4j version errors; behavior differs from the bundled version | The JAR bundles a library the kernel also ships; the kernel's copy wins on the classpath, so the bundled version is silently shadowed. | Declare every overlapping dependency `% Provided` (or align to the kernel version). See the classpath table below. |
 | 4 | **Streaming / config** | `ProcessingTime` trigger errors, blocked Spark configs | Serverless requires `availableNow` triggers and only allows a short config allowlist. | Source change: `.trigger(availableNow=true)`; remove unsupported `spark.conf.set`. |
 
+## Narrate the migration as you go
+
+This is an interactive migration. After each step below, tell the user **what you did and what happened** before moving to the next step — do not silently apply a batch of changes and reveal them only at the end. Each step ends with a **Report after this step** line stating the minimum to surface. The value of the skill is the user seeing which failure modes were detected, what was changed and why, and the result of each gate. The end-of-run summary (see "Output the skill should produce") consolidates these per-step reports; it does not replace them.
+
 ## Step 1 — Analyze the build statically (do not wait for a failed run)
 
 Read the build file and flag issues before running anything.
@@ -47,6 +51,8 @@ Every node that appears in the classpath table is a conflict (mode 3). Fix the *
 ```scala
 case PathList("META-INF", "maven", _ @ _*) => MergeStrategy.first
 ```
+
+**Report after this step:** State the verdict before changing anything — which of the four failure modes are present, the JAR's current Scala and JDK versions, the exact conflicting dependencies found in the tree (naming the kernel version each one collides with), and whether any mode-2 source rewrites are required. If the build is already clean, say so and stop here.
 
 ## Step 2 — Apply the fixes (sbt)
 
@@ -84,6 +90,8 @@ assembly / assemblyOption ~= { _.withIncludeScala(false) }
 
 Full Maven/Gradle fix recipes are a TODO; for now, translate the sbt steps above.
 
+**Report after this step:** Show the `build.sbt` (or `pom.xml`/`build.gradle`) diff and explain each change in one line — the Scala bump, every dependency newly marked `% Provided` (naming the kernel version it would otherwise shadow), and Scala excluded from the assembly. The user should see what changed and why *before* any build runs.
+
 ## Step 3 — Verify before deploying (do not skip)
 
 Editing `build.sbt` is not the fix; a JAR that compiles and runs is. Gate on both before the slow upload, smallest/fastest check first.
@@ -103,6 +111,8 @@ sbt run      # runs Main against serverless via the DatabricksSession
 A green local run means the migration worked end to end against the real serverless kernel. This is the fast inner loop — only after it passes do you pay for the deploy.
 
 *(If you took the not-recommended `spark-sql % Provided` fallback, there is no local session to connect with — the assemble gate in 3.1 is your only local check and Step 4's deploy run is the first real test.)*
+
+**Report after this step:** Report the build-gate result (assembled cleanly, or the compile errors) and the local Databricks Connect smoke-test result (ran green / failed with trace / skipped and why). Do not move on from a failed build — say it failed and what you are fixing.
 
 ## Step 4 — Deploy and confirm
 
@@ -131,6 +141,8 @@ The parent skill's notebook testing relies on **re-pointing the workload at a sa
 **Git flow transfers fine** (it's the *data*-repointing that doesn't): make the `build.sbt` changes on a `serverless-test-<job>-<ts>` branch, then put **only** the real migration fixes on a clean `serverless-prod-<job>` branch off master and open a **PR** — no test-only workarounds (catalog overrides, output redirects, sampled data) in the prod branch.
 
 So: build gate + DB Connect loop (Step 3) are the fast inner loop; this branch + A/B is the production gate — but the test-data setup is conditional on the JAR being re-pointable, which is exactly the assumption that breaks if you copy the notebook flow blindly.
+
+**Report after this step:** Report the deploy + run outcome (run state and run URL/ID). On the production-rigor path, also report the A/B result — row counts, schema match, and row-level diff — and state explicitly whether output matched the classic baseline, not just that the run was green.
 
 ## Kernel classpath — serverless environment version 4
 
