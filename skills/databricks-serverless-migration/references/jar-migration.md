@@ -125,6 +125,39 @@ databricks jobs run-now <job_id>
 ```
 Confirm the run reaches `TERMINATED / SUCCESS`. For a clean target, prefer the `default-scala` bundle template (`databricks bundle init default-scala`), which sets this up by default and deploys with `databricks bundle deploy`.
 
+### Job config — attach the JAR to the serverless environment
+
+A serverless JAR task wires up the JAR differently from a classic `spark_jar_task`, and the differences are **rejected at deploy time** (`databricks bundle deploy` / `jobs reset`) rather than at run time — so fix them in the job definition up front instead of discovering them on a failed deploy:
+
+- Define a job-level `environments` entry with `spec.environment_version: "4"`.
+- Attach the JAR in `environments[].spec.java_dependencies` (a `/Volumes/...` path) — **not** the task-level `libraries` field, which is not supported for serverless tasks.
+- Reference the environment from the task with `environment_key` (in place of `job_cluster_key` / `new_cluster`).
+- Remove the classic cluster scaffolding entirely: `new_cluster`, `num_workers`, `node_type_id`, `data_security_mode`, `spark_conf`, `init_scripts`, `cluster_log_conf`.
+
+```yaml
+# DABs job YAML — serverless spark_jar_task
+environments:
+  - environment_key: default
+    spec:
+      environment_version: "4"            # Scala 2.13.16 / JDK 17 / DBConnect 17.3.1
+      java_dependencies:
+        - /Volumes/<cat>/<schema>/<vol>/<artifact>.jar
+tasks:
+  - task_key: my_task
+    environment_key: default              # not job_cluster_key / new_cluster
+    spark_jar_task:
+      main_class_name: com.example.Main
+      parameters: ["--flag", "value"]
+    # no task-level `libraries:` — the JAR is in java_dependencies above
+```
+
+Deploy-time errors and their fix:
+
+| Error (at `bundle deploy` / `jobs reset`) | Fix |
+|---|---|
+| `Libraries field is not supported for serverless task, please specify libraries in environment` | Move the JAR out of the task `libraries` field into `environments[].spec.java_dependencies` |
+| `Serverless jar task must have java_dependencies in environment` | The JAR belongs in `java_dependencies` specifically — not `dependencies` (which is for PyPI/wheels) |
+
 ### Production rigor (adapt the parent flow — a JAR is NOT a notebook)
 
 The parent skill's notebook testing relies on **re-pointing the workload at a sampled test catalog** via a catalog widget/variable. **Do not assume that works for a JAR.** A compiled JAR usually **hardcodes its source and output tables in Scala**, so you cannot redirect it to a test catalog without changing code. Before borrowing the parent's test-data step, branch on this:
