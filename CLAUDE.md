@@ -49,10 +49,10 @@ python3 scripts/skills.py validate     # check Codex metadata + icons + manifest
 
 ### Mirrored skills
 
-`skills/app-templates-*` are generated mirrors of
+`skills/databricks-agent-*` are generated mirrors of
 [databricks/app-templates](https://github.com/databricks/app-templates)
 `.claude/skills/` (the source of truth) — do not hand-edit; see
-[CONTRIBUTING.md](./CONTRIBUTING.md#mirrored-skills-skillsapp-templates-).
+[CONTRIBUTING.md](./CONTRIBUTING.md#mirrored-skills-skillsdatabricks-agent-).
 
 ## Security
 

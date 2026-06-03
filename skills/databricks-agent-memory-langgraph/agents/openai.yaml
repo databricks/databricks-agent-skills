@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Agent Memory (LangGraph)"
+  short_description: "Add memory capabilities to your agent."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-agent-memory-langgraph for add memory capabilities to your agent."

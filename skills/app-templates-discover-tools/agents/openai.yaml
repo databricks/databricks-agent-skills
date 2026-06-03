@@ -1,7 +1,0 @@
-interface:
-  display_name: "App Templates Discover Tools"
-  short_description: "Discover available tools and resources in Databricks workspace."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $app-templates-discover-tools for discover available tools and resources in databricks workspace."

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Agent Modify (LangGraph)"
+  short_description: "Modify agent code, add tools, or change configuration."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-agent-modify-langgraph for modify agent code, add tools, or change configuration."

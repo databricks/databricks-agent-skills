@@ -52,22 +52,28 @@ python3 scripts/skills.py validate
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
-## Mirrored skills (`skills/app-templates-*`)
+## Mirrored skills (`skills/databricks-agent-*`)
 
-Skills whose directory name starts with `app-templates-` are **generated
+The agent-template skills under `skills/databricks-agent-*` are **generated
 mirrors** of the agent-template skills in
 [databricks/app-templates](https://github.com/databricks/app-templates)
 (`.claude/skills/`), which is their source of truth. Each carries a
-`.synced-from` provenance marker.
+`.synced-from` provenance marker — that marker, not the name, is the reliable
+way to tell a mirrored skill from a hand-authored one.
 
 **Do not hand-edit them here.** Changes are overwritten on the next sync. To
 change one, edit the source skill in app-templates; its
-`sync-skills-to-agent-skills.py` workflow renders the skills into the flat
-`skills/app-templates-<name>/` layout and opens a PR against this repo. The
-flat (not nested) layout is required because Claude Code discovers plugin
-skills only one level deep under `skills/`. The sync runs the usual
-`scripts/skills.py generate`, so mirrored skills get `agents/openai.yaml` +
-icons + a `manifest.json` entry like any other stable skill.
+`sync-skills-to-agent-skills.py` workflow renames each skill into this repo's
+`databricks-<topic>` convention (the `databricks-agent-*` namespace), renders
+the flat `skills/databricks-agent-<name>/` layout, and opens a PR against this
+repo. The flat (not nested) layout is required because Claude Code discovers
+plugin skills only one level deep under `skills/`. Where a mirrored skill
+overlaps an existing skill here (e.g. `databricks-lakebase`,
+`databricks-model-serving`), the sync injects a "Related skill" cross-link so
+the mirror defers to the canonical skill instead of duplicating it. The sync
+runs the usual `scripts/skills.py generate`, so mirrored skills get
+`agents/openai.yaml` + icons + a `manifest.json` entry like any other stable
+skill.
 
 ## Security
 

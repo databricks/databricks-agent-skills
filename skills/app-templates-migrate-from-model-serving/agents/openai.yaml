@@ -1,7 +1,0 @@
-interface:
-  display_name: "App Templates Migrate From Model Serving"
-  short_description: "Migrate an MLflow ResponsesAgent from Databricks Model Serving to Databricks Apps."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $app-templates-migrate-from-model-serving for migrate an mlflow responsesagent from databricks model serving to databricks apps."

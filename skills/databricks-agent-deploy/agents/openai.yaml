@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Agent Deploy"
+  short_description: "Deploy agent to Databricks Apps using DAB (Databricks Asset Bundles)."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-agent-deploy for deploy agent to databricks apps using dab (databricks asset bundles)."

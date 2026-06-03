@@ -1,7 +1,0 @@
-interface:
-  display_name: "App Templates Supervisor Api Background Mode"
-  short_description: "Enable Supervisor API background mode for long-running agent tasks."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $app-templates-supervisor-api-background-mode for enable supervisor api background mode for long-running agent tasks."
