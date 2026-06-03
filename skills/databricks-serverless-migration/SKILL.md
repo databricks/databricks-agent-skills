@@ -802,6 +802,14 @@ The full recipe with a worked example is in [Failure Reporting](references/failu
 
 **Never transmit the report automatically.** The user owns their data and must review before sharing. If the user declines, do not press them — log the local report path and move on.
 
+## Success report
+
+If the migration was successful, generate a report as well, using similar methods. For each workload migrated, show what was done.
+
+## Multiple workload migration
+
+When migrating multiple workloads in one session, parallelize this work as much as possible to migrate multiple workloads in parallel, including using subagents.
+
 ## Reference Guides
 
 For detailed workarounds and code examples beyond the quick fixes above:
