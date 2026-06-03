@@ -158,22 +158,18 @@ Deploy-time errors and their fix:
 | `Libraries field is not supported for serverless task, please specify libraries in environment` | Move the JAR out of the task `libraries` field into `environments[].spec.java_dependencies` |
 | `Serverless jar task must have java_dependencies in environment` | The JAR belongs in `java_dependencies` specifically — not `dependencies` (which is for PyPI/wheels) |
 
-### Production rigor (adapt the parent flow — a JAR is NOT a notebook)
+### Production rigor — follow the parent skill, with one JAR prerequisite
 
-The parent skill's notebook testing relies on **re-pointing the workload at a sampled test catalog** via a catalog widget/variable. **Do not assume that works for a JAR.** A compiled JAR usually **hardcodes its source and output tables in Scala**, so you cannot redirect it to a test catalog without changing code. Before borrowing the parent's test-data step, branch on this:
+Do not invent a JAR-specific testing methodology. Use the parent skill's **Step 3** unchanged: the two-branch strategy, **Test Data Setup** (sample upstream tables into a test catalog), the **A/B comparison**, and the prod-vs-test decision table. The build gate + Databricks Connect loop (Step 3 above) are the fast inner loop; the parent's test-branch + A/B is the production gate.
 
-**Is the JAR parameterized** (reads catalog / schema / tables from args or config, like the `default-scala` template's `--catalog` / `--schema`)?
+The only thing a JAR adds is the *seam*. The parent flow re-points the workload at the test catalog by flipping a parameter — a notebook does this with a `catalog` widget. A compiled JAR has no widget: if its catalog/schema/tables are **hardcoded in Scala**, there is nothing to re-point. So before borrowing the parent's test-data step, check whether the JAR can read them from args (like the `default-scala` template's `--catalog` / `--schema`):
 
-- **Yes (parameterized):** the parent approach transfers directly. Create **sampled upstream tables in a test catalog** (`CREATE TABLE … LIMIT N` from the job's lineage), pass the test catalog as a job parameter, and run the migrated JAR against it.
-- **No (hardcoded tables — the common case):** the "sampled test catalog" step **will not work** — the JAR can't see it. Do **not** fabricate a test catalog the JAR can't read. Instead, pick one:
-  - **(a) Parameterize it first** — a small source change to read catalog/schema/output table from args. Recommended if the team will keep iterating. Then proceed as the parameterized case.
-  - **(b) A/B on real inputs, redirected output** — run the **original JAR on classic** and the **migrated JAR on serverless** against the *same* production source tables, each writing to a **distinct output table** (redirect the migrated run's output via a param or a one-line source edit so it does not clobber prod), then diff the two outputs.
+- **Parameterized** → the parent flow applies directly. Sample upstream tables into a test catalog (`CREATE TABLE … LIMIT N` from the job's lineage), pass the test catalog as a job parameter, and run the migrated JAR against it.
+- **Hardcoded** → parameterize it first (a small source change to read catalog/schema/output table from args), then proceed exactly as the parameterized case.
 
-**A/B comparison** (either path): diff the output tables — row counts first, then full content / checksums. Equal output is the real proof the migration preserved behavior, not just that it ran.
+Either way, **test output lands in a non-production table — never overwrite the production output table to test.** This is the parent's rule, not a JAR exception.
 
-**Git flow transfers fine** (it's the *data*-repointing that doesn't): make the `build.sbt` changes on a `serverless-test-<job>-<ts>` branch, then put **only** the real migration fixes on a clean `serverless-prod-<job>` branch off master and open a **PR** — no test-only workarounds (catalog overrides, output redirects, sampled data) in the prod branch.
-
-So: build gate + DB Connect loop (Step 3) are the fast inner loop; this branch + A/B is the production gate — but the test-data setup is conditional on the JAR being re-pointable, which is exactly the assumption that breaks if you copy the notebook flow blindly.
+**Git flow is identical to the parent:** make the `build.sbt` changes on a `serverless-test-<job>-<ts>` branch, then put **only** the real compatibility fixes on a clean `serverless-prod-<job>` branch off master and open a **PR** — no test-only workarounds (catalog overrides, sampled data) in the prod branch.
 
 **Report after this step:** Report the deploy + run outcome (run state and run URL/ID). On the production-rigor path, also report the A/B result — row counts, schema match, and row-level diff — and state explicitly whether output matched the classic baseline, not just that the run was green.
 
