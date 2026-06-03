@@ -69,7 +69,7 @@ with mlflow.start_run():
         signature=infer_signature(sample_input, sample_output),
         input_example=sample_input,
         # Pin exact versions — endpoint rebuilds the env from these:
-        pip_requirements=["mlflow==2.22.0", "xgboost==2.1.3", "scikit-learn==1.5.2", "pandas"],
+        pip_requirements=["mlflow>=3.0", "xgboost==2.1.3", "scikit-learn==1.5.2", "pandas"],
         # Extra modules to ship with the model (e.g. shared util libs):
         # code_paths=["src/utils.py"],
         registered_model_name=FULL_NAME,

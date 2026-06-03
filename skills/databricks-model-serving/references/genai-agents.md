@@ -143,7 +143,7 @@ with mlflow.start_run():
         resources=resources,             # auto-auth — DO NOT skip
         input_example={"input": [{"role": "user", "content": "What's the maintenance history for turbine WTG-12?"}]},
         pip_requirements=[
-            "mlflow==2.22.0",
+            "mlflow>=3.0",
             "databricks-langchain",
             "langgraph==0.3.4",
             "databricks-agents",
@@ -184,7 +184,7 @@ Anything the agent calls that isn't covered here will hit auth errors at the end
 ```bash
 # 1. Is a deploy_agent run already active for this model? Match on run_name.
 databricks jobs list-runs --active-only --output json \
-  | jq --arg name "deploy_${MODEL_NAME}" '.runs[]? | select(.run_name == $name) | {run_id, state}'
+  | jq --arg name "deploy_${MODEL_NAME}" '.[]? | select(.run_name == $name) | {run_id, state}'
 
 # 2. Does the target endpoint already exist? If READY on the right version, skip the redeploy.
 databricks serving-endpoints get <endpoint_name> 2>/dev/null \
@@ -194,13 +194,17 @@ databricks serving-endpoints get <endpoint_name> 2>/dev/null \
 If either check returns a hit, follow the existing run with `jobs get-run <RUN_ID>` instead of submitting a new one.
 
 ```python
-# deploy_agent.py
-import json, sys
+# deploy_agent.py — runs as a notebook task, so args arrive as WIDGETS, not sys.argv.
+# Submit it with notebook_task.base_parameters = {"model_name", "version", "endpoint_name"}.
+import json
 from databricks import agents
 
-model_name    = sys.argv[1]
-version       = sys.argv[2]
-endpoint_name = sys.argv[3] if len(sys.argv) > 3 else None
+dbutils.widgets.text("model_name", "")
+dbutils.widgets.text("version", "")
+dbutils.widgets.text("endpoint_name", "")          # optional
+model_name    = dbutils.widgets.get("model_name")
+version       = dbutils.widgets.get("version")
+endpoint_name = dbutils.widgets.get("endpoint_name") or None
 
 # Always pass endpoint_name explicitly — auto-derived names are
 # `agents_<catalog>-<schema>-<model>` with dots → dashes, which is unpredictable.
@@ -217,7 +221,7 @@ dbutils.notebook.exit(json.dumps({
 }))
 ```
 
-Submit via the same `jobs submit --no-wait` pattern shown in [training-and-serving.md](training-and-serving.md#train--deploy-as-a-serverless-job) — same script, just `deploy_agent.py` as the notebook.
+Submit via the same `jobs submit --no-wait` pattern shown in [training-and-serving.md](training-and-serving.md#train--deploy-as-a-serverless-job) — `deploy_agent.py` as the notebook, passing the args as `notebook_task.base_parameters` (e.g. `{"model_name": FULL_NAME, "version": "3", "endpoint_name": "turbine-agent-endpoint"}`). The script reads them via `dbutils.widgets`.
 
 ## Query
 

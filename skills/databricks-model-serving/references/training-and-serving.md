@@ -29,7 +29,7 @@ One notebook, one artifact. Re-running = retraining. Gold is where truth lives �
 
 ## Train and register (the 90% case)
 
-`mlflow.autolog()` captures params, metrics, code, and the model artifact for every run; `registered_model_name=...` auto-registers the best run to UC (auto-incremented version). Wrap training with **Optuna** so each trial is a child run and the best one is what gets registered.
+`mlflow.autolog()` captures params, metrics, code, and the model artifact for every run. Wrap training with **Optuna** so each trial is a child run, then — after the search — refit on `study.best_params` and register **that** model. Do **not** pass `registered_model_name=` to `autolog()` during a sweep: it registers a new UC version on *every* trial, so "latest version" becomes "the last trial that ran," not "the best trial."
 
 **Always `mlflow.set_registry_uri("databricks-uc")`** — without it, models land in the deprecated workspace registry. **The experiment's parent folder must exist** — `set_experiment` does NOT auto-create it (fails with `NOT_FOUND: Parent directory does not exist`). Pre-create it once with `databricks workspace mkdirs` before the job runs.
 
@@ -50,7 +50,9 @@ mlflow.set_experiment("/Users/me@example.com/turbine_project/mlflow_experiment")
 CATALOG, SCHEMA, NAME = "ai_demo_gen", "wind_farm", "turbine_failure"
 FULL_NAME = f"{CATALOG}.{SCHEMA}.{NAME}"
 
-mlflow.xgboost.autolog(log_input_examples=True, registered_model_name=FULL_NAME)
+# Autolog captures params/metrics/artifacts per trial. log_models=False so we do NOT
+# register a model on every trial — we refit on the best params and register once, below.
+mlflow.xgboost.autolog(log_input_examples=True, log_models=False)
 
 # For imbalanced labels: stratify the split, set scale_pos_weight = neg/pos.
 def objective(trial):
@@ -64,9 +66,17 @@ def objective(trial):
         return roc_auc_score(y_test, m.predict_proba(X_test)[:, 1])
 
 with mlflow.start_run(run_name="hpo"):
-    optuna.create_study(direction="maximize").optimize(objective, n_trials=20)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=20)
 
-# Move @prod alias to the just-registered version. Stages are deprecated — aliases only.
+    # Refit on the BEST params and register exactly that model. Registering inside the
+    # trial loop instead would create one UC version per trial, and "latest version"
+    # would be the LAST trial that ran — not the best-AUC one.
+    best = XGBClassifier(**study.best_params).fit(X_train, y_train)
+    mlflow.xgboost.log_model(best, name="model", registered_model_name=FULL_NAME)
+
+# Only the best model was registered above, so the newest version IS the best (not the
+# last trial). Move the @prod alias to it. Stages are deprecated — aliases only.
 client = MlflowClient(registry_uri="databricks-uc")
 latest = max(client.search_model_versions(f"name='{FULL_NAME}'"),
              key=lambda v: int(v.version))
@@ -210,7 +220,7 @@ RUN_ID=$(databricks jobs submit --no-wait --json '{
     "environment_key": "ml_env",
     "spec": {
       "client": "4",
-      "dependencies": ["mlflow==2.22.0", "xgboost==2.1.3", "optuna==4.1.0", "scikit-learn==1.5.2"]
+      "dependencies": ["mlflow>=3.0", "xgboost==2.1.3", "optuna==4.1.0", "scikit-learn==1.5.2"]
     }
   }]
 }' | jq -r .run_id)
