@@ -10,7 +10,7 @@ but end up loaded by the same agents — pick whichever fits your workflow.
 - **Databricks CLI** writes SKILL.md files directly into each agent's skill
   directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
 - **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
-  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-skills/`);
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-agent-skills/`);
   the agent discovers skills from there.
 
 **Via the Databricks CLI (canonical; supports experimental skills):**
@@ -35,7 +35,7 @@ skill under [`./skills/`](./skills/)):
 
 ```text
 /plugin marketplace add databricks/databricks-agent-skills
-/plugin install databricks-skills
+/plugin install databricks@databricks-agent-skills
 ```
 
 **Via the Cursor plugin marketplace:**
@@ -69,12 +69,15 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
 - **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
 - **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
+- **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
 
 ## Experimental Skills
 
 The [`experimental/`](./experimental/) directory contains additional skills
-imported from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
-on a **best-effort basis**.
+originally imported from
+[databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
+(now deprecated — this repo is the source of truth going forward) on a
+**best-effort basis**.
 
 - Experimental skills are **not officially supported** — they may be used, but
   do not follow the same review / quality bar as the stable skills under
@@ -149,7 +152,8 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
 ## Integrity
 
-All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+Release tags are created by the [Release workflow](./.github/workflows/release.yml)
+and map 1:1 to a published version.
 
 ## Contributing
 

@@ -17,6 +17,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
 
       - name: Validate tag format
         env:
@@ -27,11 +34,43 @@ jobs:
             exit 1
           fi
 
-      - name: Create tag and release
+      - name: Bump plugin manifests and regenerate manifest
+        env:
+          VERSION: ${{ inputs.version }}
+        run: python3 scripts/bump_version.py "$VERSION"
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/plugin.json .cursor-plugin/plugin.json manifest.json
+          if git diff --cached --quiet; then
+            echo "Manifests already at $VERSION; nothing to commit"
+          else
+            git commit -s -m "chore(release): bump plugin manifests to $VERSION"
+            git push origin HEAD:main
+          fi
+
+      - name: Create annotated tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # git identity is already configured by the "Commit version bump"
+          # step above and persists for the job via .git/config.
+          # Annotated tag (objecttype=tag), not lightweight (objecttype=commit):
+          # records tagger metadata and is the prerequisite for `git tag -v`
+          # verification if tag signing is ever enabled.
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
           gh release create "$VERSION" \
             --title "$VERSION" \
-            --generate-notes
+            --generate-notes \
+            --verify-tag

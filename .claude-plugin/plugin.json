@@ -19,6 +19,7 @@
     "pipelines",
     "dabs",
     "serverless",
+    "vector-search",
     "data-engineering"
   ],
   "skills": "./skills/"

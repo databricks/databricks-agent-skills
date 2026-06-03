@@ -33,6 +33,7 @@ SKILL_METADATA = {
     "databricks-model-serving": {"plugin_keyword": "model-serving"},
     "databricks-pipelines": {"plugin_keyword": "pipelines"},
     "databricks-serverless-migration": {"plugin_keyword": "serverless"},
+    "databricks-vector-search": {"plugin_keyword": "vector-search"},
 }
 
 

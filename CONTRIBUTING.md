@@ -65,6 +65,27 @@ Examples in skills and references must follow secure defaults:
 - Prefer scoped tokens over broad credentials
 - Obfuscate sensitive values: use placeholder workspace IDs (`1111111111111111`), URLs (`company-workspace.cloud.databricks.com`), and never include real tokens or passwords
 
+## Releasing
+
+Releases are cut by the **Release** workflow (`.github/workflows/release.yml`),
+triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
+
+1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
+   both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` to the
+   release version and regenerates `manifest.json`.
+2. Commits the bump to `main`.
+3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
+   then creates the GitHub release (`gh release create --verify-tag`).
+
+Bumping the plugin `version` on every release is **required**: Claude Code's
+plugin marketplace keys updates on the `version` field, so a release that ships
+without bumping it leaves marketplace clients on the cached copy and they never
+see the new skills.
+
+After releasing, open a follow-up PR to update
+[`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
+`databricks aitools install` resolves to the new version.
+
 ## Version resolution in Databricks CLI
 
 The Databricks CLI uses [`cli-compat.json`](https://github.com/databricks/cli/blob/main/internal/build/cli-compat.json)
