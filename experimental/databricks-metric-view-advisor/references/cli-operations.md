@@ -1,6 +1,6 @@
 # CLI & API Operations
 
-All operations in this skill run through the **Databricks CLI** (>= v0.299.1), authenticated to a workspace profile. To create a **new** profile, run `databricks auth login --host <workspace-url> --profile <PROFILE>`; to re-authenticate an **existing** profile, just run `databricks auth login --profile <PROFILE>` (the host is already stored — passing `--host` again is unnecessary and can error on a mismatch). This file documents the specific commands the workflow relies on.
+All operations in this skill run through the **Databricks CLI** (>= v1.0.0), authenticated to a workspace profile. To create a **new** profile, run `databricks auth login --host <workspace-url> --profile <PROFILE>`; to re-authenticate an **existing** profile, just run `databricks auth login --profile <PROFILE>` (the host is already stored — passing `--host` again is unnecessary and can error on a mismatch). This file documents the specific commands the workflow relies on.
 
 > **Never use `databricks sql execute` or `databricks execute-statement` — those commands do not exist.** Use the `aitools` query tool or the `aitools` statement command below.
 

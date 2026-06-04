@@ -45,8 +45,8 @@ See the root [README](../README.md) for details on the stable install path.
 
 ### 📊 Analytics & Dashboards
 - **databricks-aibi-dashboards** - Databricks AI/BI dashboards (with SQL validation workflow)
+- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files (**requires the `databricks-metric-views` skill** — it provides the baseline YAML spec/patterns this advisor builds on)
 - **databricks-metric-views** - Metric Views for governed metrics
-- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files
 - **databricks-unity-catalog** - System tables for lineage, audit, billing
 
 ### 🔧 Data Engineering

@@ -220,19 +220,18 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "evals/README.md",
-        "evals/SCENARIOS.md",
-        "evals/check_examples.py",
         "examples/sample_kpis.csv",
         "examples/sample_kpis.yaml",
         "examples/sample_queries.sql",
         "references/cli-operations.md",
         "references/input-handlers.md",
         "references/patterns.md",
+        "references/step-3-suggest-metric-views.md",
+        "references/step-4-create-definitions.md",
         "references/yaml-reference.md"
       ],
       "repo_dir": "experimental",
-      "version": "1.0.0"
+      "version": "0.1.0"
     },
     "databricks-metric-views": {
       "description": "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools.",

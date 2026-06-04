@@ -1,6 +1,21 @@
-# Metric View Patterns — Quick Reference
+# Metric View Patterns — Advisor Templates
 
-Key patterns to use as templates when generating metric view suggestions.
+Key patterns to use as templates when generating metric view suggestions. These
+are the advisor's curated, **metadata-rich** templates — every dimension and
+measure carries `comment`/`display_name`/`synonyms` where useful, because the
+suggestion step (Step 3) leans on that metadata for Genie discoverability.
+
+> **Requires the parent skill.** Additional patterns live **only** in the
+> **`databricks-metric-views`** skill (the advisor depends on it; it is not
+> optional). For patterns this file does not duplicate, see that skill →
+> `references/patterns.md`: a dedicated **Ratio Measures** pattern, a **Filtered
+> Measures (FILTER clause)** pattern, a **TPC-H `samples` demo** pattern, a
+> **Materialized Metric View** pattern, the fuller **Window Measures** breakdown
+> (each variant isolated, plus query examples), and **ALTER / query-with-filters**
+> examples. The patterns kept here are the ones whose advisor version is materially
+> richer or safer (full semantic metadata, quoted `'on':` join keys, correct
+> snowflake dot-chaining, and a window-measures example that composes
+> backtick-quoted multi-word measure names).
 
 ## Contents
 
@@ -8,9 +23,8 @@ Key patterns to use as templates when generating metric view suggestions.
 - [Pattern 2: Composability + Humanized Dimensions](#pattern-2-composability--humanized-dimensions-recommended)
 - [Pattern 3: Star Schema with Joins](#pattern-3-star-schema-with-joins)
 - [Pattern 4: Snowflake Schema (Nested Joins)](#pattern-4-snowflake-schema-nested-joins)
-- [Pattern 5: Materialized Metric View](#pattern-5-materialized-metric-view)
-- [Pattern 6: Window Measures](#pattern-6-window-measures-trailing-cumulative-period-over-period)
-- [Pattern 7: SQL Query as Source](#pattern-7-sql-query-as-source-fallback-for-incompatible-joins)
+- [Pattern 5: Window Measures](#pattern-5-window-measures-trailing-cumulative-period-over-period)
+- [Pattern 6: SQL Query as Source](#pattern-6-sql-query-as-source-fallback-for-incompatible-joins)
 - [Deploying and Querying via the CLI](#deploying-and-querying-via-the-cli)
 
 ## Pattern 1: Simple Single-Table Metrics
@@ -151,7 +165,9 @@ $$
 
 ## Pattern 3: Star Schema with Joins
 
-Join a fact table to dimension tables for richer slicing.
+Join a fact table to dimension tables for richer slicing. Note the quoted `'on':`
+keys (see the gotchas table in [yaml-reference.md](yaml-reference.md)) and the
+`source.`-prefixed fact columns.
 
 ```sql
 CREATE OR REPLACE VIEW catalog.schema.sales_analytics
@@ -248,54 +264,11 @@ AS $$
 $$
 ```
 
-## Pattern 5: Materialized Metric View
+## Pattern 5: Window Measures (Trailing, Cumulative, Period-over-Period)
 
-Pre-compute aggregations for frequently queried dimension/measure combos.
-
-```sql
-CREATE OR REPLACE VIEW catalog.schema.ecommerce_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.transactions
-
-  dimensions:
-    - name: Category
-      expr: product_category
-    - name: Day
-      expr: DATE_TRUNC('DAY', transaction_date)
-    - name: Channel
-      expr: sales_channel
-
-  measures:
-    - name: Revenue
-      expr: SUM(amount)
-    - name: Transactions
-      expr: COUNT(1)
-    - name: Unique Buyers
-      expr: COUNT(DISTINCT customer_id)
-
-  materialization:
-    schedule: every 1 hour
-    mode: relaxed
-    materialized_views:
-      - name: daily_category
-        type: aggregated
-        dimensions:
-          - Category
-          - Day
-        measures:
-          - Revenue
-          - Transactions
-      - name: full_model
-        type: unaggregated
-$$
-```
-
-## Pattern 6: Window Measures (Trailing, Cumulative, Period-over-Period)
-
-Time-series patterns using window measures. **Experimental feature.**
+Time-series patterns using window measures. **Experimental feature.** This is a
+representative example; the parent `databricks-metric-views` skill has the fuller
+window-measures section (each variant isolated, plus query examples).
 
 ```sql
 CREATE OR REPLACE VIEW catalog.schema.time_series_metrics
@@ -371,7 +344,7 @@ AS $$
 $$
 ```
 
-## Pattern 7: SQL Query as Source (Fallback for Incompatible Joins)
+## Pattern 6: SQL Query as Source (Fallback for Incompatible Joins)
 
 When snowflake joins fail (DBR < 17.1) or cross-join references don't resolve, pre-join tables in the source SQL query. **Note:** Joins block is not supported with SQL query sources.
 

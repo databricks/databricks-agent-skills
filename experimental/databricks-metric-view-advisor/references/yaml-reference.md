@@ -1,39 +1,31 @@
-# Metric View YAML Reference
+# Metric View YAML Reference — Advisor Additions
 
-Complete reference for the YAML specification used in Unity Catalog metric views.
+> **Requires the parent skill — read it first.** The baseline YAML specification
+> lives **only** in the **`databricks-metric-views`** skill →
+> `references/yaml-reference.md` (the advisor depends on it; it is not optional). That file
+> covers: **Top-Level Fields**, **Dimensions** (+ rules), the basic **Measures**
+> examples, **Window Measures** (range values, spec fields, multiple windows,
+> derived measures), the **Joins** examples (star / USING / snowflake) with the
+> baseline join rules, **Filter**, and the baseline **Materialization** block
+> (types, requirements, Python refresh). Do not duplicate that content here.
+>
+> This file documents only what the advisor needs *beyond* the parent spec: the
+> formatting gotchas table, the expanded source options, composability, the
+> additional measure/join rules, semantic metadata, level-of-detail expressions,
+> the extra materialization detail, and a comprehensive worked example that
+> demonstrates dot-chained joins and composed measures correctly.
 
 ## Contents
 
-- [Top-Level Fields](#top-level-fields)
 - [YAML Formatting Gotchas](#yaml-formatting-gotchas)
-- [Source](#source)
-- [Dimensions](#dimensions)
-- [Measures](#measures)
-  - [Composability](#composability-recommended-for-complex-measures)
-  - [Window Measures](#window-measures-experimental)
-  - [Measure Rules](#measure-rules)
-- [Joins](#joins)
-  - [Star Schema](#star-schema-single-level)
-  - [Snowflake Schema](#snowflake-schema-nested-joins-dbr-171)
-  - [Join Rules](#join-rules)
-- [Semantic Metadata](#semantic-metadata-v11)
+- [Source (expanded options)](#source-expanded-options)
+- [Composability](#composability-recommended-for-complex-measures)
+- [Additional Measure Rules](#additional-measure-rules)
+- [Additional Join Rules](#additional-join-rules)
+- [Semantic Metadata (v1.1+)](#semantic-metadata-v11)
 - [Level of Detail (LOD) Expressions](#level-of-detail-lod-expressions)
-- [Filter](#filter)
-- [Materialization](#materialization-experimental)
+- [Materialization — Additional Detail](#materialization--additional-detail)
 - [Complete Example](#complete-example)
-
-## Top-Level Fields
-
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `version` | No | string | YAML spec version. `"1.1"` for DBR 17.2+, `"0.1"` for DBR 16.4-17.1. Defaults to `1.1`. |
-| `source` | Yes | string | Source table, view, or SQL query in three-level namespace format. |
-| `comment` | No | string | Description of the metric view (v1.1+). |
-| `filter` | No | string | SQL boolean expression applied as a global WHERE clause. |
-| `dimensions` | Yes | list | Array of dimension definitions (at least one). |
-| `measures` | Yes | list | Array of measure definitions (at least one). |
-| `joins` | No | list | Star/snowflake schema join definitions. |
-| `materialization` | No | object | Pre-computation configuration (experimental). |
 
 ## YAML Formatting Gotchas
 
@@ -52,9 +44,9 @@ These are common pitfalls that cause metric view creation to fail:
 | **`format` blocks** | API requires undocumented `type` discriminator, causing parse errors | Omit `format` blocks entirely |
 | **Date subtraction** | `date1 - date2` returns `INTERVAL DAY`, not an integer — comparing to `0` or `3` causes `DATATYPE_MISMATCH` | Use `DATEDIFF(date1, date2)` which returns an integer |
 
-## Source
+## Source (expanded options)
 
-The `source` field can be:
+Beyond a plain table (covered in the parent spec), the `source` field can be:
 - A **table**: `catalog.schema.my_table`
 - A **view**: `catalog.schema.my_view`
 - A **metric view**: `catalog.schema.my_metric_view` — enables layered composition of metric views
@@ -68,72 +60,7 @@ ALTER TABLE catalog.schema.dim_customer ADD CONSTRAINT pk_customer PRIMARY KEY (
 ALTER TABLE catalog.schema.fact_orders ADD CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES catalog.schema.dim_customer(customer_id) RELY;
 ```
 
-## Dimensions
-
-Dimensions define the categorical attributes used to group and filter data.
-
-```yaml
-dimensions:
-  - name: Region               # Display name, backtick-quoted in queries
-    expr: region_name           # Direct column reference
-    comment: "Sales region"     # Optional description (v1.1+)
-
-  - name: Order Month
-    expr: DATE_TRUNC('MONTH', order_date)  # SQL transformation
-
-  - name: Order Year
-    expr: EXTRACT(YEAR FROM `Order Month`)  # Can reference other dimensions
-
-  - name: Customer Type
-    expr: CASE
-      WHEN customer_tier = 'A' THEN 'Enterprise'
-      WHEN customer_tier = 'B' THEN 'Mid-Market'
-      ELSE 'SMB'
-      END                      # Multi-line CASE expressions supported
-
-  - name: Nation
-    expr: customer.c_name      # Reference joined table columns
-```
-
-### Dimension Rules
-
-- `name` is required and becomes the column name in queries (backtick-quoted if it has spaces)
-- `expr` is required and must be a valid SQL expression
-- Can reference source columns, SQL functions, CASE expressions, and other dimensions
-- Can reference columns from joined tables using `join_name.column_name`
-- Cannot use aggregate functions (those belong in measures)
-
-## Measures
-
-Measures define aggregated values computed at query time.
-
-```yaml
-measures:
-  - name: Total Revenue
-    expr: SUM(total_price)
-    comment: "Sum of all order prices"
-
-  - name: Order Count
-    expr: COUNT(1)
-
-  - name: Average Order Value
-    expr: AVG(total_price)
-
-  - name: Unique Customers
-    expr: COUNT(DISTINCT customer_id)
-
-  - name: Revenue per Customer           # Ratio measure (inline)
-    expr: SUM(total_price) / COUNT(DISTINCT customer_id)
-
-  - name: Open Order Revenue             # Filtered measure
-    expr: SUM(total_price) FILTER (WHERE status = 'O')
-    comment: "Revenue from open orders only"
-
-  - name: Open Revenue per Customer      # Filtered ratio
-    expr: SUM(total_price) FILTER (WHERE status = 'O') / COUNT(DISTINCT customer_id) FILTER (WHERE status = 'O')
-```
-
-### Composability (Recommended for Complex Measures)
+## Composability (Recommended for Complex Measures)
 
 Composability lets you build complex metrics by reusing simpler, foundational measures. **Always define atomic measures first**, then build composed measures referencing them via `MEASURE()`.
 
@@ -168,137 +95,26 @@ measures:
 - `MEASURE()` references work within a single metric view definition
 - Metric views can also serve as sources for other metric views, enabling layered composition
 
-### Window Measures (Experimental)
+## Additional Measure Rules
 
-Add a `window` block to a measure for windowed, cumulative, or semiadditive aggregations. See [Window Measures Documentation](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures).
+These supplement the parent spec's *Measure Rules* — apply both sets:
 
-```yaml
-measures:
-  - name: Running Total
-    expr: SUM(total_price)
-    window:
-      - order: date              # Dimension that orders the window
-        range: cumulative        # Window extent (see range values below)
-        semiadditive: last       # How to summarize when order dim is not in GROUP BY
-
-  - name: 7-Day Customers
-    expr: COUNT(DISTINCT customer_id)
-    window:
-      - order: date
-        range: trailing 7 day    # 7 days before current, EXCLUDING current day
-        semiadditive: last
-```
-
-**Window range values:**
-
-| Range | Description |
-|-------|-------------|
-| `current` | Only rows matching the current ordering value |
-| `cumulative` | All rows up to and including the current row |
-| `trailing <N> <unit>` | N units before current row (excludes current) |
-| `leading <N> <unit>` | N units after current row |
-| `all` | All rows |
-
-**Window spec fields:**
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `order` | Yes | Dimension name that determines window ordering |
-| `range` | Yes | Window extent (see values above) |
-| `semiadditive` | Yes | `first` or `last` - value to use when order dimension is absent from GROUP BY |
-
-**Multiple windows** can be composed on a single measure (e.g., for year-to-date):
-
-```yaml
-  - name: ytd_sales
-    expr: SUM(total_price)
-    window:
-      - order: date
-        range: cumulative
-        semiadditive: last
-      - order: year
-        range: current
-        semiadditive: last
-```
-
-**Derived measures** can reference window measures using `MEASURE()`:
-
-```yaml
-  - name: day_over_day_growth
-    expr: (MEASURE(current_day_sales) - MEASURE(previous_day_sales)) / MEASURE(previous_day_sales) * 100
-```
-
-### Measure Rules
-
-- `name` is required and queried via `MEASURE(\`name\`)`
-- `expr` must contain an aggregate function (SUM, COUNT, AVG, MIN, MAX, etc.) — OR a `MEASURE()` reference to previously defined measures (composability)
+- `expr` may be an aggregate function **OR** a `MEASURE()` reference to previously defined measures (composability), not only a bare aggregate.
 - **Backtick-quote multi-word measure names** inside `MEASURE()`: use `MEASURE(\`Total Revenue\`)` — NOT `MEASURE(Total Revenue)`. Omitting backticks on names with spaces causes `PARSE_SYNTAX_ERROR` at deployment.
 - **Composability**: Define atomic measures first, then compose complex measures using `MEASURE()`. This is the recommended pattern for ratios, rates, and derived KPIs.
-- Supports `FILTER (WHERE ...)` for conditional aggregation
-- Supports ratios of aggregates (both inline and via composability)
-- Window measures use `version: 0.1` (experimental feature)
-- `SELECT *` on metric views is NOT supported; must use `MEASURE()` explicitly
-- `MEASURE()` cannot be used with the `OVER` clause (no window function usage)
-- `MEASURE()` only works on columns defined as measures in a metric view
+- Ratios of aggregates are supported both **inline** (`SUM(a) / COUNT(b)`) and **via composability** (`MEASURE(...) / MEASURE(...)`).
+- `MEASURE()` cannot be used with the `OVER` clause (no window function usage).
+- `MEASURE()` only works on columns defined as measures in a metric view.
 
-## Joins
+## Additional Join Rules
 
-### Star Schema (Single Level)
+These supplement the parent spec's *Join Rules* — apply both sets:
 
-```yaml
-source: catalog.schema.fact_orders
-joins:
-  - name: customer
-    source: catalog.schema.dim_customer
-    'on': source.customer_id = customer.id
-
-  - name: product
-    source: catalog.schema.dim_product
-    'on': source.product_id = product.id
-```
-
-### Star Schema with USING
-
-```yaml
-joins:
-  - name: customer
-    source: catalog.schema.dim_customer
-    using:
-      - customer_id
-      - region_id
-```
-
-### Snowflake Schema (Nested Joins, DBR 17.1+)
-
-```yaml
-source: catalog.schema.orders
-joins:
-  - name: customer
-    source: catalog.schema.customer
-    'on': source.customer_id = customer.id
-    joins:
-      - name: nation
-        source: catalog.schema.nation
-        'on': customer.nation_id = nation.id
-        joins:
-          - name: region
-            source: catalog.schema.region
-            'on': nation.region_id = region.id
-```
-
-### Join Rules
-
-- `name` is required and used to reference joined columns: `name.column`
-- `source` is the fully qualified table/view name
-- Use either `on` (expression) or `using` (column list), not both
-- In `on`, reference the fact table as `source` and join tables by their `name`
-- The reference defaults to the join table if no prefix is provided in `on` clauses
+- In `on` clauses, the reference defaults to the join table if no prefix is provided.
 - **CRITICAL — Snowflake column referencing**: Use the **full dot-chain path** through parent joins to access nested join columns. For example, `customer.nation.n_name` references `n_name` from the `nation` table nested under `customer`. Using just `nation.n_name` will cause `UNRESOLVED_COLUMN` errors. Similarly, `customer.nation.region.r_name` for a region nested two levels deep.
-- Nested `joins` create snowflake schema (requires DBR 17.1+)
-- Joined tables cannot include MAP type columns
-- Joins must follow a **many-to-one** relationship; in many-to-many cases, the first matching row is selected
-- All joins are **LEFT OUTER JOIN** semantics
-- The optimizer automatically joins only necessary dimension tables based on selected dimensions and measures
+- Joins must follow a **many-to-one** relationship; in many-to-many cases, the first matching row is selected.
+- All joins are **LEFT OUTER JOIN** semantics.
+- The optimizer automatically joins only necessary dimension tables based on selected dimensions and measures.
 
 ## Semantic Metadata (v1.1+)
 
@@ -415,89 +231,27 @@ measures:
 
 LOD expressions are an advanced feature — only suggest them if the user's analysis requires cross-grain calculations (e.g., "percentage of total", "customer-level averages shown at region level").
 
-## Filter
+## Materialization — Additional Detail
 
-A global filter applied to all queries as a WHERE clause.
-
-```yaml
-filter: order_date > '2020-01-01'
-
-# Multiple conditions
-filter: order_date > '2020-01-01' AND status != 'CANCELLED'
-
-# Using joined columns
-filter: customer.active = true
-```
-
-## Materialization (Experimental)
-
-Pre-compute aggregations for faster query performance. Uses Lakeflow Spark Declarative Pipelines under the hood.
-
-```yaml
-materialization:
-  schedule: every 6 hours           # Same syntax as MV schedule clause
-  mode: relaxed                     # Only "relaxed" supported currently
-
-  materialized_views:
-    - name: baseline
-      type: unaggregated            # Full unaggregated data model
-
-    - name: revenue_breakdown
-      type: aggregated              # Pre-computed aggregation
-      dimensions:
-        - category
-        - region
-      measures:
-        - total_revenue
-        - order_count
-
-    - name: daily_summary
-      type: aggregated
-      dimensions:
-        - order_date
-      measures:
-        - total_revenue
-```
-
-### Materialization Types
-
-| Type | Description | When to Use |
-|------|-------------|-------------|
-| `unaggregated` | Materializes full data model (source + joins + filter) | Expensive source views or many joins |
-| `aggregated` | Pre-computes specific dimension/measure combos | Frequently queried combinations |
+The parent spec covers the baseline `materialization:` block, the type table, the
+core requirements, and a Python refresh. The advisor also relies on the following:
 
 **Tips for aggregated materializations:**
 - Include potential **filter columns as dimensions** — this improves query rewrite matching for filtered queries
 - Aggregated type requires at least one dimension or measure
 - Direct table references without selective filters may not benefit from unaggregated materialization
 
-### Materialization Requirements
-
-- Serverless compute must be enabled
-- Databricks Runtime 17.2+
-- `TRIGGER ON UPDATE` clause is not supported
-- Schedule uses same syntax as materialized view schedules
+**Additional requirements / limitations:**
 - **Metric views using another metric view as source** cannot have unaggregated materializations
 - Incremental refresh is used when possible (same limitations as standard materialized view incremental refresh)
 - **Billing:** Refreshing materialized views incurs Lakeflow Spark Declarative Pipelines charges
 
-### Refresh Materialization
-
-**Via SQL:**
+**Refresh via SQL:**
 ```sql
 REFRESH MATERIALIZED VIEW <catalog.schema.metric_view_name>
 ```
 
-**Via Python SDK:**
-```python
-from databricks.sdk import WorkspaceClient
-w = WorkspaceClient()
-pipeline_id = "your-pipeline-id"
-w.pipelines.start_update(pipeline_id)
-```
-
-### Monitor Materialization
-
+**Monitor materialization:**
 ```sql
 -- View materialization status, refresh timestamps, and pipeline link
 DESCRIBE EXTENDED <catalog.schema.metric_view_name>
@@ -505,9 +259,7 @@ DESCRIBE EXTENDED <catalog.schema.metric_view_name>
 
 To verify a query uses materialization, run `EXPLAIN EXTENDED` — look for `__materialization_mat___metric_view` in the plan.
 
-### Query Rewrite Behavior
-
-The optimizer tries in order:
+**Query Rewrite Behavior** — the optimizer tries in order:
 1. **Exact match** — query dimensions match a materialized aggregation exactly
 2. **Unaggregated match** — falls back to unaggregated materialization if available
 3. **Source tables** — queries source data directly if no materialization applies
@@ -515,6 +267,9 @@ The optimizer tries in order:
 Materializations must finish building before query rewrite takes effect. In `relaxed` mode, query rewrite skips freshness checks but falls back to source for queries with row-level security (RLS), column masking (CLM), or non-deterministic functions like `current_timestamp()`.
 
 ## Complete Example
+
+A comprehensive definition demonstrating snowflake **dot-chain joins** and
+**composed measures** correctly (note `customer.region.name`, not `region.name`):
 
 ```sql
 CREATE OR REPLACE VIEW catalog.schema.sales_metrics
