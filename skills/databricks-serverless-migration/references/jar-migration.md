@@ -8,10 +8,10 @@ Serverless runs JARs on a Spark Connect kernel with a **fixed classpath**: **Sca
 
 Route into this flow when any of these are true:
 - A `spark_jar_task` / `SPARK_JAR_TASK` job, or a build that produces a JAR (`build.sbt`, `pom.xml`, `build.gradle`).
-- A serverless run whose output contains a `>>> Scala Version Check` or `>>> Dependency Conflict Detection` block.
+- A serverless run whose output contains a `>>> Scala Version Check` or `>>> Dependency Conflict Detection` block. (These diagnostic blocks are emitted by recent serverless runtimes — environment version 4 and later; older runtimes may not print them, so fall back to the error signatures below.)
 - A `NoSuchMethodError: scala.Predef$.wrapRefArray`, `NoClassDefFoundError: scala/Serializable`, or `NoClassDefFoundError` for a Spark-internal class on a serverless JAR run.
 
-## The four failure modes (cover 100% of classified production JAR failures)
+## The four failure modes (every failure mode we've seen across JAR migrations to date)
 
 | # | Failure | Signature | Root cause | Fix |
 |---|---|---|---|---|
@@ -38,7 +38,7 @@ Also flag any explicit `_2.12` artifact suffix and any Scala dep declared with s
 
 **Bundled Spark.** Any `spark-core`, `spark-sql`, `spark-catalyst` dependency that is *not* marked `% Provided` is bundling Spark (mode 3). The fix is to mark it `% Provided` (the runtime supplies it). **Watch for mode 2 separately:** if the *source* uses `SparkContext`, `sc.parallelize`, RDD APIs, or Catalyst internals, marking Spark provided is not enough — that code must be rewritten to the DataFrame/Spark Connect surface (a source change, not just a build change). Flag it so the build gate expects a recompile.
 
-**Conflicting dependencies — scan the *full* tree, not just direct deps.** Most conflicts are transitive: our demo JAR pulls guava, log4j, json4s, and Jackson *through* `spark-sql`, never declaring them directly. Matching only `libraryDependencies` misses them. Enumerate what the JAR will actually bundle and match every entry against the kernel classpath table:
+**Conflicting dependencies — scan the *full* tree, not just direct deps.** Most conflicts are transitive: our demo JAR pulls guava, log4j, json4s, and Jackson *through* `spark-sql`, never declaring them directly. Matching only `libraryDependencies` misses them. Enumerate what the JAR will actually bundle and match every entry against the kernel classpath table. (These commands invoke the workload's own build system — `sbt`/`mvn`/`gradle` execute project plugins and settings — which is expected here because the user is migrating their own JAR. If the build's provenance is unknown or untrusted, confirm with the user before invoking, mirroring the parent skill's `multi-source-enumeration.md` gate.)
 ```
 sbt 'set asciiGraphWidth := 240' dependencyTree   # full transitive tree
 sbt evicted                                        # version conflicts already resolved by sbt
@@ -51,6 +51,7 @@ Every node that appears in the classpath table is a conflict (mode 3). Fix the *
 ```scala
 case PathList("META-INF", "maven", _ @ _*) => MergeStrategy.first
 ```
+If the project already defines an `assemblyMergeStrategy`, **add** this case to the existing strategy rather than replacing it wholesale — overwriting it can drop merge rules the build already relies on.
 
 **Report after this step:** State the verdict before changing anything — which of the four failure modes are present, the JAR's current Scala and JDK versions, the exact conflicting dependencies found in the tree (naming the kernel version each one collides with), and whether any mode-2 source rewrites are required. If the build is already clean, say so and stop here.
 
@@ -103,6 +104,12 @@ sbt clean assembly
 If this fails, fix the source/build and repeat. Never upload a JAR that did not assemble cleanly.
 
 **2. Local smoke test via Databricks Connect.** Because the default fix depends on `databricks-connect`, you can run the logic against serverless from the laptop in seconds — no upload, no job run — once the project has a `DatabricksSession.builder().serverless()` bootstrap (add one if migrating from a bare `SparkSession.builder()`; the `default-scala` template includes it):
+```scala
+// Local-run bootstrap. On the serverless kernel the ambient session is injected,
+// so this path is only exercised when you run the JAR from your laptop.
+import com.databricks.connect.DatabricksSession
+val spark = DatabricksSession.builder().serverless().getOrCreate()
+```
 ```
 export DATABRICKS_CONFIG_PROFILE=<your-serverless-profile>
 sbt test     # if the project has tests
@@ -129,7 +136,7 @@ Confirm the run reaches `TERMINATED / SUCCESS`. For a clean target, prefer the `
 
 A serverless JAR task wires up the JAR differently from a classic `spark_jar_task`, and the differences are **rejected at deploy time** (`databricks bundle deploy` / `jobs reset`) rather than at run time — so fix them in the job definition up front instead of discovering them on a failed deploy:
 
-- Define a job-level `environments` entry with `spec.environment_version: "4"`.
+- Define a job-level `environments` entry with `spec.environment_version: "4"`. The value must be the quoted **string** `"4"`, not the integer `4` — the Jobs API rejects the unquoted form.
 - Attach the JAR in `environments[].spec.java_dependencies` (a `/Volumes/...` path) — **not** the task-level `libraries` field, which is not supported for serverless tasks.
 - Reference the environment from the task with `environment_key` (in place of `job_cluster_key` / `new_cluster`).
 - Remove the classic cluster scaffolding entirely: `new_cluster`, `num_workers`, `node_type_id`, `data_security_mode`, `spark_conf`, `init_scripts`, `cluster_log_conf`.
