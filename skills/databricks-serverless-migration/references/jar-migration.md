@@ -95,7 +95,7 @@ Full Maven/Gradle fix recipes are a TODO; for now, translate the sbt steps above
 
 ## Step 3 — Verify before deploying (do not skip)
 
-Editing `build.sbt` is not the fix; a JAR that compiles and runs is. Gate on both before the slow upload, smallest/fastest check first.
+Editing `build.sbt` is not the fix; a JAR that compiles and runs is. The build gate below is required and cheap. The local run is **optional** — it can catch issues before the slow upload, but the Step 4 deploy run is the authoritative test, so skip it if you'd rather not wire it up.
 
 **1. Compile + assemble (build gate).** The migrated JAR must build. Marking deps `% Provided` keeps them on the *compile* classpath (they are only excluded from the package), so compilation still resolves them, this step catches the case where a version change or removed dependency breaks the code.
 ```
@@ -103,7 +103,7 @@ sbt clean assembly
 ```
 If this fails, fix the source/build and repeat. Never upload a JAR that did not assemble cleanly.
 
-**2. Local smoke test via Databricks Connect.** Because the default fix depends on `databricks-connect`, you can run the logic against serverless from the laptop in seconds — no upload, no job run — once the project has a `DatabricksSession.builder().serverless()` bootstrap (add one if migrating from a bare `SparkSession.builder()`; the `default-scala` template includes it):
+**2. (Optional) Local smoke test via Databricks Connect.** Skippable — only do this if you want a laptop-side check before deploying. It requires a source change (a `DatabricksSession.builder().serverless()` bootstrap, if the project uses a bare `SparkSession.builder()`). If you'd rather not touch source, skip straight to the Step 4 deploy run, which validates the same thing. If you do want it — because the compile dep is `databricks-connect`, you can run the logic against serverless from the laptop in seconds, no upload, no job run (the `default-scala` template ships the bootstrap):
 ```scala
 // Local-run bootstrap. On the serverless kernel the ambient session is injected,
 // so this path is only exercised when you run the JAR from your laptop.
@@ -115,11 +115,11 @@ export DATABRICKS_CONFIG_PROFILE=<your-serverless-profile>
 sbt test     # if the project has tests
 sbt run      # runs Main against serverless via the DatabricksSession
 ```
-A green local run means the migration worked end to end against the real serverless kernel. This is the fast inner loop — only after it passes do you pay for the deploy.
+A green local run means the migration worked end to end against the real serverless kernel. Treat it as an optional accelerator, not a required gate — the deploy run in Step 4 is the authoritative test.
 
 *(If you took the not-recommended `spark-sql % Provided` fallback, there is no local session to connect with — the assemble gate in 3.1 is your only local check and Step 4's deploy run is the first real test.)*
 
-**Report after this step:** Report the build-gate result (assembled cleanly, or the compile errors) and the local Databricks Connect smoke-test result (ran green / failed with trace / skipped and why). Do not move on from a failed build — say it failed and what you are fixing.
+**Report after this step:** Report the build-gate result (assembled cleanly, or the compile errors). If you ran the optional local smoke test, report its result; otherwise note it was skipped and that validation happens at the Step 4 deploy run. Do not move on from a failed build — say it failed and what you are fixing.
 
 ## Step 4 — Deploy and confirm
 
