@@ -1,0 +1,37 @@
+name: Code Freeze
+
+# This repository is a read-only mirror. Its contents are synced one-way by an
+# internal Databricks GitHub App. Direct pull requests are not accepted.
+#
+# This check only reports pass/fail. It blocks merges only once it is added as a
+# required status check on the `main` ruleset. The sync apps are bypass actors
+# on that ruleset, so their automated syncs are unaffected.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  merge_group:
+
+permissions: {}
+
+jobs:
+  code-freeze:
+    name: code-freeze
+    runs-on:
+      group: databricks-protected-runner-group
+      labels: linux-ubuntu-latest
+    steps:
+      - name: Reject pull requests not from the sync bots
+        if: github.event_name == 'pull_request'
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          case "$PR_AUTHOR" in
+            'databricks-ci-ghec-1[bot]' | 'databricks-ci-ghec-2[bot]')
+              echo "Author '$PR_AUTHOR' is a sync bot. Allowing."
+              exit 0
+              ;;
+          esac
+          echo "::error::This repository is a read-only mirror and is frozen."
+          echo "::error::Direct pull requests are not accepted."
+          exit 1
