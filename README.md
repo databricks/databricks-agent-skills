@@ -4,26 +4,90 @@ Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databri
 
 ## Installation
 
-**For Claude Code:**
+Two install paths cover the **stable** skills. They install to different places
+but end up loaded by the same agents — pick whichever fits your workflow.
+
+- **Databricks CLI** writes SKILL.md files directly into each agent's skill
+  directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
+- **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-agent-skills/`);
+  the agent discovers skills from there.
+
+**Via the Databricks CLI (canonical; supports experimental skills):**
 
 ```bash
-databricks experimental aitools install
+databricks aitools install
 ```
 
-This installs skills to `~/.claude/skills/` for use with Claude Code.
+The CLI auto-detects your coding agent(s) and installs the stable skills to the
+right location:
 
-**For Cursor:**
+- **Claude Code** → `~/.claude/skills/`
+- **Cursor**, **Codex CLI**, **OpenCode**, **GitHub Copilot**, **Antigravity**
+  → their respective skill directories
 
-Run this command in chat:
+For finer control, use the `aitools skills install` subcommand directly — it
+accepts a positional skill name and an `--experimental` flag (see the
+[Experimental Skills](#experimental-skills) section).
+
+**Via the Claude Code plugin marketplace** (stable skills only — installs every
+skill under [`./skills/`](./skills/)):
+
+```text
+/plugin marketplace add databricks/databricks-agent-skills
+/plugin install databricks@databricks-agent-skills
+```
+
+**Via the Cursor plugin marketplace:**
 
 ```text
 /add-plugin databricks-skills
 ```
 
+### CLI vs plugin marketplace
+
+| | CLI | Plugin marketplace |
+|---|---|---|
+| Stable skills | ✅ (default) | ✅ |
+| Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
+| Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
+| Updates | `databricks aitools update` | Plugin marketplace update flow |
+| Required outside the agent | Databricks CLI v1.0.0+ | None |
+
+If in doubt, use the CLI — it's the canonical install path and the only one that
+exposes experimental skills.
+
 ## Available Skills
 
-- **databricks-apps** - Build full-stack TypeScript apps on Databricks using AppKit
-- **databricks-serverless-migration** - Migrate classic-compute workloads (notebooks, jobs, pipelines) to serverless compute. Detects compatibility blockers, provides concrete fixes, and produces an anonymized failure report you can file as a GitHub issue when migration cannot complete. Also installable inside a Databricks workspace via Genie Code Agent mode — see [the install reference](skills/databricks-serverless-migration/references/install-in-databricks-genie-code.md).
+Stable skills shipped from [`skills/`](./skills/):
+
+- **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
+- **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
+- **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
+- **databricks-jobs** — Lakeflow Jobs orchestration: task types, triggers, schedules, notifications.
+- **databricks-lakebase** — Lakebase Postgres: projects, branching, autoscaling, synced tables, Data API.
+- **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
+- **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
+- **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
+- **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
+
+## Experimental Skills
+
+The [`experimental/`](./experimental/) directory contains additional skills
+originally imported from
+[databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
+(now deprecated — this repo is the source of truth going forward) on a
+**best-effort basis**.
+
+- Experimental skills are **not officially supported** — they may be used, but
+  do not follow the same review / quality bar as the stable skills under
+  [`skills/`](./skills/).
+- They are **not installed by default** by `databricks aitools install`.
+  Pass `--experimental` to install all of them, or install a specific one
+  by name (with the `--experimental` flag — e.g. `databricks aitools install
+  databricks-iceberg --experimental`).
+- See [`experimental/README.md`](./experimental/README.md) for the full list
+  and caveats.
 
 ## Structure
 
@@ -39,21 +103,24 @@ skill-name/
 
 ### Adding New Skills
 
-When experimenting with new skill variations, create a "subskill" that references the main skill and adds specific guidance:
+For a narrower variation of an existing skill, create a subskill that declares
+its parent via frontmatter. This is how the stable skills are organized today
+— each product skill sets `parent: databricks-core`.
 
 ```markdown
 ---
-name: "ai-databricks-apps"
-description: "Databricks apps with AI features"
+name: "databricks-apps-chatbots"
+description: "Databricks apps with chatbot features"
+parent: databricks-apps
 ---
 
-# AI powered Databricks Apps
+# Chatbot Apps
 
-First, load the base databricks-apps skill for foundational guidance.
+**FIRST**: Use the parent `databricks-apps` skill for app development basics.
 
-Then apply these additional patterns:
-- Custom pattern 1
-- Custom pattern 2
+Then apply these patterns:
+- Pattern 1
+- Pattern 2
 ```
 
 This approach:
@@ -63,19 +130,21 @@ This approach:
 
 ### Manifest Management
 
-Sync assets and generate manifest after adding/updating skills:
+`manifest.json` is **generated** by `scripts/skills.py` from the skill directories and frontmatter. Do not edit it by hand. CI rejects manual changes via two checks: content drift (parsed dict doesn't match what `generate` would produce) and canonical form (on-disk bytes don't match `json.dumps(..., indent=2, sort_keys=True)`).
+
+Sync assets and regenerate the manifest after adding or updating skills:
 
 ```bash
 python3 scripts/skills.py
 ```
 
-Validate that assets and manifest are up to date (for CI):
+Validate that assets and manifest are up to date (used by CI):
 
 ```bash
 python3 scripts/skills.py validate
 ```
 
-The manifest is used by the CLI to discover available skills.
+The manifest is consumed by the CLI to discover available skills.
 
 ## Security
 
@@ -83,7 +152,8 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
 ## Integrity
 
-All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+Release tags are created by the [Release workflow](./.github/workflows/release.yml)
+and map 1:1 to a published version.
 
 ## Contributing
 

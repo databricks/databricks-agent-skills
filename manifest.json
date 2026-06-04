@@ -330,7 +330,7 @@
       "version": "0.1.0"
     },
     "databricks-serverless-migration": {
-      "description": "Migrate Databricks workloads from classic compute to serverless compute. Scans code for serverless compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and g...",
+      "description": "Migrate Databricks workloads from classic compute to serverless compute.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

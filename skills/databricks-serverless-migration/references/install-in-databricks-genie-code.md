@@ -78,8 +78,8 @@ Other notes:
 
 | Resource | Link |
 |----------|------|
-| Public docs: Extend Genie Code with agent skills | https://docs.databricks.com/aws/en/genie-code/skills |
-| Public docs: Agent skills overview | https://docs.databricks.com/aws/en/agent-skills/ |
+| Public docs: Extend Genie Code with agent skills | https://docs.databricks.com/en/genie-code/skills |
+| Public docs: Agent skills overview | https://docs.databricks.com/en/agent-skills/ |
 | Notebook + shell installer | https://github.com/databricks-solutions/ai-dev-kit |
 | This skill's source | https://github.com/databricks/databricks-agent-skills/tree/main/skills/databricks-serverless-migration |
 | Agent Skills spec | https://agentskills.io/specification |

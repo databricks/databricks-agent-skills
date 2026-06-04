@@ -1,6 +1,6 @@
 ---
 name: databricks-serverless-migration
-description: "Migrate Databricks workloads from classic compute to serverless compute. Scans code for serverless compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration to serverless environments. Use for classic-to-serverless migrations, serverless code compatibility checks, or writing new serverless-compatible notebooks and jobs. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
+description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating notebooks, jobs, or pipelines from classic clusters to serverless, checking if existing code is serverless-compatible, or writing new serverless-compatible code. Scans for compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
@@ -25,7 +25,7 @@ Analyze existing Databricks code for serverless compute compatibility and guide 
 
 This skill is published as an Agent Skill (agentskills.io) and runs in any compatible client:
 
-- **Claude Code, Cursor, or any agentskills.io client on your laptop** — the default. Install via `databricks experimental aitools install` or follow the per-client docs.
+- **Claude Code, Cursor, or any agentskills.io client on your laptop** — the default. Install via `databricks aitools install` or follow the per-client docs.
 - **Inside a Databricks workspace via Genie Code Agent mode** — drop the skill into `/Workspace/Users/<you>/.assistant/skills/databricks-serverless-migration/` (per-user) or `/Workspace/.assistant/skills/databricks-serverless-migration/` (workspace-wide, admin only). See [Install in Databricks Genie Code](references/install-in-databricks-genie-code.md) for the three install methods and the **important serverless-compute caveat** (the Databricks CLI isn't pre-installed on serverless, so some deploy steps need adjustment).
 
 If you finish a migration analysis for a user who's currently running you from a laptop client, mention the Genie Code option once at the end — many users prefer iterating on migrations inside the workspace where the workload lives.
@@ -84,7 +84,7 @@ If the workload spans more than one user notebook (exclude `_resources/` setup n
 **Procedure**:
 
 1. **Enumerate first.** List every user notebook with its path. Do not read the bodies in full yet beyond a few lines for orientation.
-   - **Check for `bundle_config.py` (P1, H4).** If the source tree contains a `bundle_config.py`, parse it and follow any upstream-source declarations (git URLs, S3 paths, `init_scripts`, `git_source`, or custom upstream-repo declarations). Clone or fetch each referenced repo into a sibling location and include its notebooks in the enumeration. List "external sources" as a first-class artifact category in the migration plan. Without this step, multi-source demos (e.g., `dbt-on-databricks` references the upstream `dbt-databricks-c360` repo) get mis-enumerated and the real task notebooks are missed.
+   - **Check for `bundle_config.py` (H4).** If the source tree contains a `bundle_config.py`, parse it and follow any upstream-source declarations (git URLs, S3 paths, `init_scripts`, `git_source`, or custom upstream-repo declarations). Clone or fetch each referenced repo into a sibling location and include its notebooks in the enumeration. List "external sources" as a first-class artifact category in the migration plan. Without this step, multi-source demos (e.g., `dbt-on-databricks` references the upstream `dbt-databricks-c360` repo) get mis-enumerated and the real task notebooks are missed.
 2. **For each notebook, in order**:
    a. Read its full source.
    b. Run the Step 2 Analyze checklist scoped to this notebook only.
@@ -187,6 +187,7 @@ Scan the code for patterns that are incompatible with the serverless compute arc
 | `mlflow.<flavor>.log_model(..., registered_model_name=...)` with `mlflow.set_registry_uri("databricks-uc")` in scope (M1) | Blocker | Under UC, `registered_model_name=` triggers an internal `get_model_version_by_alias(..., 'Champion')` call that raises `RESOURCE_DOES_NOT_EXIST` for brand-new models. Drop the kwarg from `log_model`; after the run, call `mlflow.register_model(model_uri=f"runs:/{run.info.run_id}/model", name=<full_name>)` and `MlflowClient().set_registered_model_alias(...)`. See [MLflow on UC](references/mlflow-uc-patterns.md). |
 | `.latest_versions` access on UC-registered models (e.g., `client.get_registered_model(name).latest_versions`) (M2) | Blocker | `RegisteredModel.latest_versions` is always `None` on UC; `max(None, key=...)` raises `TypeError: 'NoneType' object is not iterable`. Use `client.search_model_versions(f"name='{name}'")` + sort+index (per A2 above). See [MLflow on UC](references/mlflow-uc-patterns.md). |
 | `mlflow.<flavor>.log_model(...)` without `signature=` kwarg, with `mlflow.set_registry_uri("databricks-uc")` in scope (M3) | Blocker | UC requires a model signature on every registered model. Without `signature=`, `log_model` raises `MlflowException: Model signature is required for registering a model to Unity Catalog`. Infer from a sample: `signature = infer_signature(X_sample, model.predict(X_sample))` then pass as `signature=signature` to `log_model`. See [MLflow on UC](references/mlflow-uc-patterns.md). |
+| Binary-classifier prediction column written as `float64` (`Double`) when downstream Delta table expects `Integer` (M4) | Blocker on first write | sklearn binary classifiers (e.g. the AutoML → sklearn rewrite from A3) emit `predict()` results as `float64`. Writing to a Delta table whose `prediction` column is `IntegerType` fails with `DELTA_FAILED_TO_MERGE_FIELDS: prediction (Double) vs prediction (Integer)`. Cast before writing: `df.withColumn("prediction", col("prediction").cast("integer"))`. See [MLflow on UC](references/mlflow-uc-patterns.md). |
 
 **Category B: Data Access**
 
@@ -621,7 +622,7 @@ Always get the actual error with `w.jobs.get_run_output(run_id=...)` before gues
 | 404 on `ai_query(endpoint => 'databricks-meta-llama-3-1-405b-instruct')` | D1: retired Foundation Model endpoint. Replace with `databricks-meta-llama-3-3-70b-instruct` via content scan across all migrated files. |
 | `PERMISSION_DENIED: User does not have CREATE CATALOG on Metastore` (even when catalog exists) | B2: priv check fires before `IF NOT EXISTS` short-circuits. Guard with `SHOW CATALOGS LIKE '...'` probe. Apply recursively, including `_resources/` and `config*` files. |
 | `Table is already managed by pipeline <pipeline-id>` on SDP parallel deploy | H2: suffix the migrated pipeline's target `schema` (e.g., `<orig>_skill_migrated`). |
-| `DELTA_FAILED_TO_MERGE_FIELDS: prediction (Double) vs prediction (Integer)` | P2: AutoML → sklearn rewrite emits `float64` predictions; cast to `IntegerType` for binary classifiers before writing. See [MLflow on UC](references/mlflow-uc-patterns.md). |
+| `DELTA_FAILED_TO_MERGE_FIELDS: prediction (Double) vs prediction (Integer)` | M4: AutoML → sklearn rewrite emits `float64` predictions; cast to `IntegerType` for binary classifiers before writing. See [MLflow on UC](references/mlflow-uc-patterns.md). |
 
 See [Configuration Guide](references/configuration-guide.md) for the full error reference and SDK code examples.
 
@@ -804,11 +805,11 @@ The full recipe with a worked example is in [Failure Reporting](references/failu
 
 ## Success report
 
-If the migration was successful, generate a report as well, using similar methods. For each workload migrated, show what was done.
+When migration succeeds, generate a per-workload report with the same structure as the failure report (minus the redaction-to-publish step), listing the patterns detected and the fixes applied for each workload. Write to `~/.databricks-migration-skill/reports/success-<timestamp>.json` and tell the user the file path.
 
 ## Multiple workload migration
 
-When migrating multiple workloads in one session, parallelize this work as much as possible to migrate multiple workloads in parallel, including using subagents.
+When several independent workloads are in scope, migrate them in parallel (e.g. one subagent per workload). Keep the per-notebook steps within a single workload sequential, as in Step 1.5.
 
 ## Reference Guides
 

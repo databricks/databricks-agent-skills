@@ -23,9 +23,9 @@ Parse `bundle_config.py` **statically, via `ast.parse(...)` only**. Walk the res
    - **Git URL**: `git clone <url>` into a sibling location (e.g., `~/.databricks-migration-skill/scratch/<run-id>/external/<repo-name>/`). Honor the declared branch/ref.
    - **S3/ADLS path**: download via `databricks fs cp -r <path> <local>` into the same sibling location.
    - **Workspace path**: export via `databricks workspace export-dir <path> <local>`.
-3. **List external sources as a first-class artifact category** in the migration plan, alongside notebooks, jobs, pipelines. Use a category like `external_sources[]` with each entry containing `source_type` (git / s3 / workspace), `url_or_path`, `ref` (if git), and `local_path` (where you put it).
-4. **Include external-source notebooks in the per-notebook enumeration** (Step 1.5 procedure step 1). Treat them exactly the same as local notebooks: read full source, run Step 2 Analyze, record the structured summary.
-5. **When applying fixes**: write fixes back to the local clone of the external source. Track the upstream-vs-local mapping so the agent can produce a coherent migration plan.
+4. **List external sources as a first-class artifact category** in the migration plan, alongside notebooks, jobs, pipelines. Use a category like `external_sources[]` with each entry containing `source_type` (git / s3 / workspace), `url_or_path`, `ref` (if git), and `local_path` (where you put it).
+5. **Include external-source notebooks in the per-notebook enumeration** (Step 1.5 procedure step 1). Treat them exactly the same as local notebooks: read full source, run Step 2 Analyze, record the structured summary.
+6. **When applying fixes**: write fixes back to the local clone of the external source. Track the upstream-vs-local mapping so the agent can produce a coherent migration plan.
 
 ## Example
 
