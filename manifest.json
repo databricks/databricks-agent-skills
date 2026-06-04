@@ -1,6 +1,20 @@
 {
   "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
   "skills": {
+    "data-app-design": {
+      "description": "Design or critique the UX of Databricks analytics/BI/AI data apps \u2014 dashboards, KPI/overview pages, reports, metric pages, and Genie/natural-language data surfaces \u2014 and turn the design into concre...",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/appkit-cheatsheet.md",
+        "references/dashboard-patterns.md",
+        "references/ibcs-notation.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
+    },
     "databricks-agent-bricks": {
       "description": "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS).",
       "files": [
