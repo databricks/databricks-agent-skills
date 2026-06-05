@@ -11,6 +11,8 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
+**For data UI design**: when the app has a dashboard, KPI/overview page, report, chart, or Genie/AI surface, also use the `data-app-design` skill to choose genre, layout, charts, KPIs, semantic color, required states, and the AppKit components that realize them.
+
 Build apps that deploy to Databricks Apps platform.
 
 ## Required Reading by Phase

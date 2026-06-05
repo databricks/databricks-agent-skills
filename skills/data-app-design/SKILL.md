@@ -1,6 +1,6 @@
 ---
 name: data-app-design
-description: Design or critique the UX of Databricks analytics/BI/AI data apps — dashboards, KPI/overview pages, reports, metric pages, and Genie/natural-language data surfaces — and turn the design into concrete AppKit components. Use when laying out a dashboard or report, choosing charts/KPIs, reviewing dashboard/report UX, or designing a Genie/AI data experience. NOT for generic frontend (forms, settings, marketing pages), and NOT for scaffolding/build/deploy of an app — use the databricks-apps skill for those.
+description: Design the UX of Databricks analytics/BI/AI data apps — dashboards, KPI/overview pages, reports, metric pages, charts, and Genie/natural-language data surfaces — and map it to concrete AppKit components. Use when BUILDING or reviewing any such data UI — choosing genre, layout, charts, KPIs, semantic color, required states (loading/empty/error), IBCS notation, and AI-result trust. Complements databricks-apps (which scaffolds/builds/deploys the app); use it alongside databricks-apps whenever the app has a dashboard, chart, KPI, report, or Genie/AI surface. NOT for non-data frontend (forms, settings, auth, marketing pages).
 metadata:
   version: 0.1.0
   parent: databricks-apps
