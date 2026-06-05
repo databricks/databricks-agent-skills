@@ -2,7 +2,7 @@
   "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
   "skills": {
     "data-app-design": {
-      "description": "Design the UX of Databricks analytics/BI/AI data apps \u2014 dashboards, KPI/overview pages, reports, metric pages, charts, and Genie/natural-language data surfaces \u2014 and map it to concrete AppKit compo...",
+      "description": "Design the UX of Databricks analytics/BI/AI data apps \u2014 dashboards, KPI/overview pages, reports, metric pages, charts, tables, AND conversational/chat/Genie natural-language data assistants \u2014 and m...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
