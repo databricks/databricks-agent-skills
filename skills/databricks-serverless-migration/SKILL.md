@@ -1,6 +1,6 @@
 ---
 name: databricks-serverless-migration
-description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating notebooks, jobs, or pipelines from classic clusters to serverless, checking if existing code is serverless-compatible, or writing new serverless-compatible code. Scans for compatibility issues, provides concrete fixes for the serverless Spark Connect architecture, and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
+description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating notebooks, jobs, pipelines, or Scala JARs (`spark_jar_task`) from classic clusters to serverless, checking if existing code is serverless-compatible, or writing new serverless-compatible code. Provides concrete fixes for the serverless Spark Connect architecture and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
@@ -49,7 +49,7 @@ Workload → Check language
 ├── Compiled Scala JAR (spark_jar_task, build.sbt/pom.xml/build.gradle) → see references/jar-migration.md
 │     ├── Scala 2.12 build?             → recompile against 2.13.16
 │     ├── Bundles spark-core/spark-sql? → use databricks-connect % Provided
-│     └── Bundles libs on the kernel classpath (jackson, guava, log4j, slf4j, json4s, gson, paranamer, commons-*)? → mark % Provided
+│     └── Bundles libs on the kernel classpath? → mark % Provided (see the classpath table in references/jar-migration.md)
 ├── Python / SQL → Continue
     ├── Uses RDD APIs? → Category 2: rewrite to DataFrame API (see fixes below)
     ├── Uses DBFS paths? → Category 2: migrate to UC Volumes
@@ -614,6 +614,8 @@ Always get the actual error with `w.jobs.get_run_output(run_id=...)` before gues
 | `UC_FILE_SCHEME_FOR_TABLE_CREATION_NOT_SUPPORTED` | Use managed tables or `/Volumes/...` paths |
 | `PERMISSION_DENIED: CREATE SCHEMA on Catalog 'main'` | Add `spark.sql("USE CATALOG <your_catalog>")` before CREATE statements |
 | `DATA_SOURCE_NOT_FOUND: Failed to find data source` | Category 3 blocker — custom JAR data source needs classic compute |
+| `NoSuchMethodError: scala.Predef$.wrapRefArray` / `NoClassDefFoundError: scala/Serializable` on a JAR run | Scala version mismatch — JAR compiled against 2.12; serverless is 2.13.16. Recompile against 2.13.16. See [JAR Migration](references/jar-migration.md) |
+| `NoClassDefFoundError` for `org/apache/spark/...` on a JAR run | Spark bundled instead of provided. Mark `databricks-connect % Provided` (and rewrite any `SparkContext`/RDD source). See [JAR Migration](references/jar-migration.md) |
 | `SyntaxError` after migration | Ensure comments are inside MAGIC blocks, not straddling cell delimiters |
 | `File './<name>' not found` from `%run` (or `%run` fires as IPython line magic) | A1: a plain-Python comment is preceding `# MAGIC %run` in the same cell. Move the comment to its own `# MAGIC %md` cell above. |
 | `TypeError: max() got an unexpected keyword argument 'key'` | A2: `from pyspark.sql.functions import *` shadowed builtin `max`. Use sort+index instead of `max(..., key=)`. |

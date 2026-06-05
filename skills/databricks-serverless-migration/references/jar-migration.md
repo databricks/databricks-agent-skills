@@ -18,7 +18,7 @@ Route into this flow when any of these are true:
 | 1 | **Scala version mismatch** | `NoSuchMethodError: scala.Predef$.wrapRefArray`, `NoClassDefFoundError: scala/Serializable` | JAR compiled against Scala 2.12 (classic default). Serverless is 2.13.16. Binary-incompatible at classload. | Recompile against **2.13.16**; `%%` cross-version on every Scala dep. |
 | 2 | **Spark internals not on classpath** | `NoClassDefFoundError` for `org/apache/spark/...` driver-side classes (`JavaSparkContext`, Catalyst internals) | Code reaches behind the Spark Connect boundary; Spark is provided by the runtime, not bundled. | Mark Spark `% Provided` (don't bundle it). If the **source** uses `SparkContext`/RDD/Catalyst, rewrite to the DataFrame / Spark Connect surface — a code change, not just a build change. |
 | 3 | **Dependency conflict / shadowing** | Jackson/Guava/log4j version errors; behavior differs from the bundled version | The JAR bundles a library the kernel also ships; the kernel's copy wins on the classpath, so the bundled version is silently shadowed. | Declare every overlapping dependency `% Provided` (or align to the kernel version). See the classpath table below. |
-| 4 | **Streaming / config** | `ProcessingTime` trigger errors, blocked Spark configs | Serverless requires `availableNow` triggers and only allows a short config allowlist. | Source change: `.trigger(availableNow=true)`; remove unsupported `spark.conf.set`. |
+| 4 | **Streaming / config** | `ProcessingTime` trigger errors, blocked Spark configs | Serverless requires `availableNow` triggers and only allows a short config allowlist. | Source change: `.trigger(Trigger.AvailableNow())` (`import org.apache.spark.sql.streaming.Trigger`); remove unsupported `spark.conf.set`. |
 
 ## Narrate the migration as you go
 
@@ -38,7 +38,7 @@ Also flag any explicit `_2.12` artifact suffix and any Scala dep declared with s
 
 **Bundled Spark.** Any `spark-core`, `spark-sql`, `spark-catalyst` dependency that is *not* marked `% Provided` is bundling Spark (mode 3). The fix is to mark it `% Provided` (the runtime supplies it). **Watch for mode 2 separately:** if the *source* uses `SparkContext`, `sc.parallelize`, RDD APIs, or Catalyst internals, marking Spark provided is not enough — that code must be rewritten to the DataFrame/Spark Connect surface (a source change, not just a build change). Flag it so the build gate expects a recompile.
 
-**Conflicting dependencies — scan the *full* tree, not just direct deps.** Most conflicts are transitive: our demo JAR pulls guava, log4j, json4s, and Jackson *through* `spark-sql`, never declaring them directly. Matching only `libraryDependencies` misses them. Enumerate what the JAR will actually bundle and match every entry against the kernel classpath table. (These commands invoke the workload's own build system — `sbt`/`mvn`/`gradle` execute project plugins and settings — which is expected here because the user is migrating their own JAR. If the build's provenance is unknown or untrusted, confirm with the user before invoking, mirroring the parent skill's `multi-source-enumeration.md` gate.)
+**Conflicting dependencies — scan the *full* tree, not just direct deps.** Most conflicts are transitive: our demo JAR pulls guava, log4j, json4s, and Jackson *through* `spark-sql`, never declaring them directly. Matching only `libraryDependencies` misses them. Enumerate what the JAR will actually bundle and match every entry against the kernel classpath table. (These commands invoke the workload's own build system — `sbt`/`mvn`/`gradle` execute project plugins and settings — which is expected here because the user is migrating their own JAR. If the build's provenance is unknown or untrusted, confirm with the user before invoking.)
 ```
 sbt 'set asciiGraphWidth := 240' dependencyTree   # full transitive tree
 sbt evicted                                        # version conflicts already resolved by sbt
@@ -85,11 +85,88 @@ Prefer `% Provided` over version-pinning; the runtime supplies the version it pi
 assembly / assemblyOption ~= { _.withIncludeScala(false) }
 ```
 
-**Build tools other than sbt.** This reference is sbt-first (the common case). The same three moves apply elsewhere; only the syntax changes:
-- **Maven** (`maven-shade-plugin`): set the Scala 2.13 artifacts, add `<scope>provided</scope>` to Spark and every conflicting dependency, and do not exclude `META-INF/maven/**` in the shade filters.
-- **Gradle** (`shadow`): use the `_2.13` deps, move conflicting libs to `compileOnly` (Gradle's `provided`), and keep `META-INF/maven` in the minimize/relocate config.
+**Build tools other than sbt.** This reference is sbt-first (the common case), but the same three moves — Scala 2.13 artifacts, `provided` scope on Spark and every conflicting dependency, preserve `META-INF/maven` — translate directly. Recipes for both below.
 
-Full Maven/Gradle fix recipes are a TODO; for now, translate the sbt steps above.
+**Maven** (`maven-shade-plugin`). Set the Scala 2.13 toolchain via properties, mark Spark/Databricks Connect and every conflicting dependency `provided`, and do **not** enable `<minimizeJar>` or filter `META-INF/maven/**` (the runtime reads bundled versions from there):
+```xml
+<properties>
+  <scala.binary.version>2.13</scala.binary.version>
+  <scala.version>2.13.16</scala.version>
+</properties>
+
+<dependencies>
+  <!-- Scala stdlib: provided — the kernel ships 2.13.16 -->
+  <dependency>
+    <groupId>org.scala-lang</groupId>
+    <artifactId>scala-library</artifactId>
+    <version>${scala.version}</version>
+    <scope>provided</scope>
+  </dependency>
+  <!-- Spark API via Databricks Connect: provided, the artifact the runtime supplies -->
+  <dependency>
+    <groupId>com.databricks</groupId>
+    <artifactId>databricks-connect_${scala.binary.version}</artifactId>
+    <version>17.3.1</version>
+    <scope>provided</scope>
+  </dependency>
+  <!-- Every dependency that appears in the kernel classpath table: provided -->
+  <dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.15.2</version>
+    <scope>provided</scope>
+  </dependency>
+</dependencies>
+
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-shade-plugin</artifactId>
+      <executions>
+        <execution>
+          <phase>package</phase>
+          <goals><goal>shade</goal></goals>
+          <configuration>
+            <!-- No <minimizeJar>, no <filter> excluding META-INF/maven/** -->
+            <transformers>
+              <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+            </transformers>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+`provided` keeps a dependency on the compile classpath but out of the shaded JAR, the exact analogue of sbt's `% Provided`. Build with `mvn clean package`; the tree-scan command is `mvn dependency:tree`.
+
+**Gradle** (`shadow` plugin). Use the `_2.13` artifacts, move Spark and every conflicting dependency to `compileOnly` (Gradle's `provided`), and do **not** call `minimize()` or `exclude 'META-INF/maven/**'` in the `shadowJar` block:
+```groovy
+plugins {
+  id 'scala'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+ext {
+  scalaBinary  = '2.13'
+  scalaVersion = '2.13.16'
+}
+
+dependencies {
+  // Scala stdlib + Spark API via Databricks Connect: compileOnly — the kernel supplies them
+  compileOnly "org.scala-lang:scala-library:${scalaVersion}"
+  compileOnly "com.databricks:databricks-connect_${scalaBinary}:17.3.1"
+  // Every dependency that appears in the kernel classpath table: compileOnly
+  compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+}
+
+shadowJar {
+  // No minimize(), no exclude('META-INF/maven/**')
+  mergeServiceFiles()
+}
+```
+Build with `./gradlew shadowJar`; the tree-scan command is `./gradlew dependencies --configuration runtimeClasspath`. Note: `compileOnly` deps are not on the **test** runtime classpath, so if a `provided` library is needed to run tests, also add it as `testRuntimeOnly`.
 
 **Report after this step:** Show the `build.sbt` (or `pom.xml`/`build.gradle`) diff and explain each change in one line — the Scala bump, every dependency newly marked `% Provided` (naming the kernel version it would otherwise shadow), and Scala excluded from the assembly. The user should see what changed and why *before* any build runs.
 
@@ -125,18 +202,28 @@ A green local run means the migration worked end to end against the real serverl
 
 Two levels of rigor. Use the **fast path** for a quick migration; use **production rigor** when the migrated job is going back into production and outputs must match.
 
-### Fast path (quick validation)
+### Deploy with a bundle (durable default)
+
+The version-controlled end state is a DABs bundle, and it is where the rest of this skill is already heading — the git-flow section below puts `build.sbt` on a branch and opens a PR. Make the bundle the durable artifact rather than an afterthought. For a clean target, `databricks bundle init default-scala` scaffolds a serverless Scala JAR job; deploy with `databricks bundle deploy` and trigger with `databricks bundle run <job>`. Lean on the sibling skills for the mechanics instead of re-teaching them here:
+- **`databricks-dabs`** — bundle structure, targets, `deploy`/`run`.
+- **`databricks-jobs`** — the job and task definition.
+
+This reference covers only the serverless-JAR-specific wiring those skills don't (the `environments` / `java_dependencies` shape below).
+
+### Quick inner-loop check (fast path)
+
+To re-test a freshly rebuilt JAR against an already-deployed job — without a full redeploy — upload and re-run it directly:
 ```
 databricks fs cp target/scala-2.13/<artifact>.jar dbfs:/Volumes/<cat>/<schema>/<vol>/<artifact>.jar --overwrite
 databricks jobs run-now <job_id>
 ```
-Confirm the run reaches `TERMINATED / SUCCESS`. For a clean target, prefer the `default-scala` bundle template (`databricks bundle init default-scala`), which sets this up by default and deploys with `databricks bundle deploy`.
+Confirm the run reaches `TERMINATED / SUCCESS`. This is a fast iteration loop, not the durable deploy — fold the validated change back into the bundle above before shipping.
 
 ### Job config — attach the JAR to the serverless environment
 
 A serverless JAR task wires up the JAR differently from a classic `spark_jar_task`, and the differences are **rejected at deploy time** (`databricks bundle deploy` / `jobs reset`) rather than at run time — so fix them in the job definition up front instead of discovering them on a failed deploy:
 
-- Define a job-level `environments` entry with `spec.environment_version: "4"`. The value must be the quoted **string** `"4"`, not the integer `4` — the Jobs API rejects the unquoted form.
+- Define a job-level `environments` entry with `spec.environment_version: "4"`. The value must be the quoted **string** `"4"`, not the integer `4` — the Jobs API rejects the unquoted form. (`environment_version` is the current field and supersedes the deprecated `spec.client` the parent skill's Python/notebook examples still use — same concept, newer name.)
 - Attach the JAR in `environments[].spec.java_dependencies` (a `/Volumes/...` path) — **not** the task-level `libraries` field, which is not supported for serverless tasks.
 - Reference the environment from the task with `environment_key` (in place of `job_cluster_key` / `new_cluster`).
 - Remove the classic cluster scaffolding entirely: `new_cluster`, `num_workers`, `node_type_id`, `data_security_mode`, `spark_conf`, `init_scripts`, `cluster_log_conf`.
@@ -245,10 +332,12 @@ The serverless Scala kernel runs on Ammonite/Almond. These are kernel internals;
 > This table is the env-4 classpath snapshot provided by the runtime team (Scala 2.13.16 / JDK 17 / DBConnect 17.3.1). Refresh it per environment version; env 5 may differ. The runtime's own `Dependency Conflict Detection` output is the live source of truth at failure time, this table lets the skill flag the same conflicts statically before a run.
 
 ## Output the skill should produce
-1. A diff of `build.sbt` (Scala 2.13.16, `databricks-connect` provided, conflicting deps `% Provided`, `META-INF/maven` preserved).
-2. **Build result:** confirmation that `sbt clean assembly` succeeded (or the compile errors, if not). Do not proceed past a failed build.
-3. **Local test result:** confirmation that `sbt test` / `sbt run` ran green against serverless via Databricks Connect (or why it was skipped, e.g. no tests).
-4. **Deploy result:** the re-upload + rerun outcome (run state), or the `default-scala` bundle equivalent.
-5. A short report: which failure modes were found, which dependencies were marked `Provided` and why (cite the kernel version), and anything it could not resolve statically.
+
+Produce the parent skill's **Migration Deliverables** (test/prod branch, test job run + URL, A/B comparison, environment spec, change summary) as the baseline — the deploy outcome is captured there. A JAR migration adds these JAR-specific deliverables on top:
+
+1. **Build diff:** the `build.sbt` (or `pom.xml` / `build.gradle`) diff — Scala 2.13.16, `databricks-connect` provided, conflicting deps `% Provided`, `META-INF/maven` preserved.
+2. **Build result:** confirmation that `sbt clean assembly` (or `mvn clean package` / `./gradlew shadowJar`) succeeded, or the compile errors if not. Do not proceed past a failed build.
+3. **Local test result:** confirmation that the optional Databricks Connect smoke test ran green (or why it was skipped, e.g. no tests).
+4. **Failure modes resolved:** which of the four modes were found, which dependencies were marked `Provided` and why (cite the kernel version), and anything that could not be resolved statically.
 
 **Success criterion:** the skill has not "migrated" the JAR until it both **assembles** and **runs green** (locally via DB Connect and/or as the deployed job). Editing the build is necessary but not sufficient.
