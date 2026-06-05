@@ -1,0 +1,691 @@
+{
+  "skill_name": "databricks-serverless-storage-check",
+  "composite_score": 0.8866666666666667,
+  "duration_seconds": 18.059252977371216,
+  "mlflow_run_id": "18e1d8edab42450590804ea904cc7a57",
+  "levels": {
+    "unit": {
+      "level": "L1",
+      "score": 1.0,
+      "passed": true,
+      "num_feedbacks": 43,
+      "feedbacks": [
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_1",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_2",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_3",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/yaml_syntax/references/pattern-catalog.md:block_4",
+          "value": "pass",
+          "rationale": "Valid YAML syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_5",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_6",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/yaml_syntax/references/pattern-catalog.md:block_7",
+          "value": "pass",
+          "rationale": "Valid YAML syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_8",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_10",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/pattern-catalog.md:block_11",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/sql_syntax/references/remediation-guide.md:block_2",
+          "value": "pass",
+          "rationale": "Valid SQL syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_3",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_4",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_5",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_6",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_7",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_8",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_9",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_10",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_11",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/yaml_syntax/references/remediation-guide.md:block_12",
+          "value": "pass",
+          "rationale": "Valid YAML syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_13",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_14",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_15",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_16",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_17",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/yaml_syntax/references/remediation-guide.md:block_18",
+          "value": "pass",
+          "rationale": "Valid YAML syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_19",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/python_syntax/references/remediation-guide.md:block_20",
+          "value": "pass",
+          "rationale": "Valid Python syntax",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`databricks-serverless-migration`",
+          "value": "pass",
+          "rationale": "Link to '../databricks-serverless-migration/SKILL.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`references/remediation-guide.md`",
+          "value": "pass",
+          "rationale": "Link to 'references/remediation-guide.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`references/pattern-catalog.md`",
+          "value": "pass",
+          "rationale": "Link to 'references/pattern-catalog.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`references/remediation-guide.md`",
+          "value": "pass",
+          "rationale": "Link to 'references/remediation-guide.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`databricks-serverless-migration`",
+          "value": "pass",
+          "rationale": "Link to '../databricks-serverless-migration/SKILL.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`databricks-dabs`",
+          "value": "pass",
+          "rationale": "Link to '../databricks-dabs/SKILL.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`databricks-jobs`",
+          "value": "pass",
+          "rationale": "Link to '../databricks-jobs/SKILL.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/`databricks-core`",
+          "value": "pass",
+          "rationale": "Link to '../databricks-core/SKILL.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/Pattern catalog",
+          "value": "pass",
+          "rationale": "Link to 'references/pattern-catalog.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/link/SKILL.md/Remediation guide",
+          "value": "pass",
+          "rationale": "Link to 'references/remediation-guide.md' exists",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/pytest/skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_exists",
+          "value": "pass",
+          "rationale": "Passed in 0.001s",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/pytest/skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_not_empty",
+          "value": "pass",
+          "rationale": "Passed in 0.001s",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/pytest/skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_has_frontmatter",
+          "value": "pass",
+          "rationale": "Passed in 0.001s",
+          "source": "CODE"
+        },
+        {
+          "name": "unit/pytest/skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillContent::test_no_todo_placeholders",
+          "value": "pass",
+          "rationale": "Passed in 0.000s",
+          "source": "CODE"
+        }
+      ],
+      "task_results": null,
+      "artifacts": null,
+      "metadata": {
+        "code_blocks_tested": 29,
+        "syntax_errors": 0
+      },
+      "trace_ids": [],
+      "details": {
+        "checks": [
+          {
+            "name": "pattern-catalog.md:block_1",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_2",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_3",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_4",
+            "passed": true,
+            "message": "Valid YAML syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_5",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_6",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_7",
+            "passed": true,
+            "message": "Valid YAML syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_8",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_10",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "pattern-catalog.md:block_11",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_2",
+            "passed": true,
+            "message": "Valid SQL syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_3",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_4",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_5",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_6",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_7",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_8",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_9",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_10",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_11",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_12",
+            "passed": true,
+            "message": "Valid YAML syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_13",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_14",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_15",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_16",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_17",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_18",
+            "passed": true,
+            "message": "Valid YAML syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_19",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "remediation-guide.md:block_20",
+            "passed": true,
+            "message": "Valid Python syntax"
+          },
+          {
+            "name": "`databricks-serverless-migration`",
+            "passed": true,
+            "message": "Link to '../databricks-serverless-migration/SKILL.md' exists"
+          },
+          {
+            "name": "remediation-guide.md`",
+            "passed": true,
+            "message": "Link to 'references/remediation-guide.md' exists"
+          },
+          {
+            "name": "pattern-catalog.md`",
+            "passed": true,
+            "message": "Link to 'references/pattern-catalog.md' exists"
+          },
+          {
+            "name": "remediation-guide.md`",
+            "passed": true,
+            "message": "Link to 'references/remediation-guide.md' exists"
+          },
+          {
+            "name": "`databricks-serverless-migration`",
+            "passed": true,
+            "message": "Link to '../databricks-serverless-migration/SKILL.md' exists"
+          },
+          {
+            "name": "`databricks-dabs`",
+            "passed": true,
+            "message": "Link to '../databricks-dabs/SKILL.md' exists"
+          },
+          {
+            "name": "`databricks-jobs`",
+            "passed": true,
+            "message": "Link to '../databricks-jobs/SKILL.md' exists"
+          },
+          {
+            "name": "`databricks-core`",
+            "passed": true,
+            "message": "Link to '../databricks-core/SKILL.md' exists"
+          },
+          {
+            "name": "Pattern catalog",
+            "passed": true,
+            "message": "Link to 'references/pattern-catalog.md' exists"
+          },
+          {
+            "name": "Remediation guide",
+            "passed": true,
+            "message": "Link to 'references/remediation-guide.md' exists"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_exists",
+            "passed": true,
+            "message": "Passed in 0.001s"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_not_empty",
+            "passed": true,
+            "message": "Passed in 0.001s"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillStructure::test_skill_md_has_frontmatter",
+            "passed": true,
+            "message": "Passed in 0.001s"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_unit.TestSkillContent::test_no_todo_placeholders",
+            "passed": true,
+            "message": "Passed in 0.000s"
+          }
+        ],
+        "passed": 43,
+        "total": 43
+      },
+      "duration_ms": 449,
+      "last_run_at": "2026-05-29T10:47:39.734319+00:00",
+      "is_carried_forward": true
+    },
+    "static": {
+      "level": "static",
+      "score": 0.86,
+      "passed": true,
+      "num_feedbacks": 11,
+      "feedbacks": [
+        {
+          "name": "static/tool_accuracy",
+          "value": "pass",
+          "rationale": "No tool references to check (derived from L1)",
+          "source": "CODE"
+        },
+        {
+          "name": "static/examples_valid",
+          "value": "pass",
+          "rationale": "Derived from L1: 29/29 code blocks valid. Score: 10.0/10",
+          "source": "CODE"
+        },
+        {
+          "name": "static/security/secrets_scan",
+          "value": "pass",
+          "rationale": "No hardcoded secrets detected",
+          "source": "CODE"
+        },
+        {
+          "name": "static/self_contained",
+          "value": "pass",
+          "rationale": "Score: 7/10. The skill provides comprehensive context about the antipatterns, detection rules, remediation patterns, and decision trees. However, it references a `scripts/preflight.py` file that is central to the skill's operation but is NOT included in the skill content. The agent cannot verify or run the scanner without this file. Similarly, it references parent skills (`databricks-serverless-migration`, `databricks-core`) without including their content, though it does summarize the relevant boundaries. The pattern catalog and remediation guide are fully included as reference files, which is excellent. Recommendation: Include the `scripts/preflight.py` source (or at minimum its interface/usage documentation) so an agent can verify the scanner exists and understand its implementation. Without it, the agent must trust that the script exists at the referenced path.",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/no_conflicts",
+          "value": "pass",
+          "rationale": "Score: 9/10. Instructions are consistent throughout. The boundary between parent skill (intra-task) and this sub-skill (cross-task) is stated clearly and repeated in the table. The remediation guide's 'What NOT to do' section aligns perfectly with the pattern catalog. The 'When /local_disk0/tmp IS fine' section correctly reinforces the core rule without contradicting it. The decision tree in the remediation guide is consistent with the numbered fix priority in the main SKILL.md.",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/security",
+          "value": "pass",
+          "rationale": "Score: 9/10. No hardcoded tokens or secrets. The SQL example uses placeholder `<workspace-user-or-sp>` for grants. Permission notes are included for each fix pattern (WRITE VOLUME, CAN_EDIT, etc.). The false-positive escape hatch section appropriately warns 'Prefer fixing the antipattern when possible; this is an explicit opt-out, not a recommendation.'",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/llm_navigable_structure",
+          "value": "pass",
+          "rationale": "Score: 9/10. Excellent hierarchical structure: clear headings (When to use, Quick start, Interpreting output, Core rule, Pattern catalog, Remediation summary, What this skill does NOT cover, Related skills). Tables are used effectively for severity/exit-code mapping and skill boundary delineation. The pattern catalog uses consistent formatting (ID, Severity, What it matches, Example, Fix, Detection rule) for each pattern. The remediation guide has a decision tree at the top for quick navigation.",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/actionable_instructions",
+          "value": "pass",
+          "rationale": "Score: 8/10. The Quick start section provides concrete CLI invocations for all modes (`--notebook`, `--dir`, `--job-yaml`, `--job-id`, `--run-id`, `--json`). The remediation guide provides complete before/after code blocks with SQL setup commands. The ENV001 handling gives a numbered 3-step action plan. However, some instructions reference tools that may not exist (e.g., '/jira-actions skill or /support-escalation if available') and the agent cannot verify the scanner script exists. Recommendation: Add a verification step at the beginning: 'First, confirm scripts/preflight.py exists at the expected path relative to this skill file. If not found, the detection rules can still be applied manually by searching for the patterns described in the catalog.'",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/scoped_clearly",
+          "value": "pass",
+          "rationale": "Score: 10/10. Exceptionally clear scoping. The skill explicitly states what it covers (cross-task file handoff antipattern only) and what it does NOT cover (ENVIRONMENT_SETUP_ERROR, single-notebook migration). The boundary table between parent and sub-skill is precise. The 'When to use this skill' section lists 5 specific triggers. The 'What this skill does NOT cover' section explicitly addresses the other failure mode from the same BSI thread and explains why it's excluded.",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/error_handling",
+          "value": "pass",
+          "rationale": "Score: 7/10. Exit codes are clearly documented (0, 1, 2). The ENV001 pattern routes platform-side errors to escalation with a 3-step mitigation plan. The false-positive escape hatch provides a workaround. However, there's no guidance for: what happens if `databricks CLI` is not authenticated when using `--job-id`/`--run-id` modes, what if the scanner itself crashes, what if referenced notebooks in a DAB YAML can't be found, or what if the Volume doesn't exist yet when the fix is applied. Recommendation: Add a 'Troubleshooting' section covering: (1) CLI auth failures in --job-id/--run-id mode (point to databricks-core for auth setup), (2) scanner errors when referenced notebooks are missing (expected behavior: skip with warning?), (3) runtime errors when the target Volume doesn't exist (include the CREATE VOLUME prerequisite check).",
+          "source": "LLM_JUDGE"
+        },
+        {
+          "name": "static/no_hallucination_triggers",
+          "value": "pass",
+          "rationale": "Score: 7/10. The skill references `scripts/preflight.py` extensively but this file is not provided \u2014 an agent might attempt to run it and fail, or worse, try to create it from the description. References to `/jira-actions` and `/support-escalation` skills are hedged with 'if available', which is good. The `dbutils.notebook.entry_point.getDbutils().notebook().getContext().jobId().get()` chain in the remediation guide is a real but fragile API that may not work in all contexts (e.g., interactive notebooks). The `dbutils.task_values.set` 'legacy spelling' mentioned in FANOUT001 may not actually exist. Recommendation: Clarify that `scripts/preflight.py` must be present in the skill's directory structure (or provide it). For the jobId context chain, add a note: 'This API is available only inside a job run; for interactive testing, hardcode a test run_id.' Verify whether `dbutils.task_values.set` is a real legacy API or remove the reference.",
+          "source": "LLM_JUDGE"
+        }
+      ],
+      "task_results": null,
+      "artifacts": null,
+      "metadata": {
+        "overall_score": 8.6,
+        "criteria": {
+          "tool_accuracy": 10.0,
+          "examples_valid": 10.0,
+          "self_contained": 7.0,
+          "no_conflicts": 9.0,
+          "security": 9.0,
+          "llm_navigable_structure": 9.0,
+          "actionable_instructions": 8.0,
+          "scoped_clearly": 10.0,
+          "error_handling": 7.0,
+          "no_hallucination_triggers": 7.0
+        },
+        "recommendations": [
+          "Include the `scripts/preflight.py` source (or at minimum its interface/usage documentation) so an agent can verify the scanner exists and understand its implementation. Without it, the agent must trust that the script exists at the referenced path.",
+          "Add a verification step at the beginning: 'First, confirm scripts/preflight.py exists at the expected path relative to this skill file. If not found, the detection rules can still be applied manually by searching for the patterns described in the catalog.'",
+          "Add a 'Troubleshooting' section covering: (1) CLI auth failures in --job-id/--run-id mode (point to databricks-core for auth setup), (2) scanner errors when referenced notebooks are missing (expected behavior: skip with warning?), (3) runtime errors when the target Volume doesn't exist (include the CREATE VOLUME prerequisite check).",
+          "Clarify that `scripts/preflight.py` must be present in the skill's directory structure (or provide it). For the jobId context chain, add a note: 'This API is available only inside a job run; for interactive testing, hardcode a test run_id.' Verify whether `dbutils.task_values.set` is a real legacy API or remove the reference."
+        ],
+        "dimensions_evaluated": 10,
+        "dimensions_total": 10,
+        "coverage_factor": 1.0,
+        "priority_fixes": []
+      },
+      "trace_ids": [],
+      "details": {},
+      "duration_ms": 34709,
+      "last_run_at": "2026-05-29T10:48:15.850730+00:00",
+      "is_carried_forward": true
+    },
+    "integration": {
+      "level": "L2",
+      "score": 0.8,
+      "passed": true,
+      "num_feedbacks": 5,
+      "feedbacks": [
+        {
+          "name": "integration/connectivity/workspace",
+          "value": "pass",
+          "rationale": "Workspace configured: https://adb-984752964297111.11.azuredatabricks.net",
+          "source": "CODE"
+        },
+        {
+          "name": "integration/pytest/skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_workspace_reachable",
+          "value": "pass",
+          "rationale": "Passed in 1.652s",
+          "source": "CODE"
+        },
+        {
+          "name": "integration/pytest/skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_catalog_exists",
+          "value": "pass",
+          "rationale": "Passed in 7.870s",
+          "source": "CODE"
+        },
+        {
+          "name": "integration/pytest/skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_schema_exists",
+          "value": "fail",
+          "rationale": "FAILED: AssertionError: Schema 'skill_test' not found in main\nassert 'skill_test' in ['_inspire', '_silver_agent', 'abac_demo', 'abac_demo_ms', 'abhijeet_rao_tooling', 'abhijeet_test', ...]\nskills/databricks-serverless-storage-check/eval/tests/test_integration.py:28: in test_schema_exists\n    assert test_schema in schemas, f\"Schema '{test_schema}' not found in {test_catalog}\"\nE   AssertionError: Schema 'skill_test' not found in main\nE   assert 'skill_test' in ['_inspire', '_silver_agent', 'abac_demo', 'abac_demo_ms', 'abhijeet_rao_tooling', 'abhijeet_test', ...]",
+          "source": "CODE"
+        },
+        {
+          "name": "integration/pytest/skills.databricks-serverless-storage-check.eval.tests.test_integration.TestWarehouse::test_warehouse_accessible",
+          "value": "pass",
+          "rationale": "Passed in 0.167s",
+          "source": "CODE"
+        }
+      ],
+      "task_results": null,
+      "artifacts": null,
+      "metadata": {
+        "user_integration_tests": 4,
+        "connectivity_checks": 1
+      },
+      "trace_ids": [],
+      "details": {
+        "checks": [
+          {
+            "name": "workspace",
+            "passed": true,
+            "message": "Workspace configured: https://adb-984752964297111.11.azuredatabricks.net"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_workspace_reachable",
+            "passed": true,
+            "message": "Passed in 1.652s"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_catalog_exists",
+            "passed": true,
+            "message": "Passed in 7.870s"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_integration.TestDatabricksConnectivity::test_schema_exists",
+            "passed": false,
+            "message": "FAILED: AssertionError: Schema 'skill_test' not found in main\nassert 'skill_test' in ['_inspire', '_silver_agent', 'abac_demo', 'abac_demo_ms', 'abhijeet_rao_tooling', 'abhijeet_test', ...]\nskills/databricks-serverless-storage-check/eval/tests/test_integration.py:28: in test_schema_exists\n    assert test_schema in schemas, f\"Schema '{test_schema}' not found in {test_catalog}\"\nE   AssertionError: Schema 'skill_test' not found in main\nE   assert 'skill_test' in ['_inspire', '_silver_agent', 'abac_demo', 'abac_demo_ms', 'abhijeet_rao_tooling', 'abhijeet_test', ...]"
+          },
+          {
+            "name": "skills.databricks-serverless-storage-check.eval.tests.test_integration.TestWarehouse::test_warehouse_accessible",
+            "passed": true,
+            "message": "Passed in 0.167s"
+          }
+        ],
+        "passed": 4,
+        "total": 5
+      },
+      "duration_ms": 10383,
+      "last_run_at": "2026-05-29T11:02:12.624608+00:00",
+      "is_carried_forward": false
+    }
+  },
+  "suggestions": []
+}
