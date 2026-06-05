@@ -37,10 +37,13 @@ Design advice that doesn't name a real component is incomplete. Always end at a 
 - Large tables → server-side pagination/sort/filter, not client-side over a huge result set.
 - Long-running queries → optimistic loading + timeout/error UX.
 
-## AI / Genie surfaces (the "AI" half)
-- Use `<GenieChat alias="…">` or `useGenieChat`; surface `status` as streaming UI, not a frozen spinner.
-- **Build trust:** show the generated SQL (`queryResults`), link/show source tables (`attachments`), and add a "verify — AI-generated" disclaimer. Never present an AI answer as ground truth with no way to inspect it.
-- Handle the `"error"` status and empty/ambiguous answers explicitly.
+## AI / Genie surfaces (the "AI" half) — implement ALL five, see `references/genie-ai-trust.md` for code
+A Genie/chat/NL answer is only trustworthy if the user can see how it was produced and who it ran as. "Use `GenieChat` + a spinner" is NOT enough — for ANY Genie/chat surface, ship all five (copy the exact snippets from the reference):
+1. **Identity / OBO** — a `/api/whoami` route + the signed-in user in a `Badge`; state queries run on-behalf-of them.
+2. **Generated SQL** — render `attachments[].query` in an inspectable "Generated SQL" `Card`; never hide how the answer was computed.
+3. **Streaming/status** — reflect `useGenieChat().status` (`streaming`/`error`), never a frozen spinner.
+4. **Disclaimer** — a persistent "AI-generated — verify" note per answer.
+5. **Governance + states** — explicit Genie space config + OBO note + empty/error/ambiguous handling (`Empty`, `Alert`).
 
 ## Output formats
 
