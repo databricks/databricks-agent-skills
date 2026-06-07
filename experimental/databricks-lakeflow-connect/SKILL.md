@@ -1,6 +1,6 @@
 ---
 name: databricks-lakeflow-connect
-description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence), databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr), or file sources (SharePoint, Google Drive, SFTP) into Unity Catalog with serverless pipelines."
+description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect. Use when ingesting from SaaS apps (Salesforce, Workday Reports, ServiceNow, Google Analytics 4, HubSpot, Confluence) or databases (SQL Server cloud and on-prem; PostgreSQL/MySQL CDC in PuPr) into Unity Catalog with serverless pipelines."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
@@ -31,6 +31,22 @@ There are four architecture patterns:
 2. **Database CDC via gateway** — an ingestion gateway runs in the customer's network, stages change events to a UC Volume, a serverless ingestion pipeline applies them as CDC into Delta.
 3. **Query-based** — for sources without native CDC (Oracle / Teradata / SQL Server / PG / MySQL query-based, Snowflake / Redshift / Synapse / BigQuery via Foreign Catalog), the connector issues periodic queries instead of subscribing to a change feed.
 4. **Community connectors** — template-based, out of scope for this skill.
+
+---
+
+## Is Lakeflow Connect the right tool?
+
+Decide this before you build. Lakeflow Connect is the managed **pull** path for SaaS apps and databases — it is not the answer for every ingestion intent.
+
+| If the source is... | Use | Skill |
+|---|---|---|
+| A SaaS app or database with a managed connector (Salesforce, Workday, ServiceNow, GA4, HubSpot, Confluence, SQL Server, ...) | **Lakeflow Connect** | this skill |
+| Files on cloud object storage (S3 / ADLS / GCS) | Auto Loader | **databricks-pipelines** |
+| A source you want to query in place, no copy | Lakehouse Federation | — |
+| An app or device that **pushes** events at you | Zerobus | **databricks-zerobus-ingest** |
+| A partner offering a Delta share | Delta Sharing | — |
+
+Full reasoning, including the Federation-vs-Connect and Auto-Loader-vs-Connect trade-offs, is in [4-ingestion-decision-tree.md](references/4-ingestion-decision-tree.md).
 
 ---
 
