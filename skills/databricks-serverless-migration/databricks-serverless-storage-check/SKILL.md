@@ -3,13 +3,13 @@ name: databricks-serverless-storage-check
 description: "Detect cross-task file-sharing antipatterns in Databricks serverless jobs (writes to /local_disk0, /tmp, or trustedTemp that are read by sibling or child tasks on potentially different compute nodes) and recommend UC Volumes or /Workspace for handoff. Use when a serverless job fails with `INTERNAL_ERROR: [Errno 13] Permission denied` on /local_disk0 paths, when parallel child notebooks fail intermittently, when reviewing a DAB job before deploying to serverless, or when the user mentions trustedTemp, fan-out, or cross-task file handoff. Complements databricks-serverless-migration (which covers single-notebook migration)."
 compatibility: Requires databricks CLI (>= v0.292.0) for --job-id and --run-id modes; --notebook / --dir / --job-yaml modes have no external dependencies.
 metadata:
-  version: "0.1.0"
-parent: databricks-core
+  version: "0.2.0"
+parent: databricks-serverless-migration
 ---
 
 # Serverless Storage Check
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+**FIRST**: Use the parent `databricks-serverless-migration` skill for the overall classic-to-serverless migration workflow (Ingest → Analyze → Test → Validate), CLI auth (which it inherits from `databricks-core`), and per-task scratch guidance (`/local_disk0/tmp`). This skill is a niche sub-skill of that workflow — it focuses **only** on the cross-task handoff antipattern that the parent skill explicitly delegates here (see the Category B → DBFS-paths row in `databricks-serverless-migration/SKILL.md`).
 
 This skill detects a specific class of serverless failure: **cross-task file handoffs through local disk**. On serverless compute, each task may run on a different node, so a path written by a parent task to `/local_disk0`, `/tmp`, or a `trustedTemp` directory is not guaranteed to be visible to a child task. The typical symptom is:
 
@@ -32,14 +32,16 @@ Use this skill when any of these triggers appear:
 - The user mentions "trustedTemp", "fan-out", "cross-task file sharing", or `/local_disk0`
 - A new serverless job design needs a sanity check before first run
 
-This skill is **complementary to**, not a replacement for, [`databricks-serverless-migration`](../databricks-serverless-migration/SKILL.md). That skill handles single-notebook migration and explicitly recommends `/local_disk0/tmp` for per-task scratch — which is correct *inside* a task. The boundary between the two skills:
+This skill is a **niche sub-skill** of [`databricks-serverless-migration`](../SKILL.md) — the parent owns single-notebook migration and explicitly recommends `/local_disk0/tmp` for per-task scratch (which is correct *inside* a task). This sub-skill picks up where the parent leaves off: anything that crosses a task boundary. The boundary between the two skills:
 
 | Concern | Use skill |
 |---------|-----------|
-| Migrating one notebook from classic DBR to serverless | `databricks-serverless-migration` |
-| Per-task scratch storage (intra-task) | `databricks-serverless-migration` (recommends `/local_disk0/tmp`) |
-| **Cross-task file handoff between parent/child notebooks or sibling tasks** | **this skill** |
-| Permission-denied on `/local_disk0` during a multi-task run | **this skill** |
+| Migrating one notebook from classic DBR to serverless | `databricks-serverless-migration` (parent) |
+| Per-task scratch storage (intra-task) | `databricks-serverless-migration` (parent — recommends `/local_disk0/tmp`) |
+| **Cross-task file handoff between parent/child notebooks or sibling tasks** | **this skill (sub-skill)** |
+| Permission-denied on `/local_disk0` during a multi-task run | **this skill (sub-skill)** |
+
+Always invoke the parent skill **first** for the overall migration plan, then return here to harden cross-task handoffs before deploying a multi-task serverless job.
 
 ## Quick start
 
@@ -131,10 +133,10 @@ If the scanner emits `ENV001`:
 
 ## Related skills
 
-- [`databricks-serverless-migration`](../databricks-serverless-migration/SKILL.md) — single-notebook classic-to-serverless migration. **Use that skill first** if the workload hasn't been migrated yet.
-- [`databricks-dabs`](../databricks-dabs/SKILL.md) — DAB structure and resource definitions. Use when authoring or fixing the `job.yml` flagged by `FANOUT003` or `FANOUT004`.
-- [`databricks-jobs`](../databricks-jobs/SKILL.md) — Lakeflow Jobs orchestration. Use when restructuring task dependencies to avoid the fan-out antipattern.
-- [`databricks-core`](../databricks-core/SKILL.md) — parent skill for CLI auth and profile selection.
+- [`databricks-serverless-migration`](../SKILL.md) — **parent skill**. Single-notebook classic-to-serverless migration and the overall Ingest → Analyze → Test → Validate lifecycle. **Always invoke first** if the workload hasn't been migrated yet — this sub-skill assumes you've already done the single-notebook port and are now hardening cross-task handoffs.
+- [`databricks-dabs`](../../databricks-dabs/SKILL.md) — DAB structure and resource definitions. Use when authoring or fixing the `job.yml` flagged by `FANOUT003` or `FANOUT004`.
+- [`databricks-jobs`](../../databricks-jobs/SKILL.md) — Lakeflow Jobs orchestration. Use when restructuring task dependencies to avoid the fan-out antipattern.
+- [`databricks-core`](../../databricks-core/SKILL.md) — grandparent skill, inherited via `databricks-serverless-migration`, for CLI auth and profile selection.
 
 ## Reference docs
 

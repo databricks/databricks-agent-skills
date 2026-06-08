@@ -13,6 +13,16 @@ parent: databricks-core
 
 Analyze existing Databricks code for serverless compute compatibility and guide migration from classic clusters. The skill follows a 4-step migration lifecycle: **Ingest** the workload → **Analyze** for compatibility → **Test** via A/B comparison → **Validate** and iterate.
 
+## Sub-skills
+
+This skill is the top of a small hierarchy. Once a single-notebook migration is done, hand off to the niche sub-skill below for multi-task hardening before deploying to serverless:
+
+| Sub-skill | Use when |
+|-----------|----------|
+| [`databricks-serverless-storage-check`](databricks-serverless-storage-check/SKILL.md) | The job has **multiple tasks** (parent/child notebooks via `dbutils.notebook.run`, sibling `notebook_task`s, or a `pipeline_task` downstream of a `notebook_task`) and shares files between them. Detects the `INTERNAL_ERROR: [Errno 13] Permission denied` / `/local_disk0/.../trustedTemp/...` failure class and rewrites the handoff to UC Volumes / `/Workspace` / `taskValues`. Invoke after this skill's single-notebook port, before the Step-3 test run. |
+
+The sub-skill is a **diagnostic + fix** layer, not a replacement — keep this skill's 4-step lifecycle as the spine and call into the sub-skill only when the multi-task triggers fire.
+
 ## When to Use This Skill
 
 - Migrating notebooks, jobs, or pipelines from classic compute to serverless
@@ -198,7 +208,7 @@ Scan the code for patterns that are incompatible with the serverless compute arc
 | Pattern | Severity | Fix |
 |---------|----------|-----|
 | `dbfs:/` or `/dbfs/` paths (persistent data) | Blocker | Replace with `/Volumes/<your_catalog>/schema/volume/path` |
-| `dbfs:/tmp/`, `/dbfs/tmp/`, paths with `cache`/`scratch`/`temp` | Warning | Use `/tmp/` or `/local_disk0/tmp/` (local driver disk) — do not use Volumes for temp files due to performance. **Per-task scratch only**: if another task (child notebook, sibling job task, or pipeline) needs to read the file, use UC Volumes or `/Workspace` — see [`databricks-serverless-storage-check`](../databricks-serverless-storage-check/SKILL.md). |
+| `dbfs:/tmp/`, `/dbfs/tmp/`, paths with `cache`/`scratch`/`temp` | Warning | Use `/tmp/` or `/local_disk0/tmp/` (local driver disk) — do not use Volumes for temp files due to performance. **Per-task scratch only**: if another task (child notebook, sibling job task, or pipeline) needs to read the file, use UC Volumes or `/Workspace` — see [`databricks-serverless-storage-check`](databricks-serverless-storage-check/SKILL.md). |
 | `file:///dbfs/` FUSE mount paths | Warning | Replace persistent paths with `/Volumes/...`; replace temp paths with `/local_disk0/tmp/` |
 | `dbutils.fs.mount(...)` | Blocker | Create UC external location + external volume |
 | `hive_metastore.db.table` | Warning | Migrate to UC or use HMS Federation: `CREATE FOREIGN CATALOG ... USING CONNECTION hms_connection` |
