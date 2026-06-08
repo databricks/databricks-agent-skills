@@ -109,8 +109,7 @@ auto-invoked skills.
 (Product workflows — apps, jobs, pipelines, DABs, etc. — are handled by the
 skills, not commands, so they aren't duplicated here.)
 
-**Hooks** (`hooks/`, both fail-open; modeled on Snowflake Cortex Code's
-prompt-routing approach):
+**Hooks** (`hooks/`, both fail-open):
 
 - **Prompt router** (UserPromptSubmit) — a fast keyword regex (sub-50ms, no LLM,
   no network) over each prompt. When the prompt is Databricks-related, it injects

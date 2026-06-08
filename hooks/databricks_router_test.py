@@ -36,8 +36,8 @@ class CheckPromptTest(unittest.TestCase):
             self.assertRoutes(p)
 
     def test_strong_routes_even_with_competitor(self):
-        # "databricks" present -> route despite the snowflake mention.
-        self.assertRoutes("migrate my tables from snowflake to databricks")
+        # "databricks" present -> route despite the competitor mention.
+        self.assertRoutes("migrate my tables from redshift to databricks")
 
     def test_ambiguous_routes_without_competitor(self):
         for p in [
@@ -49,7 +49,7 @@ class CheckPromptTest(unittest.TestCase):
 
     def test_ambiguous_suppressed_by_competitor(self):
         self.assertSkips("set up a model serving endpoint in sagemaker for redshift data")
-        self.assertSkips("use snowflake cortex for vector search")
+        self.assertSkips("use bigquery for vector search")
 
     def test_local_dev_skips(self):
         for p in [

@@ -5,9 +5,7 @@ stdlib-only Python and **fail open** (any error prints `{}` / no output and
 exits 0, so a broken hook never blocks a prompt or session start). `hooks.json`
 wires them in; Claude Code expands `${CLAUDE_PLUGIN_ROOT}`. Claude Code
 auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
-(declaring the standard path double-loads it and fails the plugin). Modeled on
-[Snowflake Cortex Code](https://github.com/Snowflake-Labs/snowflake-ai-kit)'s
-prompt-routing approach.
+(declaring the standard path double-loads it and fails the plugin).
 
 ## `databricks-router.py` — prompt router (UserPromptSubmit)
 
@@ -16,16 +14,15 @@ When the prompt is Databricks-related, it injects an `additionalContext`
 instruction telling Claude to load `databricks-core` plus the matching product
 skill before answering. When it isn't, it prints `{}` and stays out of the way.
 
-Unlike Cortex Code there's no second agent to delegate to — Claude itself drives
-the `databricks` CLI through the skills, so "routing" just means "make sure the
-Databricks skills are loaded." There is **no permission gating and no cost
-warning** here.
+There's no second agent to delegate to — Claude itself drives the `databricks`
+CLI through the skills, so "routing" just means "make sure the Databricks skills
+are loaded." There is **no permission gating and no cost warning** here.
 
 Precision is tuned to avoid over-routing:
 
 - **STRONG** terms (`databricks`, `unity catalog`, `lakeflow`, `dbfs`,
   `databricks.yml`, `delta live tables`, `genie`, …) always route — even
-  alongside a competitor mention, so "migrate from snowflake to databricks"
+  alongside a competitor mention, so "migrate from redshift to databricks"
   routes.
 - **AMBIGUOUS** terms (`model serving`, `vector search`, `mlflow`, `pyspark`,
   `medallion`, …) route only when no **SUPPRESS** term is present.

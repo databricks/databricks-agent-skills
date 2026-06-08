@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """UserPromptSubmit hook: route Databricks-related prompts into the skills.
 
-Modeled on Snowflake Cortex Code's prompt_filter.py. Reads the user prompt from
-stdin, runs a fast keyword regex (sub-50ms, no LLM, no network), and if the
-prompt is Databricks-related, injects an `additionalContext` instruction telling
-Claude to load the `databricks-core` skill (the parent/router) plus the matching
-product skill before answering.
+Reads the user prompt from stdin, runs a fast keyword regex (sub-50ms, no LLM,
+no network), and if the prompt is Databricks-related, injects an
+`additionalContext` instruction telling Claude to load the `databricks-core`
+skill (the parent/router) plus the matching product skill before answering.
 
-Unlike Cortex Code there is no second agent to delegate to: Claude itself drives
-the `databricks` CLI through the skills, so "routing" just means "make sure the
-Databricks skills are loaded." No permission gating, no cost warnings.
+There is no second agent to delegate to: Claude itself drives the `databricks`
+CLI through the skills, so "routing" just means "make sure the Databricks skills
+are loaded." No permission gating, no cost warnings.
 
 Contract (Claude Code UserPromptSubmit hook):
   stdin : JSON, e.g. {"prompt": "..."} or {"message": "..."}
@@ -23,7 +22,7 @@ import re
 import sys
 
 # Unambiguously Databricks -> always route, even alongside a competitor mention
-# (e.g. "migrate from snowflake to databricks").
+# (e.g. "migrate from redshift to databricks").
 STRONG = [
     r"\bdatabricks\b",
     r"\bunity\s+catalog\b",
@@ -57,11 +56,9 @@ AMBIGUOUS = [
 # Competitor platforms + plainly-local dev work -> suppress an AMBIGUOUS match.
 # (STRONG matches ignore this list.)
 SUPPRESS = [
-    r"\bsnowflake\b",
     r"\bbigquery\b",
     r"\bredshift\b",
     r"\bsynapse\b",
-    r"\bcortex\b",
     r"\bgit\s+(commit|push|pull|status|log|diff|branch|rebase|merge|clone|stash)\b",
     r"\b(read|edit|open|write|create|delete)\s+(the\s+|this\s+|a\s+|that\s+)?file\b",
     r"\bunit\s+tests?\b",
