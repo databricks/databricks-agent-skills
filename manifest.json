@@ -43,7 +43,7 @@
         "references/5-troubleshooting.md"
       ],
       "repo_dir": "experimental",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-apps": {
       "description": "Build apps on Databricks Apps platform.",
