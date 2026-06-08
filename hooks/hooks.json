@@ -1,0 +1,25 @@
+{
+  "description": "Databricks plugin hooks: route Databricks prompts into the skills, and prime session context.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

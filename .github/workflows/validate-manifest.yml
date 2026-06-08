@@ -9,6 +9,8 @@ on:
       - 'scripts/skills.py'
       - 'manifest.json'
       - '.claude-plugin/**'
+      - 'hooks/**'
+      - 'commands/**'
   push:
     branches:
       - main
@@ -28,3 +30,6 @@ jobs:
 
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
+
+      - name: Test databricks-router hook
+        run: python3 hooks/databricks_router_test.py

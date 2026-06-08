@@ -52,6 +52,31 @@ python3 scripts/skills.py validate
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
+## Plugin components (hooks + commands)
+
+The Claude Code plugin ships more than skills:
+
+- `hooks/` — `hooks.json` wires a UserPromptSubmit prompt router
+  (`databricks-router.py`) that steers Databricks-related prompts into the
+  skills, and a SessionStart context primer (`databricks-context.py`). Both
+  stdlib-only and fail-open. See [`hooks/README.md`](./hooks/README.md). The
+  router's keyword precision is pinned by `hooks/databricks_router_test.py`.
+  **`hooks/hooks.json` is auto-loaded by Claude Code — do NOT add a `"hooks"`
+  key to `.claude-plugin/plugin.json`, or the plugin fails to load with a
+  "Duplicate hooks file" error.**
+- `commands/` — one `*.md` per slash command (`/databricks:<name>`), declared via
+  `"commands"` in `.claude-plugin/plugin.json`. Each needs frontmatter
+  (`description`, optional `argument-hint`, `allowed-tools`).
+
+`scripts/skills.py validate` (run in CI) checks that `hooks/hooks.json` is valid
+JSON referencing scripts that exist, that plugin.json does not double-declare the
+standard hooks file, and that every command carries a `description`. The validate
+workflow also runs `python3 hooks/databricks_router_test.py`.
+
+These components ship via the plugin marketplace (the whole repo is the plugin).
+`databricks aitools install` packages `skills/` only today; extending it to
+hooks/commands is CLI-side follow-up work.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.

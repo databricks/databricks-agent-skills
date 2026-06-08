@@ -51,6 +51,7 @@ skill under [`./skills/`](./skills/)):
 | Stable skills | ✅ (default) | ✅ |
 | Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
 | Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
+| Commands & hooks | ❌ (skills only today — see below) | ✅ |
 | Updates | `databricks aitools update` | Plugin marketplace update flow |
 | Required outside the agent | Databricks CLI v1.0.0+ | None |
 
@@ -88,6 +89,43 @@ originally imported from
   databricks-iceberg --experimental`).
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
+
+## Commands and hooks (Claude Code)
+
+When installed as a Claude Code plugin, the `databricks` plugin adds slash
+commands and two hooks (prompt routing + session context) on top of the skills.
+(These are Claude-Code-specific and ship via the plugin marketplace; the CLI
+`databricks aitools install` path installs skills only today — see the note at
+the end.)
+
+**Slash commands** — friction-only entry points; everyday work stays with the
+auto-invoked skills.
+
+- `/databricks:setup [workspace-url]` — auth/onboarding: install check, then an
+  OAuth / PAT / service-principal profile, then verify.
+- `/databricks:doctor [profile]` — read-only health check (CLI version, auth,
+  workspace reachability, compute, recent job failures).
+
+(Product workflows — apps, jobs, pipelines, DABs, etc. — are handled by the
+skills, not commands, so they aren't duplicated here.)
+
+**Hooks** (`hooks/`, both fail-open; modeled on Snowflake Cortex Code's
+prompt-routing approach):
+
+- **Prompt router** (UserPromptSubmit) — a fast keyword regex (sub-50ms, no LLM,
+  no network) over each prompt. When the prompt is Databricks-related, it injects
+  a note steering Claude to load `databricks-core` plus the matching product
+  skill before answering. Unrelated prompts are untouched. No permission gating,
+  no cost warnings.
+- **Context primer** (SessionStart) — injects the routing rule, CLI version,
+  configured profile names (read locally, no network call, no token values), and
+  env/in-platform auth state.
+
+> **Distribution parity (follow-up).** The plugin marketplace ships the whole
+> repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.
+> `databricks aitools install` currently packages only `skills/`, so CLI-install
+> users don't yet get commands/hooks. Closing that gap is tracked as CLI-side
+> work.
 
 ## Structure
 
