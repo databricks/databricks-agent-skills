@@ -193,7 +193,7 @@ databricks serving-endpoints patch turbine-risk-endpoint --json '{
 A loop watching only `state.ready` will say "ready" mid version-swap while the old version is still serving. Poll **both**:
 
 ```bash
-databricks serving-endpoints get turbine-risk-endpoint \
+databricks serving-endpoints get turbine-risk-endpoint --output json \
   | jq '{ready: .state.ready, config_update: .state.config_update}'
 ```
 
@@ -209,7 +209,7 @@ databricks workspace import /Workspace/Users/me@example.com/turbine_project/trai
   --file ./train_notebook.py --format SOURCE --language PYTHON --overwrite
 
 # 2. Submit as serverless one-time run (returns {"run_id": N} immediately with --no-wait)
-RUN_ID=$(databricks jobs submit --no-wait --json '{
+RUN_ID=$(databricks jobs submit --no-wait --output json --json '{
   "run_name": "turbine-train-and-deploy",
   "tasks": [{
     "task_key": "train",
@@ -227,7 +227,7 @@ RUN_ID=$(databricks jobs submit --no-wait --json '{
 
 # 3. Poll until a terminal life_cycle_state.
 for _ in $(seq 60); do
-  STATE=$(databricks jobs get-run "$RUN_ID" | jq -r '.state.life_cycle_state // "UNKNOWN"')
+  STATE=$(databricks jobs get-run "$RUN_ID" --output json | jq -r '.state.life_cycle_state // "UNKNOWN"')
   echo "$(date +%H:%M:%S) $STATE"
   [[ "$STATE" =~ ^(TERMINATED|SKIPPED|INTERNAL_ERROR)$ ]] && break
   sleep 30
@@ -236,19 +236,19 @@ done
 
 # life_cycle_state TERMINATED only means "the run ended" — check result_state
 # (SUCCESS / FAILED / TIMEDOUT / CANCELED / SUCCESS_WITH_FAILURES / …) for outcome.
-RESULT=$(databricks jobs get-run "$RUN_ID" | jq -r '.state.result_state // "UNKNOWN"')
+RESULT=$(databricks jobs get-run "$RUN_ID" --output json | jq -r '.state.result_state // "UNKNOWN"')
 echo "result_state=$RESULT"
 [[ "$RESULT" == "SUCCESS" ]] || { echo "Run did not succeed"; exit 1; }
 
 # 4. Pull structured output via the TASK run_id (NOT the submit run_id).
-TASK_RUN_ID=$(databricks jobs get-run "$RUN_ID" | jq -r '.tasks[0].run_id')
-databricks jobs get-run-output "$TASK_RUN_ID" | jq '.notebook_output.result'
+TASK_RUN_ID=$(databricks jobs get-run "$RUN_ID" --output json | jq -r '.tasks[0].run_id')
+databricks jobs get-run-output "$TASK_RUN_ID" --output json | jq '.notebook_output.result'
 # → '{"model_version":"3","val_auc":0.91,"rows_scored":124,"endpoint":"turbine-risk-endpoint"}'
 ```
 
 **Serving UI hides SP-owned endpoints by default.** If the deploy ran as a service principal, the Serving page won't show the new endpoint until you switch from "Owned by me" to "All". Or just `databricks serving-endpoints list`.
 
-For the four `jobs submit` traps (`spec.client: "4"` requirement, TASK-vs-submit run_id, `print()` unreliable, tags rejected) and full debugging flow, see **[databricks-jobs](../../databricks-jobs/SKILL.md#one-time-runs-jobs-submit--async-pattern-for-notebooks)**.
+These `jobs submit` traps — the `spec.client: "4"` requirement, using the TASK run_id (not the submit run_id) to fetch output, and `dbutils.notebook.exit` over `print()` on serverless — are shown in the example above. For broader Lakeflow Jobs guidance, see the **[databricks-jobs](../../databricks-jobs/SKILL.md)** skill.
 
 ---
 
@@ -267,7 +267,7 @@ Pay-per-token, pre-provisioned in every workspace. New models land regularly and
 
 ```bash
 # Foundation Model API endpoints in this workspace, grouped by task (chat / embeddings / etc.)
-databricks serving-endpoints list \
+databricks serving-endpoints list --output json \
   | jq -r '.[]
       | select(.name | startswith("databricks-"))
       | select((.config.served_entities[0].entity_name // "") | startswith("system.ai."))

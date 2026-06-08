@@ -187,7 +187,7 @@ databricks jobs list-runs --active-only --output json \
   | jq --arg name "deploy_${MODEL_NAME}" '.[]? | select(.run_name == $name) | {run_id, state}'
 
 # 2. Does the target endpoint already exist? If READY on the right version, skip the redeploy.
-databricks serving-endpoints get <endpoint_name> 2>/dev/null \
+databricks serving-endpoints get <endpoint_name> --output json 2>/dev/null \
   | jq '{ready: .state.ready, served: [.config.served_models[] | {name, model_version}]}'
 ```
 
