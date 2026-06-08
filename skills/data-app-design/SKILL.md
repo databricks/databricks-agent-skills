@@ -37,7 +37,8 @@ Design advice that doesn't name a real component is incomplete. Always end at a 
 - Large tables → server-side pagination/sort/filter, not client-side over a huge result set.
 - Long-running queries → optimistic loading + timeout/error UX.
 
-## AI / Genie surfaces (the "AI" half) — implement ALL five, see `references/genie-ai-trust.md` for code
+## AI / Genie surfaces (the "AI" half)
+**Gate:** this section applies **only** if the app has a Genie / chat / natural-language / "ask your data" surface. For a pure dashboard / KPI / report app with no conversational input, **skip this section and `references/genie-ai-trust.md` entirely.** When it does apply, implement ALL five (code in `references/genie-ai-trust.md`):
 A Genie/chat/NL answer is only trustworthy if the user can see how it was produced and who it ran as. "Use `GenieChat` + a spinner" is NOT enough — for ANY Genie/chat surface, ship all five (copy the exact snippets from the reference):
 1. **Identity / OBO** — a `/api/whoami` route + the signed-in user in a `Badge`; state queries run on-behalf-of them.
 2. **Generated SQL** — render `attachments[].query` in an inspectable "Generated SQL" `Card`; never hide how the answer was computed.

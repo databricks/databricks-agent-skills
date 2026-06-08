@@ -1,5 +1,8 @@
 # Genie / AI-result trust patterns (copy these)
 
+> **GATE:** apply ONLY if the app exposes a Genie / chat / natural-language query surface. If it's a
+> dashboard / report / KPI app with no NL/chat input, do not load or apply any pattern here.
+
 An AI/Genie answer is only trustworthy if the user can **see how it was produced** and **who it ran as**.
 For ANY Genie / chat / natural-language data surface, ship ALL FIVE below — "use `GenieChat` and show
 a spinner" is not enough. Snippets use the real `@databricks/appkit` + `@databricks/appkit-ui` APIs.
