@@ -163,6 +163,17 @@
       "repo_dir": "experimental",
       "version": "0.1.0"
     },
+    "databricks-genie": {
+      "description": "Create and query Databricks Genie Spaces for natural language SQL exploration. Use when building Genie Spaces, exporting and importing Genie Spaces, migrating Genie Spaces between workspaces or environments, or asking questions via the Genie Conversation API.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ],
+      "repo_dir": "experimental",
+      "version": "0.0.1"
+    },
     "databricks-iceberg": {
       "description": "Apache Iceberg tables on Databricks \u2014 Managed Iceberg tables, External Iceberg Reads (fka Uniform), Compatibility Mode, Iceberg REST Catalog (IRC), Iceberg v3, Snowflake interop, PyIceberg, OSS Spark, external engine access and credential vending. Use when creating Iceberg tables, enabling External Iceberg Reads (uniform) on Delta tables (including Streaming Tables and Materialized Views via compatibility mode), configuring external engines to read Databricks tables via Unity Catalog IRC, integrating with Snowflake catalog to read Foreign Iceberg tables",
       "files": [
