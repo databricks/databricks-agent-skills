@@ -9,7 +9,7 @@ any error exits 0 with no output. It surfaces, when available:
   - configured profile names, parsed straight from the config file (no network)
   - env-based / in-platform auth (DATABRICKS_HOST, DATABRICKS_CONFIG_PROFILE)
 
-Token values are never printed — only their presence.
+Token values are never printed, only their presence.
 
 Contract (Claude Code SessionStart hook):
   stdin : JSON (drained, content unused)
@@ -45,8 +45,10 @@ def cli_version(databricks):
 def config_profiles():
     """(config_path, [profile names]) read locally from the config file.
 
-    Skips CLI-internal sections like `[__settings__]`, which are not auth
-    profiles.
+    Parsed directly rather than via `databricks auth profiles` on purpose: this
+    runs at SessionStart, which must stay offline and fast (no network, no
+    auth-validation round-trips). Skips CLI-internal sections like
+    `[__settings__]`, which are not auth profiles.
     """
     cfg = os.environ.get("DATABRICKS_CONFIG_FILE") or str(Path.home() / ".databrickscfg")
     try:
@@ -99,7 +101,7 @@ def build_context():
         shown = [_sanitize(n) for n in profiles[:MAX_PROFILES]]
         more = f" (+{len(profiles) - len(shown)} more)" if len(profiles) > len(shown) else ""
         lines.append(f"Profiles in {Path(cfg).name}: {', '.join(shown)}{more}.")
-        lines.append("Never auto-select a profile — pass `--profile <name>` and let the user choose.")
+        lines.append("Never auto-select a profile. Pass `--profile <name>` and let the user choose.")
     else:
         lines.append(f"No profiles found in {cfg}.")
 

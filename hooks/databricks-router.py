@@ -33,7 +33,7 @@ STRONG = [
     r"\bdbsql\b",
     r"\bdatabricks\.yml\b",
     r"\basset\s+bundle\b",
-    r"\bdabs?\b",
+    r"\bdabs\b",
     r"\bdelta\s+live\s+tables?\b",
     r"\bspark\s+declarative\s+pipelines?\b",
     r"\bmosaic\s+ai\b",
@@ -73,7 +73,7 @@ _AMBIGUOUS = [re.compile(p, re.IGNORECASE) for p in AMBIGUOUS]
 _SUPPRESS = [re.compile(p, re.IGNORECASE) for p in SUPPRESS]
 
 ROUTING_INSTRUCTION = (
-    "[DATABRICKS] This request is Databricks-related — handle it through the "
+    "[DATABRICKS] This request is Databricks-related. Handle it through the "
     "Databricks skills rather than ad hoc commands. Use the Skill tool to load "
     "`databricks-core` first (the parent skill: CLI, auth, profile selection, "
     "data exploration), then load the product skill that matches the request:\n"

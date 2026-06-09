@@ -507,7 +507,7 @@ def check_plugin_components(repo_root: Path) -> list[str]:
         if "commands" not in plugin:
             errors.append(
                 'commands/ exists but .claude-plugin/plugin.json does not declare '
-                '"commands": "./commands/" — add it, or the commands silently stop '
+                '"commands": "./commands/". Add it, or the commands silently stop '
                 "shipping."
             )
         md_files = sorted(commands_dir.glob("*.md"))
@@ -532,7 +532,7 @@ def check_plugin_components(repo_root: Path) -> list[str]:
         declared = str(plugin.get("hooks", "")).strip().strip("./")
         if declared == "hooks/hooks.json":
             errors.append(
-                'plugin.json must not declare "hooks": "./hooks/hooks.json" — the '
+                'plugin.json must not declare "hooks": "./hooks/hooks.json". The '
                 "standard hooks/hooks.json is auto-loaded, so declaring it again "
                 'double-loads it. Remove the "hooks" key (reserve manifest.hooks '
                 "for additional, non-standard hook files)."

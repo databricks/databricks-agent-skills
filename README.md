@@ -51,7 +51,7 @@ skill under [`./skills/`](./skills/)):
 | Stable skills | ✅ (default) | ✅ |
 | Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
 | Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
-| Commands & hooks | ❌ (skills only today — see below) | ✅ |
+| Commands & hooks | ❌ (skills only today, see below) | ✅ |
 | Updates | `databricks aitools update` | Plugin marketplace update flow |
 | Required outside the agent | Databricks CLI v1.0.0+ | None |
 
@@ -95,28 +95,28 @@ originally imported from
 When installed as a Claude Code plugin, the `databricks` plugin adds slash
 commands and two hooks (prompt routing + session context) on top of the skills.
 (These are Claude-Code-specific and ship via the plugin marketplace; the CLI
-`databricks aitools install` path installs skills only today — see the note at
+`databricks aitools install` path installs skills only today; see the note at
 the end.)
 
-**Slash commands** — friction-only entry points; everyday work stays with the
+**Slash commands**: friction-only entry points; everyday work stays with the
 auto-invoked skills.
 
-- `/databricks:setup [workspace-url]` — auth/onboarding: install check, then an
+- `/databricks:setup [workspace-url]`: auth/onboarding. Install check, then an
   OAuth / PAT / service-principal profile, then verify.
-- `/databricks:doctor [profile]` — read-only health check (CLI version, auth,
+- `/databricks:doctor [profile]`: read-only health check (CLI version, auth,
   workspace reachability, compute, recent job failures).
 
-(Product workflows — apps, jobs, pipelines, DABs, etc. — are handled by the
+(Product workflows such as apps, jobs, pipelines, DABs, etc. are handled by the
 skills, not commands, so they aren't duplicated here.)
 
 **Hooks** (`hooks/`, both fail-open):
 
-- **Prompt router** (UserPromptSubmit) — a fast keyword regex (sub-50ms, no LLM,
+- **Prompt router** (UserPromptSubmit): a fast keyword regex (sub-50ms, no LLM,
   no network) over each prompt. When the prompt is Databricks-related, it injects
   a note steering Claude to load `databricks-core` plus the matching product
   skill before answering. Unrelated prompts are untouched. No permission gating,
   no cost warnings.
-- **Context primer** (SessionStart) — injects the routing rule, CLI version,
+- **Context primer** (SessionStart): injects the routing rule, CLI version,
   configured profile names (read locally, no network call, no token values), and
   env/in-platform auth state.
 

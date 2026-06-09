@@ -52,14 +52,14 @@ python3 scripts/skills.py validate     # check Codex metadata + icons + manifest
 Beyond skills, the Claude Code plugin ships two component dirs at the repo root.
 `commands/` is declared via `"commands"` in `.claude-plugin/plugin.json`, but
 **`hooks/hooks.json` is auto-loaded by Claude Code and must NOT be declared**
-there — declaring the standard path double-loads it and fails the plugin with a
+there. Declaring the standard path double-loads it and fails the plugin with a
 "Duplicate hooks file" error.
 
-- `hooks/` — a UserPromptSubmit prompt router (`databricks-router.py`) that
+- `hooks/`: a UserPromptSubmit prompt router (`databricks-router.py`) that
   steers Databricks-related prompts into the skills, and a SessionStart context
   primer (`databricks-context.py`), wired via `hooks/hooks.json`. Both
   stdlib-only and fail-open. See [hooks/README.md](./hooks/README.md).
-- `commands/` — friction-only slash commands (`/databricks:setup`,
+- `commands/`: friction-only slash commands (`/databricks:setup`,
   `/databricks:doctor`). Product workflows stay in the skills, not commands, to
   avoid shadowing a skill of the same name.
 
