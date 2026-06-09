@@ -49,5 +49,45 @@ class CheckTest(unittest.TestCase):
         self.assertIsNone(helper.check("Bash", "databricks auth env", ""))
 
 
+class CommandDetectionTest(unittest.TestCase):
+    """`databricks` must be a segment executable, not a substring anywhere."""
+
+    AUTH_ERROR = "Error: 401 Unauthorized"
+
+    def test_databricks_mentioned_but_not_invoked_no_hint(self):
+        # Observed false positives: gh commands against the databricks GitHub
+        # org whose output quoted auth-failure phrases (a PR body describing
+        # this hook, and this hook's own source fetched via the contents API).
+        for command in [
+            "gh pr view 128 --repo databricks/databricks-agent-skills --json body",
+            'gh api "repos/databricks/databricks-agent-skills/contents/hooks/databricks-auth-helper.py"',
+            "git clone https://github.com/databricks/cli",
+            "curl https://docs.databricks.com/api/auth.html",
+            "echo databricks",
+            "cat notes/databricks.md",
+            "/tmp/databricks-test clusters list",
+        ]:
+            self.assertIsNone(
+                helper.check("Bash", command, self.AUTH_ERROR),
+                f"should not hint: {command!r}",
+            )
+
+    def test_databricks_invoked_hint(self):
+        for command in [
+            "databricks clusters list",
+            "cd repos/cli && databricks auth describe",
+            "databricks jobs list | head -5",
+            "/usr/local/bin/databricks --version",
+            "./databricks auth env",
+            "DATABRICKS_CONFIG_PROFILE=dev databricks current-user me",
+            "sudo -E databricks auth login",
+            "token=$(databricks auth token --host https://example.com)",
+        ]:
+            self.assertIsNotNone(
+                helper.check("Bash", command, self.AUTH_ERROR),
+                f"should hint: {command!r}",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

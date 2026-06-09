@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """PostToolUse hook: suggest an auth fix when a `databricks` command fails auth.
 
-Watches Bash tool results. When the command involved the `databricks` CLI and
-the output looks like an authentication failure (missing credentials, expired
-or invalid token, OAuth refresh failure), it injects one line of
-`additionalContext` pointing at `/databricks:doctor` and `databricks auth
-login`. Everything else passes through silently.
+Watches Bash tool results. When the command actually invoked the `databricks`
+CLI (as a segment executable, not merely "databricks" appearing in a repo
+path, URL, or argument) and the output looks like an authentication failure
+(missing credentials, expired or invalid token, OAuth refresh failure), it
+injects one line of `additionalContext` pointing at `/databricks:doctor` and
+`databricks auth login`. Everything else passes through silently.
 
 No gating: this never blocks or rewrites a tool call, it only adds context
 after the fact.
@@ -19,7 +20,41 @@ import json
 import re
 import sys
 
-DATABRICKS_CMD_RE = re.compile(r"\bdatabricks\b")
+# `databricks` must be the executable of one of the command's shell segments,
+# not a substring anywhere in the command line: `gh pr view --repo
+# databricks/cli`, URLs, and file paths mention databricks without invoking
+# the CLI, and their output can legitimately quote auth-failure phrases (a PR
+# body, this hook's own source). Segments are split on shell connectors and
+# command-substitution openers; each segment's executable is its first token
+# after env assignments, common wrappers, and wrapper flags. Path-prefixed
+# invocations (`/usr/local/bin/databricks`) count; `databricks-test` does not.
+_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||\$\(|[;|&\n`(]")
+_ENV_ASSIGNMENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
+_WRAPPERS = frozenset({"sudo", "env", "command", "exec", "time", "nohup", "xargs"})
+
+
+def _segment_executable(tokens):
+    """First token that is not an env assignment, wrapper, or wrapper flag."""
+    after_wrapper = False
+    for token in tokens:
+        if _ENV_ASSIGNMENT_RE.match(token):
+            continue
+        if token in _WRAPPERS:
+            after_wrapper = True
+            continue
+        if after_wrapper and token.startswith("-"):
+            continue
+        return token
+    return ""
+
+
+def _invokes_databricks_cli(command):
+    """True when any segment of the command runs the `databricks` executable."""
+    for segment in _SEGMENT_SPLIT_RE.split(command):
+        executable = _segment_executable(segment.split())
+        if executable.rsplit("/", 1)[-1] == "databricks":
+            return True
+    return False
 
 # Phrase-shaped auth-failure signals as emitted by the CLI / Go SDK error
 # paths. Deliberately not bare status codes, so ordinary data in stdout
@@ -48,7 +83,7 @@ def check(tool_name, command, response_text):
     """Return the auth hint when a databricks command hit an auth error, else None."""
     if tool_name != "Bash":
         return None
-    if not command or not DATABRICKS_CMD_RE.search(command):
+    if not command or not _invokes_databricks_cli(command):
         return None
     if not response_text:
         return None

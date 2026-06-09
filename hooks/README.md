@@ -62,7 +62,10 @@ output matches a phrase-shaped auth-failure signal (missing default
 credentials, `invalid_grant`, `401 unauthorized`, invalid/expired token), it
 injects one line suggesting `/databricks:doctor` or `databricks auth login`
 before any retry. It never blocks or rewrites tool calls; bare status codes in
-ordinary output do not trigger it.
+ordinary output do not trigger it. Only commands that actually **invoke** the
+`databricks` executable count: `databricks` appearing as a repo path, URL, or
+argument (`gh pr view --repo databricks/cli`) does not, since such output can
+legitimately quote auth-failure phrases without any auth problem.
 Covered by `databricks_auth_helper_test.py` (`python3 hooks/databricks_auth_helper_test.py`).
 
 ## Distribution note
