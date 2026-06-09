@@ -71,6 +71,18 @@ changing hook behavior.
 These ship via the plugin marketplace
 (whole-repo source); `databricks aitools install` currently installs skills only.
 
+**Marketplace entries are load-bearing for installed plugins.** Never remove a
+shipped plugin's entry from `.claude-plugin/marketplace.json` (and never rename
+the plugin or the marketplace). Claude Code re-resolves installed plugins
+against the marketplace catalog at load time, so removing the entry does not
+just stop updates: every existing install immediately fails to load ("Plugin
+databricks not found in marketplace databricks-agent-skills") and those users
+lose all skills, hooks, and commands until they manually uninstall and
+reinstall from another source. Verified empirically (2026-06). Listing the
+plugin on an additional marketplace, such as Anthropic's official directory,
+is additive and never replaces the entry here. This applies to both plugins,
+`databricks` and `databricks-experimental` alike.
+
 `experimental/` is also its own **skills-only** plugin (`databricks-experimental`,
 manifest at `experimental/.claude-plugin/plugin.json`, marketplace source
 `./experimental`). Never add hooks or commands under `experimental/`; hooks
