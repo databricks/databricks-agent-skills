@@ -35,8 +35,8 @@ Edit those three lists when the product surface changes. Behavior is pinned by
 ## `databricks-context.py` — context primer (SessionStart)
 
 Injects a compact banner once at session start: the routing rule (load
-`databricks-core` + the product skill), CLI presence + version (notes when below
-v0.292.0), configured profile names (parsed from `~/.databrickscfg` locally —
+`databricks-core` + the product skill), CLI presence + version, configured
+profile names (parsed from `~/.databrickscfg` locally —
 **no network call**, token values never printed), and whether env/in-platform
 auth is set. If the CLI isn't installed it points at `/databricks:setup`.
 

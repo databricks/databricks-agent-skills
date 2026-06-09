@@ -5,7 +5,7 @@ Local-only and fail-open by design. It never makes a network call (so it can't
 hang, hit an MCP-style timeout, or trigger an auth prompt at session start) and
 any error exits 0 with no output. It surfaces, when available:
 
-  - databricks CLI presence + version (warns below MIN_VERSION)
+  - databricks CLI presence + version
   - configured profile names, parsed straight from the config file (no network)
   - env-based / in-platform auth (DATABRICKS_HOST, DATABRICKS_CONFIG_PROFILE)
 
@@ -24,8 +24,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Matches the minimum the databricks-core skill requires.
-MIN_VERSION = (0, 292, 0)
 VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 SECTION_RE = re.compile(r"^\[([^\]]+)\]", re.MULTILINE)
 MAX_PROFILES = 12
@@ -91,10 +89,7 @@ def build_context():
 
     lines = []
     ver = cli_version(databricks)
-    if ver and ver < MIN_VERSION:
-        rec = ".".join(map(str, MIN_VERSION))
-        lines.append(f"CLI v{'.'.join(map(str, ver))} (below recommended v{rec} — consider upgrading).")
-    elif ver:
+    if ver:
         lines.append(f"CLI v{'.'.join(map(str, ver))}.")
     else:
         lines.append("CLI present (version unknown).")

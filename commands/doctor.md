@@ -13,7 +13,8 @@ check `databricks <group> --help` first rather than guessing.
 Run these in order. Don't stop on the first failure — collect what you can and
 report the rest as unknown.
 
-1. **CLI** — `databricks --version`. Flag if missing or below v0.292.0.
+1. **CLI** — `databricks --version`. Flag only if it's missing; don't gate on a
+   specific version (the CLI surfaces its own update notice).
 2. **Profiles** — `databricks auth profiles`. List configured profiles and
    validity. If `$1` is given, use that profile for the rest. Otherwise, if more
    than one profile exists, ask the user which to use — **never auto-select**.

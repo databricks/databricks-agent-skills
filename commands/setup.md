@@ -10,7 +10,7 @@ Guide the user through Databricks CLI authentication. Use the **databricks-core*
 skill for the authoritative auth details; this command is the step-by-step
 wrapper around it.
 
-1. **CLI present?** — `databricks --version`. If missing or below v0.292.0,
+1. **CLI present?** — `databricks --version`. If it's missing,
    follow the install steps in the databricks-core skill
    (`databricks-cli-install.md`). In sandboxed environments (Cursor, containers),
    print the install command and ask the user to run it in their own terminal —
