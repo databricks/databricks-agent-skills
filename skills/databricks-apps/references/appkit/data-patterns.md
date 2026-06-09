@@ -9,8 +9,8 @@ Apps are **compositions of capabilities**, not single archetypes. Derive `--feat
 | Flag | Plugin | Owns | Deep guide |
 |------|--------|------|------------|
 | `reads_warehouse` | `analytics` | `config/queries/` (SELECT), charts, `useAnalyticsQuery` | [SQL Queries](sql-queries.md) |
-| `reads_synced` | `lakebase` | Read-only queries on Lakebase synced tables | [Lakebase](lakebase.md) *Reading from synced tables* |
-| `writes_oltp` | `lakebase` | Postgres CRUD, schema init, deploy-first | [Lakebase](lakebase.md) |
+| `reads_synced` | `lakebase` | Read-only queries on Lakebase synced tables | [Lakebase Synced Reads](lakebase-synced-reads.md) |
+| `writes_oltp` | `lakebase` | Postgres CRUD, schema init, deploy-first | [Lakebase OLTP](lakebase-oltp.md) |
 | `writes_delta` | `analytics` | Warehouse DML via custom routes | [Warehouse Mutations](warehouse-mutations.md) |
 | `writes_via_job` | `jobs` | Trigger/monitor Lakeflow Jobs | [Jobs](jobs.md) |
 | `genie` | `genie` | NL Q&A over UC tables (SSE) | [Genie](genie.md) |
@@ -61,7 +61,7 @@ When the app **persists or mutates** data:
 
 | Need | Write path | Read next |
 |------|------------|-----------|
-| App-owned state (forms, CRUD, sessions) — Postgres is system of record | Custom route + `appkit.lakebase.query()` | [Lakebase](lakebase.md) |
+| App-owned state (forms, CRUD, sessions) — Postgres is system of record | Custom route + `appkit.lakebase.query()` | [Lakebase OLTP](lakebase-oltp.md) |
 | User action updates **existing Delta/UC table now** (small scoped DML) | Custom route + `appkit.analytics.query()` + Zod | [Warehouse Mutations](warehouse-mutations.md) |
 | Large / async lakehouse write | Custom route → `jobs()` plugin | [Jobs](jobs.md) |
 | Postgres now; curated data in Delta **later** (async OK) | Lakebase OLTP + [Lakehouse Sync](../../../databricks-lakebase/references/lakehouse-sync.md) (UI-only) | **`databricks-lakebase`** skill |
@@ -90,7 +90,7 @@ After choice: (A) → `--features lakebase` (+ analytics if also dashboarding di
 - **Genie + analytics:** OK — SQL files for fixed KPIs; Genie for NL. Flags: `reads_warehouse`, `genie`.
 - **Lakebase OLTP + analytics:** Common hybrid — reads via SQL files; writes via Postgres routes. Flags: `writes_oltp`, `reads_warehouse`.
 - **Files / serving / jobs:** Stack freely with any read/write combo.
-- **Never write to synced tables** — read-only replicas; see [Lakebase](lakebase.md).
+- **Never write to synced tables** — read-only replicas; see [Lakebase Synced Reads](lakebase-synced-reads.md).
 - **Never** warehouse SELECT in custom endpoints — use `config/queries/`.
 - **Never** `useAnalyticsQuery` for Lakebase data.
 
@@ -147,7 +147,7 @@ Union slices for every flag in the capability set. See [Lifecycle](lifecycle.md)
 
 - [ ] Synced table exists; SP granted SELECT — **`databricks-lakebase`** skill
 - [ ] Read-only Express routes — never write to synced tables
-- [ ] → [Lakebase](lakebase.md) *Reading from synced tables*
+- [ ] → [Lakebase Synced Reads](lakebase-synced-reads.md)
 
 ### Slice: `writes_oltp`
 
@@ -155,7 +155,7 @@ Union slices for every flag in the capability set. See [Lifecycle](lifecycle.md)
 - [ ] Schema + CRUD in `onPluginsReady`
 - [ ] Frontend uses `fetch('/api/...')` — not `useAnalyticsQuery`
 - [ ] Deploy before local dev
-- [ ] → [Lakebase](lakebase.md)
+- [ ] → [Lakebase OLTP](lakebase-oltp.md)
 
 ### Slice: `writes_delta`
 

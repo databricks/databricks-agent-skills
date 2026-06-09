@@ -4,7 +4,7 @@ Use this guide when an AppKit app must **write to Unity Catalog Delta tables** v
 
 For **reads** from the warehouse, use [SQL Queries](sql-queries.md) (`config/queries/` + `useAnalyticsQuery`). **Never** add custom endpoints for SELECT.
 
-For **app-owned operational state** (forms, CRUD, session data), prefer [Lakebase](lakebase.md) instead of writing Delta directly from the app.
+For **app-owned operational state** (forms, CRUD, session data), prefer [Lakebase OLTP](lakebase-oltp.md) instead of writing Delta directly from the app.
 
 **Pattern selection and gates:** [Data Patterns](data-patterns.md).
 
@@ -14,13 +14,13 @@ Before implementing warehouse DML, confirm this is the right layer:
 
 | Need | Use |
 |------|-----|
-| User form / CRUD / low-latency app state | [Lakebase](lakebase.md) — `appkit.lakebase.query()` |
+| User form / CRUD / low-latency app state | [Lakebase OLTP](lakebase-oltp.md) — `appkit.lakebase.query()` |
 | App data must appear in Delta later (async OK) | Lakebase write + [Lakehouse Sync](../../../databricks-lakebase/references/lakehouse-sync.md) (UI-only) |
 | Large / batch / multi-step lakehouse write | [Jobs](jobs.md) — `jobs()` plugin triggers a Lakeflow Job |
 | User action must land in Delta **now**, small scoped DML | **This guide** — custom endpoint + `appkit.analytics.query()` |
 | Read lakehouse data in the UI | [SQL Queries](sql-queries.md) or Lakebase synced tables (read-only) |
 
-**Never write to Lakebase synced tables** — they are read-only replicas of Delta; app writes corrupt sync. See [Lakebase Guide](lakebase.md) *Reading from Synced Tables*.
+**Never write to Lakebase synced tables** — they are read-only replicas of Delta; app writes corrupt sync. See [Lakebase Synced Reads](lakebase-synced-reads.md).
 
 ## How it works
 
@@ -113,7 +113,7 @@ createApp({
 }).catch(console.error);
 ```
 
-For typing extracted route modules, see [Lakebase Guide](lakebase.md) *Lakebase route modules — typing* — use the same generic `setupXRoutes<T>(appkit: T)` pattern when `analytics()` is in the plugin list. Do not add `appkit-types.ts` or hand-written `AppKitWith*` interfaces.
+For typing extracted route modules, see [Lakebase OLTP](lakebase-oltp.md) *Lakebase route modules — typing* — use the same generic `setupXRoutes<T>(appkit: T)` pattern when `analytics()` is in the plugin list. Do not add `appkit-types.ts` or hand-written `AppKitWith*` interfaces.
 
 ## Service principal vs on-behalf-of-user
 
@@ -206,5 +206,5 @@ If you enable the **agents** plugin, built-in `analytics.query` **agent tools** 
 
 - [Custom Endpoints](custom-endpoints.md) — when to add routes vs use plugins
 - [SQL Queries](sql-queries.md) — read path only (`config/queries/`)
-- [Lakebase](lakebase.md) — Postgres CRUD and hybrid read/write patterns
+- [Lakebase OLTP](lakebase-oltp.md) — Postgres CRUD; [Lakebase Synced Reads](lakebase-synced-reads.md) — read-only Delta replicas
 - [Jobs](jobs.md) — async lakehouse writes

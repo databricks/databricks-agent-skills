@@ -8,7 +8,7 @@ When you need server-side logic that no plugin covers, extend the AppKit server 
 
 **Writes are allowed via custom endpoints** — pick the backend in [Data Patterns: Write path](data-patterns.md#write-path):
 
-- **Postgres app state** (forms, CRUD, session data) → `appkit.lakebase.query()` — [Lakebase Guide](lakebase.md)
+- **Postgres app state** (forms, CRUD, session data) → `appkit.lakebase.query()` — [Lakebase OLTP](lakebase-oltp.md)
 - **Delta / Unity Catalog DML** (small scoped `INSERT`/`UPDATE`/`DELETE`/`MERGE`) → `appkit.analytics.query()` — [Warehouse Mutations](warehouse-mutations.md)
 - **Large or async lakehouse writes** → [Jobs](jobs.md) plugin
 
@@ -75,7 +75,7 @@ Register routes inside `onPluginsReady` so plugins are initialized before the se
 |---------------|-------------------|
 | External Databricks APIs (MLflow, Workspace) | `[server()]` |
 | Delta / UC DML | `[server(), analytics({})]` — see [Warehouse Mutations](warehouse-mutations.md) |
-| Postgres CRUD | `[server(), lakebase()]` — see [Lakebase](lakebase.md) |
+| Postgres CRUD | `[server(), lakebase()]` — see [Lakebase OLTP](lakebase-oltp.md) |
 | Trigger Lakeflow Jobs | `[server(), jobs()]` — see [Jobs](jobs.md) |
 
 ### Example: external API (no warehouse or Lakebase)
@@ -103,9 +103,9 @@ await createApp({
 });
 ```
 
-Do **not** copy a placeholder mutation that returns fake IDs — real writes must use `appkit.lakebase.query()` or `appkit.analytics.query()` as in [Lakebase Guide](lakebase.md) and [Warehouse Mutations Guide](warehouse-mutations.md).
+Do **not** copy a placeholder mutation that returns fake IDs — real writes must use `appkit.lakebase.query()` or `appkit.analytics.query()` as in [Lakebase OLTP](lakebase-oltp.md) and [Warehouse Mutations Guide](warehouse-mutations.md).
 
-For Lakebase CRUD routes, schema initialization, and chat persistence, see [Lakebase Guide](lakebase.md).
+For Lakebase CRUD routes, schema initialization, and chat persistence, see [Lakebase OLTP](lakebase-oltp.md).
 
 For Delta / Unity Catalog writes (`INSERT`, `UPDATE`, `DELETE`, `MERGE`), see [Warehouse Mutations Guide](warehouse-mutations.md).
 
@@ -140,34 +140,15 @@ function MyComponent() {
 }
 ```
 
-## Decision Tree for Data Operations
+## Route patterns and anti-patterns
 
-1. **Need to display data from SQL?**
-   - **Chart or Table?** → Use visualization components (`BarChart`, `LineChart`, `DataTable`, etc.)
-   - **Custom display (KPIs, cards, lists)?** → Use `useAnalyticsQuery` hook
-   - **Never** add custom endpoints for SQL SELECT statements against the warehouse
+For **which backend** to use (reads, writes, plugins), see [Data Patterns](data-patterns.md) — do not duplicate that decision tree here.
 
-2. **Need to call a Databricks API?**
-   - Serving endpoints → use `serving()` plugin (see [Model Serving Guide](model-serving.md))
-   - Jobs → use `jobs()` plugin (see [Jobs Guide](jobs.md))
-   - MLflow, Workspace API, other APIs → custom endpoint via `onPluginsReady`
+**Summary for custom routes:**
 
-3. **Need to modify data?** → Custom endpoint in `onPluginsReady`
-   - **Delta / UC table (SQL warehouse)** → `appkit.analytics.query()` with fixed SQL + Zod validation — see [Warehouse Mutations](warehouse-mutations.md)
-   - **Postgres app state** → `appkit.lakebase.query()` — see [Lakebase](lakebase.md)
-   - **Large / async lakehouse writes** → `jobs()` plugin — see [Jobs](jobs.md)
-   - Multi-step transactions or business logic with side effects
-
-4. **Need non-SQL custom logic?** → Custom endpoint in `onPluginsReady`
-   - File processing
-   - External API calls
-   - Complex computations in TypeScript
-
-**Summary:**
-
-- ✅ SQL **reads** → Visualization components or `useAnalyticsQuery`
-- ✅ Delta / UC **writes** → custom endpoint + `appkit.analytics.query()` — see [Warehouse Mutations](warehouse-mutations.md)
-- ✅ Databricks APIs without a plugin → custom endpoint via `onPluginsReady`
-- ✅ Postgres app mutations → Lakebase routes — see [Lakebase](lakebase.md)
-- ❌ SQL warehouse **SELECT** in custom endpoints (NEVER — use `config/queries/`)
-- ❌ Files operations → custom endpoints (NEVER do this — use Files plugin)
+- ✅ SQL **reads** → `config/queries/` / `useAnalyticsQuery` (not custom endpoints)
+- ✅ Postgres mutations → [Lakebase OLTP](lakebase-oltp.md)
+- ✅ Delta / UC DML → [Warehouse Mutations](warehouse-mutations.md)
+- ✅ Databricks APIs without a plugin → custom endpoint + `onPluginsReady`
+- ❌ Warehouse SELECT in custom endpoints
+- ❌ Files operations in custom endpoints — use [Files](files.md) plugin

@@ -1,6 +1,8 @@
 # Proto-First App Design
 
-Schema-first approach for AppKit apps using protobuf data contracts. Define contracts BEFORE implementation — derive TypeScript types, Lakebase DDL, and Volume paths from `.proto` files.
+**Advanced / optional** — use only for multi-plugin apps with strict typed boundaries. For most apps, skip this and use [Data Patterns](data-patterns.md) instead.
+
+Schema-first approach for AppKit apps using protobuf data contracts.
 
 **When to use:** New apps with multiple plugins (files + lakebase + jobs), or adding typed boundaries to existing apps. Skip for quick prototypes.
 
@@ -41,7 +43,7 @@ Every Databricks app decomposes into a combination of these plugin modules:
 | **Database** | lakebase | Postgres tables | Structured records, queries, migrations |
 | **Compute** | jobs | Databricks Jobs API | Job runs, task results, cluster configs |
 | **Analytics** | analytics | SQL Warehouse | Read-only queries, dashboards |
-| **Serving** | server | HTTP routes | API endpoints, SSE streams |
+| **HTTP API** | server | Custom routes, SSE | API endpoints, streams |
 
 ### Decomposition Rules
 

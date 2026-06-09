@@ -47,7 +47,7 @@ If using a different model (768d or 1536d), change `VECTOR(1024)` to match.
 
 ## Vector Store Module
 
-Create `server/lib/vector-store.ts`. For typing `appkit` in extracted modules, see the **`databricks-apps`** skill's [Lakebase Guide](../../databricks-apps/references/appkit/lakebase.md) section *Lakebase route modules — typing* — use generic `setupXRoutes<T>(appkit: T)` called from `onPluginsReady`; do not copy scaffold's `AppKitWithLakebase` or add `appkit-types.ts`.
+Create `server/lib/vector-store.ts`. For typing `appkit` in extracted modules, see the **`databricks-apps`** skill's [Lakebase OLTP](../../databricks-apps/references/appkit/lakebase-oltp.md) section *Lakebase route modules — typing* — use generic `setupXRoutes<T>(appkit: T)` called from `onPluginsReady`; do not copy scaffold's `AppKitWithLakebase` or add `appkit-types.ts`.
 
 ```typescript
 export async function setupVectorTables<

@@ -73,7 +73,7 @@ Validate locally; deploy with user consent. First deploy: `bundle deploy` then `
 | Warehouse SELECT queries | [SQL Queries](references/appkit/sql-queries.md) |
 | Custom routes | [Custom Endpoints](references/appkit/custom-endpoints.md) |
 | Delta/UC DML | [Warehouse Mutations](references/appkit/warehouse-mutations.md) |
-| Lakebase OLTP + synced reads | [Lakebase](references/appkit/lakebase.md) |
+| Lakebase OLTP + synced reads | [Lakebase](references/appkit/lakebase.md) → [OLTP](references/appkit/lakebase-oltp.md) / [Synced Reads](references/appkit/lakebase-synced-reads.md) |
 | Genie | [Genie](references/appkit/genie.md) |
 | Model Serving | [Model Serving](references/appkit/model-serving.md) |
 | Files | [Files](references/appkit/files.md) |

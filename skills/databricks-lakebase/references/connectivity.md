@@ -11,7 +11,7 @@
 
 ## Connection Patterns (Python)
 
-> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity via the `lakebase()` plugin — see the **`databricks-apps`** skill's [Lakebase guide](../../databricks-apps/references/appkit/lakebase.md).
+> **JavaScript/TypeScript Databricks Apps** using AppKit get Lakebase connectivity via the `lakebase()` plugin — see the **`databricks-apps`** skill's [Lakebase guides](../../databricks-apps/references/appkit/lakebase.md) ([OLTP](../../databricks-apps/references/appkit/lakebase-oltp.md) / [synced reads](../../databricks-apps/references/appkit/lakebase-synced-reads.md)).
 
 ### Pattern 1: Direct Connection (Scripts/Notebooks)
 

@@ -51,7 +51,7 @@ my-app/
 └── tests/smoke.spec.ts
 ```
 
-**Lakebase OLTP** (`writes_oltp`) — no `config/queries/`; CRUD via Express routes. See [Lakebase](lakebase.md).
+**Lakebase OLTP** (`writes_oltp`) — no `config/queries/`; CRUD via Express routes. See [Lakebase OLTP](lakebase-oltp.md).
 
 **Key files:**
 
@@ -98,7 +98,7 @@ Pattern selection → [Data Patterns](data-patterns.md). These docs are **setup 
 | SQL reads | [SQL Queries](sql-queries.md) |
 | Custom routes | [Custom Endpoints](custom-endpoints.md) |
 | Delta DML | [Warehouse Mutations](warehouse-mutations.md) |
-| Lakebase | [Lakebase](lakebase.md) |
+| Lakebase | [Lakebase](lakebase.md) → [OLTP](lakebase-oltp.md) / [Synced Reads](lakebase-synced-reads.md) |
 | Genie | [Genie](genie.md) |
 | Serving | [Model Serving](model-serving.md) |
 | Files | [Files](files.md) |
