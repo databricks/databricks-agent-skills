@@ -1,15 +1,8 @@
 # Model Serving: Calling ML Endpoints from Apps
 
-Use Model Serving when your app needs **AI features** — chat, inference, embeddings, or predictions from a Databricks Model Serving endpoint. For analytics dashboards, use `config/queries/` instead. For persistent storage, use Lakebase.
+**Pattern selection:** [Data Patterns](data-patterns.md). This guide covers **`serving()` plugin setup only.**
 
-## When to Use
-
-| Pattern | Use Case | Data Source |
-|---------|----------|-------------|
-| Analytics | Read-only dashboards, charts, KPIs | SQL Warehouse |
-| Lakebase | CRUD operations, persistent state, forms | PostgreSQL (Lakebase) |
-| Model Serving | Chat, AI features, model inference | Serving Endpoint |
-| Multiple | Dashboard with AI features or persistent state | Combine as needed |
+Use Model Serving for **AI features** — chat, inference, embeddings, predictions from a Databricks serving endpoint.
 
 ## Scaffolding
 

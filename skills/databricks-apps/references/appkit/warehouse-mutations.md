@@ -6,6 +6,8 @@ For **reads** from the warehouse, use [SQL Queries](sql-queries.md) (`config/que
 
 For **app-owned operational state** (forms, CRUD, session data), prefer [Lakebase](lakebase.md) instead of writing Delta directly from the app.
 
+**Pattern selection and gates:** [Data Patterns](data-patterns.md).
+
 ## Decision gate
 
 Before implementing warehouse DML, confirm this is the right layer:

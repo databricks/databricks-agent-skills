@@ -6,7 +6,7 @@
 
 When you need server-side logic that no plugin covers, extend the AppKit server in `onPluginsReady` and register Express routes with `appkit.server.extend()`.
 
-**Writes are allowed via custom endpoints** — but pick the right backend first (see parent SKILL.md *Pick your write path first*):
+**Writes are allowed via custom endpoints** — pick the backend in [Data Patterns: Write path](data-patterns.md#write-path):
 
 - **Postgres app state** (forms, CRUD, session data) → `appkit.lakebase.query()` — [Lakebase Guide](lakebase.md)
 - **Delta / Unity Catalog DML** (small scoped `INSERT`/`UPDATE`/`DELETE`/`MERGE`) → `appkit.analytics.query()` — [Warehouse Mutations](warehouse-mutations.md)

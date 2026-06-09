@@ -1,10 +1,10 @@
 # Jobs: Trigger Lakeflow Jobs from Apps
 
-**For full Jobs plugin API (routes, types, config options)**: run `npx @databricks/appkit docs` → Jobs plugin.
+**Pattern selection:** [Data Patterns](data-patterns.md). This guide covers **`jobs()` plugin setup only.**
 
-Use the `jobs()` plugin when your app needs to **trigger or monitor pre-existing Databricks Lakeflow Jobs** (notebooks, Python scripts, SQL, dbt, JARs) and surface their status to users. The jobs themselves still live as regular Lakeflow Jobs in the workspace — the plugin is the typed, resource-scoped accessor that lets app code start runs, poll status, and stream completion events.
+**For full Jobs plugin API**: run `npx @databricks/appkit docs` → Jobs plugin.
 
-The plugin is **resource-scoped**: only jobs declared via config or discovered from `DATABRICKS_JOB_*` env vars are accessible. It is not a generic Jobs SDK wrapper — to author or schedule jobs, use the `databricks-jobs` (Lakeflow) skill instead. See [`overview.md`](./overview.md) for the cross-plugin data-pattern selector.
+Use the `jobs()` plugin to **trigger or monitor pre-existing Lakeflow Jobs** from the app. To **author** jobs, use the **`databricks-jobs`** skill.
 
 ## Scaffolding
 

@@ -1,16 +1,8 @@
 # AppKit Genie Guide
 
-Use Genie when your app needs a **natural language query interface** over Unity Catalog tables. For analytics dashboards, use `config/queries/` instead. For persistent storage, use Lakebase.
+**Pattern selection:** [Data Patterns](data-patterns.md). This guide covers **`genie()` plugin setup only.**
 
-## When to Use
-
-| Pattern | Use Case | Data Source |
-|---------|----------|-------------|
-| Analytics | Read-only dashboards, charts, KPIs | SQL Warehouse |
-| Lakebase | CRUD operations, persistent state, forms | PostgreSQL (Lakebase) |
-| Model Serving | Chat, AI features, model inference | Serving Endpoint |
-| Genie | Natural language queries over tables | Genie Space → SQL Warehouse |
-| Multiple | Combine plugins as needed | Mix of the above |
+Use Genie for a **natural language query interface** over Unity Catalog tables. Fixed KPIs still use `config/queries/` (`reads_warehouse`). App-owned CRUD uses Lakebase (`writes_oltp`).
 
 ## Architecture
 

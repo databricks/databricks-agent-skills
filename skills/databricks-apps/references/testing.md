@@ -31,6 +31,8 @@ describe('Feature Name', () => {
 
 ## Smoke Test (Playwright)
 
+**First action after `apps init`:** update `tests/smoke.spec.ts` before the first `databricks apps validate` — regardless of app capabilities.
+
 The template includes a smoke test at `tests/smoke.spec.ts` that verifies the app loads correctly.
 
 **⚠️ MUST UPDATE after customizing the app:**
