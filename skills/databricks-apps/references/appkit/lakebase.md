@@ -16,9 +16,28 @@ Use Lakebase when your app needs **persistent read/write storage** — forms, CR
 
 **Scaffolding is the fastest way to get started.** If you already have an app, see *Adding Lakebase to an Existing App* below.
 
+**Always derive `--set` keys from the manifest** — do not guess field names:
+
+```bash
+databricks apps manifest --profile <PROFILE>
+```
+
+For the `lakebase` plugin, the required `postgres` resource has **three** user-supplied fields: `project`, `branch`, and `database`. All three must appear as `--set` flags — omitting `lakebase.postgres.project` causes init to fail.
+
+Discover values (after creating a project via the `databricks-lakebase` skill):
+
+```bash
+databricks postgres list-projects --profile <PROFILE>                    # → lakebase.postgres.project
+databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>   # → lakebase.postgres.branch
+databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>  # → lakebase.postgres.database
+```
+
+Use the `.name` field from each list command as the `--set` value.
+
 **Lakebase only** (no analytics SQL warehouse):
 ```bash
 databricks apps init --name <NAME> --features lakebase \
+  --set "lakebase.postgres.project=<PROJECT_NAME>" \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
@@ -28,14 +47,13 @@ databricks apps init --name <NAME> --features lakebase \
 ```bash
 databricks apps init --name <NAME> --features analytics,lakebase \
   --set "analytics.sql-warehouse.id=<WAREHOUSE_ID>" \
+  --set "lakebase.postgres.project=<PROJECT_NAME>" \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
 ```
 
-Where `<BRANCH_NAME>` and `<DATABASE_NAME>` are full resource names (e.g. `projects/<PROJECT_ID>/branches/<BRANCH_ID>` and `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
-
-Use the `databricks-lakebase` skill to create a Lakebase project and discover branch/database resource names before running this command.
+Where `<PROJECT_NAME>`, `<BRANCH_NAME>`, and `<DATABASE_NAME>` are full resource paths (e.g. `projects/<PROJECT_ID>`, `projects/<PROJECT_ID>/branches/<BRANCH_ID>`, `projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DB_ID>`).
 
 > For multi-environment deployments (dev/prod), use `variables:` and `targets:` blocks in `databricks.yml` — see the **`databricks-dabs`** skill for patterns.
 
@@ -43,6 +61,8 @@ Use the `databricks-lakebase` skill to create a Lakebase project and discover br
 
 **Get resource names** (if you have an existing project):
 ```bash
+# List projects → use the name field
+databricks postgres list-projects --profile <PROFILE>
 # List branches → use the name field of a READY branch
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 # List databases → use the name field
@@ -123,15 +143,116 @@ Deploy the app before local development — see *Local Development > Prerequisit
 ```
 my-app/
 ├── server/
-│   └── server.ts       # Backend with Lakebase plugin + Express routes
-├── client/
-│   └── src/
-│       └── App.tsx     # React frontend
-├── app.yaml            # Manifest with database resource declaration
-└── package.json        # Includes @databricks/lakebase dependency
+│   ├── server.ts                          # Entry — calls setup from onPluginsReady
+│   └── routes/lakebase/
+│       └── todo-routes.ts                 # ⚠️ Starter CRUD — replace for your domain
+├── client/src/
+│   ├── App.tsx                            # Layout + nav (may include /lakebase route)
+│   └── pages/lakebase/
+│       └── LakebasePage.tsx               # ⚠️ Starter todo UI — replace for your domain
+├── tests/smoke.spec.ts                    # ⚠️ Asserts "Todo List" — update for your UI
+├── databricks.yml                         # Lakebase postgres resource wiring
+├── app.yaml                               # Manifest with database resource declaration
+└── package.json                           # Includes @databricks/lakebase dependency
 ```
 
 Note: **No `config/queries/` directory** — Lakebase apps use server-side `appkit.lakebase.query()` calls, not SQL files.
+
+## What the scaffold gives you (replace, don't keep)
+
+`databricks apps init --features lakebase` generates a **working todo list demo**, not your final app. Treat every file below as **starter code to replace** once you know your domain (reading log, inventory, registrations, etc.).
+
+| Scaffold artifact | What it is | What to do |
+|-------------------|------------|------------|
+| `server/routes/lakebase/todo-routes.ts` | Sample CRUD for `app.todos` + hand-written `AppKitWithLakebase` | Rename/replace (e.g. `book-routes.ts`), change table/schema/API paths to your domain |
+| `client/src/pages/lakebase/LakebasePage.tsx` | Todo list UI wired to `/api/lakebase/todos` | Replace with your page (e.g. `ReadingLogPage.tsx`) and your API paths |
+| `client/src/App.tsx` | Generic home page + nav link to `/lakebase` | Simplify or rewire — many CRUD apps use the domain page as `/` |
+| `tests/smoke.spec.ts` | Expects headings like "Todo List" and todo-specific selectors | Update **every** assertion to match your UI before `databricks apps validate` |
+| `AppKitWithLakebase` interface | Local typing workaround in `*-routes.ts` | **Not official AppKit API** — see *Lakebase route modules — typing* below |
+
+**Agent checklist after init:**
+
+1. **Decide your domain** (table name, API prefix, page title) — use domain names in routes and UI (`/api/books`, `BooksPage.tsx`), not "todo" or generic "lakebase" labels in user-facing code.
+2. **Replace backend** — schema (`app.<your_table>`), Zod validators, Express routes under a domain path (e.g. `/api/books`, not `/api/lakebase/todos`).
+3. **Replace frontend** — form, list, filters; point `fetch()` at your new API routes.
+4. **Update smoke tests** — assert your headings, buttons, and stable empty-state copy. Avoid asserting dynamic Lakebase content (e.g. "Your shelf is empty") if validate runs without a live database.
+5. **Remove dead scaffold files** — delete `todo-routes.ts` / `LakebasePage.tsx` after replacement so agents don't copy leftover patterns.
+
+Do **not** ship a custom app that still exposes "Todo List" in the UI or `/api/lakebase/todos` unless the user explicitly asked for a todo app.
+
+## Lakebase route modules — typing
+
+Inside `server.ts`, `onPluginsReady(appkit)` is already fully typed via AppKit's internal `PluginMap<T>` — no manual interface needed:
+
+```typescript
+createApp({
+  plugins: [lakebase(), server()],
+  async onPluginsReady(appkit) {
+    // appkit.lakebase.query(...) and appkit.server.extend(...) are typed here
+    await setupBookRoutes(appkit);
+  },
+});
+```
+
+The scaffold's `AppKitWithLakebase` in `todo-routes.ts` is **not** exported by `@databricks/appkit`. It exists because route setup was split into a separate file and `PluginMap` is not part of the public package exports. Agents often copy it and treat it as required AppKit surface area — **don't**.
+
+### Recommended patterns
+
+**Option A — Inline in `server.ts` (simplest)**
+
+Register schema init and routes directly in `onPluginsReady`. No shared type, no duplicate interface.
+
+**Option B — Extract routes with generic inference (recommended for larger apps)**
+
+Pass `appkit` from `onPluginsReady` into a setup function. TypeScript infers `T` from the call site — no `appkit-types.ts`, no duplicated plugin tuple, no hand-trimmed interface:
+
+```typescript
+// server/routes/lakebase/book-routes.ts
+import type { Application } from "express";
+
+export async function setupBookRoutes<
+  T extends {
+    lakebase: {
+      query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
+    };
+    server: { extend(fn: (app: Application) => void): void };
+  },
+>(appkit: T) {
+  await appkit.lakebase.query("CREATE SCHEMA IF NOT EXISTS app");
+  appkit.server.extend((app) => { /* ... */ });
+}
+```
+
+```typescript
+// server/server.ts — plugins inline; T inferred at the call site
+createApp({
+  plugins: [lakebase(), server()],
+  async onPluginsReady(appkit) {
+    await setupBookRoutes(appkit); // appkit is fully typed here
+  },
+});
+```
+
+Keep `plugins: [lakebase(), server()]` inline in `server.ts` (same array as production). If AppKit later exports `PluginMap` / `AppKitHandle`, prefer that over widening the generic constraint.
+
+**Option C — Minimal local interface (fallback only)**
+
+If generics are not viable, a narrow app-local type is acceptable — rename it (e.g. `RouteSetupContext`) and comment that it is **not** AppKit API. Do **not** add a separate `appkit-types.ts` that re-declares the plugin list.
+
+### Anti-patterns
+
+```typescript
+// ❌ Copy scaffold's AppKitWithLakebase — looks like official API
+interface AppKitWithLakebase { /* ... */ }
+
+// ❌ appkit-types.ts + exported appPlugins tuple — duplicates server.ts, drifts when plugins change
+export const appPlugins = [lakebase(), server()] as const;
+
+// ❌ Double-assert to satisfy a local interface — appkit lint forbids this
+setupBookRoutes(appkit as unknown as AppKitWithLakebase);
+```
+
+Prefer Option A or B. When replacing scaffold routes, **rename** any local interface if you keep Option C — do not leave `AppKitWithLakebase` in a non-todo app.
 
 ## Lakebase Plugin API
 
@@ -213,7 +334,7 @@ await createApp({
 });
 ```
 
-> **Deploy first (App + Lakebase only)!** When your Databricks App uses Lakebase, the Service Principal must create and own the schema. Run `databricks apps deploy` before any local development. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for details.
+> **Deploy first (Lakebase OLTP CRUD)!** The Service Principal must create and own the schema before local development. Follow the parent **`databricks-apps`** skill *Deployment Workflow* — first deploy requires `bundle deploy` then `apps deploy`; see **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the permission model.
 
 ## Schema Initialization
 
@@ -395,8 +516,10 @@ databricks apps get <APP_NAME> --profile <PROFILE>
 
 Check the response for the `active_deployment` field. If it exists with `status.state` of `SUCCEEDED`, the app has been deployed. If `active_deployment` is missing, the app has never been deployed:
 1. **STOP** — do not proceed with local development
-2. Deploy first: `databricks apps deploy <APP_NAME> --profile <PROFILE>`
+2. **First deploy** (app not in workspace): `databricks bundle deploy -t <TARGET> --profile <PROFILE>`, then `databricks apps deploy -t <TARGET> --profile <PROFILE>`
 3. Wait for deployment to complete, then continue
+
+For apps that already have `active_deployment`, use `databricks apps deploy` only. See parent **`databricks-apps`** skill *Deployment Workflow*.
 
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 

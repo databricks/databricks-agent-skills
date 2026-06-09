@@ -9,8 +9,8 @@ Before scaffolding, decide which data pattern the app needs:
 | Pattern | When to use | Init command |
 |---------|-------------|-------------|
 | **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
-| **Lakebase synced tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` (no `--set` flags needed) + sync Delta table via `databricks-lakebase` skill |
-| **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
+| **Lakebase synced tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` + all three `--set lakebase.postgres.{project,branch,database}=...` (derive from manifest) + sync Delta table via `databricks-lakebase` skill |
+| **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase` + `--set lakebase.postgres.project=<PROJECT> --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` (derive from `databricks apps manifest`) |
 | **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
 | **Model Serving** (ML inference) | Chat, AI features, model predictions | `--features serving --set serving.serving-endpoint.name=<NAME>` (check manifest) |
 | **Jobs** (trigger Lakeflow Jobs) | Kick off and monitor pre-existing notebooks / Python / SQL / dbt jobs | `--features jobs --set jobs.<resourceKey>.<field>=<JOB_ID>` (check manifest) |
@@ -22,9 +22,9 @@ See [Genie Guide](genie.md) for space creation, plugin setup, and frontend compo
 ## Workflow
 
 1. **Scaffold**: Run `databricks apps manifest`, then `databricks apps init` with `--features` and `--set` as in parent SKILL.md (App Manifest and Scaffolding)
-2. **Develop**: `cd <NAME> && npm install && npm run dev`
-3. **Validate**: `databricks apps validate`
-4. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
+2. **Validate**: `databricks apps validate --profile <PROFILE>`
+3. **Deploy**: follow parent SKILL.md *Deployment Workflow* — first deploy: `bundle deploy` then `apps deploy`; updates: `apps deploy` (⚠️ USER CONSENT REQUIRED)
+4. **Develop**: `cd <NAME> && npm install && npm run dev` — **Lakebase OLTP CRUD apps**: deploy (step 3) before local dev so the SP owns the schema
 
 ## Data Discovery (Before Writing SQL)
 
@@ -32,15 +32,35 @@ See [Genie Guide](genie.md) for space creation, plugin setup, and frontend compo
 
 ## Pre-Implementation Checklist
 
-Before writing App.tsx, complete these steps:
+Use the checklist that matches your scaffolded `--features`. See parent SKILL.md *Pick your write path first* if you have not chosen read vs write paths yet.
 
-1. ✅ Create SQL files in `config/queries/`
+### Analytics apps (`--features analytics`)
+
+Before writing `App.tsx`:
+
+1. ✅ Create SQL files in `config/queries/` (SELECT only — not DML)
 2. ✅ Run `npm run typegen` to generate query types
 3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
-4. ✅ Verify component props via `npx @databricks/appkit docs` (check the relevant component page)
+4. ✅ Verify component props via `npx @databricks/appkit docs`
 5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
 
 **DO NOT** write UI code until types are generated and verified.
+
+If the app also **writes to Delta/UC**, read [Warehouse Mutations](warehouse-mutations.md) before adding mutation routes.
+
+### Lakebase apps (`--features lakebase`)
+
+Before writing `App.tsx`:
+
+1. ✅ Read [Lakebase Guide](lakebase.md) — *What the scaffold gives you* and *Lakebase route modules — typing*
+2. ✅ Replace scaffold todo boilerplate with your domain routes and UI
+3. ✅ Plan schema init and CRUD routes in `onPluginsReady` (no `config/queries/`, no typegen)
+4. ✅ Plan smoke test updates — do not assert Lakebase-backed dynamic content during validate
+5. ✅ **Lakebase OLTP CRUD**: deploy before local dev so the SP owns the schema (see parent SKILL.md *Deployment Workflow*)
+
+### Hybrid apps (`analytics,lakebase` or similar)
+
+Complete both checklists above: SQL files + typegen for warehouse **reads**; Lakebase routes for Postgres **writes**. Do not use `useAnalyticsQuery` for Lakebase data.
 
 ## Post-Implementation Checklist
 
@@ -48,7 +68,7 @@ Before running `databricks apps validate`:
 
 1. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
 2. ✅ Update or remove the 'hello world' text assertion
-3. ✅ Verify `npm run typegen` has been run after all SQL files are finalized
+3. ✅ **Analytics reads**: verify `npm run typegen` ran after all SQL files are finalized
 4. ✅ Ensure all numeric SQL values use `Number()` conversion in display code
 
 ## Project Structure
@@ -125,8 +145,8 @@ Do not guess paths — run without args first, then pick from the index.
 | Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
 | Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
-| Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) — only if you need server-side logic |
-| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
+| Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) + [Warehouse Mutations](warehouse-mutations.md) for Delta/UC DML |
+| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — replace scaffold todo boilerplate, route typing, `onPluginsReady` patterns, schema init |
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
@@ -142,8 +162,17 @@ Do not guess paths — run without args first, then pick from the index.
 
 ## Decision Tree
 
-- **Display data from SQL?**
+- **Display data from SQL warehouse?**
   - Chart/Table → `BarChart`, `LineChart`, `DataTable` components
   - Custom layout (KPIs, cards) → `useAnalyticsQuery` hook
-- **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or custom endpoint via `onPluginsReady`
-- **Modify data?** → Express routes in `onPluginsReady`
+  - **Never** custom endpoints for warehouse SELECT — use [SQL Queries](sql-queries.md)
+- **Call Databricks API?**
+  - Model inference → `serving()` plugin — [Model Serving](model-serving.md)
+  - Trigger/monitor jobs → `jobs()` plugin — [Jobs](jobs.md)
+  - Files in UC Volumes → `files()` plugin — [Files](files.md)
+  - MLflow, Workspace API, other APIs → custom endpoint via `onPluginsReady` — [Custom Endpoints](custom-endpoints.md)
+- **Modify / persist data?** → Custom endpoint in `onPluginsReady` (see parent SKILL.md *Pick your write path first*)
+  - Postgres app state (forms, CRUD) → `appkit.lakebase.query()` — [Lakebase](lakebase.md)
+  - Small scoped Delta/UC DML now → `appkit.analytics.query()` — [Warehouse Mutations](warehouse-mutations.md)
+  - Large / async lakehouse write → validate input, then `jobs()` — [Jobs](jobs.md)
+- **Non-SQL server logic?** → Custom endpoint via `onPluginsReady` — [Custom Endpoints](custom-endpoints.md)

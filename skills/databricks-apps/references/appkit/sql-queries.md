@@ -1,8 +1,10 @@
 # SQL Query Files
 
-**IMPORTANT**: ALWAYS use SQL files in `config/queries/` for data retrieval. NEVER add custom endpoints for warehouse SQL queries.
+**IMPORTANT**: ALWAYS use SQL files in `config/queries/` for **data retrieval (SELECT)**. NEVER add custom endpoints for warehouse SELECT queries.
 
-- Store ALL SQL queries in `config/queries/` directory
+For **writes** to Delta / Unity Catalog (`INSERT`, `UPDATE`, `DELETE`, `MERGE`), use custom mutation routes with `appkit.analytics.query()` — see [Warehouse Mutations](warehouse-mutations.md). Do not put DML in `config/queries/` for client-side execution.
+
+- Store all **read** (SELECT) queries in `config/queries/` directory
 - Name files descriptively: `trip_statistics.sql`, `user_metrics.sql`, `sales_by_region.sql`
 - Reference by filename (without extension) in `useAnalyticsQuery` or directly in a visualization component passing it as `queryKey`
 - App Kit automatically executes queries against configured Databricks warehouse

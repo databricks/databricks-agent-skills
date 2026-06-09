@@ -47,21 +47,12 @@ If using a different model (768d or 1536d), change `VECTOR(1024)` to match.
 
 ## Vector Store Module
 
-Create `server/lib/vector-store.ts`:
+Create `server/lib/vector-store.ts`. For typing `appkit` in extracted modules, see the **`databricks-apps`** skill's [Lakebase Guide](../../databricks-apps/references/appkit/lakebase.md) section *Lakebase route modules — typing* — use generic `setupXRoutes<T>(appkit: T)` called from `onPluginsReady`; do not copy scaffold's `AppKitWithLakebase` or add `appkit-types.ts`.
 
 ```typescript
-import type { Application } from "express";
-
-interface AppKitWithLakebase {
-  lakebase: {
-    query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
-  };
-  server: {
-    extend(fn: (app: Application) => void): void;
-  };
-}
-
-export async function setupVectorTables(appkit: AppKitWithLakebase) {
+export async function setupVectorTables<
+  T extends { lakebase: { query(text: string, params?: unknown[]): Promise<unknown> } },
+>(appkit: T) {
   try {
     await appkit.lakebase.query("CREATE EXTENSION IF NOT EXISTS vector");
   } catch (err: unknown) {
@@ -90,7 +81,7 @@ export async function setupVectorTables(appkit: AppKitWithLakebase) {
 }
 
 export async function insertDocument(
-  appkit: AppKitWithLakebase,
+  appkit: AppKit,
   input: { content: string; embedding: number[]; metadata?: Record<string, unknown> },
 ) {
   const result = await appkit.lakebase.query(
@@ -103,7 +94,7 @@ export async function insertDocument(
 }
 
 export async function retrieveSimilar(
-  appkit: AppKitWithLakebase,
+  appkit: AppKit,
   queryEmbedding: number[],
   limit = 5,
 ) {

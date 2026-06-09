@@ -64,6 +64,7 @@
         "references/appkit/proto-contracts.md",
         "references/appkit/proto-first.md",
         "references/appkit/sql-queries.md",
+        "references/appkit/warehouse-mutations.md",
         "references/other-frameworks.md",
         "references/platform-guide.md",
         "references/testing.md"
