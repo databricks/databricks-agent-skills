@@ -30,8 +30,8 @@ class CheckPromptTest(unittest.TestCase):
             "set up a lakeflow job",
             "write this dataframe to dbfs",
             "validate my databricks.yml asset bundle",
+            "deploy my dabs to the dev target",
             "build a delta live tables pipeline",
-            "ask Genie about revenue",
         ]:
             self.assertRoutes(p)
 
@@ -44,6 +44,7 @@ class CheckPromptTest(unittest.TestCase):
             "set up a model serving endpoint",
             "create a vector search index for RAG",
             "build a medallion architecture for my tables",
+            "ask Genie about revenue",
         ]:
             self.assertRoutes(p)
 
@@ -63,7 +64,8 @@ class CheckPromptTest(unittest.TestCase):
             self.assertSkips(p)
 
     def test_unrelated_skips(self):
-        for p in ["hello", "what's the weather", "refactor this react component", "ok"]:
+        for p in ["hello", "what's the weather", "refactor this react component", "ok",
+                  "explain photon energy in physics"]:
             self.assertSkips(p)
 
     def test_too_short_skips(self):

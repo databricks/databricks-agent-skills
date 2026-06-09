@@ -33,16 +33,16 @@ STRONG = [
     r"\bdbsql\b",
     r"\bdatabricks\.yml\b",
     r"\basset\s+bundle\b",
+    r"\bdabs?\b",
     r"\bdelta\s+live\s+tables?\b",
     r"\bspark\s+declarative\s+pipelines?\b",
     r"\bmosaic\s+ai\b",
-    r"\bgenie\b",
-    r"\bphoton\b",
 ]
 
 # Databricks-likely but also used elsewhere -> route only when no competitor /
 # local-dev signal is present.
 AMBIGUOUS = [
+    r"\bgenie\b",
     r"\bdelta\s+(lake|tables?)\b",
     r"\bmodel\s+serving\b",
     r"\bvector\s+search\b",

@@ -489,6 +489,8 @@ def check_plugin_components(repo_root: Path) -> list[str]:
 
     - plugin.json must NOT declare "hooks": the standard hooks/hooks.json is
       auto-loaded by Claude Code, so declaring it double-loads (a load error)
+    - plugin.json MUST declare "commands" when commands/ exists (this repo ships
+      commands via that manifest declaration)
     - hooks/hooks.json must be valid JSON, and every ${CLAUDE_PLUGIN_ROOT}/*.py
       script it references must exist
     - every commands/*.md must have frontmatter carrying a `description`
@@ -502,6 +504,12 @@ def check_plugin_components(repo_root: Path) -> list[str]:
 
     commands_dir = repo_root / "commands"
     if commands_dir.is_dir():
+        if "commands" not in plugin:
+            errors.append(
+                'commands/ exists but .claude-plugin/plugin.json does not declare '
+                '"commands": "./commands/" — add it, or the commands silently stop '
+                "shipping."
+            )
         md_files = sorted(commands_dir.glob("*.md"))
         if not md_files:
             errors.append("commands/ exists but contains no *.md command files.")

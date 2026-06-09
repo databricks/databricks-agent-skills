@@ -52,7 +52,13 @@ def config_profiles():
     """
     cfg = os.environ.get("DATABRICKS_CONFIG_FILE") or str(Path.home() / ".databrickscfg")
     try:
-        text = Path(cfg).read_text()
+        p = Path(cfg)
+        # Only read a regular file under a sane size cap, so a FIFO/device or a
+        # huge file pointed at by DATABRICKS_CONFIG_FILE can never hang or do
+        # unbounded work at session start.
+        if not p.is_file() or p.stat().st_size > 1_000_000:
+            return cfg, []
+        text = p.read_text(errors="replace")
     except Exception:
         return cfg, []
     names = [
@@ -60,6 +66,17 @@ def config_profiles():
         if not (n.startswith("__") and n.endswith("__"))
     ]
     return cfg, names
+
+
+def _sanitize(value, limit=64):
+    """Make a config-derived string safe to inject as one context list item.
+
+    Strips control chars / newlines (so a crafted profile name or env value
+    cannot inject extra bullets or instructions) and caps the length.
+    """
+    s = re.sub(r"[\x00-\x1f\x7f]", " ", str(value))
+    s = re.sub(r"\s+", " ", s).strip()
+    return s[: limit - 1].rstrip() + "…" if len(s) > limit else s
 
 
 def build_context():
@@ -84,7 +101,7 @@ def build_context():
 
     cfg, profiles = config_profiles()
     if profiles:
-        shown = profiles[:MAX_PROFILES]
+        shown = [_sanitize(n) for n in profiles[:MAX_PROFILES]]
         more = f" (+{len(profiles) - len(shown)} more)" if len(profiles) > len(shown) else ""
         lines.append(f"Profiles in {Path(cfg).name}: {', '.join(shown)}{more}.")
         lines.append("Never auto-select a profile — pass `--profile <name>` and let the user choose.")
@@ -93,7 +110,7 @@ def build_context():
 
     env_profile = os.environ.get("DATABRICKS_CONFIG_PROFILE")
     if env_profile:
-        lines.append(f"DATABRICKS_CONFIG_PROFILE is set to `{env_profile}`.")
+        lines.append(f"DATABRICKS_CONFIG_PROFILE is set to `{_sanitize(env_profile)}`.")
     if os.environ.get("DATABRICKS_HOST"):
         authed = " with DATABRICKS_TOKEN set" if os.environ.get("DATABRICKS_TOKEN") else ""
         lines.append(f"DATABRICKS_HOST is set{authed} (env / in-platform auth).")

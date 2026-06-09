@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-router.py\" || true"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || true"
           }
         ]
       }
