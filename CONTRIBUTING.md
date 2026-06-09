@@ -60,7 +60,8 @@ The Claude Code plugin ships more than skills:
   (`databricks-router.py`) that steers Databricks-related prompts into the
   skills, and a SessionStart context primer (`databricks-context.py`). Both
   stdlib-only and fail-open. See [`hooks/README.md`](./hooks/README.md). The
-  router's keyword precision is pinned by `hooks/databricks_router_test.py`.
+  router's keyword precision is pinned by `hooks/databricks_router_test.py`,
+  and the context primer by `hooks/databricks_context_test.py`.
   **`hooks/hooks.json` is auto-loaded by Claude Code, so do NOT add a `"hooks"`
   key to `.claude-plugin/plugin.json`, or the plugin fails to load with a
   "Duplicate hooks file" error.**
@@ -70,8 +71,9 @@ The Claude Code plugin ships more than skills:
 
 `scripts/skills.py validate` (run in CI) checks that `hooks/hooks.json` is valid
 JSON referencing scripts that exist, that plugin.json does not double-declare the
-standard hooks file, and that every command carries a `description`. The validate
-workflow also runs `python3 hooks/databricks_router_test.py`.
+standard hooks file, and that every command carries a `description` (quoted if it
+contains a `:`, since strict YAML rejects unquoted colons). The validate
+workflow also runs both hook test files.
 
 These components ship via the plugin marketplace (the whole repo is the plugin).
 `databricks aitools install` packages `skills/` only today; extending it to

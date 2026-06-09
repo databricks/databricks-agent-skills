@@ -33,3 +33,6 @@ jobs:
 
       - name: Test databricks-router hook
         run: python3 hooks/databricks_router_test.py
+
+      - name: Test databricks-context hook
+        run: python3 hooks/databricks_context_test.py

@@ -1,5 +1,5 @@
 ---
-description: Set up Databricks CLI auth: install check, then an OAuth / PAT / service-principal profile, then verify.
+description: "Set up Databricks CLI auth: install check, then an OAuth / PAT / service-principal profile, then verify."
 argument-hint: "[workspace-url]"
 allowed-tools: Bash(databricks:*), Read
 ---
@@ -23,7 +23,11 @@ wrapper around it.
      `databricks auth login --host <workspace-url> --profile <name>`. Opens a
      browser. Best for laptops.
    - **PAT**: `databricks configure --token --profile <name>`; the user pastes
-     a personal access token.
+     a personal access token. This command prompts on stdin, so don't run it
+     yourself (it hangs without a TTY): ask the user to run it in their own
+     terminal, then continue once it's done. The same applies to
+     `databricks auth login` when no browser can open (headless or sandboxed
+     sessions).
    - **Service principal (M2M)**: client id/secret via profile or env. Use for
      CI/automation; never a personal PAT in CI.
    - **In-platform** (notebook/cluster): `DATABRICKS_HOST`/`DATABRICKS_TOKEN`

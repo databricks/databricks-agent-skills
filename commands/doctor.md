@@ -1,5 +1,5 @@
 ---
-description: Read-only Databricks health check: CLI version, auth, workspace reachability, running compute, recent job failures.
+description: "Read-only Databricks health check: CLI version, auth, workspace reachability, running compute, recent job failures."
 argument-hint: "[profile]"
 allowed-tools: Bash(databricks:*), Read
 ---

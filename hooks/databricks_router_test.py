@@ -72,6 +72,25 @@ class CheckPromptTest(unittest.TestCase):
         self.assertSkips("db")
         self.assertSkips("")
 
+    def test_code_host_urls_do_not_route(self):
+        # "databricks" as a GitHub org/repo name is not product intent.
+        for p in [
+            "review https://github.com/databricks/databricks-agent-skills/pull/128 please",
+            "what changed in github.com/databricks/cli recently?",
+            "clone git@github.com:databricks/terraform-provider-databricks.git",
+        ]:
+            self.assertSkips(p)
+
+    def test_workspace_urls_still_route(self):
+        # Hostname contains "databricks" -> real product signal.
+        self.assertRoutes("why is https://myco.cloud.databricks.com/jobs/123 failing?")
+
+    def test_url_plus_real_intent_routes(self):
+        # Only the URL is blanked; intent outside it still routes.
+        self.assertRoutes(
+            "review https://github.com/databricks/cli/pull/5 and then deploy the databricks job"
+        )
+
     def test_extract_prompt_shapes(self):
         self.assertEqual(router.extract_prompt({"prompt": "hi"}), "hi")
         self.assertEqual(router.extract_prompt({"message": "yo"}), "yo")

@@ -100,10 +100,12 @@ def build_context():
     if profiles:
         shown = [_sanitize(n) for n in profiles[:MAX_PROFILES]]
         more = f" (+{len(profiles) - len(shown)} more)" if len(profiles) > len(shown) else ""
-        lines.append(f"Profiles in {Path(cfg).name}: {', '.join(shown)}{more}.")
+        lines.append(f"Profiles in {_sanitize(Path(cfg).name)}: {', '.join(shown)}{more}.")
         lines.append("Never auto-select a profile. Pass `--profile <name>` and let the user choose.")
     else:
-        lines.append(f"No profiles found in {cfg}.")
+        # Basename only, matching the branch above: the full path (possibly a
+        # custom DATABRICKS_CONFIG_FILE) stays out of the injected context.
+        lines.append(f"No profiles found in {_sanitize(Path(cfg).name)}.")
 
     env_profile = os.environ.get("DATABRICKS_CONFIG_PROFILE")
     if env_profile:

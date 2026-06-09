@@ -28,6 +28,10 @@ Precision is tuned to avoid over-routing:
   `medallion`, ...) route only when no **SUPPRESS** term is present.
 - **SUPPRESS** terms (competitor platforms + plainly-local dev work like
   `git commit`, `read the file`, `unit test`, `npm`) hold back an ambiguous match.
+- **URLs**: code-hosting URLs are blanked before matching, so `databricks`
+  appearing only as a GitHub/GitLab org or repo name
+  (`github.com/databricks/...`) does not route. URLs whose hostname contains
+  `databricks` (workspace and docs hosts) still do.
 
 Edit those three lists when the product surface changes. Behavior is pinned by
 `databricks_router_test.py` (`python3 hooks/databricks_router_test.py`).
@@ -39,6 +43,7 @@ Injects a compact banner once at session start: the routing rule (load
 profile names (parsed from `~/.databrickscfg` locally,
 **no network call**, token values never printed), and whether env/in-platform
 auth is set. If the CLI isn't installed it points at `/databricks:setup`.
+Covered by `databricks_context_test.py` (`python3 hooks/databricks_context_test.py`).
 
 ## Distribution note
 

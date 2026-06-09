@@ -72,6 +72,24 @@ _STRONG = [re.compile(p, re.IGNORECASE) for p in STRONG]
 _AMBIGUOUS = [re.compile(p, re.IGNORECASE) for p in AMBIGUOUS]
 _SUPPRESS = [re.compile(p, re.IGNORECASE) for p in SUPPRESS]
 
+# "databricks" inside a code-hosting URL (github.com/databricks/...) is an
+# org/repo name, not product intent, so URLs are blanked before matching unless
+# the hostname itself contains "databricks" (workspace and docs hosts), which
+# keeps "why is https://myco.cloud.databricks.com/jobs/123 failing?" routing.
+_URL_RE = re.compile(
+    r"(?:https?://|git@)(?P<host>[\w.-]+)[/:]?\S*"
+    r"|\b(?:www\.)?(?P<bare>(?:github|gitlab|bitbucket)\.(?:com|org))[/:]\S*",
+    re.IGNORECASE,
+)
+
+
+def _strip_non_databricks_urls(text):
+    def _keep_or_blank(match):
+        host = match.group("host") or match.group("bare") or ""
+        return match.group(0) if "databricks" in host.lower() else " "
+
+    return _URL_RE.sub(_keep_or_blank, text)
+
 ROUTING_INSTRUCTION = (
     "[DATABRICKS] This request is Databricks-related. Handle it through the "
     "Databricks skills rather than ad hoc commands. Use the Skill tool to load "
@@ -94,6 +112,7 @@ def check_prompt(prompt):
     """Return the routing instruction if the prompt is Databricks-related, else None."""
     if not prompt or len(prompt.strip()) < 4:
         return None
+    prompt = _strip_non_databricks_urls(prompt)
     if any(p.search(prompt) for p in _STRONG):
         return ROUTING_INSTRUCTION
     if any(p.search(prompt) for p in _SUPPRESS):
