@@ -1,6 +1,6 @@
 # SQL Query Files
 
-**IMPORTANT**: ALWAYS use SQL files in `config/queries/` for data retrieval. NEVER use tRPC for SQL queries.
+**IMPORTANT**: ALWAYS use SQL files in `config/queries/` for data retrieval. NEVER add custom endpoints for warehouse SQL queries.
 
 - Store ALL SQL queries in `config/queries/` directory
 - Name files descriptively: `trip_statistics.sql`, `user_metrics.sql`, `sales_by_region.sql`
