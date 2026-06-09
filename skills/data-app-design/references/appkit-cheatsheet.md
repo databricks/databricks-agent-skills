@@ -17,7 +17,7 @@ line / pie / donut / radar / scatter / heatmap) that take either a `queryKey` (q
 - ordered magnitude (low→high) → sequential palette
 - signed / good-bad variance around a midpoint → diverging palette
 
-Pass `colorPalette` (or semantic tokens) — never raw hex.
+Pass `colorPalette` (or semantic tokens) — never raw hex or raw Tailwind color utilities.
 
 ## Data
 Fetch with AppKit's analytics query hook (returns `{ data, loading, error }`). Define queries as SQL
@@ -38,13 +38,13 @@ When the app already ships these, **reuse them before inventing** — they encod
 - `DistributionCard` — KpiCard + horizontal stacked bar + percentage legend.
 
 ## Semantic color
-Color must encode meaning; use semantic tokens or the chart `colorPalette` prop, never hardcoded hex:
-- good / up-is-good → success token; bad / breach → destructive; caution → warning
-- actual / primary series → foreground; comparison / secondary → muted-foreground; brand / internal → primary
-- categorical / sequential / diverging chart series → the matching chart-palette tokens
+Color must encode meaning; use semantic tokens or the chart `colorPalette` prop. **Never use raw colors — neither hex (`#22c55e`) NOR raw Tailwind palette utilities (`bg-amber-100`, `text-emerald-600`, `fill-red-500`, `text-amber-500`, …).** Both bypass the design tokens and break dark mode. Map intent to a token:
+- good / up-is-good → `--success`; bad / breach → `--destructive`; caution / warning → `--warning`
+- actual / primary series → `--foreground`; comparison / secondary → `--muted-foreground`; brand / internal → `--primary`
+- categorical / sequential / diverging chart series → the matching chart-palette tokens (or the `colorPalette` prop)
 
 The exact token names and their light/dark values come from AppKit-ui's stylesheet — read it; don't
-hardcode hex or assume token names.
+hardcode colors or assume token names.
 
 ## UI primitives & required states
 Use AppKit-ui's shadcn primitives (`Card*`, `Badge`, `Button`, `Tabs`, `Table`, `Select`,
