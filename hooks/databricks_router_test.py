@@ -37,8 +37,8 @@ class CheckPromptTest(unittest.TestCase):
         ]:
             self.assertRoutes(p)
 
-    def test_strong_routes_even_with_competitor(self):
-        # "databricks" present -> route despite the competitor mention.
+    def test_strong_routes_even_with_alternative_platform(self):
+        # "databricks" present -> route despite the alternative-platform mention.
         self.assertRoutes("migrate my tables from redshift to databricks")
         self.assertRoutes("migrate from snowflake to databricks")
 
@@ -53,7 +53,7 @@ class CheckPromptTest(unittest.TestCase):
         # One-word "autoloader" (PHP/composer style) must not match.
         self.assertSkips("fix the php autoloader config")
 
-    def test_ambiguous_routes_without_competitor(self):
+    def test_ambiguous_routes_without_alternative_platform(self):
         for p in [
             "set up a model serving endpoint",
             "create a vector search index for RAG",
@@ -62,7 +62,7 @@ class CheckPromptTest(unittest.TestCase):
         ]:
             self.assertRoutes(p)
 
-    def test_ambiguous_suppressed_by_competitor(self):
+    def test_ambiguous_suppressed_by_alternative_platform(self):
         self.assertSkips("set up a model serving endpoint in sagemaker for redshift data")
         self.assertSkips("use bigquery for vector search")
 

@@ -27,11 +27,11 @@ Precision is tuned to avoid over-routing:
 
 - **STRONG** terms (`databricks`, `unity catalog`, `lakeflow`, `dbfs`,
   `databricks.yml`, `delta live tables`, `genie`, ...) always route, even
-  alongside a competitor mention, so "migrate from redshift to databricks"
-  routes.
+  alongside an alternative-platform mention, so "migrate from redshift to
+  databricks" routes.
 - **AMBIGUOUS** terms (`model serving`, `vector search`, `mlflow`, `pyspark`,
   `medallion`, ...) route only when no **SUPPRESS** term is present.
-- **SUPPRESS** terms (competitor platforms + plainly-local dev work like
+- **SUPPRESS** terms (alternative data platforms + plainly-local dev work like
   `git commit`, `read the file`, `unit test`, `npm`) hold back an ambiguous match.
 - **URLs**: code-hosting URLs are blanked before matching, so `databricks`
   appearing only as a GitHub/GitLab org or repo name

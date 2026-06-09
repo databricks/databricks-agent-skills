@@ -28,8 +28,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Unambiguously Databricks -> always route, even alongside a competitor mention
-# (e.g. "migrate from redshift to databricks").
+# Unambiguously Databricks -> always route, even alongside a mention of an
+# alternative platform (e.g. "migrate from redshift to databricks").
 STRONG = [
     r"\bdatabricks\b",
     r"\bunity\s+catalog\b",
@@ -48,8 +48,8 @@ STRONG = [
     r"\bcloudfiles\b",
 ]
 
-# Databricks-likely but also used elsewhere -> route only when no competitor /
-# local-dev signal is present.
+# Databricks-likely but also used elsewhere -> route only when no
+# alternative-platform / local-dev signal is present.
 AMBIGUOUS = [
     r"\bgenie\b",
     r"\bdelta\s+(lake|tables?)\b",
@@ -64,8 +64,8 @@ AMBIGUOUS = [
     r"\bauto\s+loader\b",
 ]
 
-# Competitor platforms + plainly-local dev work -> suppress an AMBIGUOUS match.
-# (STRONG matches ignore this list.)
+# Alternative data platforms + plainly-local dev work -> suppress an AMBIGUOUS
+# match. (STRONG matches ignore this list.)
 SUPPRESS = [
     r"\bbigquery\b",
     r"\bredshift\b",
