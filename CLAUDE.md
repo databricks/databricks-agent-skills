@@ -71,6 +71,14 @@ changing hook behavior.
 These ship via the plugin marketplace
 (whole-repo source); `databricks aitools install` currently installs skills only.
 
+`experimental/` is also its own **skills-only** plugin (`databricks-experimental`,
+manifest at `experimental/.claude-plugin/plugin.json`, marketplace source
+`./experimental`). Never add hooks or commands under `experimental/`; hooks
+stack across enabled plugins, so they live in the stable plugin only, and
+`scripts/skills.py validate` rejects violations. Both Claude plugin manifests
+share one version, bumped in lockstep by `scripts/bump_version.py` on release.
+See CONTRIBUTING.md ("The experimental plugin is skills-only").
+
 ## Security
 
 When documenting examples, obfuscate sensitive info:

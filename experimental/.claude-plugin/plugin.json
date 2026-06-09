@@ -1,0 +1,17 @@
+{
+  "name": "databricks-experimental",
+  "description": "Experimental Databricks skills: best-effort, unstable content that may change or be removed without notice. Skills only by design; install the stable databricks plugin alongside it for the routing hooks and slash commands.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Databricks",
+    "url": "https://databricks.com"
+  },
+  "homepage": "https://github.com/databricks/databricks-agent-skills",
+  "repository": "https://github.com/databricks/databricks-agent-skills",
+  "license": "LicenseRef-Databricks",
+  "keywords": [
+    "databricks",
+    "experimental"
+  ],
+  "skills": "./"
+}

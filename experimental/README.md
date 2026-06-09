@@ -34,6 +34,24 @@ databricks aitools install --experimental
 databricks aitools install databricks-iceberg --experimental
 ```
 
+On Claude Code, they are also available as a plugin (all-or-nothing) from this
+repo's marketplace:
+
+```text
+/plugin marketplace add databricks/databricks-agent-skills
+/plugin install databricks-experimental@databricks-agent-skills
+```
+
+The plugin is **skills-only by design** (manifest at
+[`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json)). The stable
+`databricks` plugin is the platform layer: prompt-routing hooks, the session
+context primer, auth-failure hints, `/databricks:doctor`, and
+`/databricks:setup` all ship there, and this plugin assumes it is installed
+alongside. Never add hooks or commands under `experimental/`: Claude Code runs
+hooks from every enabled plugin with no precedence, so a second copy would
+stack with the stable plugin's on every prompt. `scripts/skills.py validate`
+enforces this (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+
 See the root [README](../README.md) for details on the stable install path.
 
 ## Available Skills

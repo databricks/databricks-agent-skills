@@ -30,12 +30,20 @@ For finer control, use the `aitools skills install` subcommand directly — it
 accepts a positional skill name and an `--experimental` flag (see the
 [Experimental Skills](#experimental-skills) section).
 
-**Via the Claude Code plugin marketplace** (stable skills only — installs every
-skill under [`./skills/`](./skills/)):
+**Via the Claude Code plugin marketplace** (installs every stable skill under
+[`./skills/`](./skills/), plus the plugin's commands and hooks):
 
 ```text
 /plugin marketplace add databricks/databricks-agent-skills
 /plugin install databricks@databricks-agent-skills
+```
+
+Experimental skills are a separate, optional plugin on the same marketplace
+(all-or-nothing, skills-only, unstable; see
+[Experimental Skills](#experimental-skills)):
+
+```text
+/plugin install databricks-experimental@databricks-agent-skills
 ```
 
 **Via the Cursor plugin marketplace:**
@@ -49,14 +57,14 @@ skill under [`./skills/`](./skills/)):
 | | CLI | Plugin marketplace |
 |---|---|---|
 | Stable skills | ✅ (default) | ✅ |
-| Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
-| Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
-| Commands & hooks | ❌ (skills only today, see below) | ✅ |
+| Experimental skills | ✅ (with `--experimental` or by name) | ✅ (`databricks-experimental` plugin, Claude Code only) |
+| Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing per plugin) |
+| Commands & hooks | ❌ (skills only today, see below) | ✅ (stable plugin) |
 | Updates | `databricks aitools update` | Plugin marketplace update flow |
 | Required outside the agent | Databricks CLI v1.0.0+ | None |
 
-If in doubt, use the CLI — it's the canonical install path and the only one that
-exposes experimental skills.
+If in doubt, use the CLI: it's the canonical install path and the only one with
+per-skill selection.
 
 ## Available Skills
 
@@ -87,6 +95,13 @@ originally imported from
   Pass `--experimental` to install all of them, or install a specific one
   by name (with the `--experimental` flag — e.g. `databricks aitools install
   databricks-iceberg --experimental`).
+- On Claude Code they are also available as a separate plugin:
+  `/plugin install databricks-experimental@databricks-agent-skills`
+  (all-or-nothing). The plugin is **skills-only by design**: hooks and
+  commands ship only with the stable `databricks` plugin, so the two never
+  conflict. Install it alongside the stable plugin, not instead of it. It is
+  listed only on this repo's self-hosted marketplace, never on Anthropic's
+  community or official listings.
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 
@@ -125,6 +140,11 @@ skills, not commands, so they aren't duplicated here.)
 - **Auth-failure hint** (PostToolUse on Bash): when a `databricks` command fails
   with an auth-shaped error, adds one line suggesting `/databricks:doctor` or
   `databricks auth login` before retrying. Never blocks or rewrites commands.
+
+The `databricks-experimental` plugin deliberately ships none of these: the
+stable plugin is the platform layer (routing, context, auth hints, commands)
+for both, and Claude Code runs hooks from every enabled plugin, so a second
+copy would fire alongside the first on every prompt.
 
 > **Distribution parity (follow-up).** The plugin marketplace ships the whole
 > repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.

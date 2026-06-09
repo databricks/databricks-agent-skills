@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Bump the plugin manifest versions to a release version + regenerate manifest.
 
-Given a `vX.Y.Z` (or `X.Y.Z`) release version, set the `version` field in both
-`.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`, then regenerate
-`manifest.json` so the released commit ships a current manifest.
+Given a `vX.Y.Z` (or `X.Y.Z`) release version, set the `version` field in
+`.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and
+`experimental/.claude-plugin/plugin.json`, then regenerate `manifest.json` so
+the released commit ships a current manifest.
 
 Why this exists: Claude Code's plugin marketplace keys updates on the `version`
 field in `.claude-plugin/plugin.json`. If a release ships without bumping that
 field, marketplace clients keep the cached copy and never see the new skills.
 This makes the release tag the single source of truth for the plugin version.
+All plugin manifests move in lockstep (one tag, one version, every plugin);
+`skills.py validate` rejects skew between the stable and experimental plugin.
 
 Run by `.github/workflows/release.yml`. Stdlib-only (no pip), so it runs on the
 protected runner that can't reach pypi.org.
@@ -22,7 +25,7 @@ import skills  # sibling module in scripts/
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
-# Matches the first `"version": "..."` field. Both manifests carry exactly one
+# Matches the first `"version": "..."` field. Each manifest carries exactly one
 # top-level `version` key, so a targeted in-place replacement keeps the diff to
 # a single line and avoids reformatting the JSON (which a load/dump round-trip
 # would risk).
@@ -31,6 +34,7 @@ VERSION_FIELD_RE = re.compile(r'("version"\s*:\s*")[^"]*(")')
 PLUGIN_MANIFESTS = (
     Path(".claude-plugin") / "plugin.json",
     Path(".cursor-plugin") / "plugin.json",
+    skills.EXPERIMENTAL_PLUGIN_MANIFEST,
 )
 
 

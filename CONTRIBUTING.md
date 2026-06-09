@@ -79,6 +79,33 @@ These components ship via the plugin marketplace (the whole repo is the plugin).
 `databricks aitools install` packages `skills/` only today; extending it to
 hooks/commands is CLI-side follow-up work.
 
+### The experimental plugin is skills-only
+
+`experimental/` ships as a second Claude Code plugin, `databricks-experimental`
+(marketplace `source: "./experimental"`, manifest at
+`experimental/.claude-plugin/plugin.json` with `"skills": "./"` because the
+skill dirs sit at the plugin root). The stable plugin is the platform layer;
+this one is a content pack installed alongside it. Policy, enforced by
+`scripts/skills.py validate`:
+
+- **No hooks, ever.** Claude Code runs hooks from every enabled plugin with no
+  shadowing or precedence: a hook here would stack with the stable plugin's on
+  every prompt, session start, or tool call, and experimental-bar code must not
+  run in that always-on hot path. If a hook idea needs incubation, it goes into
+  the stable plugin's `hooks/` behind the normal review bar.
+- **Commands only case by case, never duplicating a stable command.** They are
+  namespaced (`/databricks-experimental:<name>`) so they cannot collide, but
+  near-duplicates of `/databricks:doctor` and friends only confuse. Today there
+  are none, and the validator rejects the directory outright; relaxing that is
+  a deliberate decision, not a drive-by.
+- **Skill names must stay distinct from stable skill names.** Graduation is a
+  pure file move (`experimental/<name>/` to `skills/<name>/` in one PR, shipped
+  atomically in one release); manifest generation already rejects a name
+  present in both trees.
+- **One version for both plugins.** `scripts/bump_version.py` bumps the stable,
+  Cursor, and experimental manifests in lockstep on release; the validator
+  rejects skew between the two Claude plugin manifests.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
@@ -98,8 +125,9 @@ Releases are cut by the **Release** workflow (`.github/workflows/release.yml`),
 triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
 
 1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
-   both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` to the
-   release version and regenerates `manifest.json`.
+   `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and
+   `experimental/.claude-plugin/plugin.json` to the release version and
+   regenerates `manifest.json`.
 2. Commits the bump to `main`.
 3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
    then creates the GitHub release (`gh release create --verify-tag`).

@@ -20,6 +20,13 @@ SHARED_ASSETS = [
 STABLE_REPO_DIR = "skills"
 EXPERIMENTAL_REPO_DIR = "experimental"
 
+# experimental/ also ships as its own Claude Code plugin (marketplace source
+# "./experimental"). See check_experimental_plugin for the policy it must obey.
+EXPERIMENTAL_PLUGIN_NAME = "databricks-experimental"
+EXPERIMENTAL_PLUGIN_MANIFEST = (
+    Path(EXPERIMENTAL_REPO_DIR) / ".claude-plugin" / "plugin.json"
+)
+
 # Stable-skill -> Claude marketplace plugin keyword. Used by
 # check_plugin_manifest to verify .claude-plugin/plugin.json keywords stay
 # aligned with the shipped skills. Descriptions live in each skill's SKILL.md
@@ -449,18 +456,35 @@ def validate_plugin_manifests(repo_root: Path) -> list[str]:
                 "Add it so the Claude marketplace listing stays in sync."
             )
 
-    plugin_name = plugin.get("name")
     market_plugins = marketplace.get("plugins", [])
-    market_entry = next((p for p in market_plugins if p.get("name") == plugin_name), None)
-    if market_entry is None:
-        errors.append(
-            f".claude-plugin/marketplace.json has no entry for plugin '{plugin_name}'."
+
+    # Every plugin served from this repo (the stable plugin at the root, the
+    # experimental plugin at experimental/) needs a marketplace entry whose
+    # description matches its plugin.json, or the two drift independently.
+    manifests = [(plugin, plugin_path)]
+    experimental_path = repo_root / EXPERIMENTAL_PLUGIN_MANIFEST
+    if experimental_path.exists():
+        try:
+            manifests.append(
+                (json.loads(experimental_path.read_text()), experimental_path)
+            )
+        except json.JSONDecodeError:
+            pass  # check_experimental_plugin reports the broken manifest
+    for manifest_obj, manifest_path in manifests:
+        plugin_name = manifest_obj.get("name")
+        market_entry = next(
+            (p for p in market_plugins if p.get("name") == plugin_name), None
         )
-    else:
-        if market_entry.get("description") != plugin.get("description"):
+        if market_entry is None:
             errors.append(
-                ".claude-plugin/marketplace.json plugin description must match "
-                ".claude-plugin/plugin.json description (they drift independently otherwise)."
+                f".claude-plugin/marketplace.json has no entry for plugin '{plugin_name}'."
+            )
+            continue
+        if market_entry.get("description") != manifest_obj.get("description"):
+            errors.append(
+                f".claude-plugin/marketplace.json description for '{plugin_name}' "
+                f"must match {manifest_path.relative_to(repo_root)} "
+                "(they drift independently otherwise)."
             )
 
     return errors
@@ -586,6 +610,134 @@ def check_plugin_components(repo_root: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Experimental plugin (skills-only by policy)
+# ---------------------------------------------------------------------------
+#
+# experimental/ ships as its own Claude Code plugin (databricks-experimental,
+# marketplace source "./experimental") so experimental content installs and
+# updates through the agent just like the stable plugin. It is skills-only BY
+# POLICY, not by omission: Claude Code runs hooks from every enabled plugin
+# with no shadowing or precedence, so any hook here would stack with the
+# stable plugin's hooks on every prompt, session start, or tool call, and
+# experimental-bar code must not run in that always-on hot path. The stable
+# plugin is the platform layer (router, context primer, auth hints, slash
+# commands); this plugin is a content pack that assumes the stable plugin is
+# installed alongside it. Keeping it self-contained also keeps graduation a
+# pure file move (experimental/<name>/ -> skills/<name>/ in one release).
+
+
+def check_experimental_plugin(repo_root: Path) -> list[str]:
+    """Validate the experimental plugin manifest and its skills-only policy.
+
+    - experimental/.claude-plugin/plugin.json must exist, parse, and be named
+      EXPERIMENTAL_PLUGIN_NAME (the marketplace entry points at it)
+    - it must declare "skills": "./": the skill dirs sit at the plugin root
+      (there is no experimental/skills/), so without the field the plugin
+      silently ships zero skills
+    - it must NOT declare hooks/commands/agents/mcpServers, and no
+      experimental/hooks/ or experimental/commands/ dirs may exist (see the
+      skills-only policy comment above)
+    - its "version" must equal the stable plugin's: scripts/bump_version.py
+      bumps both in lockstep on release, so a mismatch means one side was
+      hand-edited
+    - its marketplace entry must use source "./experimental"
+
+    Returns a list of error strings (empty means all good).
+    """
+    errors: list[str] = []
+
+    manifest_path = repo_root / EXPERIMENTAL_PLUGIN_MANIFEST
+    if not manifest_path.exists():
+        return [
+            f"Missing {EXPERIMENTAL_PLUGIN_MANIFEST} (the marketplace entry "
+            f"'{EXPERIMENTAL_PLUGIN_NAME}' points at experimental/, so the "
+            "manifest must exist)."
+        ]
+    try:
+        plugin = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f"{EXPERIMENTAL_PLUGIN_MANIFEST} is not valid JSON: {exc}"]
+
+    if plugin.get("name") != EXPERIMENTAL_PLUGIN_NAME:
+        errors.append(
+            f"{EXPERIMENTAL_PLUGIN_MANIFEST} must be named "
+            f"'{EXPERIMENTAL_PLUGIN_NAME}', got {plugin.get('name')!r}."
+        )
+
+    declared_skills = plugin.get("skills")
+    declared_list = (
+        [declared_skills] if isinstance(declared_skills, str) else declared_skills
+    )
+    if not isinstance(declared_list, list) or not any(
+        isinstance(p, str) and _norm_rel_path(p) in ("", ".") for p in declared_list
+    ):
+        errors.append(
+            f'{EXPERIMENTAL_PLUGIN_MANIFEST} must declare "skills": "./" so the '
+            "skill directories at the plugin root (experimental/<name>/) are "
+            "scanned; there is no experimental/skills/, so without it the "
+            "plugin ships zero skills."
+        )
+
+    for forbidden_key in ("hooks", "commands", "agents", "mcpServers"):
+        if forbidden_key in plugin:
+            errors.append(
+                f"{EXPERIMENTAL_PLUGIN_MANIFEST} declares '{forbidden_key}'. The "
+                "experimental plugin is skills-only by policy; that "
+                "infrastructure belongs in the stable plugin (see the comment "
+                "above check_experimental_plugin)."
+            )
+    for forbidden_dir in ("hooks", "commands", "agents"):
+        if (repo_root / EXPERIMENTAL_REPO_DIR / forbidden_dir).exists():
+            errors.append(
+                f"experimental/{forbidden_dir}/ exists. The experimental plugin "
+                "is skills-only by policy; hooks and commands belong to the "
+                "stable plugin (see the comment above check_experimental_plugin)."
+            )
+
+    stable_path = repo_root / ".claude-plugin" / "plugin.json"
+    try:
+        stable = json.loads(stable_path.read_text()) if stable_path.exists() else {}
+    except json.JSONDecodeError:
+        stable = {}  # validate_plugin_manifests reports the broken manifest
+    stable_version = stable.get("version")
+    if stable_version and plugin.get("version") != stable_version:
+        errors.append(
+            f"Version skew: .claude-plugin/plugin.json is {stable_version!r} "
+            f"but {EXPERIMENTAL_PLUGIN_MANIFEST} is {plugin.get('version')!r}. "
+            "scripts/bump_version.py bumps both in lockstep on release; they "
+            "must match."
+        )
+
+    marketplace_path = repo_root / ".claude-plugin" / "marketplace.json"
+    try:
+        marketplace = (
+            json.loads(marketplace_path.read_text())
+            if marketplace_path.exists()
+            else {}
+        )
+    except json.JSONDecodeError:
+        marketplace = {}  # validate_plugin_manifests reports the broken manifest
+    entry = next(
+        (
+            p
+            for p in marketplace.get("plugins", [])
+            if p.get("name") == EXPERIMENTAL_PLUGIN_NAME
+        ),
+        None,
+    )
+    if entry is not None and _norm_rel_path(entry.get("source", "")) != _norm_rel_path(
+        f"./{EXPERIMENTAL_REPO_DIR}"
+    ):
+        errors.append(
+            f"marketplace.json entry '{EXPERIMENTAL_PLUGIN_NAME}' must use "
+            f'"source": "./{EXPERIMENTAL_REPO_DIR}", got '
+            f"{entry.get('source')!r}."
+        )
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -659,6 +811,17 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in component_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            experimental_errors = check_experimental_plugin(repo_root)
+            if experimental_errors:
+                print(
+                    "ERROR: experimental plugin (experimental/.claude-plugin/) "
+                    "is misconfigured:",
+                    file=sys.stderr,
+                )
+                for err in experimental_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

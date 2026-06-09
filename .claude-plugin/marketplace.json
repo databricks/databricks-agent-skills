@@ -11,6 +11,12 @@
       "source": "./",
       "category": "development",
       "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."
+    },
+    {
+      "name": "databricks-experimental",
+      "source": "./experimental",
+      "category": "development",
+      "description": "Experimental Databricks skills: best-effort, unstable content that may change or be removed without notice. Skills only by design; install the stable databricks plugin alongside it for the routing hooks and slash commands."
     }
   ]
 }
