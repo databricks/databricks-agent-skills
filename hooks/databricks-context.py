@@ -7,6 +7,7 @@ any error exits 0 with no output. It surfaces, when available:
 
   - databricks CLI presence + version
   - configured profile names, parsed straight from the config file (no network)
+  - the `[__settings__].default_profile` the CLI resolves when --profile is omitted
   - env-based / in-platform auth (DATABRICKS_HOST, DATABRICKS_CONFIG_PROFILE)
 
 Token values are never printed, only their presence.
@@ -26,6 +27,12 @@ from pathlib import Path
 
 VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 SECTION_RE = re.compile(r"^\[([^\]]+)\]", re.MULTILINE)
+# default_profile inside the [__settings__] section ([^\[]*? keeps the search
+# from crossing into the next section header).
+SETTINGS_DEFAULT_RE = re.compile(
+    r"^\[__settings__\][^\[]*?^[ \t]*default_profile[ \t]*=[ \t]*(\S+)",
+    re.MULTILINE,
+)
 MAX_PROFILES = 12
 
 
@@ -43,12 +50,14 @@ def cli_version(databricks):
 
 
 def config_profiles():
-    """(config_path, [profile names]) read locally from the config file.
+    """(config_path, [profile names], default_profile) read locally from the config file.
 
     Parsed directly rather than via `databricks auth profiles` on purpose: this
     runs at SessionStart, which must stay offline and fast (no network, no
     auth-validation round-trips). Skips CLI-internal sections like
-    `[__settings__]`, which are not auth profiles.
+    `[__settings__]`, which are not auth profiles, but does surface
+    `[__settings__].default_profile` since the CLI resolves it when --profile
+    is omitted.
     """
     cfg = os.environ.get("DATABRICKS_CONFIG_FILE") or str(Path.home() / ".databrickscfg")
     try:
@@ -57,15 +66,16 @@ def config_profiles():
         # huge file pointed at by DATABRICKS_CONFIG_FILE can never hang or do
         # unbounded work at session start.
         if not p.is_file() or p.stat().st_size > 1_000_000:
-            return cfg, []
+            return cfg, [], None
         text = p.read_text(errors="replace")
     except Exception:
-        return cfg, []
+        return cfg, [], None
     names = [
         n for n in SECTION_RE.findall(text)
         if not (n.startswith("__") and n.endswith("__"))
     ]
-    return cfg, names
+    m = SETTINGS_DEFAULT_RE.search(text)
+    return cfg, names, (m.group(1) if m else None)
 
 
 def _sanitize(value, limit=64):
@@ -96,11 +106,16 @@ def build_context():
     else:
         lines.append("CLI present (version unknown).")
 
-    cfg, profiles = config_profiles()
+    cfg, profiles, default_profile = config_profiles()
     if profiles:
         shown = [_sanitize(n) for n in profiles[:MAX_PROFILES]]
         more = f" (+{len(profiles) - len(shown)} more)" if len(profiles) > len(shown) else ""
         lines.append(f"Profiles in {_sanitize(Path(cfg).name)}: {', '.join(shown)}{more}.")
+        if default_profile:
+            lines.append(
+                f"Default profile (from [__settings__]): `{_sanitize(default_profile)}`; "
+                "the CLI uses it when `--profile` is omitted."
+            )
         lines.append("Never auto-select a profile. Pass `--profile <name>` and let the user choose.")
     else:
         # Basename only, matching the branch above: the full path (possibly a

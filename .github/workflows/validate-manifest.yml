@@ -31,8 +31,8 @@ jobs:
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
 
-      - name: Test databricks-router hook
-        run: python3 hooks/databricks_router_test.py
-
-      - name: Test databricks-context hook
-        run: python3 hooks/databricks_context_test.py
+      - name: Test plugin hooks
+        run: |
+          python3 hooks/databricks_router_test.py
+          python3 hooks/databricks_context_test.py
+          python3 hooks/databricks_auth_helper_test.py

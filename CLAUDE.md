@@ -56,8 +56,9 @@ there. Declaring the standard path double-loads it and fails the plugin with a
 "Duplicate hooks file" error.
 
 - `hooks/`: a UserPromptSubmit prompt router (`databricks-router.py`) that
-  steers Databricks-related prompts into the skills, and a SessionStart context
-  primer (`databricks-context.py`), wired via `hooks/hooks.json`. Both
+  steers Databricks-related prompts into the skills, a SessionStart context
+  primer (`databricks-context.py`), and a PostToolUse auth-failure hinter
+  (`databricks-auth-helper.py`), wired via `hooks/hooks.json`. All
   stdlib-only and fail-open. See [hooks/README.md](./hooks/README.md).
 - `commands/`: friction-only slash commands (`/databricks:setup`,
   `/databricks:doctor`). Product workflows stay in the skills, not commands, to
@@ -65,9 +66,8 @@ there. Declaring the standard path double-loads it and fails the plugin with a
 
 `python3 scripts/skills.py validate` checks these (hooks.json is valid and
 references existing scripts, plugin.json does not double-declare hooks, every
-command has frontmatter). Run the hook tests
-(`python3 hooks/databricks_router_test.py` and
-`python3 hooks/databricks_context_test.py`) after changing hook behavior.
+command has frontmatter). Run the hook tests under `hooks/*_test.py` after
+changing hook behavior.
 These ship via the plugin marketplace
 (whole-repo source); `databricks aitools install` currently installs skills only.
 

@@ -18,8 +18,10 @@ report the rest as unknown.
 2. **Profiles**: `databricks auth profiles`. List configured profiles and
    validity. If `$1` is given, use that profile for the rest. Otherwise, if more
    than one profile exists, ask the user which to use (**never auto-select**).
-3. **Identity**: `databricks current-user me --profile <profile>`. Confirm who
-   you're authenticated as.
+3. **Identity & auth method**: `databricks auth describe --profile <profile>`
+   shows the effective host, user, and credential source (never pass
+   `--sensitive`). Fall back to `databricks current-user me --profile <profile>`
+   if it's unavailable.
 4. **Workspace reach**: `databricks catalogs list --profile <profile>`.
    Confirms API reachability and Unity Catalog access.
 5. **Compute**: `databricks warehouses list` and `databricks clusters list` for

@@ -10,8 +10,13 @@ There is no second agent to delegate to: Claude itself drives the `databricks`
 CLI through the skills, so "routing" just means "make sure the Databricks skills
 are loaded." No permission gating, no cost warnings.
 
+The full routing instruction is injected once per session (keyed by the
+payload's session_id via a marker file in the temp dir); later Databricks
+prompts in the same session get a one-line reminder instead, keeping repeat
+token cost low.
+
 Contract (Claude Code UserPromptSubmit hook):
-  stdin : JSON, e.g. {"prompt": "..."} or {"message": "..."}
+  stdin : JSON, e.g. {"prompt": "...", "session_id": "..."} or {"message": "..."}
   stdout: JSON -> hookSpecificOutput.additionalContext (injected before the turn),
           or "{}" to stay out of the way.
   Fail-open: on ANY error print "{}" and exit 0, so a broken hook never blocks a
@@ -20,6 +25,8 @@ Contract (Claude Code UserPromptSubmit hook):
 import json
 import re
 import sys
+import tempfile
+from pathlib import Path
 
 # Unambiguously Databricks -> always route, even alongside a competitor mention
 # (e.g. "migrate from redshift to databricks").
@@ -37,6 +44,8 @@ STRONG = [
     r"\bdelta\s+live\s+tables?\b",
     r"\bspark\s+declarative\s+pipelines?\b",
     r"\bmosaic\s+ai\b",
+    r"\bdelta\s+sharing\b",
+    r"\bcloudfiles\b",
 ]
 
 # Databricks-likely but also used elsewhere -> route only when no competitor /
@@ -51,6 +60,8 @@ AMBIGUOUS = [
     r"\bspark\s*\.\s*(sql|read|write|table)\b",
     r"\bserverless\s+(compute|warehouse|migration)\b",
     r"\bmedallion\s+(architecture|tables?)\b",
+    r"\bsql\s+warehouse\b",
+    r"\bauto\s+loader\b",
 ]
 
 # Competitor platforms + plainly-local dev work -> suppress an AMBIGUOUS match.
@@ -59,6 +70,7 @@ SUPPRESS = [
     r"\bbigquery\b",
     r"\bredshift\b",
     r"\bsynapse\b",
+    r"\bsnowflake\b",
     r"\bgit\s+(commit|push|pull|status|log|diff|branch|rebase|merge|clone|stash)\b",
     r"\b(read|edit|open|write|create|delete)\s+(the\s+|this\s+|a\s+|that\s+)?file\b",
     r"\bunit\s+tests?\b",
@@ -103,9 +115,29 @@ ROUTING_INSTRUCTION = (
     "- Lakebase / Postgres -> databricks-lakebase\n"
     "- Vector Search / RAG -> databricks-vector-search\n"
     "- Classic-to-serverless migration -> databricks-serverless-migration\n"
+    "- Genie / natural-language data Q&A -> databricks-core (Genie CLI support "
+    "is experimental)\n"
     "Then follow the skill's guidance (it drives the `databricks` CLI). If no "
     "product skill fits, databricks-core alone is enough."
 )
+
+# After the first routed prompt the skills are loaded (or being loaded), so the
+# rest of the session gets this one-liner instead of the full block above.
+ROUTING_REMINDER = (
+    "[DATABRICKS] Databricks-related prompt: keep routing through the "
+    "Databricks skills (databricks-core plus the matching product skill); load "
+    "any that are not already loaded."
+)
+
+_SESSION_ID_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def _marker_path(session_id):
+    """Temp-dir marker recording that this session already got the full instruction."""
+    sid = _SESSION_ID_SAFE_RE.sub("", str(session_id or ""))[:64]
+    if not sid:
+        return None
+    return Path(tempfile.gettempdir()) / f"databricks-router-{sid}"
 
 
 def check_prompt(prompt):
@@ -120,6 +152,23 @@ def check_prompt(prompt):
     if any(p.search(prompt) for p in _AMBIGUOUS):
         return ROUTING_INSTRUCTION
     return None
+
+
+def routing_context(prompt, session_id):
+    """Full instruction on the session's first Databricks prompt, reminder after."""
+    if check_prompt(prompt) is None:
+        return None
+    marker = _marker_path(session_id)
+    if marker is None:
+        return ROUTING_INSTRUCTION
+    try:
+        if marker.exists():
+            return ROUTING_REMINDER
+        marker.touch()
+    except Exception:
+        # Marker bookkeeping must never break routing itself.
+        pass
+    return ROUTING_INSTRUCTION
 
 
 def extract_prompt(data):
@@ -144,7 +193,8 @@ def main():
         sys.exit(0)
 
     try:
-        result = check_prompt(extract_prompt(data))
+        session_id = data.get("session_id", "") if isinstance(data, dict) else ""
+        result = routing_context(extract_prompt(data), session_id)
     except Exception:
         result = None
 

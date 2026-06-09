@@ -6,8 +6,10 @@ precision is pinned here (over-routing is annoying; under-routing misses work).
 Stdlib-only; run with: python3 hooks/databricks_router_test.py
 """
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _spec = importlib.util.spec_from_file_location(
     "databricks_router", Path(__file__).parent / "databricks-router.py"
@@ -38,6 +40,18 @@ class CheckPromptTest(unittest.TestCase):
     def test_strong_routes_even_with_competitor(self):
         # "databricks" present -> route despite the competitor mention.
         self.assertRoutes("migrate my tables from redshift to databricks")
+        self.assertRoutes("migrate from snowflake to databricks")
+
+    def test_new_strong_terms_route(self):
+        self.assertRoutes("share this table via delta sharing")
+        self.assertRoutes("ingest with the cloudFiles format")
+
+    def test_new_ambiguous_terms(self):
+        self.assertRoutes("create a serverless sql warehouse")
+        self.assertRoutes("set up auto loader for streaming ingestion")
+        self.assertSkips("set up a sql warehouse in snowflake")
+        # One-word "autoloader" (PHP/composer style) must not match.
+        self.assertSkips("fix the php autoloader config")
 
     def test_ambiguous_routes_without_competitor(self):
         for p in [
@@ -98,6 +112,34 @@ class CheckPromptTest(unittest.TestCase):
         self.assertEqual(
             router.extract_prompt({"prompt": [{"text": "a"}, {"text": "b"}]}), "a b"
         )
+
+
+class SessionMemoTest(unittest.TestCase):
+    def test_first_route_full_then_reminder(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(router.tempfile, "gettempdir", return_value=tmp):
+            first = router.routing_context("deploy a databricks job", "sess-1")
+            second = router.routing_context("update that databricks job", "sess-1")
+            other = router.routing_context("deploy a databricks job", "sess-2")
+        self.assertEqual(first, router.ROUTING_INSTRUCTION)
+        self.assertEqual(second, router.ROUTING_REMINDER)
+        self.assertEqual(other, router.ROUTING_INSTRUCTION)
+
+    def test_non_databricks_prompt_does_not_mark_session(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(router.tempfile, "gettempdir", return_value=tmp):
+            self.assertIsNone(router.routing_context("hello there friend", "sess-3"))
+            self.assertEqual(
+                router.routing_context("deploy a databricks job", "sess-3"),
+                router.ROUTING_INSTRUCTION,
+            )
+
+    def test_missing_session_id_always_full_instruction(self):
+        for sid in (None, "", "!!!"):
+            self.assertEqual(
+                router.routing_context("deploy a databricks job", sid),
+                router.ROUTING_INSTRUCTION,
+            )
 
 
 if __name__ == "__main__":

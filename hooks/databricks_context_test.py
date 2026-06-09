@@ -31,19 +31,39 @@ class ConfigProfilesTest(unittest.TestCase):
             "[DEFAULT]\nhost = https://x\n\n[__settings__]\nfoo = 1\n\n[prod]\nhost = https://y\n"
         )
         with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": cfg}):
-            path, names = ctx.config_profiles()
+            path, names, default = ctx.config_profiles()
         self.assertEqual(path, cfg)
         self.assertEqual(names, ["DEFAULT", "prod"])
+        self.assertIsNone(default)
+
+    def test_default_profile_from_settings(self):
+        cfg = self._write_cfg(
+            "[DEFAULT]\nhost = https://x\n\n[__settings__]\ndefault_profile = prod\n\n"
+            "[prod]\nhost = https://y\n"
+        )
+        with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": cfg}):
+            _, names, default = ctx.config_profiles()
+        self.assertEqual(names, ["DEFAULT", "prod"])
+        self.assertEqual(default, "prod")
+
+    def test_default_profile_key_outside_settings_ignored(self):
+        cfg = self._write_cfg(
+            "[__settings__]\nfoo = 1\n\n[prod]\ndefault_profile = nope\nhost = https://y\n"
+        )
+        with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": cfg}):
+            _, _, default = ctx.config_profiles()
+        self.assertIsNone(default)
 
     def test_missing_file_gives_no_profiles(self):
         with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": "/nonexistent/nope.cfg"}):
-            _, names = ctx.config_profiles()
+            _, names, default = ctx.config_profiles()
         self.assertEqual(names, [])
+        self.assertIsNone(default)
 
     def test_oversized_file_is_skipped(self):
         cfg = self._write_cfg("[DEFAULT]\n" + "x = y\n" * 200_000)
         with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": cfg}):
-            _, names = ctx.config_profiles()
+            _, names, _ = ctx.config_profiles()
         self.assertEqual(names, [])
 
 
@@ -73,6 +93,18 @@ class BuildContextTest(unittest.TestCase):
             out = ctx.build_context()
         self.assertIn("custom.cfg", out)
         self.assertNotIn("/secret/dir", out)
+
+    def test_default_profile_shown_in_banner(self):
+        f = tempfile.NamedTemporaryFile("w", suffix=".cfg", delete=False)
+        f.write("[__settings__]\ndefault_profile = prod\n\n[prod]\nhost = https://y\n")
+        f.close()
+        self.addCleanup(os.unlink, f.name)
+        with mock.patch.dict(os.environ, {"DATABRICKS_CONFIG_FILE": f.name}), \
+             mock.patch.object(ctx.shutil, "which", return_value="/usr/bin/databricks"), \
+             mock.patch.object(ctx, "cli_version", return_value=(1, 2, 3)):
+            out = ctx.build_context()
+        self.assertIn("Default profile", out)
+        self.assertIn("`prod`", out)
 
 
 if __name__ == "__main__":

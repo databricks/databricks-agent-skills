@@ -93,7 +93,8 @@ originally imported from
 ## Commands and hooks (Claude Code)
 
 When installed as a Claude Code plugin, the `databricks` plugin adds slash
-commands and two hooks (prompt routing + session context) on top of the skills.
+commands and three hooks (prompt routing, session context, auth-failure hints)
+on top of the skills.
 (These are Claude-Code-specific and ship via the plugin marketplace; the CLI
 `databricks aitools install` path installs skills only today; see the note at
 the end.)
@@ -109,16 +110,21 @@ auto-invoked skills.
 (Product workflows such as apps, jobs, pipelines, DABs, etc. are handled by the
 skills, not commands, so they aren't duplicated here.)
 
-**Hooks** (`hooks/`, both fail-open):
+**Hooks** (`hooks/`, all fail-open):
 
 - **Prompt router** (UserPromptSubmit): a fast keyword regex (sub-50ms, no LLM,
   no network) over each prompt. When the prompt is Databricks-related, it injects
   a note steering Claude to load `databricks-core` plus the matching product
-  skill before answering. Unrelated prompts are untouched. No permission gating,
-  no cost warnings.
-- **Context primer** (SessionStart): injects the routing rule, CLI version,
-  configured profile names (read locally, no network call, no token values), and
-  env/in-platform auth state.
+  skill before answering. The full note fires once per session; later Databricks
+  prompts get a one-line reminder. Unrelated prompts are untouched. No
+  permission gating, no cost warnings.
+- **Context primer** (SessionStart, skipped on resume): injects the routing
+  rule, CLI version, configured profile names and any
+  `[__settings__].default_profile` (read locally, no network call, no token
+  values), and env/in-platform auth state.
+- **Auth-failure hint** (PostToolUse on Bash): when a `databricks` command fails
+  with an auth-shaped error, adds one line suggesting `/databricks:doctor` or
+  `databricks auth login` before retrying. Never blocks or rewrites commands.
 
 > **Distribution parity (follow-up).** The plugin marketplace ships the whole
 > repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.

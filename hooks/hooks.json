@@ -1,5 +1,5 @@
 {
-  "description": "Databricks plugin hooks: route Databricks prompts into the skills, and prime session context.",
+  "description": "Databricks plugin hooks: route Databricks prompts into the skills, prime session context, and hint on auth failures.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -13,10 +13,22 @@
     ],
     "SessionStart": [
       {
+        "matcher": "startup|clear|compact",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-context.py\" || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-auth-helper.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/databricks-auth-helper.py\" || true"
           }
         ]
       }
