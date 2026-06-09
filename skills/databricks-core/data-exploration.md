@@ -21,10 +21,11 @@ databricks experimental aitools tools discover-schema catalog.schema.table1 cata
 ## Identifier Names & Quoting — Read Before Writing Any Query
 
 **Use catalog, schema, and table names EXACTLY as given.** Never normalize them: do not
-change a hyphen (`-`) to an underscore (`_`), do not change case, and do not add or drop
-characters. `hello-world` and `hello_world` are *different* catalogs — silently
-"fixing" the name produces `NO_SUCH_CATALOG` / `TABLE_OR_VIEW_NOT_FOUND` against an object
-that does not exist.
+change a hyphen (`-`) to an underscore (`_`), and do not add or drop characters.
+`hello-world` and `hello_world` are *different* catalogs — silently "fixing" the name
+produces `NO_SUCH_CATALOG` / `TABLE_OR_VIEW_NOT_FOUND` against an object that does not
+exist. (Case is not significant — Unity Catalog stores names lowercase — but there is no
+reason to alter what you were given.)
 
 **Hyphens and other special characters are valid in Unity Catalog names.** For catalogs,
 only `.`, space, and `/` are disallowed — a hyphen is fine. So a name like `hello-world`
@@ -56,6 +57,12 @@ inside the SQL string of `... tools query "<SQL>"`.
 > Note: legacy `hive_metastore` is stricter than Unity Catalog — table names there allow
 > only alphanumeric ASCII and underscores, so hyphens are not valid even with backticks.
 > This guidance is for Unity Catalog names.
+
+> References (Databricks):
+> [Names](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-names) — allowed
+> characters in catalog/schema/table names ·
+> [SQL identifiers](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-identifiers) —
+> backtick-quoting rules for special characters.
 
 ## Overview
 
@@ -290,11 +297,10 @@ Both commands support:
 
 **Solution**:
 1. Verify table name format: `CATALOG.SCHEMA.TABLE`
-1. **Confirm you did not alter the name** — names are literal. A common failure is
-   normalizing a hyphen to an underscore (`hello-world` → `hello_world`), which points
-   at a catalog that does not exist. See [Identifier Names & Quoting](#identifier-names--quoting--read-before-writing-any-query).
-2. Check if you have read permissions on the table
-3. List available tables:
+2. **Names are literal** — a hyphen is not an underscore; don't normalize it.
+   See [Identifier Names & Quoting](#identifier-names--quoting--read-before-writing-any-query).
+3. Check if you have read permissions on the table
+4. List available tables:
    ```bash
    databricks tables list <catalog> <schema> --profile my-workspace
    ```
@@ -339,13 +345,11 @@ Both commands support:
 
 **Solution**:
 1. Check SQL syntax - use standard SQL
-1. **Backtick-quote identifiers with special characters.** A catalog/schema/table/column
-   name containing a hyphen, space, or other non-`[a-zA-Z0-9_]` character must be wrapped in
-   backticks (e.g. `` `hello-world`.demo ``); unquoted, a hyphen parses as subtraction.
+2. **Backtick-quote special-character identifiers** (`` `hello-world`.demo ``).
    See [Identifier Names & Quoting](#identifier-names--quoting--read-before-writing-any-query).
-2. Verify column names match schema (use discover-schema first)
-3. Ensure proper quoting for string literals
-4. Test query incrementally (start simple, add complexity)
+3. Verify column names match schema (use discover-schema first)
+4. Ensure proper quoting for string literals
+5. Test query incrementally (start simple, add complexity)
 
 ## Best Practices
 
