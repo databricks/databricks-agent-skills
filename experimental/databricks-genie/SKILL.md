@@ -169,13 +169,13 @@ manage_genie(
 )
 ```
 
-> **Cross-workspace migration:** Each MCP server is workspace-scoped. Configure one server entry per workspace profile in your IDE's MCP config, then `manage_genie(action="export")` from the source server and `manage_genie(action="import")` via the target server. See [spaces.md §Migration](spaces.md#migrating-across-workspaces-with-catalog-remapping) for the full workflow.
+> **Cross-workspace migration:** Each MCP server is workspace-scoped. Configure one server entry per workspace profile in your IDE's MCP config, then `manage_genie(action="export")` from the source server and `manage_genie(action="import")` via the target server. See [spaces.md §Migration](references/spaces.md#migrating-across-workspaces-with-catalog-remapping) for the full workflow.
 
 ## Reference Files
 
-- [spaces.md](spaces.md) - Creating and managing Genie Spaces
-- [space-quality.md](space-quality.md) - Tool-agnostic quick reference: sizing, build & validation loop, benchmarks, regression, setup checklist, anti-patterns
-- [conversation.md](conversation.md) - Asking questions via the Conversation API
+- [spaces.md](references/spaces.md) - Creating and managing Genie Spaces
+- [space-quality.md](references/space-quality.md) - Tool-agnostic quick reference: sizing, build & validation loop, benchmarks, regression, setup checklist, anti-patterns
+- [conversation.md](references/conversation.md) - Asking questions via the Conversation API
 
 ## Genie Code Agent Skills (in-product design & tuning)
 
@@ -190,7 +190,27 @@ A companion suite of **Genie Code Agent** skills runs **inside Databricks Genie 
 | [optimize-genie-space](optimize-genie-space/SKILL.md) | Approved iterative benchmark-driven quality tuning (one focused pass at a time) |
 | [optimize-genie-query](optimize-genie-query/SKILL.md) | Benchmark-query performance/cost triage via Query History Insights & Query Profile |
 
-Typical in-product flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). For the condensed, tool-agnostic version of the build/validation guidance these skills implement, see [space-quality.md](space-quality.md).
+Typical in-product flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). For the condensed, tool-agnostic version of the build/validation guidance these skills implement, see [space-quality.md](references/space-quality.md).
+
+## Genie Space Lifecycle (design → diagnose → optimize)
+
+The **methodology** in the Genie Code Agent suite is portable to this MCP path — only the *mechanism* differs (MCP tools here vs the in-product UI there). Use this skill as the orchestration hub: for each phase, follow the canonical methodology and execute it with the MCP tool below; when the user is working inside Databricks Genie Code, route to the subskill instead.
+
+| Phase | Methodology (canonical source) | Execute via MCP | In-product subskill |
+|-------|-------------------------------|-----------------|---------------------|
+| **Design** | [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) — requirements, readiness, structured-context-first order, metric-view recommendation | `get_table_stats_and_schema`, `execute_sql` (read-only profiling) | `create-genie-space` |
+| **Create / update** | [space-quality.md](references/space-quality.md) — sizing, setup checklist; [spaces.md](references/spaces.md) | `manage_genie(create_or_update)` | `create-genie-space` |
+| **Query / evaluate** | [space-quality.md](references/space-quality.md) — incremental build & validation loop, benchmarks | `ask_genie` over a question set; compare results to source-of-truth | `optimize-genie-space` |
+| **Diagnose** | [diagnose-genie-space → failure-routing.md](diagnose-genie-space/references/failure-routing.md) — classify primary failure, smallest fix | `ask_genie` to reproduce, `manage_genie(get, include_serialized_space)`, `execute_sql`, `system.query.history` | `diagnose-genie-space` |
+| **Optimize (quality)** | [optimize-genie-space → optimization-guide.md](optimize-genie-space/references/optimization-guide.md) — benchmark integrity, repair/pruning, baseline→candidate, regression | edit config via `manage_genie(create_or_update)`; re-run `ask_genie` eval loop | `optimize-genie-space` |
+| **Optimize (query)** | [optimize-genie-query → query-optimization-guide.md](optimize-genie-query/references/query-optimization-guide.md) — reduce work before adding compute | `execute_sql` + `EXPLAIN`, `system.query.history`, `system.access.audit` | `optimize-genie-query` |
+
+**Mechanism gaps (no MCP equivalent — in-product only):**
+
+- **Native benchmark execution & scoring.** Via MCP, approximate it with an `ask_genie`-over-a-fixed-question-set loop and compare SQL/results yourself; you don't get the native per-question eval UI.
+- **Monitor-tab feedback** (thumbs up/down trends, review requests) and **Query History Insights / Query Profile.** Substitute `system.query.history` / `system.access.audit` reads where possible, and state the limitation.
+
+When a phase depends on one of these gaps, say so explicitly and either approximate via the MCP substitute or recommend doing that phase inside Databricks Genie Code with the matching subskill.
 
 ## Prerequisites
 
@@ -213,13 +233,13 @@ If a Genie Space's data source is a **metric view** (not a plain table), Genie's
 - Use a pre-built blended measure (e.g. `MEASURE(blended_spread)`) instead of reconstructing per-dimension branching with `CASE WHEN`.
 - **Never** put a measure column in `WHERE` or `GROUP BY` — measures are only valid via `MEASURE()` in `SELECT`. Filter NULL/unwanted results with `HAVING` or an outer query/CTE.
 
-See [spaces.md §Querying Metric Views in Genie](spaces.md#querying-metric-views-in-genie) for a summary, and [databricks-metric-views/query-patterns.md](../databricks-metric-views/references/query-patterns.md) for full rules and examples.
+See [spaces.md §Querying Metric Views in Genie](references/spaces.md#querying-metric-views-in-genie) for a summary, and [databricks-metric-views/query-patterns.md](../databricks-metric-views/references/query-patterns.md) for full rules and examples.
 
 ## Common Issues
 
-See [spaces.md §Troubleshooting](spaces.md#troubleshooting) for a full list of issues and solutions.
+See [spaces.md §Troubleshooting](references/spaces.md#troubleshooting) for a full list of issues and solutions.
 
-**If you're constructing `serialized_space` JSON by hand** and getting errors like `Expected 'START_OBJECT' not 'VALUE_STRING'`, `must be sorted by id`, `must contain at most one item`, or `Unknown field`, see [spaces.md §Exact Field Schemas](spaces.md#exact-field-schemas-verified-against-the-genie-api) for the verified shapes of `text_instructions`, `example_question_sqls`, `benchmarks`, and `sample_questions`, plus a self-contained Python helper.
+**If you're constructing `serialized_space` JSON by hand** and getting errors like `Expected 'START_OBJECT' not 'VALUE_STRING'`, `must be sorted by id`, `must contain at most one item`, or `Unknown field`, see [spaces.md §Exact Field Schemas](references/spaces.md#exact-field-schemas-verified-against-the-genie-api) for the verified shapes of `text_instructions`, `example_question_sqls`, `benchmarks`, and `sample_questions`, plus a self-contained Python helper.
 ## Related Skills
 
 - **[databricks-metric-views](../databricks-metric-views/SKILL.md)** - Build governed business metrics that Genie consumes. See [genie-integration.md](../databricks-metric-views/references/genie-integration.md) for metric-view design rules that affect Genie answer quality (one-fact-source rule, base view pattern for multi-fact KPIs, agent metadata, domain organization), and [query-patterns.md](../databricks-metric-views/references/query-patterns.md) for the `MEASURE()` query rules Genie must follow.
