@@ -8,17 +8,13 @@ For **app-owned operational state** (forms, CRUD, session data), prefer [Lakebas
 
 **Pattern selection and gates:** [Data Patterns](data-patterns.md).
 
-## Decision gate
+> **Agentic mode:** the warehouse is already wired (id injected). **Skip** the `databricks apps init … --set` scaffold block below; just write the mutation route. You still confirm the target `catalog.schema.table` via data discovery. See [Environments](environments.md).
 
-Before implementing warehouse DML, confirm this is the right layer:
+## When this guide applies
 
-| Need | Use |
-|------|-----|
-| User form / CRUD / low-latency app state | [Lakebase OLTP](lakebase-oltp.md) — `appkit.lakebase.query()` |
-| App data must appear in Delta later (async OK) | Lakebase write + [Lakehouse Sync](../../../databricks-lakebase/references/lakehouse-sync.md) (UI-only) |
-| Large / batch / multi-step lakehouse write | [Jobs](jobs.md) — `jobs()` plugin triggers a Lakeflow Job |
-| User action must land in Delta **now**, small scoped DML | **This guide** — custom endpoint + `appkit.analytics.query()` |
-| Read lakehouse data in the UI | [SQL Queries](sql-queries.md) or Lakebase synced tables (read-only) |
+You're in the right place **only if** a user action must land in an existing Delta / Unity Catalog table **now**, as small scoped DML (`INSERT` / `UPDATE` / `DELETE` / `MERGE`).
+
+Anything else — app-owned CRUD, async/batch writes, or reads — is a different path. Choose it in **[Data Patterns: Write path](data-patterns.md#write-path)** (the canonical decision table); don't re-decide it here.
 
 **Never write to Lakebase synced tables** — they are read-only replicas of Delta; app writes corrupt sync. See [Lakebase Synced Reads](lakebase-synced-reads.md).
 
@@ -48,17 +44,59 @@ Register **one named route per mutation**. Use **fixed SQL** with `:param` place
 
 Before writing code, run `npx @databricks/appkit docs ./docs/plugins/analytics.md` on the installed AppKit version and verify `query()` signature and parameter types.
 
+**Start inline in `onPluginsReady`** — `appkit` is already fully typed there, so no extra interfaces or generics are needed:
+
 ```typescript
-// server/routes/warehouse/feedback-routes.ts
-import { sql } from "@databricks/appkit";
+// server/server.ts
+import { createApp, analytics, server, sql } from "@databricks/appkit";
 import { z } from "zod";
-import type { Application, Request } from "express";
 
 const FeedbackBody = z.object({
   userId: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(2000).optional(),
 });
+
+await createApp({
+  plugins: [server(), analytics({})],
+  async onPluginsReady(appkit) {
+    appkit.server.extend((app) => {
+      app.post("/api/feedback", async (req, res) => {
+        const parsed = FeedbackBody.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({ error: "Invalid input" });
+          return;
+        }
+
+        try {
+          await appkit.analytics.query(
+            `INSERT INTO catalog.schema.feedback (user_id, rating, comment, created_at)
+             VALUES (:user_id, :rating, :comment, current_timestamp())`,
+            {
+              user_id: sql.string(parsed.data.userId),
+              rating: sql.int(parsed.data.rating),
+              comment: sql.string(parsed.data.comment ?? ""),
+            },
+          );
+          res.status(201).json({ ok: true });
+        } catch (err) {
+          console.error("Failed to insert feedback:", err);
+          res.status(500).json({ error: "Failed to save feedback" });
+        }
+      });
+    });
+  },
+});
+```
+
+### Extracting routes (larger apps, optional)
+
+For bigger apps, move the handler into a `setupFeedbackRoutes(appkit)` function and call it from `onPluginsReady`. Let TypeScript **infer** the type from the call site — do **not** hand-write an `AppKitWith*` interface or add `appkit-types.ts`:
+
+```typescript
+// server/routes/warehouse/feedback-routes.ts
+import { sql } from "@databricks/appkit";
+import type { Application } from "express";
 
 export function setupFeedbackRoutes<
   T extends {
@@ -67,53 +105,27 @@ export function setupFeedbackRoutes<
         statement: string,
         parameters?: Record<string, ReturnType<typeof sql.string>>,
       ): Promise<unknown>;
-      asUser: (req: Request) => { query: T["analytics"]["query"] };
     };
     server: { extend(fn: (app: Application) => void): void };
   },
 >(appkit: T) {
   appkit.server.extend((app) => {
-    app.post("/api/feedback", async (req, res) => {
-      const parsed = FeedbackBody.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ error: "Invalid input" });
-        return;
-      }
-
-      try {
-        await appkit.analytics.query(
-          `INSERT INTO catalog.schema.feedback (user_id, rating, comment, created_at)
-           VALUES (:user_id, :rating, :comment, current_timestamp())`,
-          {
-            user_id: sql.string(parsed.data.userId),
-            rating: sql.int(parsed.data.rating),
-            comment: sql.string(parsed.data.comment ?? ""),
-          },
-        );
-        res.status(201).json({ ok: true });
-      } catch (err) {
-        console.error("Failed to insert feedback:", err);
-        res.status(500).json({ error: "Failed to save feedback" });
-      }
-    });
+    // same /api/feedback handler as above
   });
 }
 ```
 
 ```typescript
 // server/server.ts
-import { createApp, analytics, server } from "@databricks/appkit";
-import { setupFeedbackRoutes } from "./routes/warehouse/feedback-routes";
-
-createApp({
+await createApp({
   plugins: [server(), analytics({})],
   async onPluginsReady(appkit) {
-    setupFeedbackRoutes(appkit);
+    setupFeedbackRoutes(appkit); // T inferred here — fully typed, no casts
   },
-}).catch(console.error);
+});
 ```
 
-For typing extracted route modules, see [Lakebase OLTP](lakebase-oltp.md) *Lakebase route modules — typing* — use the same generic `setupXRoutes<T>(appkit: T)` pattern when `analytics()` is in the plugin list. Do not add `appkit-types.ts` or hand-written `AppKitWith*` interfaces.
+For on-behalf-of-user calls (`appkit.analytics.asUser(req).query(...)`), see *Service principal vs on-behalf-of-user* below. Same generic-inference pattern as [Lakebase OLTP](lakebase-oltp.md) *Lakebase route modules — typing*.
 
 ## Service principal vs on-behalf-of-user
 
@@ -136,13 +148,15 @@ The app SP (or user, for OBO) needs at minimum:
 
 `CAN_USE` on the SQL warehouse is wired via the analytics plugin resource in `databricks.yml`. **Warehouse access does not imply table write access** — verify UC grants separately.
 
-Test with a one-off statement (as the app SP or your user) before wiring the route:
+Confirm access **without mutating real data** before wiring the route:
 
 ```bash
+# Preferred: verify the identity can read the target (no write side effect)
 databricks experimental aitools tools query \
-  "INSERT INTO catalog.schema.feedback (user_id, rating, comment) VALUES ('test', 5, 'smoke')" \
-  --profile <PROFILE>
+  "SELECT 1 FROM catalog.schema.feedback LIMIT 1" --profile <PROFILE>
 ```
+
+If you must exercise the write path itself, insert into a disposable table (e.g. `catalog.schema._appkit_smoke`) and drop it afterward — **do not** write throwaway rows into the real target table.
 
 ## Client-side pattern
 

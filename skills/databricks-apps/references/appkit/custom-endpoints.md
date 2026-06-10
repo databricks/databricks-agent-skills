@@ -6,11 +6,7 @@
 
 When you need server-side logic that no plugin covers, extend the AppKit server in `onPluginsReady` and register Express routes with `appkit.server.extend()`.
 
-**Writes are allowed via custom endpoints** — pick the backend in [Data Patterns: Write path](data-patterns.md#write-path):
-
-- **Postgres app state** (forms, CRUD, session data) → `appkit.lakebase.query()` — [Lakebase OLTP](lakebase-oltp.md)
-- **Delta / Unity Catalog DML** (small scoped `INSERT`/`UPDATE`/`DELETE`/`MERGE`) → `appkit.analytics.query()` — [Warehouse Mutations](warehouse-mutations.md)
-- **Large or async lakehouse writes** → [Jobs](jobs.md) plugin
+**Writes are allowed via custom endpoints**, but **which backend** (Postgres app state / Delta DML / Jobs) is decided in **[Data Patterns: Write path](data-patterns.md#write-path)** — the canonical table. Don't re-decide it here.
 
 Use custom endpoints ONLY for:
 

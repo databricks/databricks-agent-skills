@@ -6,6 +6,8 @@
 
 For warehouse dashboards, use `config/queries/` (`reads_warehouse`). Never use `useAnalyticsQuery` for Lakebase data.
 
+> **Agentic mode:** the Lakebase project/branch/database already exist and `LAKEBASE_ENDPOINT` / `PG*` are injected. **Skip** the *Scaffolding*, *Adding Lakebase to an Existing App*, and `server/.env` sections, and the **deploy-first** rule — deploy and schema ownership are handled externally, and `npm run dev` hits the live database. Just write the schema init + CRUD routes in `onPluginsReady`. See [Environments](environments.md).
+
 ## Scaffolding
 
 **Scaffolding is the fastest way to get started.** If you already have an app, see *Adding Lakebase to an Existing App* below.
@@ -111,9 +113,9 @@ Other Lakebase env vars (`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE`
 ```typescript
 import { createApp, server, analytics, lakebase } from "@databricks/appkit";
 
-createApp({
+await createApp({
   plugins: [server(), analytics(), lakebase()],
-}).catch(console.error);
+});
 ```
 
 Preserve existing plugins and add `lakebase()` to the array.
@@ -179,7 +181,7 @@ Do **not** ship a custom app that still exposes "Todo List" in the UI or `/api/l
 Inside `server.ts`, `onPluginsReady(appkit)` is already fully typed via AppKit's internal `PluginMap<T>` — no manual interface needed:
 
 ```typescript
-createApp({
+await createApp({
   plugins: [lakebase(), server()],
   async onPluginsReady(appkit) {
     // appkit.lakebase.query(...) and appkit.server.extend(...) are typed here
@@ -219,7 +221,7 @@ export async function setupBookRoutes<
 
 ```typescript
 // server/server.ts — plugins inline; T inferred at the call site
-createApp({
+await createApp({
   plugins: [lakebase(), server()],
   async onPluginsReady(appkit) {
     await setupBookRoutes(appkit); // appkit is fully typed here

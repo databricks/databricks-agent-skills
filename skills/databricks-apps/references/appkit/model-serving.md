@@ -4,6 +4,8 @@
 
 Use Model Serving for **AI features** — chat, inference, embeddings, predictions from a Databricks serving endpoint.
 
+> **Agentic mode:** the serving endpoint already exists and `DATABRICKS_SERVING_ENDPOINT_NAME` is injected. **Skip** *Scaffolding* and *Adding Model Serving to an Existing App*; do not use the `databricks-model-serving` skill to create an endpoint. Just call the `serving()` plugin (it reads the env var). See [Environments](environments.md).
+
 ## Scaffolding
 
 Check if the `serving` plugin is available in the AppKit template:
@@ -59,9 +61,9 @@ The injected value is the endpoint **name** (not a URL). Use it in server-side c
 ```typescript
 import { createApp, server, analytics, serving } from "@databricks/appkit";
 
-createApp({
+await createApp({
   plugins: [server(), analytics(), serving()],
-}).catch(console.error);
+});
 ```
 
 Preserve existing plugins and add `serving()` to the array.

@@ -17,6 +17,8 @@ Apps are **compositions of capabilities**, not single archetypes. Derive `--feat
 | `files` | `files` | UC Volume upload/download/browse | [Files](files.md) |
 | `serving` | `serving` | Model inference / chat endpoints | [Model Serving](model-serving.md) |
 
+> **These are concepts, not CLI flags.** Never pass a capability name to `--features`. The CLI value is the **Plugin** column. E.g. `{ writes_oltp, reads_warehouse }` → `--features lakebase,analytics` (not `--features writes_oltp,reads_warehouse`).
+
 **Route mechanics** (all mutation paths): [Custom Endpoints](custom-endpoints.md) — `onPluginsReady` + `appkit.server.extend()`.
 
 ### Infer capabilities from the user request
@@ -39,6 +41,8 @@ Map flags → plugins → `--features` (comma-separated union). Derive every `--
 ## Conditional gates
 
 Run **only** gates whose capability is in the set. Skip the rest.
+
+> **Agentic mode:** the capability set comes from `appkit.plugins.json` / `app.yaml`, not inference. Run **design + discovery** gates only (`write_path`, `read_path`, `data_discovery`). Skip the **provisioning** gates (`lakebase_resources`, `genie_space`) — those resources already exist. See [Environments](environments.md).
 
 | Gate | Run when | Action |
 |------|----------|--------|
@@ -81,7 +85,7 @@ When the app **reads** Unity Catalog / lakehouse data and synced vs warehouse SQ
 
 Recommend **(B)** for most dashboards. Recommend **(A)** only for sub-second lookup/typeahead on synced tables.
 
-**Do not** use synced reads **and** warehouse SQL for the **same dataset** without a explicit reason.
+**Do not** use synced reads **and** warehouse SQL for the **same dataset** without an explicit reason.
 
 After choice: (A) → `--features lakebase` (+ analytics if also dashboarding different data). (B) → `--features analytics`.
 

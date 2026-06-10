@@ -15,13 +15,22 @@ Build TypeScript/React apps on the Databricks Apps platform (AppKit). Apps are *
 
 ## Agent workflow (follow in order)
 
-### 0. Prerequisites
+### 0. Detect environment + prerequisites
 
-Profile + CLI via `databricks-core`. Never auto-select a profile.
+**Check the environment first — the workflow differs.** → [Environments](references/appkit/environments.md)
+
+```bash
+echo "${DATABRICKS_APPS_AGENTIC_MODE:-}"
+```
+
+- **`true` → Agentic mode:** the app is already scaffolded and every resource is provisioned. Auth is ambient — never select a profile, omit `--profile`. **Skip** steps 2–3 and the deploy in step 5; read wired plugins from `appkit.plugins.json` / `app.yaml` instead of inferring; no smoke tests. Still do step 1 (read, don't infer), step 4 (write code), data discovery, `npm run dev`, and `databricks apps validate`. → [Environments](references/appkit/environments.md)
+- **else → Local:** select a profile via `databricks-core` (never auto-select) and follow every step below.
 
 ### 1. Infer capabilities
 
 From the user request, build a capability set (`reads_warehouse`, `writes_oltp`, `genie`, `files`, etc.). Include only what was asked for — do not add Lakebase or analytics by default.
+
+**Agentic mode:** do **not** infer — read the enabled plugins from `appkit.plugins.json` / `app.yaml`. If the request needs a plugin that isn't wired, **stop and tell the user**; never provision it yourself.
 
 → [Data Patterns: Capability catalog](references/appkit/data-patterns.md#capability-catalog)
 
@@ -29,9 +38,13 @@ From the user request, build a capability set (`reads_warehouse`, `writes_oltp`,
 
 Run gates **only** for capabilities in the set (write path, read path, Genie space, Lakebase resources, data discovery).
 
+**Agentic mode:** run **design + discovery** gates only (write_path, read_path, data_discovery). Skip provisioning gates (Lakebase resources, Genie space) — they already exist.
+
 → [Data Patterns: Conditional gates](references/appkit/data-patterns.md#conditional-gates)
 
 ### 3. Scaffold
+
+**Local only — skip entirely in agentic mode** (the app is already scaffolded).
 
 `databricks apps manifest` → derive `--features` (union of plugins) + all `--set` → `databricks apps init --run none`.
 
@@ -45,11 +58,13 @@ Union the slice checklists for each capability. Follow [Lifecycle](references/ap
 
 → [Data Patterns: Checklist slices](references/appkit/data-patterns.md#checklist-slices)
 
-**First action after init:** update `tests/smoke.spec.ts` before the first `databricks apps validate`.
+**First action after init (local):** update `tests/smoke.spec.ts` before the first `databricks apps validate`. **Agentic mode has no smoke tests — skip this.**
 
 ### 5. Validate and deploy
 
-Validate locally; deploy with user consent. First deploy: `bundle deploy` then `apps deploy`.
+**Local:** validate, then deploy with user consent. First deploy: `bundle deploy` then `apps deploy`.
+
+**Agentic mode:** run `databricks apps validate` (no `--profile`, no smoke) as your done-check. **Never deploy** — it's handled externally.
 
 → [Lifecycle](references/appkit/lifecycle.md)
 
@@ -67,6 +82,7 @@ Validate locally; deploy with user consent. First deploy: `bundle deploy` then `
 
 | Topic | Guide |
 |-------|-------|
+| Local vs agentic mode | [Environments](references/appkit/environments.md) |
 | Capabilities, gates, recipes, scaffolding | [Data Patterns](references/appkit/data-patterns.md) |
 | Dev / validate / deploy order | [Lifecycle](references/appkit/lifecycle.md) |
 | Project structure, visualizations | [Overview](references/appkit/overview.md) |

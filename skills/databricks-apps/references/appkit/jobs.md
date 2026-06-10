@@ -6,6 +6,8 @@
 
 Use the `jobs()` plugin to **trigger or monitor pre-existing Lakeflow Jobs** from the app. To **author** jobs, use the **`databricks-jobs`** skill.
 
+> **Agentic mode:** the job(s) are already wired and the `DATABRICKS_JOB_*` env vars are injected. **Skip** *Scaffolding* and `--set`; do not author or create jobs. Just call `jobs()` (it discovers jobs from the env vars) and build the trigger/monitor UI. See [Environments](environments.md).
+
 ## Scaffolding
 
 ```bash

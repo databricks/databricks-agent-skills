@@ -4,6 +4,8 @@
 
 Use Genie for a **natural language query interface** over Unity Catalog tables. Fixed KPIs still use `config/queries/` (`reads_warehouse`). App-owned CRUD uses Lakebase (`writes_oltp`).
 
+> **Agentic mode:** the Genie space already exists and `DATABRICKS_GENIE_SPACE_ID` is injected. **Skip** *Genie Space Creation*, *Scaffolding*, and *Adding Genie to an Existing App* — do not run `genie create-space` / `list-spaces` or ask which tables. Just call `genie()` (it reads the env var) and build the chat UI. See [Environments](environments.md).
+
 ## Architecture
 
 ```text
@@ -108,9 +110,9 @@ env:
 ```typescript
 import { createApp, server, analytics, genie } from "@databricks/appkit";
 
-createApp({
+await createApp({
   plugins: [server(), analytics(), genie()],
-}).catch(console.error);
+});
 ```
 
 Preserve existing plugins and add `genie()` to the array.

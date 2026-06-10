@@ -6,6 +6,8 @@
 
 Use the `files()` plugin to **browse, upload, download, or manage files** in Unity Catalog Volumes.
 
+> **Agentic mode:** the volumes already exist and the `DATABRICKS_VOLUME_*` env vars are injected. **Skip** *Scaffolding*; do not create volumes or set `--set` flags. Just call `files()` (it discovers the volumes from the env vars). See [Environments](environments.md).
+
 ## Scaffolding
 
 ```bash

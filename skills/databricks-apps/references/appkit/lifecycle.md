@@ -2,20 +2,19 @@
 
 Ordering for scaffold → develop → validate → deploy. Capability-specific steps — see [Data Patterns](data-patterns.md) for which apply.
 
+> **Agentic mode:** scaffold and deploy are handled externally — skip both. No smoke tests. `npm run dev` runs against **live** injected resources, so the Lakebase deploy-first rule and "don't assert Lakebase rows locally" caveat below **do not apply**. You still run `databricks apps validate` (no `--profile`). See [Environments](environments.md).
+
 ## Phase order by capability
 
-| Phase | `reads_warehouse` | `writes_oltp` | `genie` | All apps |
-|-------|-------------------|---------------|---------|----------|
-| Prerequisites | | | | Profile + CLI (`databricks-core`) |
-| Gates | data_discovery | write_path, deploy-first | genie_space | Conditional — [Data Patterns](data-patterns.md) |
-| Scaffold | | | space before/with init | `manifest` → `apps init --run none` |
-| First code | SQL files + typegen | replace scaffold, `onPluginsReady` | wire plugin | Update smoke tests **first** |
-| First deploy | optional before dev | **required before local dev** | after init | See [First deploy](#first-deploy) |
-| Local dev | `npm run dev` | after deploy | | |
-| Validate | | don't assert Lakebase rows locally | | `databricks apps validate` |
-| Deploy | user consent | | | See below |
+**All apps:** Prerequisites (profile + CLI via `databricks-core`) → Gates (conditional — [Data Patterns](data-patterns.md)) → Scaffold (`manifest` → `apps init --run none`) → First code (**update smoke tests first**) → Validate (`databricks apps validate`) → Deploy (user consent).
 
-**Hybrid apps** (e.g. analytics + lakebase + genie): follow the **strictest** row per phase (e.g. deploy-before-dev because of OLTP).
+Capability-specific ordering layered on top:
+
+- **`reads_warehouse`** — SQL files + `npm run typegen` before building UI; deploy is optional before `npm run dev`.
+- **`writes_oltp`** — replace the scaffold and put schema init + routes in `onPluginsReady`; **deploy before local dev** (the SP must own the schema first); don't assert Lakebase rows in local validate.
+- **`genie`** — create or reuse the space before/with init.
+
+**Hybrid apps** (e.g. analytics + lakebase + genie): follow the **strictest** rule — e.g. deploy-before-dev, because OLTP requires it.
 
 ## Recommended slice order (multi-plugin)
 

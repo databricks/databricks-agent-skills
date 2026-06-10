@@ -2,6 +2,8 @@
 
 AppKit is the recommended way to build Databricks Apps — type-safe SQL queries, React components, and seamless deployment.
 
+**Local vs agentic mode:** [Environments](environments.md) — detect with `DATABRICKS_APPS_AGENTIC_MODE` first; in agentic mode, scaffold/deploy/smoke-tests are skipped.
+
 **Pattern selection, gates, and capability composition:** [Data Patterns](data-patterns.md) (canonical).
 
 **Scaffold → dev → validate → deploy order:** [Lifecycle](lifecycle.md).
@@ -34,8 +36,8 @@ Quick reference:
 
 Before `databricks apps validate`:
 
-1. Update `tests/smoke.spec.ts` selectors
-2. Remove default "hello world" assertions
+1. Update `tests/smoke.spec.ts` selectors — **local only; agentic mode has no smoke tests**
+2. Remove default "hello world" assertions — **local only**
 3. Run typegen if analytics reads changed
 4. Convert numeric SQL display with `Number()`
 

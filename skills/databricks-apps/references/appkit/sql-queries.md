@@ -10,6 +10,8 @@ For **writes** to Delta / Unity Catalog (`INSERT`, `UPDATE`, `DELETE`, `MERGE`),
 - App Kit automatically executes queries against configured Databricks warehouse
 - Benefits: Built-in caching, proper connection pooling, better performance
 
+> **Agentic mode:** the warehouse is already wired — no scaffold or `--set`. Writing the SQL files is identical; you still confirm the target `catalog.schema.table` via data discovery (ambient auth, no `--profile`). See [Environments](environments.md).
+
 ## Type Generation
 
 For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
