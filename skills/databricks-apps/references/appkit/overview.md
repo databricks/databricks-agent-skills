@@ -22,9 +22,11 @@ See [Genie Guide](genie.md) for space creation, plugin setup, and frontend compo
 ## Workflow
 
 1. **Scaffold**: Run `databricks apps manifest`, then `databricks apps init` with `--features` and `--set` as in parent SKILL.md (App Manifest and Scaffolding)
-2. **Validate**: `databricks apps validate --profile <PROFILE>`
-3. **Deploy**: follow parent SKILL.md *Deployment Workflow* — first deploy: `bundle deploy` then `apps deploy`; updates: `apps deploy` (⚠️ USER CONSENT REQUIRED)
-4. **Develop**: `cd <NAME> && npm install && npm run dev` — **Lakebase OLTP CRUD apps**: deploy (step 3) before local dev so the SP owns the schema
+2. **Develop**: `cd <NAME> && npm install`, implement SQL/routes/UI, update `tests/smoke.spec.ts` — use `npm run dev` to iterate (analytics, Genie, serving, etc.)
+3. **Validate**: `databricks apps validate --profile <PROFILE>` — after smoke tests match your UI
+4. **Deploy**: follow parent SKILL.md *Deployment Workflow* — first deploy: `bundle deploy` then `apps deploy`; updates: `apps deploy` (⚠️ USER CONSENT REQUIRED)
+
+**Lakebase OLTP CRUD exception:** Write routes and UI in step 2, but do **not** run `npm run dev` against Lakebase until after the first successful deploy (step 4) — the Service Principal must own the schema first. See [Lakebase Guide](lakebase.md) *Local Development*.
 
 ## Data Discovery (Before Writing SQL)
 
@@ -41,7 +43,7 @@ Before writing `App.tsx`:
 1. ✅ Create SQL files in `config/queries/` (SELECT only — not DML)
 2. ✅ Run `npm run typegen` to generate query types
 3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
-4. ✅ Verify component props via `npx @databricks/appkit docs`
+4. ✅ Verify component props via `npx @databricks/appkit docs` (check the relevant component page)
 5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
 
 **DO NOT** write UI code until types are generated and verified.
