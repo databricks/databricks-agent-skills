@@ -53,6 +53,7 @@
         "assets/databricks.png",
         "assets/databricks.svg",
         "references/appkit/appkit-sdk.md",
+        "references/appkit/custom-endpoints.md",
         "references/appkit/files.md",
         "references/appkit/frontend.md",
         "references/appkit/genie.md",
@@ -63,7 +64,6 @@
         "references/appkit/proto-contracts.md",
         "references/appkit/proto-first.md",
         "references/appkit/sql-queries.md",
-        "references/appkit/trpc.md",
         "references/other-frameworks.md",
         "references/platform-guide.md",
         "references/testing.md"
