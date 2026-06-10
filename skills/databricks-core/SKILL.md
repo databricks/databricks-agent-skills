@@ -70,6 +70,11 @@ databricks experimental aitools tools query "SELECT * FROM table LIMIT 10" --pro
 databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
 ```
 
+**Names are literal.** Use catalog/schema/table names exactly as given — never change a
+hyphen to an underscore or otherwise normalize them. In SQL, backtick-quote any name part
+with special characters (e.g. `` `my-catalog`.schema.table ``); unquoted hyphens cause a
+parse error.
+
 See [Data Exploration](data-exploration.md) for details.
 
 ## Quick Reference
