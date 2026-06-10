@@ -26,14 +26,19 @@ Create a focused Genie Space using Databricks-native context. Rely on Genie Code
 4. Inspect and profile in phases. Read Unity Catalog metadata first, then use bounded SQL and `references/data-profiling-and-readiness.md` to identify source purpose, row counts, grain, freshness, comments, columns, data types, null/empty/constant columns, categorical values, measures, sensitive/noisy fields, likely relationships, and usage/lineage signals where available.
 5. For Metric Views, inspect available measures, dimensions, filters, joins, time dimensions, comments, display names, synonyms, and formatting before adding extra Genie context. Prefer governed Metric View semantics over duplicated SQL logic.
 6. Assess readiness for each business question with High/Medium/Low confidence based on semantic coverage, data quality/freshness, modelability/join evidence, and GenAI context readiness. Mark unsupported questions and upstream semantic model gaps explicitly.
-7. Design the Genie Space surfaces:
+7. Design the Genie Space surfaces in priority order — structured context first, free-text instructions last (see `references/space-design-guide.md` → Design Priorities). The more governed the surface, the earlier it belongs:
+   - space description: set this **first** — it states the Space's purpose/scope and is required for multi-agent routing (supervisor agents delegate based on it)
    - data sources: keep the attached tables/views/Metric Views focused
-   - descriptions and synonyms: clarify business meaning and selection boundaries
+   - Metric View metadata: prefer governed Metric View semantics over duplicated SQL
+   - descriptions: table/Metric View/column descriptions that clarify business meaning and selection boundaries
+   - synonyms and display names: map business terms to fields
+   - format assistance and entity matching / prompt matching: enable only for eligible, useful categorical strings
    - hidden fields: remove noisy technical columns from end-user context
-   - prompt matching: enable only for eligible, useful categorical strings
    - joins: add standard raw-table relationships only when evidence or user confirmation supports them
-   - snippets/examples: add reusable business logic and representative complex patterns only after metadata is insufficient
-   - text instructions: use only for global behavior that cannot be encoded in structured surfaces; include adapted justification when proposing or editing them
+   - SQL expressions (snippets): reusable filters, expressions, and measures not already governed by Metric Views
+   - example SQL: representative complex question patterns; instructive, not memorized benchmark answers
+   - SQL functions: trusted registered UC logic
+   - text instructions: **last resort** — use only for global behavior that cannot be encoded in the structured surfaces above; include adapted justification when proposing or editing them
    - sample questions and benchmarks: cover realistic user workflows without teaching from benchmark answers. For benchmarks, choose SQL answers, evaluation notes, or both based on answer shape and intended execution mode.
 8. Review the draft against `references/space-design-guide.md` before proposing live changes.
 9. Present the proposed Space configuration in the Databricks-native editor or chat output for user review. Apply only after the user approves.

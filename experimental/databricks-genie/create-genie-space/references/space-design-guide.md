@@ -19,18 +19,31 @@ Use workspace metadata first, then run focused read-only SQL only when metadata 
 
 ## Design Priorities
 
-Prefer structured context over broad instructions:
+Prefer structured context over broad instructions. Add surfaces in this order — the more governed the surface, the earlier it belongs, and free-text instructions are the last resort:
 
-1. Metric View semantic metadata when it already owns the business definition.
-2. Focused data source selection.
-3. Table, Metric View, and column descriptions.
-4. Synonyms and display names for business terms.
-5. Format assistance and entity matching for eligible categorical strings.
-6. Join specs for raw tables exposed together.
-7. SQL snippets for reusable filters, expressions, and measures not already governed by Metric Views.
-8. Example SQL for complex question patterns.
-9. SQL functions for trusted registered logic.
-10. Short text instructions only for global behavior that cannot be encoded structurally.
+1. **Space description** — set first. States the Space's purpose/scope and is required for multi-agent routing (supervisor agents delegate based on it).
+2. Metric View semantic metadata when it already owns the business definition.
+3. Focused data source selection.
+4. Table, Metric View, and column descriptions.
+5. Synonyms and display names for business terms.
+6. Format assistance and entity matching for eligible categorical strings.
+7. Join specs for raw tables exposed together.
+8. SQL snippets for reusable filters, expressions, and measures not already governed by Metric Views.
+9. Example SQL for complex question patterns.
+10. SQL functions for trusted registered logic.
+11. Short text instructions only for global behavior that cannot be encoded structurally.
+
+### Vocabulary
+
+Genie-UI / common terms map to the surfaces above as follows:
+
+| Common term | Surface here |
+|-------------|--------------|
+| Space description / instructions header | Space description (#1) |
+| SQL expressions | SQL snippets (#8) |
+| SQL queries / SQL instructions / trusted/certified SQL | Example SQL (#9) |
+| SQL functions | SQL functions (#10) |
+| General instructions / notes / text instructions | Text instructions (#11) |
 
 ## Text Instruction Last-Resort Rule
 
@@ -81,6 +94,7 @@ Before proposing a live change, summarize High/Medium/Low confidence for each bu
 
 Check the draft for:
 
+- A space description that states purpose and scope (required for multi-agent routing).
 - A focused source set, ideally 5 or fewer at first.
 - Descriptions that state business purpose and grain.
 - Hidden ingestion, audit, hash, raw JSON, embedding, and sensitive free-text fields.
