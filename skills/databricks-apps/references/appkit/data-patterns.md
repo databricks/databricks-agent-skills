@@ -210,6 +210,9 @@ databricks apps init --name <NAME> --features <plugin1>,<plugin2> \
   --description "<DESC>" --run none --profile <PROFILE>
 ```
 
+   Run this **from the working directory** — `apps init` creates the app in a new `<NAME>/` subdirectory. Do **not** create or `cd` into `<NAME>/` beforehand, and do not run `apps init` more than once, or the app nests at `<NAME>/<NAME>/`.
+5. **Verify layout:** confirm `<NAME>/package.json` exists directly under the working directory. If init produced a doubled `<NAME>/<NAME>/`, lift the inner app up one level before continuing (`mv <NAME>/<NAME>/{.,}* <NAME>/ 2>/dev/null; rmdir <NAME>/<NAME>`) — the app must live at `<NAME>/`, never nested.
+
 **DO NOT guess** plugin keys or `--set` paths — derive from manifest.
 
 **Common mistake:** `databricks apps init --features analytics my-app` — name must be `--name my-app`.

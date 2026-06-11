@@ -48,6 +48,8 @@ Run gates **only** for capabilities in the set (write path, read path, Genie spa
 
 `databricks apps manifest` → derive `--features` (union of plugins) + all `--set` → `databricks apps init --run none`.
 
+Run `apps init` **from your current working directory** — it creates the app under a new `<app-name>/`. Do **not** `mkdir`/`cd` into an app directory first and do not re-run init, or the app nests at `<app-name>/<app-name>/`. After init, confirm `<app-name>/package.json` exists; if you see a doubled `<app-name>/<app-name>/`, move the inner app up one level before continuing.
+
 Apply manifest scaffolding rules silently; STOP only on `must` vs `never` conflict.
 
 → [Data Patterns: Scaffolding](references/appkit/data-patterns.md#scaffolding)
