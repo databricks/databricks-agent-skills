@@ -147,6 +147,8 @@ For the `spaces` map API, `GenieChat alias` prop, and `useGenieChat` hook, see `
 
 This section covers the **deployment-specific patterns** for multi-space Genie apps (databricks.yml, app.yaml, stale conversation cleanup).
 
+> **Agentic mode:** skip the `databricks.yml` / `app.yaml` subsections below — spaces are pre-wired; use the injected `DATABRICKS_GENIE_SPACE_*` env vars, and if a space the user needs is not wired, **stop and tell the user**. The client-side patterns (spaces map, build version stamp, stale-conversation cleanup) still apply. See [Environments](environments.md).
+
 **databricks.yml** — add one variable + resource per space, plus target-level values:
 
 ```yaml

@@ -23,7 +23,7 @@ Build TypeScript/React apps on the Databricks Apps platform (AppKit). Apps are *
 echo "${DATABRICKS_APPS_AGENTIC_MODE:-}"
 ```
 
-- **`true` → Agentic mode:** the app is already scaffolded and every resource is provisioned. Auth is ambient — never select a profile, omit `--profile`. **Skip** steps 2–3 and the deploy in step 5; read wired plugins from `appkit.plugins.json` / `app.yaml` instead of inferring; no smoke tests. Still do step 1 (read, don't infer), step 4 (write code), data discovery, `npm run dev`, and `databricks apps validate`. → [Environments](references/appkit/environments.md)
+- **`true` → Agentic mode:** the app is already scaffolded and every resource is provisioned. Auth is ambient — never select a profile, omit `--profile`. **Skip** step 3 and the deploy in step 5; in step 2 run **only** the design + discovery gates (write_path, read_path, data_discovery); read wired plugins from `appkit.plugins.json` / `app.yaml` instead of inferring; no smoke tests. Still do step 1 (read, don't infer), step 4 (write code), `npm run dev`, and `databricks apps validate`. → [Environments](references/appkit/environments.md)
 - **else → Local:** select a profile via `databricks-core` (never auto-select) and follow every step below.
 
 ### 1. Infer capabilities

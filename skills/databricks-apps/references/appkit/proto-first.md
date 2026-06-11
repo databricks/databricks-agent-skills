@@ -16,7 +16,8 @@ Define protobuf data contracts FIRST, then derive everything else (TypeScript ty
 
 | Scenario | Use this skill |
 |----------|---------------|
-| Creating a new Databricks app | YES — define contracts before `databricks apps init` |
+| Creating a new **multi-plugin** app (e.g. files + lakebase + jobs) | YES — define contracts before `databricks apps init` |
+| Single-plugin app (dashboard, simple CRUD) | NO — use [Data Patterns](data-patterns.md) |
 | Adding a new data boundary to an existing app | YES — add proto before implementation |
 | Quick prototype / hackathon | NO — skip contracts, move fast |
 | Modifying existing typed code | NO — contracts already exist |
@@ -246,7 +247,9 @@ Example migration:
 
 ```sql
 -- migrations/001_create_runs.sql
-CREATE TABLE IF NOT EXISTS runs (
+-- Schema-qualified: the app SP cannot use `public` — see lakebase-oltp.md.
+CREATE SCHEMA IF NOT EXISTS app_data;
+CREATE TABLE IF NOT EXISTS app_data.runs (
   run_id TEXT NOT NULL,
   app_name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'RUN_STATUS_PENDING',
@@ -257,6 +260,8 @@ CREATE TABLE IF NOT EXISTS runs (
   PRIMARY KEY (run_id, app_name)
 );
 ```
+
+Execute migrations in `onPluginsReady` via `appkit.lakebase.query()` — the Lakebase OLTP **deploy-first** rule ([lakebase-oltp.md](lakebase-oltp.md)) still applies.
 
 ### 3d. Validate
 
@@ -305,4 +310,4 @@ Before writing implementation code:
 
 ## References
 
-- [Plugin Contract Details](references/plugin-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs
+- [Plugin Contract Details](proto-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs

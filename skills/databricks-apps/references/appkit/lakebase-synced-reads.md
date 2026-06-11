@@ -6,6 +6,8 @@
 
 **Pattern selection:** [Data Patterns](data-patterns.md). Create synced tables and grant SP access via the **`databricks-lakebase`** skill — [synced-tables.md](../../../databricks-lakebase/references/synced-tables.md).
 
+> **Agentic mode:** the synced tables, SP grants, and `PG*` env vars already exist / are injected. **Skip** *Scaffolding* and all `databricks-lakebase` handoffs — do not create synced tables or grant access. Just write the read-only routes. See [Environments](environments.md).
+
 ## Architecture
 
 ```

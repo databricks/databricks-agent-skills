@@ -36,7 +36,7 @@ databricks apps init --name <NAME> --features analytics \
   --run none --profile <PROFILE>
 ```
 
-Hybrid apps (read warehouse + write Lakebase, or read SQL files + write Delta) use `--features analytics,lakebase` with all required `--set` flags from `databricks apps manifest`.
+Hybrids need only the plugins actually involved: read warehouse + write Delta is `--features analytics` alone; read warehouse + write Lakebase is `--features analytics,lakebase` — in all cases with the required `--set` flags from `databricks apps manifest`.
 
 ## Canonical pattern
 
@@ -74,7 +74,7 @@ await createApp({
              VALUES (:user_id, :rating, :comment, current_timestamp())`,
             {
               user_id: sql.string(parsed.data.userId),
-              rating: sql.int(parsed.data.rating),
+              rating: sql.number(parsed.data.rating),
               comment: sql.string(parsed.data.comment ?? ""),
             },
           );
@@ -103,7 +103,7 @@ export function setupFeedbackRoutes<
     analytics: {
       query(
         statement: string,
-        parameters?: Record<string, ReturnType<typeof sql.string>>,
+        parameters?: Record<string, ReturnType<typeof sql.string> | ReturnType<typeof sql.number>>,
       ): Promise<unknown>;
     };
     server: { extend(fn: (app: Application) => void): void };
@@ -204,7 +204,7 @@ Prefer the [Jobs](jobs.md) plugin when the write:
 - Should be retried/monitored asynchronously
 - Must not block the HTTP response
 
-Pattern: custom endpoint validates input → `appkit.jobs.run(...)` with parameters → job notebook/SQL task writes Delta.
+Pattern: custom endpoint validates input → `appkit.jobs("<key>").runNow(...)` with parameters → job notebook/SQL task writes Delta. See [Jobs](jobs.md) for the `JobHandle` API.
 
 ## Agents plugin note
 

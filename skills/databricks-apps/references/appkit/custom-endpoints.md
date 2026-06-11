@@ -8,6 +8,8 @@ When you need server-side logic that no plugin covers, extend the AppKit server 
 
 **Writes are allowed via custom endpoints**, but **which backend** (Postgres app state / Delta DML / Jobs) is decided in **[Data Patterns: Write path](data-patterns.md#write-path)** — the canonical table. Don't re-decide it here.
 
+> **Agentic mode:** never run `databricks apps manifest` or pass `--profile`. For check 2 below, read the enabled plugins from `appkit.plugins.json` / `app.yaml` and the `createApp({ plugins: [...] })` array in `server/server.ts` instead. Checks 1 and 3 apply unchanged. See [Environments](environments.md).
+
 Use custom endpoints ONLY for:
 
 - **Data mutations** — Express routes in `onPluginsReady` using Lakebase or warehouse DML as above (not `useAnalyticsQuery`)
