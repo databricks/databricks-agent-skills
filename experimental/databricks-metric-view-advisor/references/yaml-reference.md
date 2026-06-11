@@ -203,6 +203,8 @@ measures:
 
 Aggregate at a coarser grain than the query by using window measures with `range: all`. This is filter-aware and adapts to query-time dimensions.
 
+> **Requires `version: 0.1`.** This pattern uses window measures, which are only supported under `version: 0.1` (see the parent skill's Window Measures section and `patterns.md`). Definitions elsewhere in this file use `version: 1.1` — do not combine a coarser-LOD window measure with `version: 1.1`, or the metric view will fail validation.
+
 ```yaml
 dimensions:
   - name: Order Priority
