@@ -44,6 +44,19 @@ skill under [`./skills/`](./skills/)):
 /add-plugin databricks-skills
 ```
 
+**Via the Codex plugin marketplace:**
+
+```text
+codex plugin marketplace add databricks/databricks-agent-skills
+codex plugin add databricks
+```
+
+The Codex plugin ships the skills plus all three hooks (prompt routing,
+session context, auth-failure hints). Codex hash-pins plugin hooks: run
+`/hooks` once after install (and after each update) to review and enable
+them. Codex has no distributable slash commands, so the setup/doctor
+workflows are reachable through the skills there.
+
 ### CLI vs plugin marketplace
 
 | | CLI | Plugin marketplace |

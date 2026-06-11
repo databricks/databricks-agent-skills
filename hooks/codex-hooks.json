@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-router.py\" || python \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-router.py\" || true"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-context.py\" || python \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-context.py\" || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "(?i)bash|shell|exec",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-auth-helper.py\" || python \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/databricks-auth-helper.py\" || true"
+          }
+        ]
+      }
+    ]
+  }
+}

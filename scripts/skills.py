@@ -585,6 +585,93 @@ def check_plugin_components(repo_root: Path) -> list[str]:
     return errors
 
 
+def check_codex_plugin(repo_root: Path) -> list[str]:
+    """Validate the Codex plugin manifest, marketplace catalog, and hook wiring.
+
+    Codex's default plugin hook file is `hooks/hooks.json`, which is this
+    repo's Claude Code wiring, so `.codex-plugin/plugin.json` must point
+    "hooks" at `hooks/codex-hooks.json` explicitly. The marketplace entry in
+    `.agents/plugins/marketplace.json` becomes load-bearing once users install
+    from it (same never-remove rule as the Claude marketplace).
+    """
+    errors: list[str] = []
+
+    plugin_path = repo_root / ".codex-plugin" / "plugin.json"
+    if not plugin_path.exists():
+        return [f"Missing {plugin_path.relative_to(repo_root)}"]
+    try:
+        plugin = json.loads(plugin_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f".codex-plugin/plugin.json is not valid JSON: {exc}"]
+
+    if plugin.get("name") != "databricks":
+        errors.append(
+            '.codex-plugin/plugin.json "name" must be "databricks" (the install '
+            "identifier; the marketplace entry and install docs key on it)."
+        )
+
+    claude_path = repo_root / ".claude-plugin" / "plugin.json"
+    try:
+        claude_version = json.loads(claude_path.read_text()).get("version")
+    except Exception:
+        claude_version = None
+    if claude_version and plugin.get("version") != claude_version:
+        errors.append(
+            f'.codex-plugin/plugin.json version ({plugin.get("version")}) must match '
+            f".claude-plugin/plugin.json ({claude_version}); scripts/bump_version.py "
+            "keeps them in sync at release time."
+        )
+
+    skills_rel = plugin.get("skills")
+    if not isinstance(skills_rel, str) or not (repo_root / _norm_rel_path(skills_rel)).is_dir():
+        errors.append(
+            '.codex-plugin/plugin.json "skills" must point at an existing directory.'
+        )
+
+    hooks_rel = plugin.get("hooks")
+    declared = _norm_rel_path(hooks_rel) if isinstance(hooks_rel, str) else ""
+    if declared != "hooks/codex-hooks.json":
+        errors.append(
+            '.codex-plugin/plugin.json must declare "hooks": "./hooks/codex-hooks.json". '
+            "Without it Codex defaults to hooks/hooks.json, the Claude Code wiring."
+        )
+    codex_hooks = repo_root / "hooks" / "codex-hooks.json"
+    if not codex_hooks.exists():
+        errors.append("Missing hooks/codex-hooks.json.")
+    else:
+        try:
+            cfg = json.loads(codex_hooks.read_text())
+        except json.JSONDecodeError as exc:
+            errors.append(f"hooks/codex-hooks.json is not valid JSON: {exc}")
+            cfg = None
+        if cfg is not None:
+            blob = json.dumps(cfg)
+            for script in sorted(set(re.findall(r"hooks/[\w.-]+\.py", blob))):
+                if not (repo_root / script).exists():
+                    errors.append(
+                        f"hooks/codex-hooks.json references '{script}' which does not exist."
+                    )
+
+    market_path = repo_root / ".agents" / "plugins" / "marketplace.json"
+    if not market_path.exists():
+        errors.append(f"Missing {market_path.relative_to(repo_root)}")
+    else:
+        try:
+            market = json.loads(market_path.read_text())
+        except json.JSONDecodeError as exc:
+            errors.append(f".agents/plugins/marketplace.json is not valid JSON: {exc}")
+            market = None
+        if market is not None and not any(
+            p.get("name") == plugin.get("name") for p in market.get("plugins", [])
+        ):
+            errors.append(
+                ".agents/plugins/marketplace.json has no entry for plugin "
+                f"'{plugin.get('name')}'."
+            )
+
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -659,6 +746,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in component_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            codex_errors = check_codex_plugin(repo_root)
+            if codex_errors:
+                print(
+                    "ERROR: Codex plugin manifests / hooks are misconfigured:",
+                    file=sys.stderr,
+                )
+                for err in codex_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 
