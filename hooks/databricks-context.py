@@ -12,10 +12,12 @@ any error exits 0 with no output. It surfaces, when available:
 
 Token values are never printed, only their presence.
 
-Contract (Claude Code SessionStart hook):
+Contract (Claude Code SessionStart hook; Cursor sessionStart with
+`--platform cursor`):
   stdin : JSON (drained, content unused)
-  stdout: JSON -> hookSpecificOutput.additionalContext, a string injected into
-          the session context.
+  stdout: platform-shaped JSON carrying the banner string:
+          Claude/Codex -> hookSpecificOutput.additionalContext
+          Cursor       -> additional_context
 """
 import json
 import os
@@ -34,6 +36,38 @@ SETTINGS_DEFAULT_RE = re.compile(
     re.MULTILINE,
 )
 MAX_PROFILES = 12
+
+# Per-platform differences: how the setup/doctor commands are invoked there
+# (Claude Code namespaces plugin commands as /databricks:<name>; Cursor has a
+# flat / menu, so the Cursor plugin ships them as /databricks-<name>) and the
+# hook output envelope. Codex consumes the Claude envelope.
+PLATFORMS = {
+    "claude": {
+        "setup_cmd": "/databricks:setup",
+        "commands_blurb": "`/databricks:*` commands",
+    },
+    "cursor": {
+        "setup_cmd": "/databricks-setup",
+        "commands_blurb": "`/databricks-*` commands",
+    },
+}
+
+
+def _platform_from_argv(argv):
+    """Platform from `--platform <name>` / `--platform=<name>`, default claude.
+
+    Unknown values fall back to claude rather than erroring: a wiring typo must
+    degrade to a working hook, never a broken one.
+    """
+    for i, arg in enumerate(argv):
+        if arg == "--platform" and i + 1 < len(argv):
+            value = argv[i + 1]
+        elif arg.startswith("--platform="):
+            value = arg.split("=", 1)[1]
+        else:
+            continue
+        return value if value in PLATFORMS else "claude"
+    return "claude"
 
 
 def cli_version(databricks):
@@ -89,13 +123,14 @@ def _sanitize(value, limit=64):
     return s[: limit - 1].rstrip() + "…" if len(s) > limit else s
 
 
-def build_context():
+def build_context(platform="claude"):
     """Return the context banner string, or '' to inject nothing."""
+    p = PLATFORMS.get(platform, PLATFORMS["claude"])
     databricks = shutil.which("databricks")
     if not databricks:
         return (
             "Databricks CLI (`databricks`) is not on PATH. The Databricks skills "
-            "and `/databricks:*` commands need it. Run `/databricks:setup` or see "
+            f"and {p['commands_blurb']} need it. Run `{p['setup_cmd']}` or see "
             "the databricks-core skill to install it."
         )
 
@@ -136,24 +171,32 @@ def build_context():
     return "Databricks context:\n- " + "\n- ".join(lines)
 
 
+def render_output(ctx, platform="claude"):
+    """Wrap the banner in the platform's hook output envelope."""
+    if platform == "cursor":
+        return json.dumps({"additional_context": ctx})
+    return json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": ctx,
+        }
+    })
+
+
 def main():
     # One outer try so the fail-open guarantee covers the entire main block,
     # including JSON serialization; the final print gets its own guard (a
     # closed stdout must never break session startup either).
     output = None
     try:
+        platform = _platform_from_argv(sys.argv[1:])
         try:
             json.load(sys.stdin)  # drain stdin; content unused
         except Exception:
             pass
-        ctx = build_context()
+        ctx = build_context(platform)
         if ctx:
-            output = json.dumps({
-                "hookSpecificOutput": {
-                    "hookEventName": "SessionStart",
-                    "additionalContext": ctx,
-                }
-            })
+            output = render_output(ctx, platform)
     except Exception:
         output = None
     try:

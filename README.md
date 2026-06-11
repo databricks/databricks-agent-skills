@@ -44,6 +44,11 @@ skill under [`./skills/`](./skills/)):
 /add-plugin databricks-skills
 ```
 
+The Cursor plugin ships the skills plus the `databricks-setup` /
+`databricks-doctor` commands and two of the three hooks (session context,
+auth-failure hints); see
+[Commands and hooks](#commands-and-hooks-claude-code-cursor).
+
 ### CLI vs plugin marketplace
 
 | | CLI | Plugin marketplace |
@@ -90,14 +95,14 @@ originally imported from
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 
-## Commands and hooks (Claude Code)
+## Commands and hooks (Claude Code, Cursor)
 
 When installed as a Claude Code plugin, the `databricks` plugin adds slash
 commands and three hooks (prompt routing, session context, auth-failure hints)
-on top of the skills.
-(These are Claude-Code-specific and ship via the plugin marketplace; the CLI
-`databricks aitools install` path installs skills only today; see the note at
-the end.)
+on top of the skills. The Cursor plugin (`databricks-skills`) ships the same
+commands and two of the hooks; see the Cursor note below.
+(These ship via the plugin marketplaces; the CLI `databricks aitools install`
+path installs skills only today; see the note at the end.)
 
 **Slash commands**: friction-only entry points; everyday work stays with the
 auto-invoked skills.
@@ -125,6 +130,17 @@ skills, not commands, so they aren't duplicated here.)
 - **Auth-failure hint** (PostToolUse on Bash): when a `databricks` command fails
   with an auth-shaped error, adds one line suggesting `/databricks:doctor` or
   `databricks auth login` before retrying. Never blocks or rewrites commands.
+
+**Cursor.** Cursor has a flat `/` menu (no `plugin:command` namespacing), so
+the same commands ship as `/databricks-setup` and `/databricks-doctor` from
+[`commands-cursor/`](./commands-cursor/). Hooks are wired via
+[`hooks/cursor-hooks.json`](./hooks/cursor-hooks.json) (declared explicitly in
+`.cursor-plugin/plugin.json`): the context primer (`sessionStart`) and the
+auth-failure hint (`postToolUse`), both invoked with `--platform cursor` so
+they emit Cursor's output shape and reference the Cursor command names. The
+prompt router does not port: Cursor's `beforeSubmitPrompt` hook cannot inject
+context, so routing rides on the primer's routing rule plus Cursor's native
+skill selection.
 
 > **Distribution parity (follow-up).** The plugin marketplace ships the whole
 > repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.

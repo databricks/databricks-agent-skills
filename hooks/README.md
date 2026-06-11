@@ -7,6 +7,17 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+`cursor-hooks.json` wires the Cursor plugin and **is** declared explicitly (as
+`"hooks"` in `.cursor-plugin/plugin.json`), because Cursor's default plugin
+discovery would otherwise parse the Claude-format `hooks.json`. It runs the
+context primer (`sessionStart`) and the auth hinter (`postToolUse`, matcher
+`Shell`) with `--platform cursor`, which switches the scripts' output envelope
+to Cursor's `additional_context` and renders the Cursor command names
+(`/databricks-setup`, `/databricks-doctor`) in the injected text. The prompt
+router is not wired on Cursor: `beforeSubmitPrompt` can block a prompt but
+cannot inject context, so routing rides on the primer plus Cursor's native
+skill selection.
+
 Each hook is pinned by a test file in `tests/` at the repo root; run the whole
 suite with `python3 -m unittest discover -s tests -p '*_test.py'`.
 
@@ -76,6 +87,8 @@ Covered by `tests/databricks_auth_helper_test.py`.
 ## Distribution note
 
 These ship with the Claude Code plugin (the whole repo is the plugin via
-`marketplace.json` `source: "./"`). The Databricks CLI install path
-(`databricks aitools install`) currently packages **skills only**. See the repo
-README for the parity follow-up.
+`marketplace.json` `source: "./"`). The Cursor marketplace plugin
+(`databricks-skills`) ships the context primer and auth hinter via
+`cursor-hooks.json`; the router stays Claude-only there. The Databricks CLI
+install path (`databricks aitools install`) currently packages **skills
+only**. See the repo README for the parity follow-up.

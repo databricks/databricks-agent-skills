@@ -6,5 +6,7 @@
   "author": {
     "name": "Databricks"
   },
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "commands": "./commands-cursor/",
+  "hooks": "./hooks/cursor-hooks.json"
 }
