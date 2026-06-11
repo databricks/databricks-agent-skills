@@ -129,7 +129,7 @@ conn = psycopg.connect(
 )
 ```
 
-For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy pooling. For the full app development workflow (scaffolding, tRPC, schema init), use the **`databricks-apps`** skill.
+For production apps, combine with Pattern 2's token refresh loop and SQLAlchemy pooling. For the full app development workflow (scaffolding, custom endpoints, schema init), use the **`databricks-apps`** skill.
 
 ### Pattern 5: Off-Platform Apps (TypeScript/Node.js)
 

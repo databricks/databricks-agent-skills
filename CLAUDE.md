@@ -47,6 +47,41 @@ python3 scripts/skills.py sync         # sync Codex metadata + icons only
 python3 scripts/skills.py validate     # check Codex metadata + icons + manifest are up to date (CI)
 ```
 
+## Plugin components (hooks + commands)
+
+Beyond skills, the Claude Code plugin ships two component dirs at the repo root.
+`commands/` is declared via `"commands"` in `.claude-plugin/plugin.json`, but
+**`hooks/hooks.json` is auto-loaded by Claude Code and must NOT be declared**
+there. Declaring the standard path double-loads it and fails the plugin with a
+"Duplicate hooks file" error.
+
+- `hooks/`: a UserPromptSubmit prompt router (`databricks-router.py`) that
+  steers Databricks-related prompts into the skills, a SessionStart context
+  primer (`databricks-context.py`), and a PostToolUse auth-failure hinter
+  (`databricks-auth-helper.py`), wired via `hooks/hooks.json`. All
+  stdlib-only and fail-open. See [hooks/README.md](./hooks/README.md).
+- `commands/`: friction-only slash commands (`/databricks:setup`,
+  `/databricks:doctor`). Product workflows stay in the skills, not commands, to
+  avoid shadowing a skill of the same name.
+
+`python3 scripts/skills.py validate` checks these (hooks.json is valid and
+references existing scripts, plugin.json does not double-declare hooks, every
+command has frontmatter). After changing hook behavior, run the hook test
+suite: `python3 -m unittest discover -s tests -p '*_test.py'`.
+These ship via the plugin marketplace
+(whole-repo source); `databricks aitools install` currently installs skills only.
+
+**Marketplace entries are load-bearing for installed plugins.** Never remove a
+shipped plugin's entry from `.claude-plugin/marketplace.json` (and never rename
+the plugin or the marketplace). Claude Code re-resolves installed plugins
+against the marketplace catalog at load time, so removing the entry does not
+just stop updates: every existing install immediately fails to load ("Plugin
+databricks not found in marketplace databricks-agent-skills") and those users
+lose all skills, hooks, and commands until they manually uninstall and
+reinstall from another source. Verified empirically (2026-06). Listing the
+plugin on an additional marketplace, such as Anthropic's official directory,
+is additive and never replaces the entry here.
+
 ## Security
 
 When documenting examples, obfuscate sensitive info:

@@ -21,7 +21,7 @@ Build apps that deploy to Databricks Apps platform.
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
-| Adding API endpoints | [tRPC Guide](references/appkit/trpc.md) |
+| Adding API endpoints | [Custom Endpoints Guide](references/appkit/custom-endpoints.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
 | Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — follow the Genie agent workflow below |
 | Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
@@ -46,16 +46,16 @@ Build apps that deploy to Databricks Apps platform.
 ## Project Structure (after `databricks apps init --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
 - `config/queries/*.sql` — SQL query files (queryKey = filename without .sql)
-- `server/server.ts` — backend entry (tRPC routers)
+- `server/server.ts` — backend entry (`onPluginsReady` + Express routes)
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
 
 ## Project Structure (after `databricks apps init --features lakebase`)
-- `server/server.ts` — backend with Lakebase pool + tRPC routes
+- `server/server.ts` — backend with Lakebase pool + Express routes
 - `client/src/App.tsx` — React frontend
 - `app.yaml` — manifest with `database` resource declaration
 - `package.json` — includes `@databricks/lakebase` dependency
-- Note: **No `config/queries/`** — Lakebase apps use `pool.query()` in tRPC, not SQL files
+- Note: **No `config/queries/`** — Lakebase apps use `appkit.lakebase.query()` in Express routes, not SQL files
 
 ## Data Discovery
 
@@ -103,7 +103,7 @@ After the user chooses:
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
-**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the tRPC pattern: initialize schema at startup, write procedures in `server/server.ts`, then build the React frontend.
+**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the `onPluginsReady` pattern: initialize schema at startup, register Express routes in `server/server.ts`, then build the React frontend.
 
 ## When to Use What
 
@@ -113,11 +113,11 @@ After completing the decision gate above, use this routing table:
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
 - **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit/lakebase.md)
-- **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase pool via tRPC — see [Lakebase Guide](references/appkit/lakebase.md)
+- **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase via Express routes in `onPluginsReady` — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
-- **⚠️ NEVER use tRPC to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
+- **⚠️ NEVER add custom endpoints to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
 
 ## Frameworks

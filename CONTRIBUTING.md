@@ -52,6 +52,34 @@ python3 scripts/skills.py validate
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
+## Plugin components (hooks + commands)
+
+The Claude Code plugin ships more than skills:
+
+- `hooks/`: `hooks.json` wires a UserPromptSubmit prompt router
+  (`databricks-router.py`) that steers Databricks-related prompts into the
+  skills, a SessionStart context primer (`databricks-context.py`), and a
+  PostToolUse auth-failure hinter (`databricks-auth-helper.py`). All
+  stdlib-only and fail-open. See [`hooks/README.md`](./hooks/README.md). Each
+  hook's behavior is pinned by its matching `tests/*_test.py` file; run the
+  suite with `python3 -m unittest discover -s tests -p '*_test.py'`.
+  **`hooks/hooks.json` is auto-loaded by Claude Code, so do NOT add a `"hooks"`
+  key to `.claude-plugin/plugin.json`, or the plugin fails to load with a
+  "Duplicate hooks file" error.**
+- `commands/`: one `*.md` per slash command (`/databricks:<name>`), declared via
+  `"commands"` in `.claude-plugin/plugin.json`. Each needs frontmatter
+  (`description`, optional `argument-hint`, `allowed-tools`).
+
+`scripts/skills.py validate` (run in CI) checks that `hooks/hooks.json` is valid
+JSON referencing scripts that exist, that plugin.json does not double-declare the
+standard hooks file, and that every command carries a `description` (quoted if it
+contains a `:`, since strict YAML rejects unquoted colons). The validate
+workflow also runs all hook test files.
+
+These components ship via the plugin marketplace (the whole repo is the plugin).
+`databricks aitools install` packages `skills/` only today; extending it to
+hooks/commands is CLI-side follow-up work.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
@@ -64,6 +92,27 @@ Examples in skills and references must follow secure defaults:
 - If an example requires elevated permissions, state it explicitly (e.g. "requires workspace admin")
 - Prefer scoped tokens over broad credentials
 - Obfuscate sensitive values: use placeholder workspace IDs (`1111111111111111`), URLs (`company-workspace.cloud.databricks.com`), and never include real tokens or passwords
+
+## Releasing
+
+Releases are cut by the **Release** workflow (`.github/workflows/release.yml`),
+triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
+
+1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
+   both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` to the
+   release version and regenerates `manifest.json`.
+2. Commits the bump to `main`.
+3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
+   then creates the GitHub release (`gh release create --verify-tag`).
+
+Bumping the plugin `version` on every release is **required**: Claude Code's
+plugin marketplace keys updates on the `version` field, so a release that ships
+without bumping it leaves marketplace clients on the cached copy and they never
+see the new skills.
+
+After releasing, open a follow-up PR to update
+[`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
+`databricks aitools install` resolves to the new version.
 
 ## Version resolution in Databricks CLI
 

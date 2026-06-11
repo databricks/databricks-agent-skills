@@ -1,18 +1,24 @@
 ---
 name: databricks-unstructured-pdf-generation
-description: "Generate PDF documents from HTML and upload to Unity Catalog volumes. Use for creating test PDFs, demo documents, reports, or evaluation datasets."
+description: "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for Knowledge Assistant) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
-# PDF Generation from HTML
+# Unstructured-Document for Demos and Eval Datasets on Databricks
 
-Convert HTML content to PDF documents and upload them to Unity Catalog Volumes.
+Workflow for producing **synthetic PDF documents + paired test questions** as a Unity Catalog-resident dataset for Demos and RAG / unstructured-document retrieval evaluation on Databricks. The PDF-generation step uses standard local HTML → PDF tooling; the Databricks-specific value is the workflow shape — UC volume layout, paired question files, and integration with downstream Databricks retrieval / `ai_extract` / `ai_parse_document` evaluation.
 
 ## Workflow
 
-1. Write HTML files to `./raw_data/html/` (write multiple files in parallel for speed)
-2. Convert HTML → PDF using `<SKILL_ROOT>/scripts/pdf_generator.py` (parallel conversion)
-3. Upload PDFs to Unity Catalog volume using `databricks fs cp`
-4. Generate `doc_questions.json` with test questions for each document
+1. Write HTML files to `./raw_data/html/` (write multiple files in parallel for speed) — domain-shaped to match the documents your retrieval pipeline will see in production.
+2. Convert HTML → PDF using `<SKILL_ROOT>/scripts/pdf_generator.py` (parallel conversion, wraps `plutoprint`).
+3. Upload PDFs to a Unity Catalog volume via `databricks fs cp` — same volume shape your production pipeline will read from.
+4. Generate `doc_questions.json` pairing each document with retrieval-eval questions; this becomes the gold dataset for `mlflow.genai.evaluate()` or comparable retrieval-quality scorers.
+
+> If you only need ad-hoc PDFs (no Databricks workflow), any HTML → PDF tool (`weasyprint`, `wkhtmltopdf`, `playwright pdf`, `plutoprint`) works directly — this skill exists for the synthetic-dataset-on-UC end-to-end shape, not as a general PDF generator.
 
 > **Path convention:** `<SKILL_ROOT>` below = the directory containing this SKILL.md. Resolve to the absolute install path (e.g. `~/.claude/skills/databricks-unstructured-pdf-generation`). `./raw_data/...` paths are relative to your own project cwd.
 

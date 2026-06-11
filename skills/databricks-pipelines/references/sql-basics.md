@@ -1,57 +1,55 @@
-#### Core SQL Statements
+# SQL Basics
 
-- `CREATE MATERIALIZED VIEW` - Batch processing with full refresh or incremental computation
-- `CREATE STREAMING TABLE` - Continuous incremental processing
-- `CREATE TEMPORARY VIEW` - Non-materialized views (pipeline lifetime only)
-- `CREATE VIEW` - Non-materialized catalog views (Unity Catalog only)
-- `AUTO CDC INTO` - Change data capture flows
-- `CREATE FLOW` - Define flows or backfills for streaming tables
+## Core statements
 
-#### Message Bus Ingestion Functions
+- `CREATE OR REFRESH STREAMING TABLE` — continuous incremental processing. See [streaming-table-sql.md](streaming-table-sql.md).
+- `CREATE OR REFRESH MATERIALIZED VIEW` — batch table. See [materialized-view-sql.md](materialized-view-sql.md).
+- `CREATE TEMPORARY VIEW` — pipeline-scoped view. See [temporary-view-sql.md](temporary-view-sql.md).
+- `CREATE VIEW` — UC-published view. See [view-sql.md](view-sql.md).
+- `AUTO CDC INTO` (inside `CREATE FLOW`) — CDC. See [auto-cdc-sql.md](auto-cdc-sql.md).
+- `CREATE FLOW ... AS INSERT INTO [ONCE] target_table` — append / backfill flows. See [streaming-table-sql.md](streaming-table-sql.md).
 
-- `read_kafka(bootstrapServers => '...', subscribe => '...')` - Apache Kafka
-- `read_kinesis(streamName => '...', region => '...')` - AWS Kinesis
-- `read_pubsub(subscriptionId => '...', topicId => '...')` - Google Cloud Pub/Sub
-- `read_pulsar(serviceUrl => '...', topics => '...')` - Apache Pulsar
-- Event Hubs: Use `read_kafka()` with Kafka-compatible Event Hubs config
+## Source functions (streaming)
 
-#### Critical Rules
+Used as `FROM STREAM read_*(...)` inside a streaming table:
 
-- ✅ Prefer `CREATE OR REFRESH` syntax for defining datasets (bare `CREATE` also works, but `OR REFRESH` is the idiomatic convention)
-- ✅ Use `STREAM` keyword when reading sources for streaming tables
-- ✅ Use `read_files()` function for Auto Loader (cloud storage ingestion)
-- ✅ Look up documentation for statement parameters when unsure
-- ❌ NEVER use `LIVE.` prefix when reading other datasets (deprecated)
-- ❌ NEVER use `CREATE LIVE TABLE` or `CREATE LIVE VIEW` (deprecated - use `CREATE STREAMING TABLE`, `CREATE MATERIALIZED VIEW`, or `CREATE TEMPORARY VIEW` instead)
-- ❌ Do not use `PIVOT` clause (unsupported)
+- `read_files(path, format => '...')` — Auto Loader. See [auto-loader-sql.md](auto-loader-sql.md).
+- `read_kafka(bootstrapServers => '...', subscribe => '...')` — Kafka. Also covers Event Hubs via Kafka protocol. See [kafka.md](kafka.md).
+- `read_kinesis(streamName => '...', region => '...')` — AWS Kinesis.
+- `read_pubsub(subscriptionId => '...', topicId => '...')` — GCP Pub/Sub.
+- `read_pulsar(serviceUrl => '...', topics => '...')` — Apache Pulsar.
 
-#### SQL-Specific Considerations
+## Critical rules
 
-**Streaming vs. Batch Semantics:**
+- ✅ Prefer `CREATE OR REFRESH` over bare `CREATE` for SDP datasets (idiomatic convention; both parse).
+- ✅ Use `FROM STREAM(table)` (function form with parens) for table sources in streaming tables; `FROM STREAM read_files(...)` (no extra parens) for function sources.
+- ❌ Never use the `LIVE.` prefix when reading sibling datasets — deprecated, errors in modern pipelines.
+- ❌ Never `CREATE LIVE TABLE` / `CREATE STREAMING LIVE TABLE` / `CREATE TEMPORARY LIVE VIEW` — all legacy. (Exception: `CREATE LIVE VIEW` is retained for the edge case of expectations on a temp view — see [temporary-view-sql.md#using-expectations-with-temporary-views](temporary-view-sql.md#using-expectations-with-temporary-views).)
+- ❌ Never `CREATE OR REPLACE STREAMING TABLE` — that's standard SQL, not SDP. Use `CREATE OR REFRESH`.
+- ❌ `PIVOT` clause is unsupported.
 
-- Omit `STREAM` keyword for materialized views (batch processing)
-- Use `STREAM` keyword for streaming tables to enable streaming semantics
+## Streaming vs batch
 
-**GROUP BY Best Practices:**
+`STREAM(...)` opts in to streaming semantics; omit it for batch reads. Streaming tables require streaming reads. Materialized views require batch reads.
 
-- Prefer `GROUP BY ALL` over explicitly listing individual columns unless the user specifically requests explicit grouping
-- Benefits: more maintainable when adding/removing columns, less verbose, reduces risk of missing columns in the GROUP BY clause
-- Example: `SELECT category, region, SUM(sales) FROM table GROUP BY ALL` instead of `GROUP BY category, region`
+## `GROUP BY ALL`
 
-**Python UDFs:**
+Prefer `SELECT category, region, SUM(sales) FROM t GROUP BY ALL` over enumerating the grouping columns — less drift when columns are added/removed, no risk of forgetting a column in the `GROUP BY` clause.
 
-- You can use Python user-defined functions (UDFs) in SQL queries
-- UDFs must be defined in Python files before calling them in SQL source files
+## Configuration
 
-**Configuration:**
+- Reference pipeline config values with `${var_name}` interpolation in SQL files.
+- Use `SET key = value;` for Spark-level config.
 
-- Use `SET` statements and `${}` string interpolation for dynamic values and Spark configurations
+## Python UDFs in SQL
 
-#### skipChangeCommits
+UDFs must be declared in a Python file in the pipeline (e.g. `@dp.temporary_view()` is not enough — you need a top-level `spark.udf.register(...)` or a UC SQL UDF). The SQL file can then call them by name.
 
-When a downstream streaming table reads from an upstream streaming table that has updates or deletes, use `skipChangeCommits` to ignore change commits:
+## `skipChangeCommits`
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE downstream
-AS SELECT * FROM STREAM read_stream("upstream_table", skipChangeCommits => true)
+AS SELECT * FROM STREAM read_stream("upstream_table", skipChangeCommits => true);
 ```
+
+Use when reading from a streaming table that has updates/deletes (GDPR purges, Auto CDC targets). Without it, change commits fail.

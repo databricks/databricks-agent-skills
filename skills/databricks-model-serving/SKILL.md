@@ -175,7 +175,7 @@ env:
     valueFrom: serving-endpoint
 ```
 
-Then add a tRPC route to call it from your app. For the full app integration pattern, use the **`databricks-apps`** skill and read the [Model Serving Guide](../databricks-apps/references/appkit/model-serving.md).
+Then wire the endpoint into your app via the `serving()` plugin or a custom route in `onPluginsReady`. For the full app integration pattern, use the **`databricks-apps`** skill and read the [Model Serving Guide](../databricks-apps/references/appkit/model-serving.md).
 
 ## Troubleshooting
 

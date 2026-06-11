@@ -2,8 +2,6 @@
 
 **Use when:** You have an existing running cluster and need to preserve state across multiple tool calls, or need Scala/R support.
 
-> `<SKILL_ROOT>` in examples = the directory containing the parent SKILL.md — substitute the absolute install path (e.g. `~/.claude/skills/databricks-execution-compute`).
-
 ## When to Choose Interactive Cluster
 
 - Multiple sequential commands where variables must persist
@@ -23,8 +21,10 @@
 **Starting a cluster takes 3-8 minutes and costs money.** Always check first:
 
 ```bash
-python <SKILL_ROOT>/scripts/compute.py list-compute --resource clusters
+databricks clusters list --cluster-sources UI,API --output json | jq '.[] | select(.state == "RUNNING") | {cluster_id, cluster_name, state, cluster_source}'
 ```
+
+`--cluster-sources UI,API` restricts the list to user-created clusters and excludes job clusters, which dominate the list on busy workspaces.
 
 If no cluster is running, ask the user:
 > "No running cluster. Options:
@@ -32,137 +32,158 @@ If no cluster is running, ask the user:
 > 2. Use serverless (instant, no setup)
 > Which do you prefer?"
 
-## Basic Usage
+## Code Execution Flow (1.2 commands API)
 
-### First Command: Creates Context
+The Databricks CLI doesn't ship a single "run code on a cluster" subcommand. Use the `1.2 commands` API directly via `databricks api`:
 
-```bash
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "import pandas as pd; df = pd.DataFrame({'a': [1, 2, 3]}); print(df)" \
-    --compute-type cluster \
-    --cluster-id "1234-567890-abcdef"
-```
+1. **Create an execution context** (one per language per cluster; reuse across commands for state).
+2. **Submit the command** — returns a `commandId`.
+3. **Poll status** until `status == "Finished"` (or `Error`).
+4. **(Optional) Destroy the context** when done. Contexts also expire when the cluster terminates.
 
-Response includes `context_id` for reuse:
-```json
-{
-  "success": true,
-  "output": "   a\n0  1\n1  2\n2  3",
-  "context_id": "ctx_abc123",
-  "cluster_id": "1234-567890-abcdef"
-}
-```
-
-### Follow-up Commands: Reuse Context
+### 1. Create a context
 
 ```bash
-# Variables from first command still available
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "print(df.shape)" \
-    --compute-type cluster \
-    --cluster-id "1234-567890-abcdef" \
-    --context-id "ctx_abc123"
+CID="1234-567890-abcdef"  # target cluster; reused by every call below
+CTX=$(databricks api post /api/1.2/contexts/create --json '{
+  "language": "python",
+  "clusterId": "'"$CID"'"
+}' | jq -r '.id')
+echo "$CTX"  # e.g. ctx_abc123
 ```
 
-### Auto-Select Best Running Cluster
+Languages: `python`, `scala`, `sql`, `r`. You need one context per language; running `sql` requires a separate context from `python` on the same cluster.
+
+### 2. Submit a command
 
 ```bash
-# Get best running cluster
-python <SKILL_ROOT>/scripts/compute.py list-compute --auto-select
-# Returns: {"cluster_id": "1234-567890-abcdef"}
+CMD=$(databricks api post /api/1.2/commands/execute --json '{
+  "language": "python",
+  "clusterId": "'"$CID"'",
+  "contextId": "'"$CTX"'",
+  "command": "import pandas as pd; df = pd.DataFrame({\"a\": [1, 2, 3]}); print(df)"
+}' | jq -r '.id')
+echo "$CMD"
+```
 
-# Then execute on it
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "spark.range(100).show()" \
-    --compute-type cluster \
-    --cluster-id "1234-567890-abcdef"
+### 3. Poll status and fetch results
+
+The `/api/1.2/commands/status` endpoint takes its parameters in the query string — a JSON body on a GET request gets dropped by the server.
+
+```bash
+while :; do
+  STATUS=$(databricks api get "/api/1.2/commands/status?clusterId=${CID}&contextId=${CTX}&commandId=${CMD}")
+  STATE=$(echo "$STATUS" | jq -r '.status')
+  [ "$STATE" = "Finished" ] && break
+  [ "$STATE" = "Error" ] && break
+  [ "$STATE" = "Cancelled" ] && break
+  sleep 2
+done
+echo "$STATUS" | jq '{status, results: .results}'
+```
+
+`.results.resultType` indicates output type:
+- `text` — `.results.data` is the captured stdout string.
+- `error` — `.results.summary` has the error preamble; `.results.cause` has the traceback.
+- `table` — `.results.schema` + `.results.data` (rows).
+
+### 4. Follow-up commands reuse the context
+
+State (variables, imports, `%pip install`-ed packages) persists across commands sharing the same `contextId`:
+
+```bash
+CMD2=$(databricks api post /api/1.2/commands/execute --json '{
+  "language": "python",
+  "clusterId": "'"$CID"'",
+  "contextId": "'"$CTX"'",
+  "command": "print(df.shape)"
+}' | jq -r '.id')
+# poll as above
+```
+
+### 5. (Optional) Destroy the context
+
+Contexts auto-expire when the cluster terminates. Destroy explicitly when you're done with a session:
+
+```bash
+databricks api post /api/1.2/contexts/destroy --json '{
+  "clusterId": "'"$CID"'",
+  "contextId": "'"$CTX"'"
+}'
 ```
 
 ## Language Support
 
+The `language` field on context-create + command-execute controls the runtime:
+
 ```bash
 # Scala
-python <SKILL_ROOT>/scripts/compute.py execute-code --code 'println("Hello")' --compute-type cluster --language scala --cluster-id ...
-                   
+databricks api post /api/1.2/contexts/create --json '{"language":"scala","clusterId":"..."}'
+
 # SQL
-python <SKILL_ROOT>/scripts/compute.py execute-code --code "SELECT * FROM table LIMIT 10" --compute-type cluster --language sql --cluster-id ...
+databricks api post /api/1.2/contexts/create --json '{"language":"sql","clusterId":"..."}'
 
 # R
-python <SKILL_ROOT>/scripts/compute.py execute-code --code 'print("Hello")' --compute-type cluster --language r --cluster-id ...
+databricks api post /api/1.2/contexts/create --json '{"language":"r","clusterId":"..."}'
 ```
+
+Each language needs its own context on the same cluster.
 
 ## Installing Libraries
 
 Install pip packages directly in the execution context:
 
 ```bash
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "%pip install faker" \
-    --compute-type cluster \
-    --cluster-id "..." \
-    --context-id "..."
+databricks api post /api/1.2/commands/execute --json '{
+  "language":"python","clusterId":"...","contextId":"...",
+  "command":"%pip install faker"
+}'
 ```
 
-If needed, restart Python to pick up new packages:
+If needed, restart Python in the same context to pick up new packages:
+
 ```bash
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "dbutils.library.restartPython()" \
-    --compute-type cluster \
-    --cluster-id "..." \
-    --context-id "..."
-```
-
-## Context Lifecycle
-
-**Keep alive (default):** Context persists until cluster terminates.
-
-**Destroy when done:**
-```bash
-python <SKILL_ROOT>/scripts/compute.py execute-code \
-    --code "print('Done!')" \
-    --compute-type cluster \
-    --cluster-id "..." \
-    --destroy-context
+databricks api post /api/1.2/commands/execute --json '{
+  "language":"python","clusterId":"...","contextId":"...",
+  "command":"dbutils.library.restartPython()"
+}'
 ```
 
 ## Managing Clusters
 
-Two equivalent paths: the standalone script (convenience wrapper) or the raw `databricks` CLI (more fields exposed). Prefer the script for the common operations listed here.
+All cluster lifecycle goes through `databricks clusters`:
 
 ```bash
-# List all clusters
-python <SKILL_ROOT>/scripts/compute.py list-compute --resource clusters
+# List all clusters (full output)
+databricks clusters list --cluster-sources UI,API --output json
 
-# Get specific cluster status
-python <SKILL_ROOT>/scripts/compute.py list-compute --cluster-id "1234-567890-abcdef"
+# Get one cluster's state
+databricks clusters get <CLUSTER_ID> | jq '{state, cluster_id, cluster_name}'
 
-# Start a cluster (WITH USER APPROVAL ONLY - costs money, 3-8min startup)
-python <SKILL_ROOT>/scripts/compute.py manage-cluster --action start --cluster-id "1234-567890-abcdef"
+# Start a cluster (WITH USER APPROVAL ONLY — costs money, 3-8 min startup)
+databricks clusters start <CLUSTER_ID>
 
-# Terminate a cluster (reversible)
-python <SKILL_ROOT>/scripts/compute.py manage-cluster --action terminate --cluster-id "1234-567890-abcdef"
+# Terminate (reversible — cluster definition kept, state lost)
+databricks clusters delete <CLUSTER_ID>
 
-# Create a new cluster
-python <SKILL_ROOT>/scripts/compute.py manage-cluster --action create --name "my-cluster" --num-workers 2
+# Permanent delete (irreversible)
+databricks clusters permanent-delete <CLUSTER_ID>
+
+# Restart
+databricks clusters restart <CLUSTER_ID>
+
+# Resize
+databricks clusters resize <CLUSTER_ID> --num-workers 4
 ```
 
-### Filter running interactive clusters only (raw CLI)
-
-Useful before asking the user which cluster to reuse. `--cluster-sources UI,API` excludes job clusters (which would otherwise dominate the list on busy workspaces):
+### Create with a full spec
 
 ```bash
-databricks clusters list --cluster-sources UI,API --output json \
-  | jq '.[] | select(.state == "RUNNING")'
-```
-
-### Create with a full spec (raw CLI)
-
-The script's `manage-cluster --action create` is fine for quick defaults; for full control (DBR version, instance type, tags) use the raw CLI:
-
-```bash
-# SPARK_VERSION is positional; custom_tags recommended for resource tracking
-databricks clusters create 15.4.x-scala2.12 --json '{
+# With --json, every field goes in the body — including spark_version (no positional arg).
+# custom_tags recommended for resource tracking.
+databricks clusters create --json '{
   "cluster_name": "my-cluster",
+  "spark_version": "15.4.x-scala2.12",
   "node_type_id": "i3.xlarge",
   "num_workers": 2,
   "autotermination_minutes": 60,
@@ -170,13 +191,21 @@ databricks clusters create 15.4.x-scala2.12 --json '{
 }'
 ```
 
+Discover node types and DBR versions:
+
+```bash
+databricks clusters list-node-types | jq '.node_types[] | {node_type_id, memory_mb, num_cores}'
+databricks clusters spark-versions   | jq '.versions[] | {key, name}'
+```
+
 ## Common Issues
 
 | Issue | Solution |
 |-------|----------|
 | "No running cluster" | Ask user to start or use serverless |
-| Context not found | Context expired; create new one |
-| Library not found | `%pip install <library>` then restart Python if needed |
+| `Context not found` | Context expired (cluster restarted, or destroyed); create a new one |
+| Library not found mid-session | `%pip install <library>`, then `dbutils.library.restartPython()` if needed |
+| Command stuck in `Running` | Send `databricks api post /api/1.2/commands/cancel --json '{"clusterId":"...","contextId":"...","commandId":"..."}'` |
 
 ## When NOT to Use
 

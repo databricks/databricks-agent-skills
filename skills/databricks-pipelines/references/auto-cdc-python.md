@@ -1,214 +1,131 @@
-Auto CDC in Spark Declarative Pipelines processes change data capture (CDC) events from streaming sources or snapshots.
+# Auto CDC (Python)
 
-**API Reference:**
+CDC from streaming events (`dp.create_auto_cdc_flow`) or periodic snapshots (`dp.create_auto_cdc_from_snapshot_flow`). Both write into a pre-created streaming table.
 
-**dp.create_auto_cdc_flow() / dp.apply_changes() / dlt.create_auto_cdc_flow() / dlt.apply_changes()**
-Applies CDC operations (inserts, updates, deletes) from a streaming source to a target table. Supports SCD Type 1 (latest) and Type 2 (history). Does NOT return a value - call at top level without assignment.
+Use streaming when CDC events arrive continuously (transaction logs, Kafka, Delta change feeds). Use snapshot when the source is a full dump compared to the previous state (daily extracts, batch exports).
+
+Legacy aliases `dp.apply_changes()` / `dp.apply_changes_from_snapshot()` still parse but should be migrated (see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate)).
+
+For querying SCD Type 2 history tables, see [scd-2-querying.md](scd-2-querying.md).
+
+## `dp.create_auto_cdc_flow(...)`
+
+Call at top level — does NOT return a value.
 
 ```python
 dp.create_auto_cdc_flow(
-  target="<target-table>",
-  source="<source-table-name>",
-  keys=["key1", "key2"],
-  sequence_by="<sequence-column>",
-  ignore_null_updates=False,
-  apply_as_deletes=None,
-  apply_as_truncates=None,
-  column_list=None,
-  except_column_list=None,
-  stored_as_scd_type=1,
-  track_history_column_list=None,
-  track_history_except_column_list=None,
-  name=None,
-  once=False
+    target="<target_table>",                  # required — pre-created via dp.create_streaming_table()
+    source="<source_table_or_view>",          # required — string name (table or @dp.temporary_view)
+    keys=["key1", "key2"],                    # required — primary key columns
+    sequence_by="<col>",                       # required — string col name, or col("ts"), or struct("ts","id")
+    stored_as_scd_type=1,                     # 1 (default) = latest values; 2 = history with __START_AT/__END_AT
+    ignore_null_updates=False,                # NULL values won't overwrite non-NULL existing
+    apply_as_deletes=None,                    # expr("op = 'D'") or "op = 'D'"
+    apply_as_truncates=None,                  # SCD Type 1 only
+    column_list=None,                          # include list — mutually exclusive with except_column_list
+    except_column_list=None,                  # exclude list
+    track_history_column_list=None,           # SCD Type 2: cols that trigger new history rows
+    track_history_except_column_list=None,    # SCD Type 2: cols that DON'T trigger new history rows
+    name=None,                                 # flow name (multiple flows to one target)
+    once=False,
 )
 ```
 
-Parameters:
+`source` must be a table/view identifier (string) — NOT a DataFrame. To pre-filter, define a `@dp.temporary_view()` and reference its name. Don't materialize a streaming table just for filtering — temp view is preferred.
 
-- `target` (str): Target table name (must exist, create with `dp.create_streaming_table()`). **Required.**
-- `source` (str): Source table name with CDC events. **Required.**
-- `keys` (list): Primary key columns for row identification. **Required.**
-- `sequence_by` (str | Column): Column for ordering events (timestamp, version). **Required.** Accepts a string column name or a `Column` expression. For multi-column sequencing, use `struct("col1", "col2")` to order by multiple columns.
-- `ignore_null_updates` (bool): If True, NULL values won't overwrite existing non-NULL values
-- `apply_as_deletes` (str or Column): Expression identifying delete operations. Use `expr("op = 'D'")` (Column) or `"op = 'D'"` (string).
-- `apply_as_truncates` (str or Column): Expression identifying truncate operations. Use `expr("op = 'TRUNCATE'")` (Column) or `"op = 'TRUNCATE'"` (string).
-- `column_list` (list): Columns to include (mutually exclusive with `except_column_list`)
-- `except_column_list` (list): Columns to exclude
-- `stored_as_scd_type` (int): `1` for latest values (default), `2` for full history with `__START_AT`/`__END_AT` columns
-- `track_history_column_list` (list): For SCD Type 2, columns to track history for (others use Type 1)
-- `track_history_except_column_list` (list): For SCD Type 2, columns to exclude from history tracking
-- `name` (str): Flow name (for multiple flows to same target)
-- `once` (bool): Process once and stop (default: False)
-
-**dp.create_auto_cdc_from_snapshot_flow() / dp.apply_changes_from_snapshot() / dlt.create_auto_cdc_from_snapshot_flow() / dlt.apply_changes_from_snapshot()**
-Applies CDC from full snapshots by comparing to previous state. Automatically infers inserts, updates, deletes.
+## `dp.create_auto_cdc_from_snapshot_flow(...)`
 
 ```python
 dp.create_auto_cdc_from_snapshot_flow(
-  target="<target-table>",
-  source=<source-table-name-or-callable>,
-  keys=["key1", "key2"],
-  stored_as_scd_type=1,
-  track_history_column_list=None,
-  track_history_except_column_list=None
+    target="<target_table>",
+    source="<snapshot_table>",                # OR callable (see below)
+    keys=["product_id"],
+    stored_as_scd_type=1,
+    track_history_column_list=None,
+    track_history_except_column_list=None,
 )
 ```
 
-Parameters:
-
-- `target` (str): Target table name (must exist). **Required.**
-- `source` (str or callable): **Required.** Can be one of:
-  - **String**: Source table name containing the full snapshot (most common)
-  - **Callable**: Function for processing historical snapshots with type `SnapshotAndVersionFunction = Callable[[SnapshotVersion], SnapshotAndVersion]`
-    - `SnapshotVersion = Union[int, str, float, bytes, datetime.datetime, datetime.date, decimal.Decimal]`
-    - `SnapshotAndVersion = Optional[Tuple[DataFrame, SnapshotVersion]]`
-    - Function receives the latest processed snapshot version (or None for first run)
-    - Must return `None` when no more snapshots to process
-    - Must return tuple of `(DataFrame, SnapshotVersion)` for next snapshot to process
-    - Snapshot version is used to track progress and must be comparable/orderable
-- `keys` (list): Primary key columns. **Required.**
-- `stored_as_scd_type` (int): `1` for latest (default), `2` for history
-- `track_history_column_list` (list): Columns to track history for (SCD Type 2)
-- `track_history_except_column_list` (list): Columns to exclude from history tracking
-
-**Use create_auto_cdc_flow when:** Processing streaming CDC events from transaction logs, Kafka, Delta change feeds
-**Use create_auto_cdc_from_snapshot_flow when:** Processing periodic full snapshots (daily dumps, batch extracts)
-
-**Common Patterns:**
-
-**Pattern 1: Basic CDC flow from streaming source**
+`source` accepts a string (most common — name of a table holding the latest snapshot) or a callable for historical snapshot replay:
 
 ```python
-# Step 1: Create target table
+def next_snapshot_and_version(latest_version: Optional[int]) -> Optional[Tuple[DataFrame, int]]:
+    # Receives the last processed snapshot version (None on first run).
+    # Return (DataFrame, version) for the next snapshot, or None when caught up.
+    if latest_version is None:
+        return (spark.read.load("products_v1.csv"), 1)
+    return None
+```
+
+Version must be a comparable scalar (`int`, `str`, `float`, `bytes`, `datetime`, `date`, `Decimal`).
+
+## Patterns
+
+### Basic (SCD Type 1)
+
+```python
 dp.create_streaming_table(name="users")
-
-# Step 2: Define CDC flow (source must be a table name)
-dp.create_auto_cdc_flow(
-    target="users",
-    source="user_changes",
-    keys=["user_id"],
-    sequence_by="updated_at"
-)
+dp.create_auto_cdc_flow(target="users", source="user_changes",
+                        keys=["user_id"], sequence_by="updated_at")
 ```
 
-**Pattern 2: CDC flow with upstream transformation**
+### With pre-filtering via temp view
 
 ```python
-# Step 1: Define view with transformation (source preprocessing)
 @dp.temporary_view()
 def filtered_user_changes():
-    return (
-        spark.readStream.table("raw_user_changes")
-        .filter("user_id IS NOT NULL")
-    )
+    return spark.readStream.table("raw_user_changes").filter("user_id IS NOT NULL")
 
-# Step 2: Create target table
 dp.create_streaming_table(name="users")
-
-# Step 3: Define CDC flow using the view as source
-dp.create_auto_cdc_flow(
-    target="users",
-    source="filtered_user_changes",  # References the view name
-    keys=["user_id"],
-    sequence_by="updated_at"
-)
-# Note: Use distinct names for view and target for clarity
-# Note: If "raw_user_changes"  is defined in the pipeline and no additional transformations or expectations are needed,
-#  source="raw_user_changes" can be used directly
+dp.create_auto_cdc_flow(target="users", source="filtered_user_changes",
+                        keys=["user_id"], sequence_by="updated_at")
 ```
 
-**Pattern 3: CDC with explicit deletes and truncates**
+### Explicit deletes + truncates + ignore-null
 
 ```python
 from pyspark.sql.functions import expr
 
-dp.create_streaming_table(name="orders")
-
 dp.create_auto_cdc_flow(
-    target="orders",
-    source="order_events",
-    keys=["order_id"],
+    target="orders", source="order_events", keys=["order_id"],
     sequence_by="event_timestamp",
     apply_as_deletes=expr("operation = 'DELETE'"),
-    apply_as_truncates=expr("operation = 'TRUNCATE'"),
-    ignore_null_updates=True
+    apply_as_truncates=expr("operation = 'TRUNCATE'"),    # SCD Type 1 only
+    ignore_null_updates=True,
 )
 ```
 
-**Pattern 4: SCD Type 2 (Historical tracking)**
+### SCD Type 2 with selective history tracking
 
 ```python
-dp.create_streaming_table(name="customer_history")
-
 dp.create_auto_cdc_flow(
-    target="customer_history",
-    source="source.customer_changes",
-    keys=["customer_id"],
-    sequence_by="changed_at",
-    stored_as_scd_type=2  # Track full history
+    target="accounts", source="account_changes", keys=["account_id"],
+    sequence_by="modified_at",
+    stored_as_scd_type=2,
+    track_history_column_list=["balance", "status"],   # only these trigger new history rows
 )
-# Target will include __START_AT and __END_AT columns
 ```
 
-**Pattern 5: Snapshot-based CDC (Simple - table source)**
+Use `track_history_except_column_list=[...]` for the inverse.
+
+### Snapshot-based (table source)
 
 ```python
-dp.create_streaming_table(name="products")
-
 @dp.materialized_view(name="product_snapshot")
 def product_snapshot():
     return spark.read.table("source.daily_product_dump")
 
-dp.create_auto_cdc_from_snapshot_flow(
-    target="products",
-    source="product_snapshot",  # String table name - most common
-    keys=["product_id"],
-    stored_as_scd_type=1
-)
-```
-
-**Pattern 6: Snapshot-based CDC (Advanced - callable for historical snapshots)**
-
-```python
 dp.create_streaming_table(name="products")
-
-# Define a callable to process historical snapshots sequentially
-def next_snapshot_and_version(latest_snapshot_version: Optional[int]) -> Tuple[DataFrame, Optional[int]]:
-    if latest_snapshot_version is None:
-        return (spark.read.load("products.csv"), 1)
-    else:
-        return None
-
 dp.create_auto_cdc_from_snapshot_flow(
-    target="products",
-    source=next_snapshot_and_version,  # Callable function for historical processing
-    keys=["product_id"],
-    stored_as_scd_type=1
+    target="products", source="product_snapshot",
+    keys=["product_id"], stored_as_scd_type=1,
 )
 ```
 
-**Pattern 7: Selective column tracking**
+## Key rules
 
-```python
-dp.create_streaming_table(name="accounts")
-
-dp.create_auto_cdc_flow(
-    target="accounts",
-    source="account_changes",
-    keys=["account_id"],
-    sequence_by="modified_at",
-    stored_as_scd_type=2,
-    track_history_column_list=["balance", "status"],  # Only track history for these columns
-    ignore_null_updates=True
-)
-```
-
-**KEY RULES:**
-
-- Create target with `dp.create_streaming_table()` before defining CDC flow
-- `dp.create_auto_cdc_flow()` does NOT return a value - call it at top level without assigning to a variable
-- `source` must be a table name (string) - use `@dp.temporary_view()` to preprocess/filter/transform data before CDC processing. A temporary view is the **preferred** approach for source preprocessing (not a streaming table)
-- SCD Type 2 adds `__START_AT` and `__END_AT` columns for validity tracking
-- When specifying the schema of the target table for SCD Type 2, you must also include the `__START_AT` and `__END_AT` columns with the same data type as the `sequence_by` field
-- Legacy names (`apply_changes`, `apply_changes_from_snapshot`) are equivalent but deprecated - prefer `create_auto_cdc_*` variants
+- Create the target with `dp.create_streaming_table()` first.
+- `dp.create_auto_cdc_flow()` does NOT return a value — call at top level.
+- `source` is a string table/view name, never a DataFrame. Pre-process via `@dp.temporary_view()`.
+- SCD Type 2 adds `__START_AT` / `__END_AT` columns with the same type as `sequence_by`. If you supply an explicit target schema, include them.
+- `sequence_by` accepts string column name OR `col("ts")` — both work. Use `struct("ts", "id")` for multi-column ordering.

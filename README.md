@@ -10,7 +10,7 @@ but end up loaded by the same agents — pick whichever fits your workflow.
 - **Databricks CLI** writes SKILL.md files directly into each agent's skill
   directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
 - **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
-  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-skills/`);
+  agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-agent-skills/`);
   the agent discovers skills from there.
 
 **Via the Databricks CLI (canonical; supports experimental skills):**
@@ -35,7 +35,7 @@ skill under [`./skills/`](./skills/)):
 
 ```text
 /plugin marketplace add databricks/databricks-agent-skills
-/plugin install databricks-skills
+/plugin install databricks@databricks-agent-skills
 ```
 
 **Via the Cursor plugin marketplace:**
@@ -51,6 +51,7 @@ skill under [`./skills/`](./skills/)):
 | Stable skills | ✅ (default) | ✅ |
 | Experimental skills | ✅ (with `--experimental` or by name) | ❌ |
 | Per-skill selection | ✅ (`databricks aitools install <name>`) | ❌ (all-or-nothing) |
+| Commands & hooks | ❌ (skills only today, see below) | ✅ |
 | Updates | `databricks aitools update` | Plugin marketplace update flow |
 | Required outside the agent | Databricks CLI v1.0.0+ | None |
 
@@ -69,12 +70,15 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-model-serving** — Model Serving endpoint management, AI Gateway, traffic config.
 - **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
 - **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
+- **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
 
 ## Experimental Skills
 
 The [`experimental/`](./experimental/) directory contains additional skills
-imported from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
-on a **best-effort basis**.
+originally imported from
+[databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
+(now deprecated — this repo is the source of truth going forward) on a
+**best-effort basis**.
 
 - Experimental skills are **not officially supported** — they may be used, but
   do not follow the same review / quality bar as the stable skills under
@@ -85,6 +89,48 @@ on a **best-effort basis**.
   databricks-iceberg --experimental`).
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
+
+## Commands and hooks (Claude Code)
+
+When installed as a Claude Code plugin, the `databricks` plugin adds slash
+commands and three hooks (prompt routing, session context, auth-failure hints)
+on top of the skills.
+(These are Claude-Code-specific and ship via the plugin marketplace; the CLI
+`databricks aitools install` path installs skills only today; see the note at
+the end.)
+
+**Slash commands**: friction-only entry points; everyday work stays with the
+auto-invoked skills.
+
+- `/databricks:setup [workspace-url]`: auth/onboarding. Install check, then an
+  OAuth / PAT / service-principal profile, then verify.
+- `/databricks:doctor [profile]`: read-only health check (CLI version, auth,
+  workspace reachability, compute, recent job failures).
+
+(Product workflows such as apps, jobs, pipelines, DABs, etc. are handled by the
+skills, not commands, so they aren't duplicated here.)
+
+**Hooks** (`hooks/`, all fail-open):
+
+- **Prompt router** (UserPromptSubmit): a fast keyword regex (sub-50ms, no LLM,
+  no network) over each prompt. When the prompt is Databricks-related, it injects
+  a note steering Claude to load `databricks-core` plus the matching product
+  skill before answering. The full note fires once per session; later Databricks
+  prompts get a one-line reminder. Unrelated prompts are untouched. No
+  permission gating, no cost warnings.
+- **Context primer** (SessionStart, skipped on resume): injects the routing
+  rule, CLI version, configured profile names and any
+  `[__settings__].default_profile` (read locally, no network call, no token
+  values), and env/in-platform auth state.
+- **Auth-failure hint** (PostToolUse on Bash): when a `databricks` command fails
+  with an auth-shaped error, adds one line suggesting `/databricks:doctor` or
+  `databricks auth login` before retrying. Never blocks or rewrites commands.
+
+> **Distribution parity (follow-up).** The plugin marketplace ships the whole
+> repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.
+> `databricks aitools install` currently packages only `skills/`, so CLI-install
+> users don't yet get commands/hooks. Closing that gap is tracked as CLI-side
+> work.
 
 ## Structure
 
@@ -149,7 +195,8 @@ Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.
 
 ## Integrity
 
-All future release tags will be GPG-signed and verifiable via `git tag -v <tag>`.
+Release tags are created by the [Release workflow](./.github/workflows/release.yml)
+and map 1:1 to a published version.
 
 ## Contributing
 

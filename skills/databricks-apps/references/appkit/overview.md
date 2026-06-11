@@ -77,7 +77,7 @@ my-app/
 |------|------|
 | Build UI | `client/src/App.tsx` |
 | Add SQL query | `config/queries/<NAME>.sql` |
-| Add API endpoint | `server/server.ts` (tRPC) |
+| Add API endpoint | `server/server.ts` (`onPluginsReady` + `server.extend`) |
 | Add shared helpers (optional) | create `shared/types.ts` or `client/src/lib/formatters.ts` |
 | Fix smoke test | `tests/smoke.spec.ts` |
 
@@ -125,15 +125,15 @@ Do not guess paths — run without args first, then pick from the index.
 | Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
 | Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
-| Add API mutation endpoints | [tRPC](trpc.md) — only if you need server-side logic |
-| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, tRPC patterns, schema init |
+| Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) — only if you need server-side logic |
+| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
 
 ## Critical Rules
 
-1. **SQL for data retrieval**: Use `config/queries/` + visualization components. Never tRPC for SELECT.
+1. **SQL for data retrieval**: Use `config/queries/` + visualization components. Never custom endpoints for warehouse SELECT.
 2. **Numeric types**: SQL numbers may return as strings. Always convert: `Number(row.amount)`
 3. **Type imports**: Use `import type { ... }` (verbatimModuleSyntax enabled).
 4. **Charts are ECharts**: No Recharts children — use props (`xKey`, `yKey`, `colors`). `xKey`/`yKey` auto-detect from schema if omitted.
@@ -145,5 +145,5 @@ Do not guess paths — run without args first, then pick from the index.
 - **Display data from SQL?**
   - Chart/Table → `BarChart`, `LineChart`, `DataTable` components
   - Custom layout (KPIs, cards) → `useAnalyticsQuery` hook
-- **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or tRPC for other APIs
-- **Modify data?** → tRPC mutations
+- **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or custom endpoint via `onPluginsReady`
+- **Modify data?** → Express routes in `onPluginsReady`
