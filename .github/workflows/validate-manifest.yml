@@ -11,6 +11,7 @@ on:
       - '.claude-plugin/**'
       - 'hooks/**'
       - 'commands/**'
+      - 'tests/**'
   push:
     branches:
       - main
@@ -32,7 +33,4 @@ jobs:
         run: python3 scripts/skills.py validate
 
       - name: Test plugin hooks
-        run: |
-          python3 hooks/databricks_router_test.py
-          python3 hooks/databricks_context_test.py
-          python3 hooks/databricks_auth_helper_test.py
+        run: python3 -m unittest discover -s tests -p '*_test.py' -v

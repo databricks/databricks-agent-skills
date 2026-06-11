@@ -61,7 +61,8 @@ The Claude Code plugin ships more than skills:
   skills, a SessionStart context primer (`databricks-context.py`), and a
   PostToolUse auth-failure hinter (`databricks-auth-helper.py`). All
   stdlib-only and fail-open. See [`hooks/README.md`](./hooks/README.md). Each
-  hook's behavior is pinned by its matching `hooks/*_test.py` file.
+  hook's behavior is pinned by its matching `tests/*_test.py` file; run the
+  suite with `python3 -m unittest discover -s tests -p '*_test.py'`.
   **`hooks/hooks.json` is auto-loaded by Claude Code, so do NOT add a `"hooks"`
   key to `.claude-plugin/plugin.json`, or the plugin fails to load with a
   "Duplicate hooks file" error.**

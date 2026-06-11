@@ -3,14 +3,15 @@
 
 The helper should fire only for `databricks` Bash commands whose output looks
 like an auth failure, and stay silent for everything else. Stdlib-only; run
-with: python3 hooks/databricks_auth_helper_test.py
+the suite with: python3 -m unittest discover -s tests -p "*_test.py"
 """
 import importlib.util
 import unittest
 from pathlib import Path
 
+_HOOKS_DIR = Path(__file__).resolve().parent.parent / "hooks"
 _spec = importlib.util.spec_from_file_location(
-    "databricks_auth_helper", Path(__file__).parent / "databricks-auth-helper.py"
+    "databricks_auth_helper", _HOOKS_DIR / "databricks-auth-helper.py"
 )
 helper = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(helper)

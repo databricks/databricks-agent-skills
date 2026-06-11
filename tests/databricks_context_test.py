@@ -2,7 +2,8 @@
 """Unit tests for the databricks-context SessionStart hook.
 
 Covers the pure pieces (config parsing, sanitization) and the build_context
-wiring around them. Stdlib-only; run with: python3 hooks/databricks_context_test.py
+wiring around them. Stdlib-only; run the suite with:
+python3 -m unittest discover -s tests -p "*_test.py"
 """
 import importlib.util
 import os
@@ -11,8 +12,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+_HOOKS_DIR = Path(__file__).resolve().parent.parent / "hooks"
 _spec = importlib.util.spec_from_file_location(
-    "databricks_context", Path(__file__).parent / "databricks-context.py"
+    "databricks_context", _HOOKS_DIR / "databricks-context.py"
 )
 ctx = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ctx)

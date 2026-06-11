@@ -137,23 +137,30 @@ def build_context():
 
 
 def main():
+    # One outer try so the fail-open guarantee covers the entire main block,
+    # including JSON serialization; the final print gets its own guard (a
+    # closed stdout must never break session startup either).
+    output = None
     try:
         try:
             json.load(sys.stdin)  # drain stdin; content unused
         except Exception:
             pass
         ctx = build_context()
-        if not ctx:
-            return
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "SessionStart",
-                "additionalContext": ctx,
-            }
-        }))
+        if ctx:
+            output = json.dumps({
+                "hookSpecificOutput": {
+                    "hookEventName": "SessionStart",
+                    "additionalContext": ctx,
+                }
+            })
     except Exception:
-        # Never break session startup because the hook errored.
-        return
+        output = None
+    try:
+        if output:
+            print(output)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

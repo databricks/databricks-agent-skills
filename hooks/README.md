@@ -7,6 +7,9 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+Each hook is pinned by a test file in `tests/` at the repo root; run the whole
+suite with `python3 -m unittest discover -s tests -p '*_test.py'`.
+
 ## `databricks-router.py`: prompt router (UserPromptSubmit)
 
 Runs a fast keyword regex (sub-50ms, no LLM, no network) over each user prompt.
@@ -26,20 +29,22 @@ are loaded." There is **no permission gating and no cost warning** here.
 Precision is tuned to avoid over-routing:
 
 - **STRONG** terms (`databricks`, `unity catalog`, `lakeflow`, `dbfs`,
-  `databricks.yml`, `delta live tables`, `genie`, ...) always route, even
-  alongside an alternative-platform mention, so "migrate from redshift to
-  databricks" routes.
-- **AMBIGUOUS** terms (`model serving`, `vector search`, `mlflow`, `pyspark`,
-  `medallion`, ...) route only when no **SUPPRESS** term is present.
-- **SUPPRESS** terms (alternative data platforms + plainly-local dev work like
-  `git commit`, `read the file`, `unit test`, `npm`) hold back an ambiguous match.
+  `databricks.yml`, `spark declarative pipelines`, `delta live tables` (the
+  legacy name still routes), ...) always route, even alongside an
+  alternative-platform mention, so "migrate from redshift to databricks" routes.
+- **AMBIGUOUS** terms (`declarative pipelines`, `model serving`, `vector
+  search`, `mlflow`, `pyspark`, `genie`, ...) route only when no **SUPPRESS**
+  term is present.
+- **SUPPRESS** terms (alternative data platforms, Jenkins, and plainly-local
+  dev work like `git commit`, `read the file`, `unit test`, `npm`) hold back an
+  ambiguous match.
 - **URLs**: code-hosting URLs are blanked before matching, so `databricks`
   appearing only as a GitHub/GitLab org or repo name
   (`github.com/databricks/...`) does not route. URLs whose hostname contains
   `databricks` (workspace and docs hosts) still do.
 
 Edit those three lists when the product surface changes. Behavior is pinned by
-`databricks_router_test.py` (`python3 hooks/databricks_router_test.py`).
+`tests/databricks_router_test.py`.
 
 ## `databricks-context.py`: context primer (SessionStart)
 
@@ -49,7 +54,7 @@ profile names plus any `[__settings__].default_profile` (parsed from
 `~/.databrickscfg` locally, **no network call**, token values never printed),
 and whether env/in-platform auth is set. If the CLI isn't installed it points
 at `/databricks:setup`.
-Covered by `databricks_context_test.py` (`python3 hooks/databricks_context_test.py`).
+Covered by `tests/databricks_context_test.py`.
 
 Its `hooks.json` entry uses `"matcher": "startup|clear|compact"`: the banner
 fires for new sessions, `/clear`, and after compaction, but **not on resume**,
@@ -66,7 +71,7 @@ ordinary output do not trigger it. Only commands that actually **invoke** the
 `databricks` executable count: `databricks` appearing as a repo path, URL, or
 argument (`gh pr view --repo databricks/cli`) does not, since such output can
 legitimately quote auth-failure phrases without any auth problem.
-Covered by `databricks_auth_helper_test.py` (`python3 hooks/databricks_auth_helper_test.py`).
+Covered by `tests/databricks_auth_helper_test.py`.
 
 ## Distribution note
 

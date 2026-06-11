@@ -66,8 +66,8 @@ there. Declaring the standard path double-loads it and fails the plugin with a
 
 `python3 scripts/skills.py validate` checks these (hooks.json is valid and
 references existing scripts, plugin.json does not double-declare hooks, every
-command has frontmatter). Run the hook tests under `hooks/*_test.py` after
-changing hook behavior.
+command has frontmatter). After changing hook behavior, run the hook test
+suite: `python3 -m unittest discover -s tests -p '*_test.py'`.
 These ship via the plugin marketplace
 (whole-repo source); `databricks aitools install` currently installs skills only.
 

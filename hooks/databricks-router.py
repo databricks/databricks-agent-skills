@@ -41,8 +41,8 @@ STRONG = [
     r"\bdatabricks\.yml\b",
     r"\basset\s+bundle\b",
     r"\bdabs\b",
-    r"\bdelta\s+live\s+tables?\b",
-    r"\bspark\s+declarative\s+pipelines?\b",
+    r"\b(?:lakeflow|spark)\s+declarative\s+pipelines?\b",
+    r"\bdelta\s+live\s+tables?\b",  # legacy name for Declarative Pipelines
     r"\bmosaic\s+ai\b",
     r"\bdelta\s+sharing\b",
     r"\bcloudfiles\b",
@@ -53,6 +53,7 @@ STRONG = [
 AMBIGUOUS = [
     r"\bgenie\b",
     r"\bdelta\s+(lake|tables?)\b",
+    r"\bdeclarative\s+pipelines?\b",  # bare form collides with Jenkins pipelines
     r"\bmodel\s+serving\b",
     r"\bvector\s+search\b",
     r"\bmlflow\b",
@@ -78,6 +79,7 @@ SUPPRESS = [
     r"\bpip\s+install\b",
     r"\bdocker\b",
     r"\bkubernetes\b",
+    r"\bjenkins(?:file)?\b",
 ]
 
 _STRONG = [re.compile(p, re.IGNORECASE) for p in STRONG]
@@ -108,7 +110,8 @@ ROUTING_INSTRUCTION = (
     "`databricks-core` first (the parent skill: CLI, auth, profile selection, "
     "data exploration), then load the product skill that matches the request:\n"
     "- Jobs / Lakeflow / workflows -> databricks-jobs\n"
-    "- Pipelines / DLT / Spark Declarative Pipelines -> databricks-pipelines\n"
+    "- Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> "
+    "databricks-pipelines\n"
     "- Apps / AppKit -> databricks-apps\n"
     "- Asset Bundles / DABs / databricks.yml -> databricks-dabs\n"
     "- Model Serving / endpoints -> databricks-model-serving\n"
@@ -186,27 +189,27 @@ def extract_prompt(data):
 
 
 def main():
+    # One outer try so the fail-open guarantee covers the entire main block,
+    # including JSON serialization; the final print gets its own guard (a
+    # closed stdout must not surface as a hook failure either).
+    output = "{}"
     try:
         data = json.load(sys.stdin)
-    except Exception:
-        print("{}")
-        sys.exit(0)
-
-    try:
         session_id = data.get("session_id", "") if isinstance(data, dict) else ""
         result = routing_context(extract_prompt(data), session_id)
+        if result:
+            output = json.dumps({
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": result,
+                }
+            })
     except Exception:
-        result = None
-
-    if result:
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "UserPromptSubmit",
-                "additionalContext": result,
-            }
-        }))
-    else:
-        print("{}")
+        output = "{}"
+    try:
+        print(output)
+    except Exception:
+        pass
     sys.exit(0)
 
 

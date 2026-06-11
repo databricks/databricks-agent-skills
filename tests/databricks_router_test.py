@@ -3,7 +3,7 @@
 
 The router decides which prompts get steered into the Databricks skills, so its
 precision is pinned here (over-routing is annoying; under-routing misses work).
-Stdlib-only; run with: python3 hooks/databricks_router_test.py
+Stdlib-only; run the suite with: python3 -m unittest discover -s tests -p "*_test.py"
 """
 import importlib.util
 import tempfile
@@ -11,8 +11,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+_HOOKS_DIR = Path(__file__).resolve().parent.parent / "hooks"
 _spec = importlib.util.spec_from_file_location(
-    "databricks_router", Path(__file__).parent / "databricks-router.py"
+    "databricks_router", _HOOKS_DIR / "databricks-router.py"
 )
 router = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(router)
@@ -45,6 +46,14 @@ class CheckPromptTest(unittest.TestCase):
     def test_new_strong_terms_route(self):
         self.assertRoutes("share this table via delta sharing")
         self.assertRoutes("ingest with the cloudFiles format")
+
+    def test_declarative_pipelines_routes(self):
+        # Current branding for DLT. The bare phrase is AMBIGUOUS (Jenkins also
+        # has "declarative pipelines"), so Jenkins-flavored prompts stay out.
+        self.assertRoutes("rewrite this notebook as a spark declarative pipeline")
+        self.assertRoutes("create a declarative pipeline for the bronze layer")
+        self.assertSkips("convert this Jenkinsfile to a declarative pipeline")
+        self.assertSkips("write a jenkins declarative pipeline for the CI build")
 
     def test_new_ambiguous_terms(self):
         self.assertRoutes("create a serverless sql warehouse")

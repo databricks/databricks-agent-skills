@@ -93,13 +93,12 @@ def check(tool_name, command, response_text):
 
 
 def main():
+    # One outer try so the fail-open guarantee covers the entire main block,
+    # including JSON serialization; the final print gets its own guard (a
+    # closed stdout must not surface as a hook failure either).
+    output = "{}"
     try:
         data = json.load(sys.stdin)
-    except Exception:
-        print("{}")
-        sys.exit(0)
-
-    try:
         if not isinstance(data, dict):
             raise TypeError("payload is not an object")
         tool_input = data.get("tool_input")
@@ -108,18 +107,19 @@ def main():
         # errors can land in stdout, stderr, or a combined error field.
         response_text = json.dumps(data.get("tool_response", ""), default=str)
         result = check(data.get("tool_name", ""), command, response_text)
+        if result:
+            output = json.dumps({
+                "hookSpecificOutput": {
+                    "hookEventName": "PostToolUse",
+                    "additionalContext": result,
+                }
+            })
     except Exception:
-        result = None
-
-    if result:
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "PostToolUse",
-                "additionalContext": result,
-            }
-        }))
-    else:
-        print("{}")
+        output = "{}"
+    try:
+        print(output)
+    except Exception:
+        pass
     sys.exit(0)
 
 

@@ -1,6 +1,6 @@
 ---
-description: "Read-only Databricks health check: CLI version, auth, workspace reachability, running compute, recent job failures."
-argument-hint: "[profile]"
+description: "Read-only Databricks health check: CLI, profiles, auth validity via one API call. Pass `full` to also check compute and recent job failures."
+argument-hint: "[profile] [full]"
 allowed-tools: Bash(databricks:*), Read
 ---
 
@@ -18,12 +18,17 @@ report the rest as unknown.
 2. **Profiles**: `databricks auth profiles`. List configured profiles and
    validity. If `$1` is given, use that profile for the rest. Otherwise, if more
    than one profile exists, ask the user which to use (**never auto-select**).
-3. **Identity & auth method**: `databricks auth describe --profile <profile>`
-   shows the effective host, user, and credential source (never pass
-   `--sensitive`). Fall back to `databricks current-user me --profile <profile>`
-   if it's unavailable.
-4. **Workspace reach**: `databricks catalogs list --profile <profile>`.
-   Confirms API reachability and Unity Catalog access.
+3. **Auth method**: `databricks auth describe --profile <profile>` shows the
+   effective host, user, and credential source (never pass `--sensitive`).
+4. **Auth validity**: `databricks current-user me --profile <profile>`. This
+   single API call proves the credentials work end to end (token valid,
+   workspace reachable, expected identity); don't probe other APIs for it.
+   For account-level profiles (an `accounts.*` host), `current-user me` does
+   not exist; report what `auth describe` resolved instead.
+
+Stop here by default. Run the extended checks below only when the user passed
+`full` or asked about compute or jobs:
+
 5. **Compute**: `databricks warehouses list` and `databricks clusters list` for
    the profile. Note what's running.
 6. **Recent job failures**: list recent job runs (e.g.
