@@ -420,8 +420,14 @@ def validate_plugin_manifests(repo_root: Path) -> list[str]:
     if errors:
         return errors
 
-    plugin = json.loads(plugin_path.read_text())
-    marketplace = json.loads(marketplace_path.read_text())
+    try:
+        plugin = json.loads(plugin_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f"{plugin_path.relative_to(repo_root)} is not valid JSON: {exc}"]
+    try:
+        marketplace = json.loads(marketplace_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f"{marketplace_path.relative_to(repo_root)} is not valid JSON: {exc}"]
 
     keywords = {k.lower() for k in plugin.get("keywords", [])}
 
@@ -456,6 +462,125 @@ def validate_plugin_manifests(repo_root: Path) -> list[str]:
                 ".claude-plugin/marketplace.json plugin description must match "
                 ".claude-plugin/plugin.json description (they drift independently otherwise)."
             )
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# Plugin components (hooks + commands)
+# ---------------------------------------------------------------------------
+#
+# hooks/ and commands/ ship with the Claude Code plugin (the whole repo is the
+# plugin via .claude-plugin/marketplace.json `source: "./"`), but they are NOT
+# skills, so they live outside the manifest's skills map. These checks keep them
+# honest without pulling them into the skill model. Stdlib-only, like the rest
+# of this file, so the protected CI runner (no pypi) can run them.
+
+_HOOK_SCRIPT_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/(\S+?\.py)")
+
+
+def _norm_rel_path(path: str) -> str:
+    """Normalize a manifest-declared path for comparison ('./x' -> 'x')."""
+    path = path.strip()
+    while path.startswith("./"):
+        path = path[2:]
+    return path
+
+
+def _read_frontmatter(md_path: Path) -> str | None:
+    """Return the YAML frontmatter block of a markdown file, or None if absent."""
+    text = md_path.read_text()
+    if not text.startswith("---"):
+        return None
+    end = text.find("\n---", 3)
+    if end == -1:
+        return None
+    return text[3:end]
+
+
+def check_plugin_components(repo_root: Path) -> list[str]:
+    """Validate the non-skill plugin components: hooks/ and commands/.
+
+    - plugin.json must NOT declare "hooks": the standard hooks/hooks.json is
+      auto-loaded by Claude Code, so declaring it double-loads (a load error)
+    - plugin.json MUST declare "commands" when commands/ exists (this repo ships
+      commands via that manifest declaration)
+    - hooks/hooks.json must be valid JSON, and every ${CLAUDE_PLUGIN_ROOT}/*.py
+      script it references must exist
+    - every commands/*.md must have frontmatter carrying a `description`, and
+      the description must not contain an unquoted ':' (strict YAML parsers
+      reject it even though some frontmatter readers tolerate it)
+
+    Returns a list of error strings (empty means all good).
+    """
+    errors: list[str] = []
+
+    plugin_path = repo_root / ".claude-plugin" / "plugin.json"
+    try:
+        plugin = json.loads(plugin_path.read_text()) if plugin_path.exists() else {}
+    except json.JSONDecodeError as exc:
+        # validate_plugin_manifests reports the broken manifest itself; never
+        # crash here, just skip the manifest-dependent checks.
+        return [f".claude-plugin/plugin.json is not valid JSON: {exc}"]
+
+    commands_dir = repo_root / "commands"
+    if commands_dir.is_dir():
+        if "commands" not in plugin:
+            errors.append(
+                'commands/ exists but .claude-plugin/plugin.json does not declare '
+                '"commands": "./commands/". Add it, or the commands silently stop '
+                "shipping."
+            )
+        md_files = sorted(commands_dir.glob("*.md"))
+        if not md_files:
+            errors.append("commands/ exists but contains no *.md command files.")
+        for md in md_files:
+            frontmatter = _read_frontmatter(md)
+            if frontmatter is None:
+                errors.append(
+                    f"Command 'commands/{md.name}' is missing YAML frontmatter."
+                )
+            elif not re.search(r"^description:\s*\S", frontmatter, re.MULTILINE):
+                errors.append(
+                    f"Command 'commands/{md.name}' frontmatter is missing a 'description'."
+                )
+            elif re.search(r"^description:[ \t]*[^\s\"'>|].*:(?:\s|$)", frontmatter, re.MULTILINE):
+                errors.append(
+                    f"Command 'commands/{md.name}' has an unquoted ':' in its "
+                    "description, which strict YAML parsers reject. Quote the "
+                    "whole description string."
+                )
+
+    hooks_json = repo_root / "hooks" / "hooks.json"
+    if hooks_json.exists():
+        # Claude Code auto-loads the standard hooks/hooks.json. Declaring that
+        # same path in plugin.json double-loads it and fails the plugin with a
+        # "Duplicate hooks file" error, so the manifest must NOT reference it.
+        declared = plugin.get("hooks", [])
+        declared = [declared] if isinstance(declared, str) else declared
+        if isinstance(declared, list) and any(
+            _norm_rel_path(d) == "hooks/hooks.json"
+            for d in declared
+            if isinstance(d, str)
+        ):
+            errors.append(
+                'plugin.json must not declare "hooks": "./hooks/hooks.json". The '
+                "standard hooks/hooks.json is auto-loaded, so declaring it again "
+                'double-loads it. Remove the "hooks" key (reserve manifest.hooks '
+                "for additional, non-standard hook files)."
+            )
+        try:
+            hooks_cfg = json.loads(hooks_json.read_text())
+        except json.JSONDecodeError as exc:
+            errors.append(f"hooks/hooks.json is not valid JSON: {exc}")
+            hooks_cfg = None
+        if hooks_cfg is not None:
+            blob = json.dumps(hooks_cfg)
+            for rel in sorted(set(_HOOK_SCRIPT_RE.findall(blob))):
+                if not (repo_root / rel).exists():
+                    errors.append(
+                        f"hooks/hooks.json references '{rel}' which does not exist."
+                    )
 
     return errors
 
@@ -524,6 +649,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in plugin_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            component_errors = check_plugin_components(repo_root)
+            if component_errors:
+                print(
+                    "ERROR: plugin components (hooks/ + commands/) are misconfigured:",
+                    file=sys.stderr,
+                )
+                for err in component_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

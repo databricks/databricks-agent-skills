@@ -9,6 +9,9 @@ on:
       - 'scripts/skills.py'
       - 'manifest.json'
       - '.claude-plugin/**'
+      - 'hooks/**'
+      - 'commands/**'
+      - 'tests/**'
   push:
     branches:
       - main
@@ -28,3 +31,6 @@ jobs:
 
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
+
+      - name: Test plugin hooks
+        run: python3 -m unittest discover -s tests -p '*_test.py' -v

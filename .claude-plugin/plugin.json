@@ -22,5 +22,6 @@
     "vector-search",
     "data-engineering"
   ],
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "commands": "./commands/"
 }
