@@ -27,6 +27,7 @@ EXPERIMENTAL_REPO_DIR = "experimental"
 SKILL_METADATA = {
     "databricks-core": {"plugin_keyword": "cli"},
     "databricks-apps": {"plugin_keyword": "apps"},
+    "databricks-app-design": {"plugin_keyword": "app-design"},
     "databricks-jobs": {"plugin_keyword": "jobs"},
     "databricks-lakebase": {"plugin_keyword": "lakebase"},
     "databricks-dabs": {"plugin_keyword": "dabs"},
@@ -434,7 +435,12 @@ def validate_plugin_manifests(repo_root: Path) -> list[str]:
     for skill_dir in iter_skill_dirs(repo_root):
         meta = SKILL_METADATA.get(skill_dir.name)
         if meta is None:
-            continue  # generate_manifest will flag the missing metadata
+            errors.append(
+                f"Stable skill '{skill_dir.name}' has no SKILL_METADATA entry in "
+                "scripts/skills.py. Add one with a 'plugin_keyword' so its Claude "
+                "marketplace keyword in .claude-plugin/plugin.json stays in sync."
+            )
+            continue
         expected_keyword = meta.get("plugin_keyword")
         if not expected_keyword:
             errors.append(
