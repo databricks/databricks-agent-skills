@@ -46,7 +46,7 @@
       "version": "0.2.0"
     },
     "databricks-app-design": {
-      "description": "Design the UX of Databricks data apps \u2014 dashboards, KPI pages, reports, charts, tables, and Genie/chat data assistants \u2014 mapped to concrete AppKit components.",
+      "description": "Design the UX of custom-code Databricks Apps (AppKit/React) data screens \u2014 KPI/overview pages, reports, charts, tables, and Genie/chat data assistants \u2014 mapped to concrete AppKit components.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
