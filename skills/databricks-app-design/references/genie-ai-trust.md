@@ -7,26 +7,34 @@ An AI/Genie answer is only trustworthy if the user can **see how it was produced
 For ANY Genie / chat / natural-language data surface, ship ALL FIVE below — "use `GenieChat` and show
 a spinner" is not enough. Snippets use the real `@databricks/appkit` + `@databricks/appkit-ui` APIs.
 
-## 1. Authenticated identity (who is asking — on-behalf-of)
-Databricks injects identity headers; expose them and show the caller. Queries run as that user (OBO).
+## 1. Authenticated identity (who is asking)
+Databricks injects identity headers; expose them and show the signed-in caller. Use the real
+platform headers — `x-forwarded-email` (email) and `x-forwarded-user` (user identifier):
 ```ts
 // server/server.ts
 app.get("/api/whoami", (req, res) => {
   res.json({
-    email: req.header("x-forwarded-email") ?? req.header("x-forwarded-user") ?? null,
-    userId: req.header("x-databricks-user-id") ?? null,
+    email: req.header("x-forwarded-email") ?? null,
+    user: req.header("x-forwarded-user") ?? null,
   });
 });
 ```
 ```tsx
 const [me, setMe] = useState<{ email?: string } | null>(null);
-useEffect(() => { fetch("/api/whoami").then(r => r.json()).then(setMe).catch(() => {}); }, []);
+useEffect(() => { fetch("/api/whoami").then(r => (r.ok ? r.json() : null)).then(setMe).catch(() => {}); }, []);
 <Badge variant="secondary">{me?.email ?? "Signed in"}</Badge>
 ```
-Configure the space explicitly server-side: `genie({ spaces: { default: process.env.DATABRICKS_GENIE_SPACE_ID } })`.
+**Whether queries actually run as that user (OBO) depends on config:** a default `genie()` runs as the
+app's *service principal*. To run on-behalf-of the user, declare `user_api_scopes: [dashboards.genie]`
+in `databricks.yml` (see the parent `databricks-apps` `genie.md`). Only claim OBO in the UI when that's
+wired — otherwise disclose service-principal execution (see #5).
+
+Register the plugin with `genie()` (no args); it reads `DATABRICKS_GENIE_SPACE_ID` from the env, per the
+parent `genie.md`. (Multi-space config: `npx @databricks/appkit docs ./docs/plugins/genie.md`.)
 
 ## 2. Show the generated SQL (never hide how the answer was produced)
-`useGenieChat` messages carry `attachments[].query` / `queryResults`. Render the SQL inspectably:
+`useGenieChat` messages carry attachments with the generated query (exact shape is versioned — see
+`npx @databricks/appkit docs ./docs/plugins/genie.md`, the "useGenieChat hook" section). Render the SQL inspectably:
 ```tsx
 const lastSql = useMemo(() => {
   for (const m of [...messages].reverse())
@@ -44,7 +52,8 @@ const lastSql = useMemo(() => {
 ```
 
 ## 3. Streaming / status — not a frozen spinner
-`useGenieChat().status ∈ "idle" | "loading-history" | "streaming" | "error"`. Reflect it:
+Reflect `useGenieChat().status` — its exact union is versioned, so don't hard-code the values
+(`npx @databricks/appkit docs ./docs/plugins/genie.md`). Surface progress + errors, never a frozen spinner:
 ```tsx
 const { messages, status, sendMessage, error } = useGenieChat({ alias: "default" });
 {status === "streaming" && <p className="text-muted-foreground">Analyzing your data…</p>}
@@ -60,8 +69,8 @@ Persistent, low-key, near the chat — AI-generated, may be wrong, verify agains
 ```
 
 ## 5. Governance + empty/ambiguous states
-- State that access is governed by the user's own permissions (OBO), per #1.
+- **Match the disclosure to the real execution identity (per #1):** if `user_api_scopes: [dashboards.genie]` is wired, state that access is governed by the user's own permissions (OBO); if not, disclose that queries run as the app's service principal. Never render an OBO claim the config doesn't back.
 - If results are empty/ambiguous, say so with `Empty` — never render a blank table or imply a wrong answer.
 
 **Required checklist (all five):** identity shown · generated SQL inspectable · streaming/status surfaced ·
-per-answer disclaimer · governed/OBO + empty/error states. A Genie page missing any of these is incomplete.
+per-answer disclaimer · execution identity disclosed truthfully (OBO only when `user_api_scopes` is wired, else service principal) + empty/error states. A Genie page missing any of these is incomplete.

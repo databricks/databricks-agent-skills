@@ -13,6 +13,7 @@
     "databricks",
     "cli",
     "apps",
+    "app-design",
     "lakebase",
     "model-serving",
     "jobs",

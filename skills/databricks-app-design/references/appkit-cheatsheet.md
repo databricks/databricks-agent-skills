@@ -1,18 +1,23 @@
 # AppKit binding — design → primitive map
 
 This skill decides **what** to build; AppKit owns the **exact** API. For component names, props,
-hook signatures, plugin config, and the live design-token set, read the AppKit docs shipped inside
-the app — do **not** rely on a pinned list here, it drifts with the package version:
+hook signatures, plugin config, and the live design-token set, query AppKit's own docs — the same
+source of truth the parent `databricks-apps` skill mandates ("ALWAYS start here", "DO NOT guess doc
+paths"). Do **not** rely on a pinned list here; it drifts with the package version:
 
-- `./node_modules/@databricks/appkit-ui/CLAUDE.md` — UI: charts, tables, Genie, shadcn primitives, hooks
-- `./node_modules/@databricks/appkit/CLAUDE.md` — backend SDK: analytics, `sql` helpers, plugins
+```bash
+npx @databricks/appkit docs                              # ALWAYS start here — lists every section + doc path
+npx @databricks/appkit docs "appkit-ui API reference"    # UI: charts, tables, Genie, shadcn primitives, hooks
+npx @databricks/appkit docs ./docs/plugins/analytics.md  # backend: analytics plugin, sql helpers, queryKey
+```
 
 Use this file for the design→primitive mapping; confirm the exact signatures against those docs.
 
 ## Charts
-Bind charts to data; never hand-roll SVG/`<canvas>`. AppKit-ui ships chart components (area / bar /
-line / pie / donut / radar / scatter / heatmap) that take either a `queryKey` (query-driven) or
-`data` rows, plus a `colorPalette` prop. Map design intent → palette:
+Bind charts to data; never hand-roll SVG/`<canvas>`. AppKit-ui ships ECharts-based chart components
+(`BarChart`/`LineChart`/`AreaChart`, plus others — confirm the exact set in the docs). Each takes
+either `queryKey` + `parameters` (query-driven; `parameters` is required, even `{}`) or static `data`,
+plus a `colorPalette` prop. Map design intent → palette:
 - categories that are merely *different* → categorical palette
 - ordered magnitude (low→high) → sequential palette
 - signed / good-bad variance around a midpoint → diverging palette

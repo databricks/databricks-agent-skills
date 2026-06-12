@@ -64,6 +64,7 @@ Stable skills shipped from [`skills/`](./skills/):
 
 - **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
 - **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
+- **databricks-app-design** — Design the UX of data apps: dashboards, KPI pages, reports, charts, and Genie/chat surfaces, mapped to AppKit components.
 - **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
 - **databricks-jobs** — Lakeflow Jobs orchestration: task types, triggers, schedules, notifications.
 - **databricks-lakebase** — Lakebase Postgres: projects, branching, autoscaling, synced tables, Data API.
