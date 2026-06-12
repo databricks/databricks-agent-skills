@@ -1,17 +1,12 @@
 # Files: Unity Catalog Volume Operations
 
-**For full Files plugin API (routes, types, config options)**: run `npx @databricks/appkit docs ./docs/plugins/files.md`.
+**Pattern selection:** [Data Patterns](data-patterns.md). This guide covers **`files()` plugin setup only.**
 
-Use the `files()` plugin when your app needs to **browse, upload, download, or manage files** in Databricks Unity Catalog Volumes. For analytics dashboards reading from a SQL warehouse, use `config/queries/` instead. For persistent CRUD storage, use Lakebase.
+**For full Files plugin API**: run `npx @databricks/appkit docs ./docs/plugins/files.md`.
 
-## When to Use Files vs Other Patterns
+Use the `files()` plugin to **browse, upload, download, or manage files** in Unity Catalog Volumes.
 
-| Pattern           | Use Case                                    | Data Source              |
-| ----------------- | ------------------------------------------- | ------------------------ |
-| Analytics         | Read-only dashboards, charts, KPIs          | Databricks SQL Warehouse |
-| Lakebase          | CRUD operations, persistent state, forms    | PostgreSQL (Lakebase)    |
-| Files             | File uploads, downloads, browsing, previews | Unity Catalog Volumes    |
-| Files + Analytics | Upload CSVs then query warehouse tables     | Volumes + SQL Warehouse  |
+> **Agentic mode:** the volumes already exist and the `DATABRICKS_VOLUME_*` env vars are injected. **Skip** *Scaffolding*; do not create volumes or set `--set` flags. Just call `files()` (it discovers the volumes from the env vars). See [Environments](environments.md).
 
 ## Scaffolding
 

@@ -46,7 +46,7 @@
       "version": "0.1.0"
     },
     "databricks-apps": {
-      "description": "Build apps on Databricks Apps platform.",
+      "description": "Build AppKit apps on Databricks: compose analytics, Lakebase OLTP/synced reads, Genie, serving, files, jobs, and custom endpoints. Capability-based scaffolding \u2014 invoke BEFORE implementation.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -54,16 +54,22 @@
         "assets/databricks.svg",
         "references/appkit/appkit-sdk.md",
         "references/appkit/custom-endpoints.md",
+        "references/appkit/data-patterns.md",
+        "references/appkit/environments.md",
         "references/appkit/files.md",
         "references/appkit/frontend.md",
         "references/appkit/genie.md",
         "references/appkit/jobs.md",
+        "references/appkit/lakebase-oltp.md",
+        "references/appkit/lakebase-synced-reads.md",
         "references/appkit/lakebase.md",
+        "references/appkit/lifecycle.md",
         "references/appkit/model-serving.md",
         "references/appkit/overview.md",
         "references/appkit/proto-contracts.md",
         "references/appkit/proto-first.md",
         "references/appkit/sql-queries.md",
+        "references/appkit/warehouse-mutations.md",
         "references/other-frameworks.md",
         "references/platform-guide.md",
         "references/testing.md"

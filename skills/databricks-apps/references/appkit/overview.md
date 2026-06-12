@@ -1,149 +1,120 @@
 # AppKit Overview
 
-AppKit is the recommended way to build Databricks Apps - provides type-safe SQL queries, React components, and seamless deployment.
+AppKit is the recommended way to build Databricks Apps — type-safe SQL queries, React components, and seamless deployment.
 
-## Choose Your Data Pattern FIRST
+**Local vs agentic mode:** [Environments](environments.md) — detect with `DATABRICKS_APPS_AGENTIC_MODE` first; in agentic mode, scaffold/deploy/smoke-tests are skipped.
 
-Before scaffolding, decide which data pattern the app needs:
+**Pattern selection, gates, and capability composition:** [Data Patterns](data-patterns.md) (canonical).
 
-| Pattern | When to use | Init command |
-|---------|-------------|-------------|
-| **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
-| **Lakebase synced tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` (no `--set` flags needed) + sync Delta table via `databricks-lakebase` skill |
-| **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
-| **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
-| **Model Serving** (ML inference) | Chat, AI features, model predictions | `--features serving --set serving.serving-endpoint.name=<NAME>` (check manifest) |
-| **Jobs** (trigger Lakeflow Jobs) | Kick off and monitor pre-existing notebooks / Python / SQL / dbt jobs | `--features jobs --set jobs.<resourceKey>.<field>=<JOB_ID>` (check manifest) |
-| **Multiple** | Combine plugins as needed (e.g. dashboard + CRUD, analytics + Genie) | `--features analytics,lakebase,genie,...` with all required `--set` flags per plugin |
+**Scaffold → dev → validate → deploy order:** [Lifecycle](lifecycle.md).
 
-See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code patterns.
-See [Genie Guide](genie.md) for space creation, plugin setup, and frontend components.
+## Workflow (summary)
 
-## Workflow
+1. **Classify capabilities** → [Data Patterns](data-patterns.md)
+2. **Scaffold**: `databricks apps manifest` → `databricks apps init --run none`
+3. **Develop**: follow checklist slices + [Lifecycle](lifecycle.md)
+4. **Validate**: `databricks apps validate` (after updating smoke tests)
+5. **Deploy**: [Lifecycle: First deploy](lifecycle.md#first-deploy) (⚠️ user consent)
 
-1. **Scaffold**: Run `databricks apps manifest`, then `databricks apps init` with `--features` and `--set` as in parent SKILL.md (App Manifest and Scaffolding)
-2. **Develop**: `cd <NAME> && npm install && npm run dev`
-3. **Validate**: `databricks apps validate`
-4. **Deploy**: `databricks apps deploy --profile <PROFILE>` (⚠️ USER CONSENT REQUIRED)
+## Data discovery
 
-## Data Discovery (Before Writing SQL)
+When `reads_warehouse` or `writes_delta` is in the capability set, use the parent **`databricks-core`** skill before writing SQL.
 
-**Use the parent `databricks-core` skill for data discovery** (table search, schema exploration, query execution).
+## Pre-implementation checklists
 
-## Pre-Implementation Checklist
+Use the checklist slices for your capability set — [Data Patterns: Checklist slices](data-patterns.md#checklist-slices).
 
-Before writing App.tsx, complete these steps:
+Quick reference:
 
-1. ✅ Create SQL files in `config/queries/`
-2. ✅ Run `npm run typegen` to generate query types
-3. ✅ Read `client/src/appKitTypes.d.ts` to see available query result types
-4. ✅ Verify component props via `npx @databricks/appkit docs` (check the relevant component page)
-5. ✅ Plan smoke test updates (default expects "Minimal Databricks App")
+| Capabilities | Before `App.tsx` |
+|--------------|------------------|
+| `reads_warehouse` | SQL files + typegen |
+| `writes_oltp` | Replace scaffold; plan `onPluginsReady` routes; deploy before dev |
+| Hybrid | Union both; warehouse reads ≠ Lakebase writes |
 
-**DO NOT** write UI code until types are generated and verified.
+## Post-implementation
 
-## Post-Implementation Checklist
+Before `databricks apps validate`:
 
-Before running `databricks apps validate`:
+1. Update `tests/smoke.spec.ts` selectors — **local only; agentic mode has no smoke tests**
+2. Remove default "hello world" assertions — **local only**
+3. Run typegen if analytics reads changed
+4. Convert numeric SQL display with `Number()`
 
-1. ✅ Update `tests/smoke.spec.ts` heading selector to match your app title
-2. ✅ Update or remove the 'hello world' text assertion
-3. ✅ Verify `npm run typegen` has been run after all SQL files are finalized
-4. ✅ Ensure all numeric SQL values use `Number()` conversion in display code
+## Project structure
 
-## Project Structure
+**Analytics reads** (`reads_warehouse`):
 
 ```
 my-app/
-├── server/
-│   ├── server.ts             # Backend entry point (AppKit)
-│   └── .env                  # Optional local dev env vars (do not commit)
-├── client/
-│   ├── index.html
-│   ├── vite.config.ts
-│   └── src/
-│       ├── main.tsx
-│       └── App.tsx           # <- Main app component (start here)
-├── config/
-│   └── queries/
-│       └── my_query.sql      # -> queryKey: "my_query"
-├── app.yaml                  # Deployment config
-├── package.json
-└── tsconfig.json
+├── config/queries/*.sql     # SELECT only → queryKey
+├── client/src/App.tsx
+├── server/server.ts         # onPluginsReady + routes (if mutations/APIs)
+└── tests/smoke.spec.ts
 ```
 
-**Key files to modify:**
+**Lakebase OLTP** (`writes_oltp`) — no `config/queries/`; CRUD via Express routes. See [Lakebase OLTP](lakebase-oltp.md).
+
+**Key files:**
+
 | Task | File |
 |------|------|
 | Build UI | `client/src/App.tsx` |
-| Add SQL query | `config/queries/<NAME>.sql` |
-| Add API endpoint | `server/server.ts` (`onPluginsReady` + `server.extend`) |
-| Add shared helpers (optional) | create `shared/types.ts` or `client/src/lib/formatters.ts` |
+| Add warehouse read query | `config/queries/<NAME>.sql` |
+| Add API / mutation route | `server/server.ts` (`onPluginsReady` + `server.extend`) |
 | Fix smoke test | `tests/smoke.spec.ts` |
 
-## Type Safety
+## Type safety (analytics reads)
 
-For type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`
-
-**Quick workflow:**
 1. Add/modify SQL in `config/queries/`
-2. Types auto-generate during dev via the Vite plugin (or run `npm run typegen` manually)
-3. Types appear in `client/src/appKitTypes.d.ts`
+2. Run `npm run typegen` (or auto during dev)
+3. Types in `client/src/appKitTypes.d.ts`
 
-## Adding Visualizations
+Details: `npx @databricks/appkit docs ./docs/development/type-generation.md`
 
-**Step 1**: Create SQL file `config/queries/my_data.sql`
+## Adding visualizations
+
 ```sql
+-- config/queries/my_data.sql
 SELECT category, COUNT(*) as count FROM my_table GROUP BY category
 ```
 
-**Step 2**: Use component (types auto-generated!)
 ```typescript
 import { BarChart } from '@databricks/appkit-ui/react';
-// Query mode: fetches data automatically
 <BarChart queryKey="my_data" parameters={{}} />
-
-// Data mode: pass static data directly (no queryKey/parameters needed)
-<BarChart data={myData} xKey="category" yKey="count" />
 ```
 
-## AppKit Official Documentation
-
-**Always use AppKit docs as the source of truth for API details.**
+## AppKit official documentation
 
 ```bash
-npx @databricks/appkit docs                              # show the docs index (start here)
-npx @databricks/appkit docs <query>                      # look up a section by name or doc path
+npx @databricks/appkit docs
+npx @databricks/appkit docs <query>
 ```
 
-Do not guess paths — run without args first, then pick from the index.
+## Plugin setup guides
 
-## References
+Pattern selection → [Data Patterns](data-patterns.md). These docs are **setup only**:
 
-| When you're about to... | Read |
-|-------------------------|------|
-| Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
-| Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
-| Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
-| Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) — only if you need server-side logic |
-| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
-| Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
-| Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
-| Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
+| Plugin | Guide |
+|--------|-------|
+| SQL reads | [SQL Queries](sql-queries.md) |
+| Custom routes | [Custom Endpoints](custom-endpoints.md) |
+| Delta DML | [Warehouse Mutations](warehouse-mutations.md) |
+| Lakebase | [Lakebase](lakebase.md) → [OLTP](lakebase-oltp.md) / [Synced Reads](lakebase-synced-reads.md) |
+| Genie | [Genie](genie.md) |
+| Serving | [Model Serving](model-serving.md) |
+| Files | [Files](files.md) |
+| Jobs | [Jobs](jobs.md) |
+| UI | [Frontend](frontend.md), [AppKit SDK](appkit-sdk.md) |
 
-## Critical Rules
+## Critical rules
 
-1. **SQL for data retrieval**: Use `config/queries/` + visualization components. Never custom endpoints for warehouse SELECT.
-2. **Numeric types**: SQL numbers may return as strings. Always convert: `Number(row.amount)`
-3. **Type imports**: Use `import type { ... }` (verbatimModuleSyntax enabled).
-4. **Charts are ECharts**: No Recharts children — use props (`xKey`, `yKey`, `colors`). `xKey`/`yKey` auto-detect from schema if omitted.
-5. **Two data modes**: Charts/tables support query mode (`queryKey` + `parameters`) and data mode (static `data` prop).
-6. **Conditional queries**: Use `autoStart: false` option or conditional rendering to control query execution.
+1. Warehouse **reads** → `config/queries/` — never custom endpoints for SELECT.
+2. **Writes** → pick path in [Data Patterns: Write path](data-patterns.md#write-path).
+3. SQL numbers may be strings — use `Number(row.amount)`.
+4. Charts are ECharts — use `xKey`/`yKey` props, not Recharts children.
+5. Never `useAnalyticsQuery` for Lakebase data.
 
-## Decision Tree
+## Decision tree
 
-- **Display data from SQL?**
-  - Chart/Table → `BarChart`, `LineChart`, `DataTable` components
-  - Custom layout (KPIs, cards) → `useAnalyticsQuery` hook
-- **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or custom endpoint via `onPluginsReady`
-- **Modify data?** → Express routes in `onPluginsReady`
+→ [Data Patterns](data-patterns.md) — capability catalog, gates, write/read paths, recipes.

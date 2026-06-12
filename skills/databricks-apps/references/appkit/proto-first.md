@@ -1,6 +1,8 @@
 # Proto-First App Design
 
-Schema-first approach for AppKit apps using protobuf data contracts. Define contracts BEFORE implementation — derive TypeScript types, Lakebase DDL, and Volume paths from `.proto` files.
+**Advanced / optional** — use only for multi-plugin apps with strict typed boundaries. For most apps, skip this and use [Data Patterns](data-patterns.md) instead.
+
+Schema-first approach for AppKit apps using protobuf data contracts.
 
 **When to use:** New apps with multiple plugins (files + lakebase + jobs), or adding typed boundaries to existing apps. Skip for quick prototypes.
 
@@ -14,7 +16,8 @@ Define protobuf data contracts FIRST, then derive everything else (TypeScript ty
 
 | Scenario | Use this skill |
 |----------|---------------|
-| Creating a new Databricks app | YES — define contracts before `databricks apps init` |
+| Creating a new **multi-plugin** app (e.g. files + lakebase + jobs) | YES — define contracts before `databricks apps init` |
+| Single-plugin app (dashboard, simple CRUD) | NO — use [Data Patterns](data-patterns.md) |
 | Adding a new data boundary to an existing app | YES — add proto before implementation |
 | Quick prototype / hackathon | NO — skip contracts, move fast |
 | Modifying existing typed code | NO — contracts already exist |
@@ -41,7 +44,7 @@ Every Databricks app decomposes into a combination of these plugin modules:
 | **Database** | lakebase | Postgres tables | Structured records, queries, migrations |
 | **Compute** | jobs | Databricks Jobs API | Job runs, task results, cluster configs |
 | **Analytics** | analytics | SQL Warehouse | Read-only queries, dashboards |
-| **Serving** | server | HTTP routes | API endpoints, SSE streams |
+| **HTTP API** | server | Custom routes, SSE | API endpoints, streams |
 
 ### Decomposition Rules
 
@@ -244,7 +247,9 @@ Example migration:
 
 ```sql
 -- migrations/001_create_runs.sql
-CREATE TABLE IF NOT EXISTS runs (
+-- Schema-qualified: the app SP cannot use `public` — see lakebase-oltp.md.
+CREATE SCHEMA IF NOT EXISTS app_data;
+CREATE TABLE IF NOT EXISTS app_data.runs (
   run_id TEXT NOT NULL,
   app_name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'RUN_STATUS_PENDING',
@@ -255,6 +260,8 @@ CREATE TABLE IF NOT EXISTS runs (
   PRIMARY KEY (run_id, app_name)
 );
 ```
+
+Execute migrations in `onPluginsReady` via `appkit.lakebase.query()` — the Lakebase OLTP **deploy-first** rule ([lakebase-oltp.md](lakebase-oltp.md)) still applies.
 
 ### 3d. Validate
 
@@ -303,4 +310,4 @@ Before writing implementation code:
 
 ## References
 
-- [Plugin Contract Details](references/plugin-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs
+- [Plugin Contract Details](proto-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs

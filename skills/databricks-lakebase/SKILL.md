@@ -99,9 +99,11 @@ databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --
 
 | Value | JSON path | Used for |
 |-------|-----------|----------|
+| Project resource path | `name` (from `list-projects`) | `lakebase.postgres.project` |
+| Branch resource path | `name` (from `list-branches`) | `lakebase.postgres.branch` |
+| Database resource path | `name` (from `list-databases`) | `lakebase.postgres.database` |
 | Endpoint host | `status.hosts.host` | `PGHOST`, `lakebase.postgres.host` |
 | Endpoint resource path | `name` | `LAKEBASE_ENDPOINT`, `lakebase.postgres.endpointPath` |
-| Database resource path | `name` | `lakebase.postgres.database` |
 | PostgreSQL database name | `status.postgres_database` | `PGDATABASE`, `lakebase.postgres.databaseName` |
 
 ### Updating a Project
@@ -178,34 +180,43 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 
 ### Build a Databricks App
 
-After creating a project, scaffold a connected Databricks App:
+After creating a project, scaffold a connected Databricks App. **Derive all three `--set` fields from `databricks apps manifest`** — the `lakebase` plugin requires `project`, `branch`, and `database` (omitting `project` fails init):
 
 ```bash
-# 1. Get branch name
+# 0. Confirm required fields (do not guess keys)
+databricks apps manifest --profile <PROFILE>
+
+# 1. Project resource path
+databricks postgres list-projects --profile <PROFILE>
+
+# 2. Branch resource path (use production after create-project)
 databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
 
-# 2. Get database name
+# 3. Database resource path
 databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
 
-# 3. Scaffold with lakebase feature
+# 4. Scaffold — use .name from each list command
 databricks apps init --name <APP_NAME> --features lakebase \
+  --set "lakebase.postgres.project=<PROJECT_NAME>" \
   --set "lakebase.postgres.branch=<BRANCH_NAME>" \
   --set "lakebase.postgres.database=<DATABASE_NAME>" \
   --run none --profile <PROFILE>
 ```
 
-For the full app workflow, use the **`databricks-apps`** skill.
+For the full app workflow (deploy, local dev, CRUD patterns), use the **`databricks-apps`** skill.
 
 ### Schema Permissions for Deployed Apps
 
 The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new objects but **cannot access existing schemas**. The SP must create the schema to become its owner.
 
-**ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
+**ALWAYS deploy the app before running it locally (Lakebase OLTP CRUD apps).** This is the #1 source of Lakebase permission errors.
 
-**Correct workflow:**
-1. **Deploy first**: `databricks apps deploy <APP_NAME> --profile <PROFILE>`
-2. **Grant local access** *(if needed)*: assign `databricks_superuser` via UI (project creators already have access)
-3. **Develop locally**: your credentials get DML access to SP-owned schemas
+**Correct workflow** — see **`databricks-apps`** skill *Deployment Workflow* for the full picture:
+
+1. **First deploy** (app never existed in workspace): `databricks bundle deploy -t <TARGET> --profile <PROFILE>`, then `databricks apps deploy -t <TARGET> --profile <PROFILE>`. `apps deploy` alone on a new scaffold often returns **app does not exist**.
+2. **Subsequent deploys**: `databricks apps deploy -t <TARGET> --profile <PROFILE>`
+3. **Grant local access** *(if needed)*: assign `databricks_superuser` via UI (project creators already have access)
+4. **Develop locally**: your credentials get DML access to SP-owned schemas
 
 **If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data.
 

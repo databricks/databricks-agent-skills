@@ -105,17 +105,25 @@ env:
 
 ⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.
 
+**Canonical flow** is documented in the parent **`databricks-apps`** skill *Deployment Workflow* (first deploy vs updates, Lakebase deploy-first rules). Summary:
+
 ```bash
-# Option A: single command (recommended) — validates, deploys, and runs
+# First deploy (app not in workspace yet) — bundle deploy registers the app resource
+databricks bundle deploy -t <TARGET> --profile <PROFILE>
 databricks apps deploy -t <TARGET> --profile <PROFILE>
 
-# Option B: step by step
+# Subsequent deploys (app already exists)
+databricks apps deploy -t <TARGET> --profile <PROFILE>
+
+# Alternative step-by-step (updates or first deploy after bundle deploy)
 databricks apps validate --profile <PROFILE>
 databricks bundle deploy -t <TARGET> --profile <PROFILE>
 databricks bundle run <APP_RESOURCE_NAME> -t <TARGET> --profile <PROFILE>
 ```
 
-❌ **Common mistake:** Running only `bundle deploy` and expecting the app to update. Deploy uploads code but does NOT apply config changes or restart the app. Use `databricks apps deploy` or add `bundle run` after `bundle deploy`.
+❌ **Common mistakes:**
+- Running `databricks apps deploy` on a freshly scaffolded app before `bundle deploy` → **app does not exist**
+- Running only `bundle deploy` and expecting the app to update → also run `databricks apps deploy` or `bundle run`
 
 ### ⚠️ Destructive Updates Warning
 

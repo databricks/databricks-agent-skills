@@ -1,16 +1,10 @@
 # AppKit Genie Guide
 
-Use Genie when your app needs a **natural language query interface** over Unity Catalog tables. For analytics dashboards, use `config/queries/` instead. For persistent storage, use Lakebase.
+**Pattern selection:** [Data Patterns](data-patterns.md). This guide covers **`genie()` plugin setup only.**
 
-## When to Use
+Use Genie for a **natural language query interface** over Unity Catalog tables. Fixed KPIs still use `config/queries/` (`reads_warehouse`). App-owned CRUD uses Lakebase (`writes_oltp`).
 
-| Pattern | Use Case | Data Source |
-|---------|----------|-------------|
-| Analytics | Read-only dashboards, charts, KPIs | SQL Warehouse |
-| Lakebase | CRUD operations, persistent state, forms | PostgreSQL (Lakebase) |
-| Model Serving | Chat, AI features, model inference | Serving Endpoint |
-| Genie | Natural language queries over tables | Genie Space → SQL Warehouse |
-| Multiple | Combine plugins as needed | Mix of the above |
+> **Agentic mode:** the Genie space already exists and `DATABRICKS_GENIE_SPACE_ID` is injected. **Skip** *Genie Space Creation*, *Scaffolding*, and *Adding Genie to an Existing App* — do not run `genie create-space` / `list-spaces` or ask which tables. Just call `genie()` (it reads the env var) and build the chat UI. See [Environments](environments.md).
 
 ## Architecture
 
@@ -116,9 +110,9 @@ env:
 ```typescript
 import { createApp, server, analytics, genie } from "@databricks/appkit";
 
-createApp({
+await createApp({
   plugins: [server(), analytics(), genie()],
-}).catch(console.error);
+});
 ```
 
 Preserve existing plugins and add `genie()` to the array.
@@ -152,6 +146,8 @@ For advanced Genie plugin usage, see `npx @databricks/appkit docs ./docs/plugins
 For the `spaces` map API, `GenieChat alias` prop, and `useGenieChat` hook, see `npx @databricks/appkit docs ./docs/plugins/genie.md`.
 
 This section covers the **deployment-specific patterns** for multi-space Genie apps (databricks.yml, app.yaml, stale conversation cleanup).
+
+> **Agentic mode:** skip the `databricks.yml` / `app.yaml` subsections below — spaces are pre-wired; use the injected `DATABRICKS_GENIE_SPACE_*` env vars, and if a space the user needs is not wired, **stop and tell the user**. The client-side patterns (spaces map, build version stamp, stale-conversation cleanup) still apply. See [Environments](environments.md).
 
 **databricks.yml** — add one variable + resource per space, plus target-level values:
 
