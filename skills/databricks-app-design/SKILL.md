@@ -27,7 +27,7 @@ Design advice that doesn't name a real component is incomplete. Always end at a 
 2. **Genre** — pick the closest from `dashboard-patterns.md` (static / analytic / magazine / infographic / repository / embedded mini). State it.
 3. **Compose** — choose content + composition patterns (data abstraction, meta-info, layout, interaction, color). Make the tradeoff explicit: what's summarized, hidden, paginated, or made interactive — and why.
 4. **Apply notation** — run the relevant `ibcs-notation.md` rules: message-in-title, scenario marks (actual/PY/plan/forecast), honest scales, semantic color. On any chart-vocabulary conflict, **IBCS wins** (see the conflict note in that file).
-5. **Bind to components** — map every element to a real primitive from `appkit-cheatsheet.md`. **If the app already ships `KpiCard`/`MetricTrendCard`/`HistoricalTrendCard`/`DistributionCard`, reuse them before inventing** (they already encode the notation); a fresh scaffold won't have them — create them following the notation rules. Use `colorPalette` + semantic tokens, never hardcoded hex. Bind data with `useAnalyticsQuery`/`queryKey` + `sql.*` params.
+5. **Bind to components** — map every element to a primitive that's actually **exported from `@databricks/appkit` / `@databricks/appkit-ui`** (see `appkit-cheatsheet.md`); never cite a component AppKit doesn't ship. There's no prebuilt KPI/trend/distribution card — compose those from primitives, following the notation rules. Use `colorPalette` + semantic tokens, never hardcoded hex. Bind data with `useAnalyticsQuery`/`queryKey` + `sql.*` params.
 6. **Cover the states** — every data view must handle loading / empty / error / partial (see checklist).
 7. **Review** — run the checklists in both reference files; lead critiques with the highest-impact comprehension or integrity issue, citing the affected component/file.
 
@@ -67,6 +67,6 @@ findings by impact, each with the concrete fix (which component/token/state to c
 ## Anti-patterns
 - Producing a design memo with no component plan.
 - "Use semantic color" without naming the token/palette.
-- Inventing a chart when a library card already does it (and already follows IBCS).
+- Naming a component AppKit doesn't export (e.g. a prebuilt `KpiCard`) — compose composites from published primitives instead.
 - Adding interaction, pages, or density the task doesn't need (over-engineering a mock-first app).
 - Forgetting loading/empty/error states, or KPIs with no freshness/source.

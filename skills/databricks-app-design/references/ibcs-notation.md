@@ -33,9 +33,9 @@ Standardize the meaning of marks across the whole report. **IBCS scenario notati
 
 | Scenario | IBCS notation | In this app's tokens/components |
 |---|---|---|
-| Actual (AC) | **solid / filled** (darkest) | `--foreground` solid line/area (see `HistoricalTrendCard`) |
+| Actual (AC) | **solid / filled** (darkest) | `--foreground` solid line/area |
 | Previous year / prior period (PY) | **lighter solid fill** | `--muted-foreground`, lighter/dashed comparison series |
-| Plan / budget / target (PL/BU) | **outlined / hollow** (or reference line) | dashed `ReferenceLine` for target |
+| Plan / budget / target (PL/BU) | **outlined / hollow** (or reference line) | dashed target/reference line (confirm chart support in docs) |
 | Forecast (FC) | **hatched** | distinct hatched/striped fill — *not* merely "lighter shade" |
 
 > Correction vs. the older skill: forecast is **hatched**, and **lighter-solid means previous-year**.

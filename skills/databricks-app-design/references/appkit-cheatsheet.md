@@ -13,11 +13,15 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # backend: analytics pl
 
 Use this file for the design→primitive mapping; confirm the exact signatures against those docs.
 
+**Only name components/hooks exported from the published `@databricks/appkit` / `@databricks/appkit-ui`
+packages.** Never reference dev-playground / example / demo components or invent component names —
+confirm anything you cite with the docs command above.
+
 ## Charts
 Bind charts to data; never hand-roll SVG/`<canvas>`. AppKit-ui ships ECharts-based chart components
 (`BarChart`/`LineChart`/`AreaChart`, plus others — confirm the exact set in the docs). Each takes
-either `queryKey` + `parameters` (query-driven; `parameters` is required, even `{}`) or static `data`,
-plus a `colorPalette` prop. Map design intent → palette:
+either `queryKey` (+ optional `parameters`) for query-driven data or a static `data` prop (the two are
+mutually exclusive), plus a `colorPalette` prop. Map design intent → palette:
 - categories that are merely *different* → categorical palette
 - ordered magnitude (low→high) → sequential palette
 - signed / good-bad variance around a midpoint → diverging palette
@@ -35,12 +39,10 @@ Use AppKit's Genie chat component / `useGenieChat` hook; its messages carry the 
 attachments. Surface them for trust — see `genie-ai-trust.md` for the required patterns. (Exact
 component/hook API: the AppKit docs above.)
 
-## Repo component library — `@/components/library`
-When the app already ships these, **reuse them before inventing** — they encode this skill's notation rules:
-- `KpiCard` — card shell with title / value / unit / delta(tone).
-- `MetricTrendCard` — KpiCard + inline line chart; actual = solid line, comparison = dashed (IBCS).
-- `HistoricalTrendCard` — KpiCard + area chart; actual solid, comparison dashed, target dashed reference line; supports breakdowns / summary / footnote.
-- `DistributionCard` — KpiCard + horizontal stacked bar + percentage legend.
+## KPI / trend / distribution cards
+`@databricks/appkit-ui` ships **no** prebuilt KPI / metric / trend / distribution card — compose them
+yourself from published primitives (e.g. `Card*` + a chart component), following the notation rules in
+`ibcs-notation.md`.
 
 ## Semantic color
 Color must encode meaning; use semantic tokens or the chart `colorPalette` prop. **Never use raw colors — neither hex (`#22c55e`) NOR raw Tailwind palette utilities (`bg-amber-100`, `text-emerald-600`, `fill-red-500`, `text-amber-500`, …).** Both bypass the design tokens and break dark mode. Map intent to a token:
