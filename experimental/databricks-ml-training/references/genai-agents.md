@@ -35,7 +35,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 
-LLM_ENDPOINT = "databricks-claude-sonnet-4-6"   # resolve at runtime — see training-and-serving.md
+LLM_ENDPOINT = "databricks-claude-sonnet-4-6"   # resolve at runtime — see databricks-model-serving
 VS_INDEX     = "ai_demo_gen.wind_farm.docs_index"
 UC_FUNCTIONS = ["ai_demo_gen.wind_farm.lookup_turbine_history"]
 SYSTEM_PROMPT = (
@@ -143,7 +143,7 @@ with mlflow.start_run():
         resources=resources,             # auto-auth — DO NOT skip
         input_example={"input": [{"role": "user", "content": "What's the maintenance history for turbine WTG-12?"}]},
         pip_requirements=[
-            "mlflow==2.22.0",
+            "mlflow==3.1.0",
             "databricks-langchain",
             "langgraph==0.3.4",
             "databricks-agents",
@@ -195,16 +195,20 @@ If either check returns a hit, follow the existing run with `jobs get-run <RUN_I
 
 ```python
 # deploy_agent.py
-import json, sys
+import json
 from databricks import agents
 
-model_name    = sys.argv[1]
-version       = sys.argv[2]
-endpoint_name = sys.argv[3] if len(sys.argv) > 3 else None
+dbutils.widgets.text("model_name", "")
+dbutils.widgets.text("version", "")
+dbutils.widgets.text("endpoint_name", "")
+
+model_name    = dbutils.widgets.get("model_name")
+version       = dbutils.widgets.get("version")
+endpoint_name = dbutils.widgets.get("endpoint_name") or None
 
 # Always pass endpoint_name explicitly — auto-derived names are
 # `agents_<catalog>-<schema>-<model>` with dots → dashes, which is unpredictable.
-kwargs = {"tags": {"aidevkit_project": "ai-dev-kit"}}
+kwargs = {"tags": {"ai_generated_source": "databricks-agent-skills"}}
 if endpoint_name:
     kwargs["endpoint_name"] = endpoint_name
 

@@ -94,8 +94,14 @@ databricks serving-endpoints create <ENDPOINT_NAME> \
 To roll an endpoint to a new model version: repoint the alias **and** call `update_endpoint` with the new `served_entities` + matching `traffic_config`. Missing either half is the common bug — alias-only doesn't update the endpoint; `update_endpoint`-only leaves the alias pointing at the old version.
 
 ```python
-client.set_registered_model_alias(FULL_NAME, "prod", new_version)
-client.update_endpoint(endpoint=ENDPOINT_NAME, config={
+from mlflow.tracking import MlflowClient
+from mlflow.deployments import get_deploy_client
+
+registry = MlflowClient(registry_uri="databricks-uc")
+deploy   = get_deploy_client("databricks")
+
+registry.set_registered_model_alias(FULL_NAME, "prod", new_version)
+deploy.update_endpoint(endpoint=ENDPOINT_NAME, config={
     "served_entities": [{"entity_name": FULL_NAME, "entity_version": new_version,
                          "workload_size": "Small", "scale_to_zero_enabled": True}],
     "traffic_config": {"routes": [
