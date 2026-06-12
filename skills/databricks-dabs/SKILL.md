@@ -37,3 +37,8 @@ Load this skill for any request involving:
 4. **Path resolution is critical** - Paths differ based on file location (see Bundle Structure reference)
 5. **Preserve existing structure** - Keep user comments and structure when editing YAML files
 6. **Use variables** - Parameterize catalog, schema, and warehouse for multi-environment support
+
+## Documentation
+
+- [Declarative Automation Bundles](https://docs.databricks.com/dev-tools/bundles/)
+- [Bundle Examples Repository](https://github.com/databricks/bundle-examples) - official end-to-end example bundles (jobs, pipelines, dashboards, apps, and more); use as working references for patterns not covered by the reference files above
