@@ -7,6 +7,15 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+`codex-hooks.json` wires the Codex plugin and **is** declared explicitly (as
+`"hooks"` in `.codex-plugin/plugin.json`), because Codex's default plugin hook
+file is `hooks/hooks.json`, the Claude wiring. Codex uses Claude's event names
+and payload/output schema, so all three scripts run unchanged. Script paths
+resolve via the `PLUGIN_ROOT` env var Codex exports to hook processes (with
+`CLAUDE_PLUGIN_ROOT` as fallback; Codex exports both). Codex hash-pins plugin
+hooks: users approve them via `/hooks` after install and after every update,
+and enterprises can pre-trust them through managed `requirements.toml` hooks.
+
 Each hook is pinned by a test file in `tests/` at the repo root; run the whole
 suite with `python3 -m unittest discover -s tests -p '*_test.py'`.
 
@@ -76,6 +85,7 @@ Covered by `tests/databricks_auth_helper_test.py`.
 ## Distribution note
 
 These ship with the Claude Code plugin (the whole repo is the plugin via
-`marketplace.json` `source: "./"`). The Databricks CLI install path
-(`databricks aitools install`) currently packages **skills only**. See the repo
-README for the parity follow-up.
+`marketplace.json` `source: "./"`) and with the Codex plugin (all three hooks
+via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
+Databricks CLI install path (`databricks aitools install`) currently packages
+**skills only**. See the repo README for the parity follow-up.
