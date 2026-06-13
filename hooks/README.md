@@ -7,6 +7,18 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+`copilot-hooks.json` wires the GitHub Copilot plugin (declared as `"hooks"` in
+`.github/plugin/plugin.json`). It uses PascalCase event names, which selects
+Copilot's Claude-compatible payload dialect, so the scripts run unchanged and
+emit the Claude output envelope. Only two hooks are wired: the context primer
+(`SessionStart`; its injected context is honored in VS Code, while Copilot CLI
+and the cloud agent ignore session-start stdout) and the auth hinter
+(`PostToolUse`, which injects `additionalContext` on every Copilot surface).
+The prompt router is not wired: no Copilot surface lets a prompt-submit hook
+inject context, so routing rides on skill descriptions and instruction files.
+Each entry carries `bash` and `powershell` command variants per Copilot's hook
+format.
+
 `codex-hooks.json` wires the Codex plugin and **is** declared explicitly (as
 `"hooks"` in `.codex-plugin/plugin.json`), because Codex's default plugin hook
 file is `hooks/hooks.json`, the Claude wiring. Codex uses Claude's event names
@@ -85,7 +97,11 @@ Covered by `tests/databricks_auth_helper_test.py`.
 ## Distribution note
 
 These ship with the Claude Code plugin (the whole repo is the plugin via
-`marketplace.json` `source: "./"`) and with the Codex plugin (all three hooks
+`marketplace.json` `source: "./"`), with the GitHub Copilot plugin (primer +
+auth hinter via `copilot-hooks.json`, catalogued in
+`.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks
 via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
-Databricks CLI install path (`databricks aitools install`) currently packages
-**skills only**. See the repo README for the parity follow-up.
+Copilot cloud agent takes no plugins; it only reads hooks vendored into the
+target repo's `.github/hooks/`. The Databricks CLI install path
+(`databricks aitools install`) currently packages **skills only**. See the repo
+README for the parity follow-up.

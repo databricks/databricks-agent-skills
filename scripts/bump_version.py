@@ -2,8 +2,9 @@
 """Bump the plugin manifest versions to a release version + regenerate manifest.
 
 Given a `vX.Y.Z` (or `X.Y.Z`) release version, set the `version` field in every
-plugin manifest (`.claude-plugin`, `.cursor-plugin`, `.codex-plugin`), then
-regenerate `manifest.json` so the released commit ships a current manifest.
+plugin manifest (`.claude-plugin`, `.cursor-plugin`, `.github/plugin`,
+`.codex-plugin`), then regenerate `manifest.json` so the released commit ships
+a current manifest.
 
 Why this exists: Claude Code's plugin marketplace keys updates on the `version`
 field in `.claude-plugin/plugin.json`. If a release ships without bumping that
@@ -31,6 +32,7 @@ VERSION_FIELD_RE = re.compile(r'("version"\s*:\s*")[^"]*(")')
 PLUGIN_MANIFESTS = (
     Path(".claude-plugin") / "plugin.json",
     Path(".cursor-plugin") / "plugin.json",
+    Path(".github") / "plugin" / "plugin.json",
     Path(".codex-plugin") / "plugin.json",
 )
 

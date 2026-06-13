@@ -44,6 +44,20 @@ skill under [`./skills/`](./skills/)):
 /add-plugin databricks-skills
 ```
 
+**Via the GitHub Copilot plugin marketplace:**
+
+```text
+copilot plugin marketplace add databricks/databricks-agent-skills
+copilot plugin install databricks@databricks-agent-skills
+```
+
+Works in Copilot CLI (plugins are GA there) and VS Code (agent plugins,
+preview; also installable from the Extensions view). Ships the skills plus
+two hooks: the session context primer (effective in VS Code) and the
+auth-failure hinter. The Copilot cloud agent on github.com takes no plugins;
+for that surface, vendor the skills into the target repo (`.github/skills/`)
+and the auth-hint hook into `.github/hooks/`.
+
 **Via the Codex plugin marketplace:**
 
 ```text
