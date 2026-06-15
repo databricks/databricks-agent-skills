@@ -278,16 +278,19 @@
       "version": "0.1.0"
     },
     "databricks-model-serving": {
-      "description": "Manage Databricks Model Serving endpoints via CLI.",
+      "description": "Databricks Model Serving (ops) plus MLflow model development (dev): manage serving endpoints, train and register models to Unity Catalog with @prod aliases, batch-score via spark_udf, build custom...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/off-platform-streaming.md"
+        "references/custom-pyfunc.md",
+        "references/genai-agents.md",
+        "references/off-platform-streaming.md",
+        "references/training-and-serving.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.3.0"
     },
     "databricks-pipelines": {
       "description": "Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks.",
