@@ -49,6 +49,33 @@ The Cursor plugin ships the skills plus the `databricks-setup` /
 auth-failure hints); see
 [Commands and hooks](#commands-and-hooks-claude-code-cursor).
 
+**Via the GitHub Copilot plugin marketplace:**
+
+```text
+copilot plugin marketplace add databricks/databricks-agent-skills
+copilot plugin install databricks@databricks-agent-skills
+```
+
+Works in Copilot CLI (plugins are GA there) and VS Code (agent plugins,
+preview; also installable from the Extensions view). Ships the skills plus
+two hooks: the session context primer (effective in VS Code) and the
+auth-failure hinter. The Copilot cloud agent on github.com takes no plugins;
+for that surface, vendor the skills into the target repo (`.github/skills/`)
+and the auth-hint hook into `.github/hooks/`.
+
+**Via the Codex plugin marketplace:**
+
+```text
+codex plugin marketplace add databricks/databricks-agent-skills
+codex plugin add databricks
+```
+
+The Codex plugin ships the skills plus all three hooks (prompt routing,
+session context, auth-failure hints). Codex hash-pins plugin hooks: run
+`/hooks` once after install (and after each update) to review and enable
+them. Codex has no distributable slash commands, so the setup/doctor
+workflows are reachable through the skills there.
+
 ### CLI vs plugin marketplace
 
 | | CLI | Plugin marketplace |
@@ -69,6 +96,7 @@ Stable skills shipped from [`skills/`](./skills/):
 
 - **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
 - **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
+- **databricks-app-design** — Design the UX of data apps: dashboards, KPI pages, reports, charts, and Genie/chat surfaces, mapped to AppKit components.
 - **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
 - **databricks-jobs** — Lakeflow Jobs orchestration: task types, triggers, schedules, notifications.
 - **databricks-lakebase** — Lakebase Postgres: projects, branching, autoscaling, synced tables, Data API.

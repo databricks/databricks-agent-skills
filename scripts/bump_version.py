@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Bump the plugin manifest versions to a release version + regenerate manifest.
 
-Given a `vX.Y.Z` (or `X.Y.Z`) release version, set the `version` field in both
-`.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`, then regenerate
-`manifest.json` so the released commit ships a current manifest.
+Given a `vX.Y.Z` (or `X.Y.Z`) release version, set the `version` field in every
+plugin manifest (`.claude-plugin`, `.cursor-plugin`, `.github/plugin`,
+`.codex-plugin`), then regenerate `manifest.json` so the released commit ships
+a current manifest.
 
 Why this exists: Claude Code's plugin marketplace keys updates on the `version`
 field in `.claude-plugin/plugin.json`. If a release ships without bumping that
@@ -22,15 +23,17 @@ import skills  # sibling module in scripts/
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
-# Matches the first `"version": "..."` field. Both manifests carry exactly one
-# top-level `version` key, so a targeted in-place replacement keeps the diff to
-# a single line and avoids reformatting the JSON (which a load/dump round-trip
-# would risk).
+# Matches the first `"version": "..."` field. Every manifest carries exactly
+# one top-level `version` key, so a targeted in-place replacement keeps the
+# diff to a single line and avoids reformatting the JSON (which a load/dump
+# round-trip would risk).
 VERSION_FIELD_RE = re.compile(r'("version"\s*:\s*")[^"]*(")')
 
 PLUGIN_MANIFESTS = (
     Path(".claude-plugin") / "plugin.json",
     Path(".cursor-plugin") / "plugin.json",
+    Path(".github") / "plugin" / "plugin.json",
+    Path(".codex-plugin") / "plugin.json",
 )
 
 

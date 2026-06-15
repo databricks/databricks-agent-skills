@@ -13,7 +13,6 @@
     "databricks",
     "cli",
     "apps",
-    "app-design",
     "lakebase",
     "model-serving",
     "jobs",
@@ -24,5 +23,13 @@
     "data-engineering"
   ],
   "skills": "./skills/",
-  "commands": "./commands/"
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "Databricks",
+    "shortDescription": "Databricks skills and hooks for Codex.",
+    "category": "development",
+    "brandColor": "#FF3621",
+    "logo": "./assets/databricks.png",
+    "composerIcon": "./assets/databricks.svg"
+  }
 }

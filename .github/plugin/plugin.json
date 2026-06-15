@@ -1,5 +1,6 @@
 {
   "name": "databricks",
+  "displayName": "Databricks",
   "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
   "version": "0.2.4",
   "author": {
@@ -9,20 +10,6 @@
   "homepage": "https://github.com/databricks/databricks-agent-skills",
   "repository": "https://github.com/databricks/databricks-agent-skills",
   "license": "LicenseRef-Databricks",
-  "keywords": [
-    "databricks",
-    "cli",
-    "apps",
-    "app-design",
-    "lakebase",
-    "model-serving",
-    "jobs",
-    "pipelines",
-    "dabs",
-    "serverless",
-    "vector-search",
-    "data-engineering"
-  ],
   "skills": "./skills/",
-  "commands": "./commands/"
+  "hooks": "./hooks/copilot-hooks.json"
 }

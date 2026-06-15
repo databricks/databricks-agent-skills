@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks App Design"
+  short_description: "Design analytics/BI/AI data app UX, bound to AppKit"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-app-design to design or critique Databricks analytics/BI/AI data app UX (dashboards, KPI pages, reports, Genie surfaces)."
