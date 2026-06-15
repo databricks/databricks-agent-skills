@@ -33,7 +33,7 @@ ai_query(
 | `endpoint` | STRING literal | — | Foundation Model name or custom endpoint name. Never guess — use exact names from the [model serving docs](https://docs.databricks.com/machine-learning/foundation-models/supported-models.html). |
 | `request` | STRING or STRUCT | — | Prompt string for chat models; STRUCT for custom ML endpoints |
 | `returnType` | DDL schema (optional) | 15.2+ | Structures the parsed response like `from_json` |
-| `failOnError` | BOOLEAN (optional, default `true`) | 15.3+ | If `false`, returns STRUCT `{response, error}` instead of raising on failure |
+| `failOnError` | BOOLEAN (optional, default `true`) | 15.3+ | If `false`, returns STRUCT `{response, errorMessage}` instead of raising on failure (`errorMessage` is `NULL` on success; `response` is `NULL` on failure) |
 | `modelParameters` | STRUCT (optional) | 15.3+ | Sampling params: `temperature`, `max_tokens`, `top_p`, etc. |
 | `responseFormat` | JSON string (optional) | 15.4+ | Forces structured JSON output: `'{"type":"json_object"}'` |
 | `files` | binary column (optional) | — | Pass binary images directly (JPEG/PNG) — no upload step needed |
@@ -108,7 +108,7 @@ df.select("invoice.numero", "invoice.total", "invoice.itens").display()
 SELECT
     id,
     ai_response.response,
-    ai_response.error
+    ai_response.errorMessage
 FROM (
     SELECT id,
            ai_query(
@@ -217,7 +217,7 @@ def extracted():
 def extraction_errors():
     return (
         dlt.read("extracted")
-        .filter(col("ai_response.error").isNotNull())
-        .select("id", "prompt", col("ai_response.error").alias("error"))
+        .filter(col("ai_response.errorMessage").isNotNull())
+        .select("id", "prompt", col("ai_response.errorMessage").alias("error"))
     )
 ```
