@@ -1,7 +1,6 @@
 ---
 name: "databricks-core"
 description: "Databricks CLI operations: auth, profiles, data exploration, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
-compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
 ---

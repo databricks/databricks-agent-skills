@@ -1,15 +1,15 @@
 ---
 name: databricks-lakebase
 description: "Databricks Lakebase Postgres: projects, scaling, connectivity, Lakebase synced tables, and Data API. Use when asked about Lakebase databases, OLTP storage, or connecting apps to Postgres on Databricks."
-compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.0"
-parent: databricks-core
 ---
 
 # Lakebase Postgres Autoscaling
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+Requires Databricks CLI v0.294.0 or newer.
+
+**FIRST**: Also load/read the `databricks-core` skill for CLI basics, authentication, and profile selection. Do not rely on skill frontmatter to load it automatically.
 
 Lakebase is Databricks' serverless Postgres-compatible database, available on both AWS and Azure (GA). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
 

@@ -1,15 +1,15 @@
 ---
 name: databricks-model-serving
 description: "Databricks Model Serving (ops) plus MLflow model development (dev): manage serving endpoints, train and register models to Unity Catalog with @prod aliases, batch-score via spark_udf, build custom PyFunc / ResponsesAgent models, and discover Foundation Model API endpoints."
-compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.3.0"
-parent: databricks-core
 ---
 
 # Model Serving Endpoints
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+Requires Databricks CLI v0.294.0 or newer.
+
+**FIRST**: Also load/read the `databricks-core` skill for CLI basics, authentication, and profile selection. Do not rely on skill frontmatter to load it automatically.
 
 Model Serving provides managed endpoints for serving LLMs, custom ML models, and external models as scalable REST APIs. Endpoints are identified by **name** (unique per workspace).
 

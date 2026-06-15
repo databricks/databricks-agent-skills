@@ -1,15 +1,15 @@
 ---
 name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
-compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.2"
-parent: databricks-core
 ---
 
 # Databricks Apps Development
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
+Requires Databricks CLI v0.294.0 or newer.
+
+**FIRST**: Also load/read the `databricks-core` skill for CLI basics, authentication, and profile selection. Do not rely on skill frontmatter to load it automatically.
 
 **For data UI design (required for any data-displaying app)**: if the app shows ANY data — a dashboard, KPI/overview page, report, chart, table, query results, OR a **conversational / chat / Genie natural-language assistant** — you MUST use the `databricks-app-design` skill (alongside this one) to decide layout, charts, KPIs, semantic color, required states, and AI-result trust, and map them to AppKit components. This includes chat/Genie apps, not just dashboards — if in doubt, use it.
 
@@ -41,7 +41,7 @@ Build apps that deploy to Databricks Apps platform.
 - **Smoke test selectors**: use only Playwright locator APIs — `getByRole`, `getByText`, `getByPlaceholder`, `getByLabel`. `getByLabelText` does not exist in Playwright (it is a React Testing Library method) and throws `TypeError` at runtime. See [testing guide](references/testing.md) or `npx playwright codegen`.
 - **Smoke test data**: keep result sets under the 1 MB analytics-event payload cap. Queries returning thousands of rows cause `INVALID_REQUEST: Event exceeds max size of 1048576 bytes` and `net::ERR_ABORTED`, leaving every asserted UI element absent. Use `LIMIT` or an aggregated query (e.g. `COUNT(*) GROUP BY status`) — never raw row dumps.
 - **AppKit version**: never override the `@databricks/appkit` or `@databricks/appkit-ui` version in `package.json` — `databricks apps init` sets the correct version. Do not run `npm install @databricks/appkit@<version>` unless explicitly asked by the user. If you need a different version, re-scaffold with `databricks apps init --version <version>`.
-- **Authentication**: covered by parent `databricks-core` skill.
+- **Authentication**: covered by the companion `databricks-core` skill.
 - **AppKit API surface**: before writing code that calls AppKit APIs (`createApp`, plugin shapes, `useAnalyticsQuery`, etc.), run `npx @databricks/appkit docs <section>` and use the actual signature. Training data has stale shapes; a single invented signature fails `tsc --noEmit` during validate. The docs ship with the installed AppKit and are the authoritative source.
 - **TypeScript casts**: never use `as unknown as <T>` double-assertions — `appkit lint` enforces `no-double-type-assertion` and one violation fails the entire validate step. Instead: narrow with Zod (`z.infer<typeof schema>`), use a runtime type guard, or write a typed mapper function. If a query result needs reshaping, type the row schema via queryKey types rather than casting.
 
@@ -61,7 +61,7 @@ Build apps that deploy to Databricks Apps platform.
 
 ## Data Discovery
 
-Before writing any SQL, use the parent `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
+Before writing any SQL, use the companion `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
 
 **State Storage Guidance (evaluate BEFORE the Decision Gate):**
 
@@ -170,7 +170,7 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
    Optionally use `--version <VERSION>` to target a specific AppKit version.
    - **Required**: `--name`, `--profile`. Name: ≤26 chars, lowercase letters/numbers/hyphens only. Use `--features` only for **optional** plugins the user wants (plugins with `requiredByTemplate: false` or absent); mandatory plugins must not be listed in `--features`.
    - **Resources**: Pass `--set` for every required resource (each field in `resources.required`) for (1) all plugins with `requiredByTemplate: true`, and (2) any optional plugins you added to `--features`. Add `--set` for `resources.optional` only when the user requests them.
-   - **Discovery**: Use the parent `databricks-core` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
+   - **Discovery**: Use the companion `databricks-core` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 

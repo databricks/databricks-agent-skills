@@ -1,15 +1,15 @@
 ---
 name: databricks-jobs
 description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation.
-compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.2.0"
-parent: databricks-core
 ---
 
 # Lakeflow Jobs Development
 
-**FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands.
+Requires Databricks CLI v1.0.0 or newer.
+
+**FIRST**: Also load/read the `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands. Do not rely on skill frontmatter to load it automatically.
 
 Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Asset Bundles (DABs), Python SDK, or CLI.
 
