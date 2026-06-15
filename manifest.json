@@ -43,7 +43,7 @@
         "references/5-troubleshooting.md"
       ],
       "repo_dir": "experimental",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-app-design": {
       "description": "Design the UX of Databricks data apps \u2014 dashboards, KPI pages, reports, charts, tables, and Genie/chat data assistants \u2014 mapped to concrete AppKit components.",
