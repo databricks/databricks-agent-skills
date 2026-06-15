@@ -40,6 +40,12 @@ env:
       resource: database
 ```
 
+4. Add the Postgres driver to **`requirements.txt`** — `psycopg2`/`asyncpg` are **NOT** pre-installed in the Databricks Apps runtime, so the app crashes on start without it:
+
+```
+psycopg2-binary
+```
+
 ---
 
 ## Connection Patterns
