@@ -94,7 +94,7 @@ exposes experimental skills.
 
 Stable skills shipped from [`skills/`](./skills/):
 
-- **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
+- **databricks-core** — CLI, authentication, profile selection, data exploration. Companion skill for Databricks product skills.
 - **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
 - **databricks-app-design** — Design the UX of data apps: dashboards, KPI pages, reports, charts, and Genie/chat surfaces, mapped to AppKit components.
 - **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
@@ -190,20 +190,22 @@ skill-name/
 
 ### Adding New Skills
 
-For a narrower variation of an existing skill, create a subskill that declares
-its parent via frontmatter. This is how the stable skills are organized today
-— each product skill sets `parent: databricks-core`.
+For a narrower variation of an existing skill, create a companion skill that
+explicitly tells the agent to load/read the related base skill. Do not depend on
+`parent:` frontmatter for inheritance: not every agent client loads parent
+skills automatically, and Codex only uses `name` and `description` for skill
+triggering. Put requirements such as Databricks CLI versions in the Markdown
+body, not custom frontmatter like `compatibility:`.
 
 ```markdown
 ---
 name: "databricks-apps-chatbots"
 description: "Databricks apps with chatbot features"
-parent: databricks-apps
 ---
 
 # Chatbot Apps
 
-**FIRST**: Use the parent `databricks-apps` skill for app development basics.
+**FIRST**: Also load/read the `databricks-apps` skill for app development basics.
 
 Then apply these patterns:
 - Pattern 1
