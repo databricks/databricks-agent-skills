@@ -56,25 +56,20 @@ Process all available data, then stop:
 
 ### Real-Time Mode (RTM)
 
-Sub-second latency with Photon:
+Sub-second end-to-end latency (as low as 5 ms). Cluster requirements, slot math, supported sources/sinks, observability — see [real-time-mode.md](real-time-mode.md).
 
 ```python
-# Real-Time Mode (Databricks 13.3+)
-.trigger(realTime=True)
+# "5 minutes" is the long-running batch duration; PySpark requires it explicitly.
+.trigger(realTime="5 minutes")
 
-# Requirements:
-# - Photon enabled
-# - Fixed-size cluster (no autoscaling)
-# - Latency: < 800ms
-
-# Cost: Continuous cluster with Photon
+# Cost: Continuous cluster (Photon disabled — required for RTM)
 ```
 
 ## Trigger Selection Guide
 
 | Latency Requirement | Trigger | Cost | Use Case |
 |---------------------|---------|------|----------|
-| < 800ms | RTM | $$$ | Real-time analytics, alerts |
+| Sub-second (as low as 5ms) | RTM | $$$ | Real-time analytics, alerts, operational apps |
 | 1-30 seconds | processingTime | $$ | Near real-time dashboards |
 | 15-60 minutes | availableNow (scheduled) | $ | Batch-style SLA |
 | > 1 hour | availableNow (scheduled) | $ | ETL pipelines |
@@ -110,7 +105,7 @@ trigger = sla / 3  # 5 minutes
 .trigger(processingTime="5 minutes")
 
 # Example 3: Real-time requirement
-.trigger(realTime=True)  # < 800ms
+.trigger(realTime="5 minutes")  # sub-second E2E latency; "5 minutes" = long-running batch duration
 ```
 
 ## Cost Optimization Strategies
@@ -276,58 +271,23 @@ def start_all_streams():
 
 ### Pattern 3: RTM for Sub-Second Latency
 
-Use RTM for real-time requirements:
+Use RTM for real-time requirements. See [real-time-mode.md](real-time-mode.md) for the deep treatment.
 
 ```python
-# Real-Time Mode for sub-second latency
+# Real-Time Mode — sub-second E2E latency (as low as 5 ms)
 df.writeStream \
-    .format("kafka")
-    .option("topic", "output")
-    .trigger(realTime=True) \
+    .format("kafka") \
+    .option("topic", "output") \
+    .outputMode("update") \
+    .trigger(realTime="5 minutes") \
     .start()
 
-# Required configurations:
-spark.conf.set("spark.databricks.photon.enabled", "true")
-spark.conf.set("spark.sql.streaming.stateStore.providerClass", 
-               "com.databricks.sql.streaming.state.RocksDBStateProvider")
-
-# Latency: < 800ms
-# Cost: Continuous cluster with Photon
+# Cost: Continuous cluster (Photon disabled)
 ```
 
 ## Real-Time Mode (RTM) Configuration
 
-### Enable RTM
-
-```python
-# Enable Real-Time Mode
-.trigger(realTime=True)
-
-# Required configurations:
-spark.conf.set("spark.databricks.photon.enabled", "true")
-spark.conf.set("spark.sql.streaming.stateStore.providerClass", 
-               "com.databricks.sql.streaming.state.RocksDBStateProvider")
-
-# Cluster requirements:
-# - Fixed-size cluster (no autoscaling)
-# - Photon enabled
-# - Driver: Minimum 4 cores
-```
-
-### RTM Use Cases
-
-```python
-# Good for RTM:
-# - Sub-second latency requirements
-# - Simple transformations
-# - Stateless operations
-# - Kafka-to-Kafka pipelines
-
-# Not recommended for RTM:
-# - Stateful operations (aggregations, joins)
-# - Complex transformations
-# - Large batch sizes
-```
+Cluster setup, Spark conf, supported operations, sources/sinks, slot math, observability — all in [real-time-mode.md](real-time-mode.md). This file covers only the cost-vs-trigger trade-off; RTM's cost shape is "continuous cluster with Photon disabled."
 
 ## Performance Considerations
 
@@ -422,10 +382,10 @@ job_tags = {
 
 ```python
 # Highest cost, lowest latency
-.trigger(realTime=True)
+.trigger(realTime="5 minutes")  # "5 minutes" = long-running batch duration
 
-# Cost: Continuous cluster with Photon
-# Latency: < 800ms
+# Cost: Continuous cluster (Photon disabled)
+# Latency: Sub-second E2E (as low as 5 ms)
 # Use when: Sub-second latency required
 ```
 
@@ -436,7 +396,7 @@ job_tags = {
 | **High latency** | Trigger interval too long | Decrease trigger interval or use RTM |
 | **High cost** | Continuous processing | Use scheduled (availableNow) |
 | **Batch duration > trigger** | Processing too slow | Optimize processing or increase trigger |
-| **RTM not working** | Photon not enabled | Enable Photon and configure cluster |
+| **RTM not working** | Cluster misconfigured | Verify: DBR 16.4 LTS+, Classic compute, autoscaling/Photon/spot OFF, `spark.databricks.streaming.realTimeMode.enabled = true`. See [real-time-mode.md](real-time-mode.md). |
 
 ## Quick Wins
 

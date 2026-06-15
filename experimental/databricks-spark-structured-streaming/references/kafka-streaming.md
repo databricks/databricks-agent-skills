@@ -153,7 +153,7 @@ query = (enriched_df
     .option("kafka.bootstrap.servers", brokers)
     .option("topic", "output-events")
     .outputMode("update")         # RTM only supports update mode
-    .trigger(realTime="5 minutes")  # PySpark requires specifying the checkpoint interval
+    .trigger(realTime="5 minutes")  # long-running batch duration; see real-time-mode.md
     .option("checkpointLocation", checkpoint_path)
     .start()
 )
@@ -171,12 +171,14 @@ query = (enriched_df
 Enrich events with dimension data:
 
 ```python
+from pyspark.sql.functions import broadcast, col, to_json, struct
+
 # Read reference data (Delta table - auto-refreshed each microbatch)
 user_dim = spark.table("users.dimension")
 
 # Stream-static join for enrichment
 enriched = (parsed_df
-    .join(user_dim, "user_id", "left")
+    .join(broadcast(user_dim), "user_id", "left")     # broadcast() required: RTM only supports broadcast stream-static joins
     .withColumn("enriched_value", to_json(struct(
         col("event_id"),
         col("user_id"),
@@ -192,7 +194,8 @@ enriched.select(col("key"), col("enriched_value").alias("value")).writeStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", brokers) \
     .option("topic", "enriched-events") \
-    .trigger(realTime=True) \
+    .outputMode("update") \
+    .trigger(realTime="5 minutes") \
     .option("checkpointLocation", "/checkpoints/enrichment") \
     .start()
 ```
@@ -231,8 +234,8 @@ def route_events(batch_df, batch_id):
         .save()
 
 parsed_df.writeStream \
-    .foreachBatch(route_events) \
-    .trigger(realTime=True) \
+    .foreachBatch(route_events) \                    # foreachBatch is NOT supported in RTM — use processingTime
+    .trigger(processingTime="30 seconds") \
     .option("checkpointLocation", "/checkpoints/routing") \
     .start()
 ```
@@ -281,8 +284,8 @@ def validate_and_route(batch_df, batch_id):
             .save()
 
 source_df.writeStream \
-    .foreachBatch(validate_and_route) \
-    .trigger(realTime=True) \
+    .foreachBatch(validate_and_route) \              # foreachBatch is NOT supported in RTM — use processingTime
+    .trigger(processingTime="30 seconds") \
     .option("checkpointLocation", "/checkpoints/validation") \
     .start()
 ```
@@ -352,7 +355,7 @@ df.writeStream \
 | minPartitions | Match Kafka partitions | Optimal parallelism |
 | maxOffsetsPerTrigger | 10,000-100,000 | Balance latency vs throughput |
 | trigger interval | Business SLA / 3 | Recovery time buffer |
-| RTM | Only if < 800ms required | Microbatch more cost-effective |
+| RTM | Default for kafka→kafka pipelines; required when sub-second E2E latency matters | Micro-batch is more cost-effective for second-or-longer SLAs and for stateful workloads RTM doesn't support |
 
 ## Monitoring
 
@@ -391,7 +394,7 @@ for stream in spark.streams.active:
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | **No data being read** | `startingOffsets` default is "latest" | Use "earliest" for existing data |
-| **High latency** | Microbatch overhead | Use RTM (trigger(realTime=True)) |
+| **High latency** | Micro-batch overhead | Use RTM (`trigger(realTime="5 minutes")`) — see [real-time-mode.md](real-time-mode.md) |
 | **Consumer lag** | Processing < Input rate | Scale cluster; reduce maxOffsetsPerTrigger |
 | **Duplicate messages** | Exactly-once not configured | Enable idempotent producer (acks=all) |
 | **Falling behind** | Processing < Input rate | Increase cluster size |
@@ -402,7 +405,7 @@ for stream in spark.streams.active:
 - [ ] Checkpoint location is persistent (UC volumes, not DBFS)
 - [ ] Unique checkpoint per pipeline
 - [ ] Fixed-size cluster (no autoscaling for streaming/RTM)
-- [ ] RTM enabled only if latency < 800ms required
+- [ ] RTM enabled for kafka→kafka pipelines and any workload needing sub-second E2E latency
 - [ ] Consumer lag monitored and alerts configured
 - [ ] Producer acks=all for durability
 - [ ] Schema validation with DLQ configured
