@@ -1,6 +1,6 @@
 interface:
   display_name: "Databricks App Design"
-  short_description: "Design analytics/BI/AI data app UX, bound to AppKit"
+  short_description: "Design custom-code Databricks App (AppKit/React) data-screen UX"
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
