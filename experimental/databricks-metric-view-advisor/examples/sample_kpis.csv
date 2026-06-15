@@ -1,0 +1,12 @@
+type,name,definition,description
+measure,Total Revenue,"SUM(amount)","Total order revenue in USD including tax"
+measure,Order Count,"COUNT(1)","Number of orders placed"
+measure,Unique Customers,"COUNT(DISTINCT customer_id)","Distinct customers who placed orders"
+measure,Avg Order Value,"AVG(amount)","Average dollar value per order"
+measure,Revenue per Customer,"SUM(amount) / COUNT(DISTINCT customer_id)","Average revenue generated per unique customer"
+measure,Open Orders,"COUNT(1) FILTER (WHERE status = 'OPEN')","Orders not yet fulfilled"
+measure,Fulfillment Rate,"COUNT(1) FILTER (WHERE status = 'FULFILLED') * 1.0 / COUNT(1)","Percentage of orders that have been fulfilled"
+dimension,Region,region,"Sales region"
+dimension,Order Month,"DATE_TRUNC('MONTH', order_date)","Month of order for trend analysis"
+dimension,Customer Segment,"CASE WHEN lifetime_value > 10000 THEN 'Enterprise' WHEN lifetime_value > 1000 THEN 'Mid-Market' ELSE 'SMB' END","Segment based on cumulative lifetime spend"
+dimension,Priority Level,"CASE WHEN priority <= 2 THEN 'High' WHEN priority <= 4 THEN 'Medium' ELSE 'Low' END","Bucketed priority: High (1-2), Medium (3-4), Low (5+)"
