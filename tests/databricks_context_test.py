@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Unit tests for the databricks-context SessionStart hook.
 
-Covers the pure pieces (config parsing, sanitization) and the build_context
-wiring around them. Stdlib-only; run the suite with:
+Covers the pure pieces (config parsing, sanitization, platform dialects) and
+the build_context wiring around them. Stdlib-only; run the suite with:
 python3 -m unittest discover -s tests -p "*_test.py"
 """
 import importlib.util
+import json
 import os
 import tempfile
 import unittest
@@ -107,6 +108,40 @@ class BuildContextTest(unittest.TestCase):
             out = ctx.build_context()
         self.assertIn("Default profile", out)
         self.assertIn("`prod`", out)
+
+
+class PlatformTest(unittest.TestCase):
+    """The --platform flag picks command names and the output envelope."""
+
+    def test_default_platform_is_claude(self):
+        self.assertEqual(ctx._platform_from_argv([]), "claude")
+        self.assertEqual(ctx._platform_from_argv(["--other", "x"]), "claude")
+
+    def test_cursor_platform_parsed(self):
+        self.assertEqual(ctx._platform_from_argv(["--platform", "cursor"]), "cursor")
+        self.assertEqual(ctx._platform_from_argv(["--platform=cursor"]), "cursor")
+
+    def test_unknown_platform_falls_back_to_claude(self):
+        # A wiring typo must degrade to a working hook, never a broken one.
+        self.assertEqual(ctx._platform_from_argv(["--platform", "vim"]), "claude")
+        self.assertEqual(ctx._platform_from_argv(["--platform"]), "claude")
+
+    def test_cursor_banner_uses_cursor_command_names(self):
+        with mock.patch.object(ctx.shutil, "which", return_value=None):
+            out = ctx.build_context(platform="cursor")
+        self.assertIn("/databricks-setup", out)
+        self.assertNotIn("/databricks:setup", out)
+
+    def test_claude_output_envelope(self):
+        out = json.loads(ctx.render_output("banner", "claude"))
+        self.assertEqual(
+            out["hookSpecificOutput"],
+            {"hookEventName": "SessionStart", "additionalContext": "banner"},
+        )
+
+    def test_cursor_output_envelope(self):
+        out = json.loads(ctx.render_output("banner", "cursor"))
+        self.assertEqual(out, {"additional_context": "banner"})
 
 
 if __name__ == "__main__":

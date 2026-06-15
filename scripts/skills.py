@@ -591,6 +591,103 @@ def check_plugin_components(repo_root: Path) -> list[str]:
     return errors
 
 
+# Any hooks/*.py mentioned in a hooks wiring file, regardless of how the
+# platform prefixes the path (${CLAUDE_PLUGIN_ROOT}/, plugin-root-relative, …).
+_HOOK_PY_RE = re.compile(r"hooks/[\w.-]+\.py")
+
+
+def _check_hook_wiring(repo_root: Path, rel: str, errors: list[str]) -> dict | None:
+    """Parse a hooks wiring file; verify every hooks/*.py it references exists.
+
+    Returns the parsed config (for caller-specific checks), or None when the
+    file is missing or not valid JSON.
+    """
+    path = repo_root / rel
+    if not path.exists():
+        errors.append(f"Missing {rel}.")
+        return None
+    try:
+        cfg = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        errors.append(f"{rel} is not valid JSON: {exc}")
+        return None
+    for script in sorted(set(_HOOK_PY_RE.findall(json.dumps(cfg)))):
+        if not (repo_root / script).exists():
+            errors.append(f"{rel} references '{script}' which does not exist.")
+    return cfg
+
+
+def check_cursor_plugin(repo_root: Path) -> list[str]:
+    """Validate the Cursor plugin manifest and its hook/command wiring.
+
+    Two Cursor-specific traps this guards:
+
+    - The plugin `name` is the frozen Cursor install identifier. Cursor keys
+      installations and updates on it, so renaming orphans every existing
+      install from auto-updates (see .cursor-plugin/NOTES.md).
+    - Cursor default-discovers `hooks/hooks.json` (the Claude-format wiring,
+      whose event names Cursor cannot parse) when the manifest declares no
+      hooks path, so the explicit "hooks" pointer is load-bearing.
+    """
+    errors: list[str] = []
+
+    plugin_path = repo_root / ".cursor-plugin" / "plugin.json"
+    if not plugin_path.exists():
+        return [f"Missing {plugin_path.relative_to(repo_root)}"]
+    try:
+        plugin = json.loads(plugin_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f".cursor-plugin/plugin.json is not valid JSON: {exc}"]
+
+    if plugin.get("name") != "databricks-skills":
+        errors.append(
+            '.cursor-plugin/plugin.json "name" must stay "databricks-skills": it is '
+            "the frozen Cursor marketplace install identifier; renaming it orphans "
+            "every existing install (see .cursor-plugin/NOTES.md)."
+        )
+
+    declared_hooks = plugin.get("hooks")
+    declared = _norm_rel_path(declared_hooks) if isinstance(declared_hooks, str) else ""
+    if declared == "hooks/hooks.json":
+        errors.append(
+            '.cursor-plugin/plugin.json "hooks" must not point at hooks/hooks.json '
+            "(the Claude Code wiring with Claude event names); Cursor needs "
+            "hooks/cursor-hooks.json."
+        )
+    if (repo_root / "hooks" / "cursor-hooks.json").exists():
+        if declared != "hooks/cursor-hooks.json":
+            errors.append(
+                "hooks/cursor-hooks.json exists but .cursor-plugin/plugin.json does "
+                'not declare "hooks": "./hooks/cursor-hooks.json". Without the '
+                "explicit pointer Cursor default-discovers the Claude-format "
+                "hooks/hooks.json and the hooks break."
+            )
+        cfg = _check_hook_wiring(repo_root, "hooks/cursor-hooks.json", errors)
+        if cfg is not None and cfg.get("version") != 1:
+            errors.append('hooks/cursor-hooks.json must declare "version": 1.')
+
+    commands_rel = plugin.get("commands")
+    if isinstance(commands_rel, str):
+        commands_dir = repo_root / _norm_rel_path(commands_rel)
+        md_files = sorted(commands_dir.glob("*.md")) if commands_dir.is_dir() else []
+        if not md_files:
+            errors.append(
+                f'.cursor-plugin/plugin.json declares commands at "{commands_rel}" '
+                "but no *.md command files exist there."
+            )
+        for md in md_files:
+            frontmatter = _read_frontmatter(md)
+            if frontmatter is None or not re.search(
+                r"^description:\s*\S", frontmatter, re.MULTILINE
+            ):
+                errors.append(
+                    f"Cursor command '{md.relative_to(repo_root)}' needs frontmatter "
+                    "with a 'description'."
+                )
+
+    return errors
+
+
 def check_codex_plugin(repo_root: Path) -> list[str]:
     """Validate the Codex plugin manifest, marketplace catalog, and hook wiring.
 
@@ -844,6 +941,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in component_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            cursor_errors = check_cursor_plugin(repo_root)
+            if cursor_errors:
+                print(
+                    "ERROR: .cursor-plugin manifest / components are misconfigured:",
+                    file=sys.stderr,
+                )
+                for err in cursor_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

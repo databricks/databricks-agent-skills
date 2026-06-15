@@ -7,6 +7,17 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+`cursor-hooks.json` wires the Cursor plugin and **is** declared explicitly (as
+`"hooks"` in `.cursor-plugin/plugin.json`), because Cursor's default plugin
+discovery would otherwise parse the Claude-format `hooks.json`. It runs the
+context primer (`sessionStart`) and the auth hinter (`postToolUse`, matcher
+`Shell`) with `--platform cursor`, which switches the scripts' output envelope
+to Cursor's `additional_context` and renders the Cursor command names
+(`/databricks-setup`, `/databricks-doctor`) in the injected text. The prompt
+router is not wired on Cursor: `beforeSubmitPrompt` can block a prompt but
+cannot inject context, so routing rides on the primer plus Cursor's native
+skill selection.
+
 `copilot-hooks.json` wires the GitHub Copilot plugin (declared as `"hooks"` in
 `.github/plugin/plugin.json`). It uses PascalCase event names, which selects
 Copilot's Claude-compatible payload dialect, so the scripts run unchanged and
@@ -101,6 +112,8 @@ These ship with the Claude Code plugin (the whole repo is the plugin via
 auth hinter via `copilot-hooks.json`, catalogued in
 `.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks
 via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
+Cursor marketplace plugin (`databricks-skills`) ships the context primer and
+auth hinter via `cursor-hooks.json`; the router stays Claude-only there. The
 Copilot cloud agent takes no plugins; it only reads hooks vendored into the
 target repo's `.github/hooks/`. The Databricks CLI install path
 (`databricks aitools install`) currently packages **skills only**. See the repo
