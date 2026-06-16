@@ -57,8 +57,8 @@ def build_routing_data(meta: dict) -> dict:
     routing = meta["routing"]
     return {
         "//": (
-            'GENERATED FILE: do not edit. Rendered from plugin.meta.json "routing" '
-            "by scripts/skills.py. Run `python3 scripts/skills.py generate`."
+            'GENERATED FILE: do not edit. Rendered from metaplugin/plugin.meta.json '
+            '"routing" by scripts/skills.py. Run `python3 scripts/skills.py generate`.'
         ),
         "strong": routing["strong"],
         "ambiguous": routing["ambiguous"],
@@ -77,10 +77,10 @@ _ROUTING_RULE_README = """\
 
 # Generated Cursor routing rule
 
-`databricks-routing.mdc` in this directory is generated from the repo-root
-`plugin.meta.json` (the `routing` block) by `scripts/skills.py`, alongside the
-prompt router's `hooks/_routing_data.json`, so the two routing tables stay in
-sync. To change routing, edit `plugin.meta.json` and run
+`databricks-routing.mdc` in this directory is generated from
+`metaplugin/plugin.meta.json` (the `routing` block) by `scripts/skills.py`,
+alongside the prompt router's `hooks/_routing_data.json`, so the two routing
+tables stay in sync. To change routing, edit `metaplugin/plugin.meta.json` and run
 `python3 scripts/skills.py generate`. CI fails on any drift. See `CONTRIBUTING.md`.
 """
 

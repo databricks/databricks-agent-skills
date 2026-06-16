@@ -5,11 +5,12 @@ from pathlib import Path
 
 
 # Plugin-level metadata (version, identity, keywords, description, per-target
-# shape) is the single source of truth in plugin.meta.json at the repo root.
-# load_meta reads it; the build_* renderers below generate every target's
-# plugin.json + marketplace.json from it. The skill -> plugin-keyword map that
-# used to live here (SKILL_METADATA) now lives in plugin.meta.json "skills".
-META_FILE = "plugin.meta.json"
+# shape) is the single source of truth in metaplugin/plugin.meta.json.
+# load_meta reads it; the build_* renderers in skillsgen/plugins.py generate
+# every target's plugin.json + marketplace.json from it. The skill ->
+# plugin-keyword map that used to live here (SKILL_METADATA) now lives in
+# metaplugin/plugin.meta.json "skills".
+META_FILE = "metaplugin/plugin.meta.json"
 
 
 def load_meta(repo_root: Path) -> dict:

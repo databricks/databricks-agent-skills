@@ -52,12 +52,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # plugin.meta.json is the source; the rest are generated from it.
-          # Stage all of them (unchanged files are a no-op) so a release can
-          # never commit a partial set, e.g. bump the Claude manifest but leave
-          # the Codex/Copilot ones behind.
+          # metaplugin/plugin.meta.json is the source; the rest are generated
+          # from it. Stage all of them (unchanged files are a no-op) so a release
+          # can never commit a partial set, e.g. bump the Claude manifest but
+          # leave the Codex/Copilot ones behind.
           git add \
-            plugin.meta.json \
+            metaplugin/plugin.meta.json \
             .claude-plugin/plugin.json \
             .codex-plugin/plugin.json \
             .github/plugin/plugin.json \

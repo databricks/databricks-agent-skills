@@ -45,7 +45,7 @@ python3 scripts/skills.py validate
 
 ### CI
 
-`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.codex-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
+`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.codex-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
 
 - Every skill has `agents/openai.yaml`.
 - Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
@@ -55,13 +55,14 @@ python3 scripts/skills.py validate
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
-## Plugin metadata (`plugin.meta.json`)
+## Plugin metadata (`metaplugin/plugin.meta.json`)
 
 The repo ships one logical plugin to four targets (Claude Code, Codex, Copilot,
 Cursor) plus a marketplace catalog for three of them. All cross-target plugin
 metadata, version, name, description, author, license, keywords, per-target
-display names, and hook/command/rule wiring, lives once in **`plugin.meta.json`**
-at the repo root. `scripts/skills.py generate` renders it into every target's
+display names, and hook/command/rule wiring, lives once in
+**`metaplugin/plugin.meta.json`**. `scripts/skills.py generate` renders it into
+every target's
 `plugin.json` and `marketplace.json`:
 
 - `.claude-plugin/{plugin,marketplace}.json`
@@ -69,7 +70,7 @@ at the repo root. `scripts/skills.py generate` renders it into every target's
 - `.github/plugin/{plugin,marketplace}.json`
 - `.cursor-plugin/plugin.json`
 
-**Edit `plugin.meta.json`, then run `python3 scripts/skills.py generate`.** Never
+**Edit `metaplugin/plugin.meta.json`, then run `python3 scripts/skills.py generate`.** Never
 hand-edit the generated files; CI re-renders them in memory and fails on any byte
 drift. (The generated JSON carries no "do-not-edit" comment key because the
 plugin loaders / the Claude marketplace `$schema` reject unknown keys; their
@@ -85,12 +86,12 @@ product-skill table there is rendered into both the prompt router's data
 (`hooks/_routing_data.json`, which `hooks/databricks-router.py` loads) and the
 Cursor rule (`rules/databricks-routing.mdc`), so the two routing tables cannot
 drift. Add a product skill and CI fails until it has a `routing.table` row.
-Regenerate the same way: edit `plugin.meta.json`, run `scripts/skills.py generate`.
+Regenerate the same way: edit `metaplugin/plugin.meta.json`, run `scripts/skills.py generate`.
 
 The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,
 `copilot-hooks.json`, `cursor-hooks.json`) are generated from the `hooks` block
 + each target's `hooks_render` (the same three logical hooks rendered into each
-runtime's dialect). Edit `plugin.meta.json` and regenerate; only the wiring JSON
+runtime's dialect). Edit `metaplugin/plugin.meta.json` and regenerate; only the wiring JSON
 is generated, the hook `*.py` scripts are hand-written.
 
 ## Plugin components (hooks + commands)

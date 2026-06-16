@@ -243,16 +243,16 @@ The manifest is consumed by the CLI to discover available skills.
 The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor)
 plus three marketplace catalogs. Their `plugin.json` / `marketplace.json` files
 are **generated** from a single source of truth,
-[`plugin.meta.json`](./plugin.meta.json), by `scripts/skills.py`. Do not
+[`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json), by `scripts/skills.py`. Do not
 hand-edit the generated files (each generated directory also carries a
-`README.md` saying so) — edit `plugin.meta.json` and regenerate:
+`README.md` saying so) — edit `metaplugin/plugin.meta.json` and regenerate:
 
 ```bash
 python3 scripts/skills.py generate   # regenerates manifest.json + all plugin manifests
 python3 scripts/skills.py validate   # CI check: fails on any drift
 ```
 
-`plugin.meta.json` owns the version (one value, propagated to all four targets),
+`metaplugin/plugin.meta.json` owns the version (one value, propagated to all four targets),
 name, description, keywords, author/license, per-target display names and
 hook/command/rule wiring, and the skill-to-keyword map. Adding a stable skill
 means adding it to the `skills` map there (with a `keyword`); CI fails if a

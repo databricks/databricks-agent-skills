@@ -47,28 +47,28 @@ python3 scripts/skills.py sync         # sync Codex metadata + icons only
 python3 scripts/skills.py validate     # check metadata + icons + manifest + plugin manifests are up to date (CI)
 ```
 
-## Plugin manifests (generated from `plugin.meta.json`)
+## Plugin manifests (generated from `metaplugin/plugin.meta.json`)
 
 The four `plugin.json` files (`.claude-plugin/`, `.codex-plugin/`,
 `.github/plugin/`, `.cursor-plugin/`) and the three `marketplace.json` files
 (`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`) are **generated**
-from [`plugin.meta.json`](./plugin.meta.json) by `scripts/skills.py generate`.
+from [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json) by `scripts/skills.py generate`.
 **Do not hand-edit them** (each generated directory carries a `README.md`
 marker). To change the plugin version, description, keywords, or per-target
-config, edit `plugin.meta.json` and run `python3 scripts/skills.py generate`; CI
-(`validate`) fails on any drift. The version lives only in `plugin.meta.json`
+config, edit `metaplugin/plugin.meta.json` and run `python3 scripts/skills.py generate`; CI
+(`validate`) fails on any drift. The version lives only in `metaplugin/plugin.meta.json`
 and propagates to all four targets. Adding a stable skill requires an entry in
 the `skills` map (with a `keyword`).
 
-The `routing` block in `plugin.meta.json` is generated too: it renders the
+The `routing` block in `metaplugin/plugin.meta.json` is generated too: it renders the
 prompt router's data (`hooks/_routing_data.json`, loaded by
 `hooks/databricks-router.py`) and the Cursor rule
 (`rules/databricks-routing.mdc`) from one table. Do not hand-edit those; edit
-`plugin.meta.json` and regenerate. CI fails if a product skill has no routing row.
+`metaplugin/plugin.meta.json` and regenerate. CI fails if a product skill has no routing row.
 
 The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,
 `copilot-hooks.json`, `cursor-hooks.json`) are also generated, from the `hooks`
-block + each target's `hooks_render`. Edit `plugin.meta.json` and regenerate;
+block + each target's `hooks_render`. Edit `metaplugin/plugin.meta.json` and regenerate;
 the hook `*.py` scripts stay hand-written, only the wiring JSON is generated.
 
 ## Plugin components (hooks + commands)

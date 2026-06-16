@@ -9,7 +9,7 @@ on:
       - 'scripts/skills.py'
       - 'scripts/bump_version.py'
       - 'manifest.json'
-      - 'plugin.meta.json'
+      - 'metaplugin/**'
       - '.claude-plugin/**'
       - '.codex-plugin/**'
       - '.github/plugin/**'

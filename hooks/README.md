@@ -9,11 +9,11 @@ Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 
 **The four hook-wiring files (`hooks.json`, `codex-hooks.json`,
 `copilot-hooks.json`, `cursor-hooks.json`) are generated** from
-`plugin.meta.json` (the `hooks` block + each target's `hooks_render`) by
+`metaplugin/plugin.meta.json` (the `hooks` block + each target's `hooks_render`) by
 `scripts/skills.py`. They are the same three logical hooks rendered into each
 runtime's dialect (schema shape, event-name casing, env var, command form, tool
 matcher, and whether the router is wired). To change hook wiring, edit
-`plugin.meta.json` and run `python3 scripts/skills.py generate`; do not
+`metaplugin/plugin.meta.json` and run `python3 scripts/skills.py generate`; do not
 hand-edit these JSON files (CI fails on drift). The hook *scripts* (`*.py`) are
 hand-written; only the wiring JSON is generated.
 
@@ -95,11 +95,11 @@ Precision is tuned to avoid over-routing:
   (`github.com/databricks/...`) does not route. URLs whose hostname contains
   `databricks` (workspace and docs hosts) still do.
 
-These three lists, plus the injected instruction, live in `plugin.meta.json`'s
-`routing` block and are generated into `_routing_data.json` (next to this
-script), which the router loads at import. To change them, edit
-`plugin.meta.json` and run `python3 scripts/skills.py generate`; do not
-hand-edit `_routing_data.json`. If that file is ever missing or unreadable the
+These three lists, plus the injected instruction, live in
+`metaplugin/plugin.meta.json`'s `routing` block and are generated into
+`_routing_data.json` (next to this script), which the router loads at import. To
+change them, edit `metaplugin/plugin.meta.json` and run
+`python3 scripts/skills.py generate`; do not hand-edit `_routing_data.json`. If that file is ever missing or unreadable the
 router falls back to a minimal inline config that routes only literal
 `databricks` mentions (fail-open), so an install that loses it keeps working but
 loses product-keyword routing until it is restored. Behavior is pinned by
