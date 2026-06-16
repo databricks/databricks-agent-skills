@@ -66,6 +66,11 @@ prompt router's data (`hooks/_routing_data.json`, loaded by
 (`rules/databricks-routing.mdc`) from one table. Do not hand-edit those; edit
 `plugin.meta.json` and regenerate. CI fails if a product skill has no routing row.
 
+The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,
+`copilot-hooks.json`, `cursor-hooks.json`) are also generated, from the `hooks`
+block + each target's `hooks_render`. Edit `plugin.meta.json` and regenerate;
+the hook `*.py` scripts stay hand-written, only the wiring JSON is generated.
+
 ## Plugin components (hooks + commands)
 
 Beyond skills, the Claude Code plugin ships two component dirs at the repo root.

@@ -7,6 +7,16 @@ exits 0, so a broken hook never blocks a prompt, session start, or tool call).
 Code auto-loads `hooks/hooks.json`, so it is **not** declared in `plugin.json`
 (declaring the standard path double-loads it and fails the plugin).
 
+**The four hook-wiring files (`hooks.json`, `codex-hooks.json`,
+`copilot-hooks.json`, `cursor-hooks.json`) are generated** from
+`plugin.meta.json` (the `hooks` block + each target's `hooks_render`) by
+`scripts/skills.py`. They are the same three logical hooks rendered into each
+runtime's dialect (schema shape, event-name casing, env var, command form, tool
+matcher, and whether the router is wired). To change hook wiring, edit
+`plugin.meta.json` and run `python3 scripts/skills.py generate`; do not
+hand-edit these JSON files (CI fails on drift). The hook *scripts* (`*.py`) are
+hand-written; only the wiring JSON is generated.
+
 `cursor-hooks.json` wires the Cursor plugin and **is** declared explicitly (as
 `"hooks"` in `.cursor-plugin/plugin.json`), because Cursor's default plugin
 discovery would otherwise parse the Claude-format `hooks.json`. It runs the
