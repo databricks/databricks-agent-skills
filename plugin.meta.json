@@ -36,7 +36,6 @@
     },
     "codex": {
       "dir": ".codex-plugin",
-      "hooks": "./hooks/codex-hooks.json",
       "hooks_render": {
         "out": "hooks/codex-hooks.json",
         "dialect": "nested",
@@ -56,7 +55,6 @@
     "copilot": {
       "dir": ".github/plugin",
       "displayName": "Databricks",
-      "hooks": "./hooks/copilot-hooks.json",
       "hooks_render": {
         "out": "hooks/copilot-hooks.json",
         "dialect": "copilot",
@@ -68,7 +66,6 @@
       "displayName": "Databricks Skills",
       "commands": "./commands-cursor/",
       "rules": "./rules/",
-      "hooks": "./hooks/cursor-hooks.json",
       "hooks_render": {
         "out": "hooks/cursor-hooks.json",
         "dialect": "cursor",

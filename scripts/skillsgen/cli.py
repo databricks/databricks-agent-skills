@@ -19,7 +19,11 @@ from skillsgen.routing import (
     check_routing_patterns,
     generate_routing,
 )
-from skillsgen.hooks import check_generated_hooks, generate_hooks
+from skillsgen.hooks import (
+    check_generated_hooks,
+    check_no_orphan_hook_scripts,
+    generate_hooks,
+)
 from skillsgen.validators import (
     check_codex_plugin,
     check_copilot_plugin,
@@ -175,6 +179,17 @@ def main() -> None:
                         file=sys.stderr,
                     )
                     for err in hook_drift:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
+
+                orphan_hooks = check_no_orphan_hook_scripts(repo_root, meta)
+                if orphan_hooks:
+                    print(
+                        f"ERROR: orphaned hook script(s) not wired into {META_FILE} "
+                        '"hooks":',
+                        file=sys.stderr,
+                    )
+                    for err in orphan_hooks:
                         print(f"  - {err}", file=sys.stderr)
                     ok = False
 

@@ -90,6 +90,8 @@ from skillsgen.hooks import (
     generated_hook_files,
     generate_hooks,
     check_generated_hooks,
+    check_no_orphan_hook_scripts,
+    _UNWIRED_HOOK_SCRIPTS,
 )
 from skillsgen.validators import (
     _HOOK_SCRIPT_RE,

@@ -45,6 +45,17 @@ def build_keywords(meta: dict) -> list[str]:
     ]
 
 
+def _declared_hooks(meta: dict, target_key: str) -> str:
+    """The plugin.json "hooks" path, derived from the single hooks_render.out.
+
+    The plugin.json declaration and the generation output name the same file;
+    deriving the declaration from hooks_render.out leaves one source of truth, so
+    there is no second hand-maintained path to drift from or typo. (Claude is
+    exempt: it auto-loads hooks/hooks.json and must not declare it.)
+    """
+    return "./" + meta["targets"][target_key]["hooks_render"]["out"]
+
+
 def build_claude_plugin(meta: dict) -> dict:
     return {
         "name": meta["name"],
@@ -72,7 +83,7 @@ def build_codex_plugin(meta: dict) -> dict:
         "license": meta["license"],
         "keywords": build_keywords(meta),
         "skills": "./skills/",
-        "hooks": target["hooks"],
+        "hooks": _declared_hooks(meta, "codex"),
         "interface": target["interface"],
     }
 
@@ -89,7 +100,7 @@ def build_copilot_plugin(meta: dict) -> dict:
         "repository": meta["repository"],
         "license": meta["license"],
         "skills": "./skills/",
-        "hooks": target["hooks"],
+        "hooks": _declared_hooks(meta, "copilot"),
     }
 
 
@@ -105,7 +116,7 @@ def build_cursor_plugin(meta: dict) -> dict:
         "skills": "./skills/",
         "commands": target["commands"],
         "rules": target["rules"],
-        "hooks": target["hooks"],
+        "hooks": _declared_hooks(meta, "cursor"),
     }
 
 

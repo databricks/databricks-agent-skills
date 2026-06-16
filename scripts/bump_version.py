@@ -86,6 +86,12 @@ def main() -> None:
     written = skills.generate_plugins(repo_root, meta)
     print(f"regenerated {written} plugin manifest file(s) from {META_FILE}")
 
+    written_routing = skills.generate_routing(repo_root, meta)
+    print(f"regenerated {written_routing} routing file(s) from {META_FILE}")
+
+    written_hooks = skills.generate_hooks(repo_root, meta)
+    print(f"regenerated {written_hooks} hook-wiring file(s) from {META_FILE}")
+
     manifest = skills.generate_manifest(repo_root)
     (repo_root / "manifest.json").write_text(skills.serialize_manifest(manifest))
     print("regenerated manifest.json")

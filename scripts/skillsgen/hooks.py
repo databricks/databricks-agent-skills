@@ -147,3 +147,28 @@ def generate_hooks(repo_root: Path, meta: dict) -> int:
 def check_generated_hooks(repo_root: Path, meta: dict) -> list[str]:
     """Fail if any generated hook-wiring file drifts from what meta would produce."""
     return _check_generated_files(repo_root, generated_hook_files(meta))
+
+
+# No hooks/*.py is expected to exist without being wired into meta["hooks"]. Add
+# a filename here (with a reason) only if a deliberately-unwired helper script is
+# ever introduced.
+_UNWIRED_HOOK_SCRIPTS: frozenset = frozenset()
+
+
+def check_no_orphan_hook_scripts(repo_root: Path, meta: dict) -> list[str]:
+    """Every hooks/*.py must be wired into meta["hooks"]["entries"] (or allow-listed).
+
+    The reverse of test_wired_scripts_exist (which checks wired -> exists): this
+    checks exists -> wired, so a hook script that is added but never wired into
+    any target (dead code that still ships) fails CI instead of riding along
+    unnoticed.
+    """
+    wired = set(_hook_scripts(meta).values()) | set(_UNWIRED_HOOK_SCRIPTS)
+    errors: list[str] = []
+    for py in sorted((repo_root / "hooks").glob("*.py")):
+        if py.name not in wired:
+            errors.append(
+                f"hooks/{py.name} exists but is not wired into plugin.meta.json "
+                '"hooks"."entries" (and is not allow-listed). Wire it or remove it.'
+            )
+    return errors
