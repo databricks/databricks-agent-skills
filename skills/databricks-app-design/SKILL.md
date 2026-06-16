@@ -1,6 +1,5 @@
 ---
 name: databricks-app-design
-parent: databricks-apps
 description: Design the UX of Databricks data apps — dashboards, KPI pages, reports, charts, tables, and Genie/chat data assistants — mapped to concrete AppKit components. Use when BUILDING or reviewing any UI that displays data or answers data questions: choosing genre, layout, charts, KPIs, semantic color, required states (loading/empty/error), IBCS notation, and AI-result trust (showing generated SQL/sources for Genie/chat). NOT for authoring managed AI/BI (Lakeview) dashboards (→ databricks-aibi-dashboards), non-data frontend (forms, settings, auth, marketing), or scaffolding/build/deploy (→ databricks-apps). Complements databricks-apps; use it alongside whenever the app has a dashboard, chart, table, KPI, report, or Genie/chat/AI surface.
 metadata:
   version: 0.1.0
@@ -20,7 +19,7 @@ Design advice that doesn't name a real component is incomplete. Always end at a 
 ## When to use / when NOT
 - USE for: dashboard/overview/KPI pages, reports, metric/ontology pages, variance analysis, and Genie/NL data surfaces — design *or* critique.
 - Do NOT use for: authoring managed **AI/BI (Lakeview) dashboards** (→ `databricks-aibi-dashboards`), generic frontend (forms, auth, settings, marketing), or scaffolding/build/deploy (→ `databricks-apps`). If a request is "add a form", "deploy this", or "build a Lakeview / AI-BI dashboard", this skill should not fire.
-- Relationship: `databricks-apps` builds/runs the app; this skill decides what the data screens should look like and which primitives realize them.
+- Relationship: load `databricks-apps` alongside this skill when building or changing a Databricks App. `databricks-apps` builds/runs the app; this skill decides what the data screens should look like and which primitives realize them.
 
 ## Workflow
 1. **Frame** — audience, the decision/question, refresh cadence, device, primary task. One sentence.
