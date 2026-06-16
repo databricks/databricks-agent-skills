@@ -45,8 +45,9 @@ skill under [`./skills/`](./skills/)):
 ```
 
 The Cursor plugin ships the skills plus the `databricks-setup` /
-`databricks-doctor` commands and two of the three hooks (session context,
-auth-failure hints); see
+`databricks-doctor` commands, two of the three hooks (session context,
+auth-failure hints), and a routing rule that steers Databricks prompts into the
+skills; see
 [Commands and hooks](#commands-and-hooks-claude-code-cursor).
 
 **Via the GitHub Copilot plugin marketplace:**
@@ -58,8 +59,9 @@ copilot plugin install databricks@databricks-agent-skills
 
 Works in Copilot CLI (plugins are GA there) and VS Code (agent plugins,
 preview; also installable from the Extensions view). Ships the skills plus
-two hooks: the session context primer (effective in VS Code) and the
-auth-failure hinter. The Copilot cloud agent on github.com takes no plugins;
+two hooks: the session context primer and the auth-failure hinter (both run on
+Copilot CLI and the cloud agent; VS Code has its own hooks system). The Copilot
+cloud agent on github.com takes no plugins;
 for that surface, vendor the skills into the target repo (`.github/skills/`)
 and the auth-hint hook into `.github/hooks/`.
 
@@ -166,9 +168,12 @@ the same commands ship as `/databricks-setup` and `/databricks-doctor` from
 `.cursor-plugin/plugin.json`): the context primer (`sessionStart`) and the
 auth-failure hint (`postToolUse`), both invoked with `--platform cursor` so
 they emit Cursor's output shape and reference the Cursor command names. The
-prompt router does not port: Cursor's `beforeSubmitPrompt` hook cannot inject
-context, so routing rides on the primer's routing rule plus Cursor's native
-skill selection.
+prompt-router hook does not port (Cursor's `beforeSubmitPrompt` cannot inject
+context), so routing instead ships as a Cursor rule
+([`rules/databricks-routing.mdc`](./rules/databricks-routing.mdc)) that injects
+the routing table when a prompt is Databricks-related, independent of an open
+Cursor bug that currently drops hook `additional_context`. Native skill
+selection also helps.
 
 > **Distribution parity (follow-up).** The plugin marketplace ships the whole
 > repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.

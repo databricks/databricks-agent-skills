@@ -504,6 +504,54 @@ def _read_frontmatter(md_path: Path) -> str | None:
     return text[3:end]
 
 
+# Documented hook event names per platform. A config keyed on an event outside
+# its platform's set silently never fires, which the JSON-validity and
+# script-existence checks cannot catch. Verified against each platform's current
+# (mid-2026) hooks docs; extend these sets when a platform adds an event we wire.
+_CLAUDE_EVENTS = frozenset({
+    "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification",
+    "Stop", "SubagentStop", "SessionStart", "SessionEnd", "PreCompact",
+})
+_CODEX_EVENTS = frozenset({
+    "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact",
+    "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop",
+    "Stop", "SessionStart",
+})
+_CURSOR_EVENTS = frozenset({
+    "sessionStart", "sessionEnd", "preToolUse", "postToolUse",
+    "postToolUseFailure", "subagentStart", "subagentStop",
+    "beforeShellExecution", "afterShellExecution", "beforeMCPExecution",
+    "afterMCPExecution", "beforeReadFile", "afterFileEdit",
+    "beforeSubmitPrompt", "preCompact", "stop", "afterAgentResponse",
+    "afterAgentThought", "beforeTabFileRead", "afterTabFileEdit",
+    "workspaceOpen",
+})
+# Copilot accepts its native camelCase events and the PascalCase
+# (Claude / Open Plugins) dialect; both are valid.
+_COPILOT_EVENTS = frozenset({
+    "sessionStart", "sessionEnd", "userPromptSubmitted", "preToolUse",
+    "postToolUse", "agentStop", "subagentStop", "errorOccurred",
+    "SessionStart", "PreToolUse", "PostToolUse", "UserPromptSubmit",
+    "PreCompact", "SubagentStart", "SubagentStop", "Stop",
+})
+
+
+def _check_hook_event_names(rel: str, cfg: dict | None, valid: frozenset, errors: list[str]) -> None:
+    """Flag any hook event key in cfg that the platform does not actually fire."""
+    if not isinstance(cfg, dict):
+        return
+    hooks = cfg.get("hooks")
+    if not isinstance(hooks, dict):
+        return
+    for event in hooks:
+        if event not in valid:
+            errors.append(
+                f"{rel} wires hook event '{event}', not a documented event for "
+                "this platform (it would silently never fire). Valid events: "
+                f"{', '.join(sorted(valid))}."
+            )
+
+
 def check_plugin_components(repo_root: Path) -> list[str]:
     """Validate the non-skill plugin components: hooks/ and commands/.
 
@@ -587,6 +635,7 @@ def check_plugin_components(repo_root: Path) -> list[str]:
                     errors.append(
                         f"hooks/hooks.json references '{rel}' which does not exist."
                     )
+        _check_hook_event_names("hooks/hooks.json", hooks_cfg, _CLAUDE_EVENTS, errors)
 
     return errors
 
@@ -667,6 +716,7 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
         cfg = _check_hook_wiring(repo_root, "hooks/cursor-hooks.json", errors)
         if cfg is not None and cfg.get("version") != 1:
             errors.append('hooks/cursor-hooks.json must declare "version": 1.')
+        _check_hook_event_names("hooks/cursor-hooks.json", cfg, _CURSOR_EVENTS, errors)
 
     commands_rel = plugin.get("commands")
     if isinstance(commands_rel, str):
@@ -685,6 +735,25 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
                 errors.append(
                     f"Cursor command '{md.relative_to(repo_root)}' needs frontmatter "
                     "with a 'description'."
+                )
+
+    rules_rel = plugin.get("rules")
+    if isinstance(rules_rel, str):
+        rules_dir = repo_root / _norm_rel_path(rules_rel)
+        mdc_files = sorted(rules_dir.glob("*.mdc")) if rules_dir.is_dir() else []
+        if not mdc_files:
+            errors.append(
+                f'.cursor-plugin/plugin.json declares rules at "{rules_rel}" but no '
+                "*.mdc rule files exist there."
+            )
+        for mdc in mdc_files:
+            frontmatter = _read_frontmatter(mdc)
+            if frontmatter is None or not re.search(
+                r"^description:\s*\S", frontmatter, re.MULTILINE
+            ):
+                errors.append(
+                    f"Cursor rule '{mdc.relative_to(repo_root)}' needs frontmatter "
+                    "with a 'description' (Apply-Intelligently rules trigger on it)."
                 )
 
     return errors
@@ -756,6 +825,7 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
                     errors.append(
                         f"hooks/codex-hooks.json references '{script}' which does not exist."
                     )
+        _check_hook_event_names("hooks/codex-hooks.json", cfg, _CODEX_EVENTS, errors)
 
     market_path = repo_root / ".agents" / "plugins" / "marketplace.json"
     if not market_path.exists():
@@ -848,6 +918,7 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
                     errors.append(
                         f"hooks/copilot-hooks.json references '{script}' which does not exist."
                     )
+        _check_hook_event_names("hooks/copilot-hooks.json", cfg, _COPILOT_EVENTS, errors)
 
     market_path = repo_root / ".github" / "plugin" / "marketplace.json"
     if not market_path.exists():
@@ -866,6 +937,80 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
                 f"'{plugin.get('name')}'."
             )
 
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# Routing tables (prompt router + Cursor rule, kept in sync with the skills)
+# ---------------------------------------------------------------------------
+
+def _routing_skill_refs(text: str) -> set:
+    """The set of databricks-* skill names referenced in a routing table."""
+    return set(re.findall(r"databricks-[a-z][a-z0-9-]*", text))
+
+
+def _load_routing_instruction(repo_root: Path) -> str | None:
+    """ROUTING_INSTRUCTION from hooks/databricks-router.py (hyphenated -> load by path)."""
+    path = repo_root / "hooks" / "databricks-router.py"
+    if not path.exists():
+        return None
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("databricks_router", path)
+    if spec is None or spec.loader is None:
+        return None
+    try:
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception:
+        return None
+    return getattr(module, "ROUTING_INSTRUCTION", None)
+
+
+def check_routing_tables(repo_root: Path) -> list[str]:
+    """Keep the prompt router's and Cursor rule's product-skill tables honest.
+
+    - Every databricks-* skill the router names must exist as a shipped skill; a
+      rename or removal otherwise silently points routing at a dead skill.
+    - The Cursor routing rule (rules/databricks-routing.mdc), if present, must
+      name the same skill set as the router, so the two hand-maintained tables
+      cannot drift apart (the router runs on Claude/Codex, the rule on Cursor).
+    """
+    errors: list[str] = []
+    instruction = _load_routing_instruction(repo_root)
+    if not instruction:
+        # No router (or unreadable) -> nothing to cross-check here.
+        return errors
+
+    def _exists(name: str) -> bool:
+        return (repo_root / "skills" / name).is_dir() or (
+            repo_root / "experimental" / name
+        ).is_dir()
+
+    router_refs = _routing_skill_refs(instruction)
+    for name in sorted(router_refs):
+        if not _exists(name):
+            errors.append(
+                f"hooks/databricks-router.py routes to '{name}', which is not a "
+                "shipped skill under skills/ or experimental/."
+            )
+
+    rule_path = repo_root / "rules" / "databricks-routing.mdc"
+    if rule_path.exists():
+        rule_refs = _routing_skill_refs(rule_path.read_text())
+        missing = router_refs - rule_refs
+        extra = rule_refs - router_refs
+        if missing:
+            errors.append(
+                "rules/databricks-routing.mdc is missing skills the router routes "
+                f"to ({', '.join(sorted(missing))}); keep the Cursor rule's table "
+                "in sync with hooks/databricks-router.py."
+            )
+        if extra:
+            errors.append(
+                "rules/databricks-routing.mdc routes to skills the router does not "
+                f"({', '.join(sorted(extra))}); keep the two routing tables in sync."
+            )
     return errors
 
 
@@ -973,6 +1118,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in copilot_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            routing_errors = check_routing_tables(repo_root)
+            if routing_errors:
+                print(
+                    "ERROR: routing tables (router + Cursor rule) are out of sync:",
+                    file=sys.stderr,
+                )
+                for err in routing_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

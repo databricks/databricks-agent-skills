@@ -13,20 +13,30 @@ discovery would otherwise parse the Claude-format `hooks.json`. It runs the
 context primer (`sessionStart`) and the auth hinter (`postToolUse`, matcher
 `Shell`) with `--platform cursor`, which switches the scripts' output envelope
 to Cursor's `additional_context` and renders the Cursor command names
-(`/databricks-setup`, `/databricks-doctor`) in the injected text. The prompt
-router is not wired on Cursor: `beforeSubmitPrompt` can block a prompt but
-cannot inject context, so routing rides on the primer plus Cursor's native
-skill selection.
+(`/databricks-setup`, `/databricks-doctor`) in the injected text. The
+prompt-router hook is not wired on Cursor (`beforeSubmitPrompt` can block a
+prompt but cannot inject context). Routing instead ships as a Cursor **rule**
+(`rules/databricks-routing.mdc`, declared via `"rules"` in
+`.cursor-plugin/plugin.json`): an Apply-Intelligently rule whose description
+triggers it on Databricks-related prompts and injects the same product-skill
+table the Claude/Codex router uses. This is load-bearing because Cursor
+currently drops `additional_context` from `sessionStart`/`postToolUse` for
+non-MCP tools (open upstream bug, Cursor forum #155689 / #158452), so the primer
+and auth-hint hooks are effectively no-ops on Cursor today; the rule loads
+through the rules engine, not the hook-injection path, so it is unaffected.
+Native skill selection also helps.
 
 `copilot-hooks.json` wires the GitHub Copilot plugin (declared as `"hooks"` in
 `.github/plugin/plugin.json`). It uses PascalCase event names, which selects
 Copilot's Claude-compatible payload dialect, so the scripts run unchanged and
 emit the Claude output envelope. Only two hooks are wired: the context primer
-(`SessionStart`; its injected context is honored in VS Code, while Copilot CLI
-and the cloud agent ignore session-start stdout) and the auth hinter
-(`PostToolUse`, which injects `additionalContext` on every Copilot surface).
+(`SessionStart`) and the auth hinter (`PostToolUse`). Copilot's hooks run on the
+Copilot CLI and the cloud agent (VS Code ships its own separate hooks system);
+the CLI injects `SessionStart` / `PostToolUse` `additionalContext` as of Copilot
+CLI v1.0.11 (earlier versions dropped session-start output).
 The prompt router is not wired: no Copilot surface lets a prompt-submit hook
-inject context, so routing rides on skill descriptions and instruction files.
+inject context (`userPromptSubmitted` output is not processed), so routing rides
+on skill descriptions and instruction files.
 Each entry carries `bash` and `powershell` command variants per Copilot's hook
 format.
 
@@ -112,8 +122,9 @@ These ship with the Claude Code plugin (the whole repo is the plugin via
 auth hinter via `copilot-hooks.json`, catalogued in
 `.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks
 via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
-Cursor marketplace plugin (`databricks`) ships the context primer and
-auth hinter via `cursor-hooks.json`; the router stays Claude-only there. The
+Cursor marketplace plugin (`databricks`) ships the context primer and auth
+hinter via `cursor-hooks.json` plus the routing rule
+(`rules/databricks-routing.mdc`); the router hook stays Claude/Codex-only. The
 Copilot cloud agent takes no plugins; it only reads hooks vendored into the
 target repo's `.github/hooks/`. The Databricks CLI install path
 (`databricks aitools install`) currently packages **skills only**. See the repo

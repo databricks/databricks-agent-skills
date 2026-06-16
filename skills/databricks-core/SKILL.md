@@ -1,6 +1,6 @@
 ---
 name: "databricks-core"
-description: "Databricks CLI operations: auth, profiles, data exploration, and bundles. Contains up-to-date guidelines for Databricks-related CLI tasks."
+description: "Databricks CLI operations and the parent/entry-point skill for all Databricks work: authentication, profile selection, data exploration, bundles, and Genie natural-language data Q&A. Load this first for any Databricks task (CLI, auth, profiles, exploring catalogs/tables), then load the matching product skill. Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
