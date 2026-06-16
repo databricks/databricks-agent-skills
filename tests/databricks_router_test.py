@@ -6,6 +6,7 @@ precision is pinned here (over-routing is annoying; under-routing misses work).
 Stdlib-only; run the suite with: python3 -m unittest discover -s tests -p "*_test.py"
 """
 import importlib.util
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -149,6 +150,71 @@ class SessionMemoTest(unittest.TestCase):
                 router.routing_context("deploy a databricks job", sid),
                 router.ROUTING_INSTRUCTION,
             )
+
+
+class RoutingDataLoadTest(unittest.TestCase):
+    """The router loads its keyword lists + instruction from the generated
+    _routing_data.json, falling back to a minimal inline config if it is
+    missing or unreadable (fail-open)."""
+
+    def test_loads_generated_data(self):
+        data = router._load_routing_data()
+        self.assertIsNotNone(data)
+        for key in ("strong", "ambiguous", "suppress", "instruction", "reminder"):
+            self.assertIn(key, data)
+        # The live config came from the data file, not the minimal fallback.
+        self.assertEqual(router.STRONG, list(data["strong"]))
+        self.assertEqual(router.ROUTING_INSTRUCTION, data["instruction"])
+        self.assertGreater(len(router.STRONG), len(router._FALLBACK_STRONG))
+
+    def test_missing_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(router._load_routing_data(Path(tmp) / "nope.json"))
+
+    def test_corrupt_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "_routing_data.json"
+            bad.write_text("{ not valid json ")
+            self.assertIsNone(router._load_routing_data(bad))
+
+    def test_incomplete_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            partial = Path(tmp) / "_routing_data.json"
+            partial.write_text('{"strong": ["x"]}')
+            self.assertIsNone(router._load_routing_data(partial))
+
+    def test_fallback_still_routes_databricks(self):
+        # With no data file the inline fallback must still route an explicit
+        # "databricks" mention and carry a non-empty instruction/reminder.
+        self.assertTrue(
+            any(
+                re.search(p, "deploy a databricks job", re.IGNORECASE)
+                for p in router._FALLBACK_STRONG
+            )
+        )
+        self.assertTrue(router._FALLBACK_INSTRUCTION.strip())
+        self.assertTrue(router._FALLBACK_REMINDER.strip())
+
+    def test_bad_regex_returns_none(self):
+        # A shape-valid file with an uncompilable pattern must fall back rather
+        # than crash the router at import.
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "_routing_data.json"
+            bad.write_text(
+                '{"strong": ["(unclosed"], "ambiguous": [], "suppress": [], '
+                '"instruction": "x", "reminder": "y"}'
+            )
+            self.assertIsNone(router._load_routing_data(bad))
+
+    def test_wrong_type_returns_none(self):
+        # strong must be a list, not a string (which list() would shred into chars).
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "_routing_data.json"
+            bad.write_text(
+                '{"strong": "databricks", "ambiguous": [], "suppress": [], '
+                '"instruction": "x", "reminder": "y"}'
+            )
+            self.assertIsNone(router._load_routing_data(bad))
 
 
 if __name__ == "__main__":

@@ -60,6 +60,12 @@ config, edit `plugin.meta.json` and run `python3 scripts/skills.py generate`; CI
 and propagates to all four targets. Adding a stable skill requires an entry in
 the `skills` map (with a `keyword`).
 
+The `routing` block in `plugin.meta.json` is generated too: it renders the
+prompt router's data (`hooks/_routing_data.json`, loaded by
+`hooks/databricks-router.py`) and the Cursor rule
+(`rules/databricks-routing.mdc`) from one table. Do not hand-edit those; edit
+`plugin.meta.json` and regenerate. CI fails if a product skill has no routing row.
+
 ## Plugin components (hooks + commands)
 
 Beyond skills, the Claude Code plugin ships two component dirs at the repo root.
