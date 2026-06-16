@@ -238,6 +238,27 @@ python3 scripts/skills.py validate
 
 The manifest is consumed by the CLI to discover available skills.
 
+### Plugin manifest management
+
+The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor)
+plus three marketplace catalogs. Their `plugin.json` / `marketplace.json` files
+are **generated** from a single source of truth,
+[`plugin.meta.json`](./plugin.meta.json), by `scripts/skills.py`. Do not
+hand-edit the generated files (each generated directory also carries a
+`README.md` saying so) — edit `plugin.meta.json` and regenerate:
+
+```bash
+python3 scripts/skills.py generate   # regenerates manifest.json + all plugin manifests
+python3 scripts/skills.py validate   # CI check: fails on any drift
+```
+
+`plugin.meta.json` owns the version (one value, propagated to all four targets),
+name, description, keywords, author/license, per-target display names and
+hook/command/rule wiring, and the skill-to-keyword map. Adding a stable skill
+means adding it to the `skills` map there (with a `keyword`); CI fails if a
+shipped skill has no entry. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the full field reference.
+
 ## Security
 
 Please see [SECURITY](./SECURITY) for vulnerability reporting guidelines.

@@ -1,0 +1,69 @@
+{
+  "//": "Single source of truth for the databricks plugin across all targets (Claude, Codex, Copilot, Cursor). Edit this file, then run `python3 scripts/skills.py generate`. The 4 plugin.json + 3 marketplace.json files are generated from here; CI fails on drift. Do not hand-edit the generated files.",
+  "version": "0.2.4",
+  "name": "databricks",
+  "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
+  "category": "development",
+  "author": {
+    "name": "Databricks",
+    "url": "https://databricks.com"
+  },
+  "homepage": "https://github.com/databricks/databricks-agent-skills",
+  "repository": "https://github.com/databricks/databricks-agent-skills",
+  "license": "LicenseRef-Databricks",
+
+  "keywords_lead": ["databricks"],
+  "keywords_tail": ["data-engineering"],
+
+  "marketplace": {
+    "name": "databricks-agent-skills",
+    "description": "Databricks agent skills for AI coding assistants.",
+    "owner": { "name": "Databricks" },
+    "displayName": "Databricks Agent Skills"
+  },
+
+  "targets": {
+    "claude": {
+      "dir": ".claude-plugin",
+      "commands": "./commands/"
+    },
+    "codex": {
+      "dir": ".codex-plugin",
+      "hooks": "./hooks/codex-hooks.json",
+      "interface": {
+        "displayName": "Databricks",
+        "shortDescription": "Databricks skills and hooks for Codex.",
+        "category": "development",
+        "brandColor": "#FF3621",
+        "logo": "./assets/databricks.png",
+        "composerIcon": "./assets/databricks.svg"
+      }
+    },
+    "copilot": {
+      "dir": ".github/plugin",
+      "displayName": "Databricks",
+      "hooks": "./hooks/copilot-hooks.json"
+    },
+    "cursor": {
+      "dir": ".cursor-plugin",
+      "displayName": "Databricks Skills",
+      "commands": "./commands-cursor/",
+      "rules": "./rules/",
+      "hooks": "./hooks/cursor-hooks.json"
+    }
+  },
+
+  "//skills": "Per-skill plugin metadata. Insertion order defines the keyword order in plugin.json: keywords = keywords_lead + [each skill's keyword] + keywords_tail. Repo-owned (does NOT live in SKILL.md frontmatter, which syncs from the internal source). Routing fields (label/order/strong/ambiguous) are added in P2a.",
+  "skills": {
+    "databricks-core": { "keyword": "cli" },
+    "databricks-apps": { "keyword": "apps" },
+    "databricks-app-design": { "keyword": "app-design" },
+    "databricks-lakebase": { "keyword": "lakebase" },
+    "databricks-model-serving": { "keyword": "model-serving" },
+    "databricks-jobs": { "keyword": "jobs" },
+    "databricks-pipelines": { "keyword": "pipelines" },
+    "databricks-dabs": { "keyword": "dabs" },
+    "databricks-serverless-migration": { "keyword": "serverless" },
+    "databricks-vector-search": { "keyword": "vector-search" }
+  }
+}

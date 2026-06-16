@@ -7,10 +7,18 @@ on:
       - 'experimental/**'
       - 'assets/**'
       - 'scripts/skills.py'
+      - 'scripts/bump_version.py'
       - 'manifest.json'
+      - 'plugin.meta.json'
       - '.claude-plugin/**'
+      - '.codex-plugin/**'
+      - '.github/plugin/**'
+      - '.cursor-plugin/**'
+      - '.agents/**'
       - 'hooks/**'
       - 'commands/**'
+      - 'commands-cursor/**'
+      - 'rules/**'
       - 'tests/**'
   push:
     branches:
