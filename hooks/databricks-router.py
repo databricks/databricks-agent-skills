@@ -10,6 +10,11 @@ There is no second agent to delegate to: Claude itself drives the `databricks`
 CLI through the skills, so "routing" just means "make sure the Databricks skills
 are loaded." No permission gating, no cost warnings.
 
+The keyword lists and the injected instruction are generated from
+plugin.meta.json into `_routing_data.json` next to this file and loaded at
+import time; a minimal inline fallback keeps the hook working if that file is
+missing or unreadable. Regenerate with `python3 scripts/skills.py generate`.
+
 The full routing instruction is injected once per session (keyed by the
 payload's session_id via a marker file in the temp dir); later Databricks
 prompts in the same session get a one-line reminder instead, keeping repeat
@@ -28,59 +33,59 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Unambiguously Databricks -> always route, even alongside a mention of an
-# alternative platform (e.g. "migrate from redshift to databricks").
-STRONG = [
-    r"\bdatabricks\b",
-    r"\bunity\s+catalog\b",
-    r"\blakeflow\b",
-    r"\blakebase\b",
-    r"\bdbfs\b",
-    r"\bdbutils\b",
-    r"\bdbsql\b",
-    r"\bdatabricks\.yml\b",
-    r"\basset\s+bundle\b",
-    r"\bdabs\b",
-    r"\b(?:lakeflow|spark)\s+declarative\s+pipelines?\b",
-    r"\bdelta\s+live\s+tables?\b",  # legacy name for Declarative Pipelines
-    r"\bmosaic\s+ai\b",
-    r"\bdelta\s+sharing\b",
-    r"\bcloudfiles\b",
-]
+# Routing config (keyword lists + the injected instruction) is generated from
+# plugin.meta.json into _routing_data.json next to this file (see
+# rules/README.md and CONTRIBUTING.md) and loaded at import time. If that file
+# is missing or unreadable the hook stays fail-open via a minimal inline
+# fallback that still routes obvious Databricks prompts.
+_FALLBACK_STRONG = [r"\bdatabricks\b"]
+_FALLBACK_AMBIGUOUS = []
+_FALLBACK_SUPPRESS = []
+_FALLBACK_INSTRUCTION = (
+    "[DATABRICKS] This request is Databricks-related. Handle it through the "
+    "Databricks skills rather than ad hoc commands: load `databricks-core` (the "
+    "parent skill) plus the matching product skill before answering."
+)
+_FALLBACK_REMINDER = (
+    "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks "
+    "skills (databricks-core plus the matching product skill)."
+)
 
-# Databricks-likely but also used elsewhere -> route only when no
-# alternative-platform / local-dev signal is present.
-AMBIGUOUS = [
-    r"\bgenie\b",
-    r"\bdelta\s+(lake|tables?)\b",
-    r"\bdeclarative\s+pipelines?\b",  # bare form collides with Jenkins pipelines
-    r"\bmodel\s+serving\b",
-    r"\bvector\s+search\b",
-    r"\bmlflow\b",
-    r"\bpyspark\b",
-    r"\bspark\s*\.\s*(sql|read|write|table)\b",
-    r"\bserverless\s+(compute|warehouse|migration)\b",
-    r"\bmedallion\s+(architecture|tables?)\b",
-    r"\bsql\s+warehouse\b",
-    r"\bauto\s+loader\b",
-]
 
-# Alternative data platforms + plainly-local dev work -> suppress an AMBIGUOUS
-# match. (STRONG matches ignore this list.)
-SUPPRESS = [
-    r"\bbigquery\b",
-    r"\bredshift\b",
-    r"\bsynapse\b",
-    r"\bsnowflake\b",
-    r"\bgit\s+(commit|push|pull|status|log|diff|branch|rebase|merge|clone|stash)\b",
-    r"\b(read|edit|open|write|create|delete)\s+(the\s+|this\s+|a\s+|that\s+)?file\b",
-    r"\bunit\s+tests?\b",
-    r"\bnpm\b",
-    r"\bpip\s+install\b",
-    r"\bdocker\b",
-    r"\bkubernetes\b",
-    r"\bjenkins(?:file)?\b",
-]
+def _load_routing_data(path=None):
+    """Load the generated _routing_data.json next to this file; None on any problem."""
+    try:
+        if path is None:
+            path = Path(__file__).resolve().parent / "_routing_data.json"
+        data = json.loads(Path(path).read_text())
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    if not all(
+        k in data for k in ("strong", "ambiguous", "suppress", "instruction", "reminder")
+    ):
+        return None
+    return data
+
+
+_DATA = _load_routing_data()
+
+# STRONG: unambiguously Databricks -> always route, even alongside a mention of
+# an alternative platform (e.g. "migrate from redshift to databricks").
+# AMBIGUOUS: Databricks-likely but also used elsewhere -> route only when no
+# SUPPRESS signal (alternative platform / local dev) is present. STRONG matches
+# ignore SUPPRESS. All are sourced from the generated data file; the inline
+# fallback degrades gracefully (routes only clear "databricks" mentions).
+STRONG = list(_DATA["strong"]) if _DATA else list(_FALLBACK_STRONG)
+AMBIGUOUS = list(_DATA["ambiguous"]) if _DATA else list(_FALLBACK_AMBIGUOUS)
+SUPPRESS = list(_DATA["suppress"]) if _DATA else list(_FALLBACK_SUPPRESS)
+
+# The full instruction injected on the session's first Databricks prompt, plus
+# the one-line reminder for later prompts. ROUTING_INSTRUCTION stays a
+# module-level attribute (scripts/skills.py check_routing_tables reads it).
+ROUTING_INSTRUCTION = _DATA["instruction"] if _DATA else _FALLBACK_INSTRUCTION
+ROUTING_REMINDER = _DATA["reminder"] if _DATA else _FALLBACK_REMINDER
 
 _STRONG = [re.compile(p, re.IGNORECASE) for p in STRONG]
 _AMBIGUOUS = [re.compile(p, re.IGNORECASE) for p in AMBIGUOUS]
@@ -104,33 +109,6 @@ def _strip_non_databricks_urls(text):
 
     return _URL_RE.sub(_keep_or_blank, text)
 
-ROUTING_INSTRUCTION = (
-    "[DATABRICKS] This request is Databricks-related. Handle it through the "
-    "Databricks skills rather than ad hoc commands. Use the Skill tool to load "
-    "`databricks-core` first (the parent skill: CLI, auth, profile selection, "
-    "data exploration), then load the product skill that matches the request:\n"
-    "- Jobs / Lakeflow / workflows -> databricks-jobs\n"
-    "- Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> "
-    "databricks-pipelines\n"
-    "- Apps / AppKit -> databricks-apps\n"
-    "- Asset Bundles / DABs / databricks.yml -> databricks-dabs\n"
-    "- Model Serving / endpoints -> databricks-model-serving\n"
-    "- Lakebase / Postgres -> databricks-lakebase\n"
-    "- Vector Search / RAG -> databricks-vector-search\n"
-    "- Classic-to-serverless migration -> databricks-serverless-migration\n"
-    "- Genie / natural-language data Q&A -> databricks-core (Genie CLI support "
-    "is experimental)\n"
-    "Then follow the skill's guidance (it drives the `databricks` CLI). If no "
-    "product skill fits, databricks-core alone is enough."
-)
-
-# After the first routed prompt the skills are loaded (or being loaded), so the
-# rest of the session gets this one-liner instead of the full block above.
-ROUTING_REMINDER = (
-    "[DATABRICKS] Databricks-related prompt: keep routing through the "
-    "Databricks skills (databricks-core plus the matching product skill); load "
-    "any that are not already loaded."
-)
 
 _SESSION_ID_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
 
