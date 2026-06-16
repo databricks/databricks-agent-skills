@@ -256,7 +256,10 @@ python3 scripts/skills.py validate   # CI check: fails on any drift
 name, description, keywords, author/license, per-target display names and
 hook/command/rule wiring, and the skill-to-keyword map. Adding a stable skill
 means adding it to the `skills` map there (with a `keyword`); CI fails if a
-shipped skill has no entry. See
+shipped skill has no entry. The same source also drives prompt routing: its
+`routing` block is rendered into the prompt router's data
+(`hooks/_routing_data.json`) and the Cursor routing rule
+(`rules/databricks-routing.mdc`) from one table, so they can't drift. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for the full field reference.
 
 ## Security

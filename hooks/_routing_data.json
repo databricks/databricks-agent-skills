@@ -1,0 +1,50 @@
+{
+  "//": "GENERATED FILE: do not edit. Rendered from plugin.meta.json \"routing\" by scripts/skills.py. Run `python3 scripts/skills.py generate`.",
+  "strong": [
+    "\\bdatabricks\\b",
+    "\\bunity\\s+catalog\\b",
+    "\\blakeflow\\b",
+    "\\blakebase\\b",
+    "\\bdbfs\\b",
+    "\\bdbutils\\b",
+    "\\bdbsql\\b",
+    "\\bdatabricks\\.yml\\b",
+    "\\basset\\s+bundle\\b",
+    "\\bdabs\\b",
+    "\\b(?:lakeflow|spark)\\s+declarative\\s+pipelines?\\b",
+    "\\bdelta\\s+live\\s+tables?\\b",
+    "\\bmosaic\\s+ai\\b",
+    "\\bdelta\\s+sharing\\b",
+    "\\bcloudfiles\\b"
+  ],
+  "ambiguous": [
+    "\\bgenie\\b",
+    "\\bdelta\\s+(lake|tables?)\\b",
+    "\\bdeclarative\\s+pipelines?\\b",
+    "\\bmodel\\s+serving\\b",
+    "\\bvector\\s+search\\b",
+    "\\bmlflow\\b",
+    "\\bpyspark\\b",
+    "\\bspark\\s*\\.\\s*(sql|read|write|table)\\b",
+    "\\bserverless\\s+(compute|warehouse|migration)\\b",
+    "\\bmedallion\\s+(architecture|tables?)\\b",
+    "\\bsql\\s+warehouse\\b",
+    "\\bauto\\s+loader\\b"
+  ],
+  "suppress": [
+    "\\bbigquery\\b",
+    "\\bredshift\\b",
+    "\\bsynapse\\b",
+    "\\bsnowflake\\b",
+    "\\bgit\\s+(commit|push|pull|status|log|diff|branch|rebase|merge|clone|stash)\\b",
+    "\\b(read|edit|open|write|create|delete)\\s+(the\\s+|this\\s+|a\\s+|that\\s+)?file\\b",
+    "\\bunit\\s+tests?\\b",
+    "\\bnpm\\b",
+    "\\bpip\\s+install\\b",
+    "\\bdocker\\b",
+    "\\bkubernetes\\b",
+    "\\bjenkins(?:file)?\\b"
+  ],
+  "instruction": "[DATABRICKS] This request is Databricks-related. Handle it through the Databricks skills rather than ad hoc commands. Use the Skill tool to load `databricks-core` first (the parent skill: CLI, auth, profile selection, data exploration), then load the product skill that matches the request:\n- Jobs / Lakeflow / workflows -> databricks-jobs\n- Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> databricks-pipelines\n- Apps / AppKit -> databricks-apps\n- Asset Bundles / DABs / databricks.yml -> databricks-dabs\n- Model Serving / endpoints -> databricks-model-serving\n- Lakebase / Postgres -> databricks-lakebase\n- Vector Search / RAG -> databricks-vector-search\n- Classic-to-serverless migration -> databricks-serverless-migration\n- Genie / natural-language data Q&A -> databricks-core (Genie CLI support is experimental)\nThen follow the skill's guidance (it drives the `databricks` CLI). If no product skill fits, databricks-core alone is enough.",
+  "reminder": "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks skills (databricks-core plus the matching product skill); load any that are not already loaded."
+}

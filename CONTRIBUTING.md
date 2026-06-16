@@ -80,6 +80,13 @@ keywords_tail`, in the insertion order of the `skills` map. The plugin `name` is
 `databricks` for every target and is load-bearing (it keys Cursor/Claude
 installs); the generator never emits a different value.
 
+The `routing` block in `plugin.meta.json` is also generated output: the
+product-skill table there is rendered into both the prompt router's data
+(`hooks/_routing_data.json`, which `hooks/databricks-router.py` loads) and the
+Cursor rule (`rules/databricks-routing.mdc`), so the two routing tables cannot
+drift. Add a product skill and CI fails until it has a `routing.table` row.
+Regenerate the same way: edit `plugin.meta.json`, run `scripts/skills.py generate`.
+
 ## Plugin components (hooks + commands)
 
 The Claude Code plugin ships more than skills:
