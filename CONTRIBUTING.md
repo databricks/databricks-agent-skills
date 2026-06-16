@@ -76,6 +76,12 @@ drift. (The generated JSON carries no "do-not-edit" comment key because the
 plugin loaders / the Claude marketplace `$schema` reject unknown keys; their
 generated status is documented here and enforced by the drift check.)
 
+The generator lives in `scripts/skillsgen/` (a package split by concern);
+`scripts/skills.py` is a thin façade that re-exports its API and is the CLI entry
+point. To change or add a *hook* specifically, see `hooks/README.md`
+("Changing or adding a hook") — the hook scripts are shared and hand-written,
+the per-target wiring JSON is generated.
+
 The plugin keyword list is composed as `keywords_lead + [each skill's keyword] +
 keywords_tail`, in the insertion order of the `skills` map. The plugin `name` is
 `databricks` for every target and is load-bearing (it keys Cursor/Claude

@@ -60,6 +60,10 @@ config, edit `metaplugin/plugin.meta.json` and run `python3 scripts/skills.py ge
 and propagates to all four targets. Adding a stable skill requires an entry in
 the `skills` map (with a `keyword`).
 
+The generator itself lives in `scripts/skillsgen/` (a package split by concern:
+plugins, routing, hooks, validators, ...); `scripts/skills.py` is a thin façade
+that re-exports it and is the CLI entry point.
+
 The `routing` block in `metaplugin/plugin.meta.json` is generated too: it renders the
 prompt router's data (`hooks/_routing_data.json`, loaded by
 `hooks/databricks-router.py`) and the Cursor rule

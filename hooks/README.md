@@ -17,6 +17,25 @@ matcher, and whether the router is wired). To change hook wiring, edit
 hand-edit these JSON files (CI fails on drift). The hook *scripts* (`*.py`) are
 hand-written; only the wiring JSON is generated.
 
+### Changing or adding a hook
+
+- **Change a hook's behavior**: edit its `*.py` script. There is one shared copy
+  per script, so the change applies to every target at once.
+- **Change a hook's wiring** (e.g. the tool matcher or env-var root): edit that
+  target's `hooks_render` block in `metaplugin/plugin.meta.json`, then
+  `python3 scripts/skills.py generate`.
+- **Add a new hook**: add it to `hooks.entries` in `metaplugin/plugin.meta.json`
+  (an `id` + `script`) **and** extend the dialect builders in
+  [`scripts/skillsgen/hooks.py`](../scripts/skillsgen/hooks.py) —
+  `build_nested_hooks` (Claude/Codex), `build_copilot_hooks`, `build_cursor_hooks`
+  — to place the new event in each runtime's dialect. The builders set event
+  placement per platform in code (not from `entries[].event`, which is currently
+  descriptive only) because the four runtimes differ in event-name casing, schema
+  shape, command form, and which hooks are wired (the prompt router runs only on
+  Claude + Codex). So adding a hook is a small per-dialect code change, not just a
+  data edit. `check_no_orphan_hook_scripts` (run by `validate`) fails if a
+  `hooks/*.py` is left unwired.
+
 `cursor-hooks.json` wires the Cursor plugin and **is** declared explicitly (as
 `"hooks"` in `.cursor-plugin/plugin.json`), because Cursor's default plugin
 discovery would otherwise parse the Claude-format `hooks.json`. It runs the
