@@ -8,5 +8,6 @@
   },
   "skills": "./skills/",
   "commands": "./commands-cursor/",
+  "rules": "./rules/",
   "hooks": "./hooks/cursor-hooks.json"
 }
