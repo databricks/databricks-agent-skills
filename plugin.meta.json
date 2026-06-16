@@ -25,11 +25,25 @@
   "targets": {
     "claude": {
       "dir": ".claude-plugin",
-      "commands": "./commands/"
+      "commands": "./commands/",
+      "hooks_render": {
+        "out": "hooks/hooks.json",
+        "dialect": "nested",
+        "env_root": "${CLAUDE_PLUGIN_ROOT}",
+        "tool_matcher": "Bash",
+        "description": true
+      }
     },
     "codex": {
       "dir": ".codex-plugin",
       "hooks": "./hooks/codex-hooks.json",
+      "hooks_render": {
+        "out": "hooks/codex-hooks.json",
+        "dialect": "nested",
+        "env_root": "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}",
+        "tool_matcher": "(?i)bash|shell|exec",
+        "description": false
+      },
       "interface": {
         "displayName": "Databricks",
         "shortDescription": "Databricks skills and hooks for Codex.",
@@ -42,14 +56,25 @@
     "copilot": {
       "dir": ".github/plugin",
       "displayName": "Databricks",
-      "hooks": "./hooks/copilot-hooks.json"
+      "hooks": "./hooks/copilot-hooks.json",
+      "hooks_render": {
+        "out": "hooks/copilot-hooks.json",
+        "dialect": "copilot",
+        "tool_matcher": "(?i)bash|shell|terminal"
+      }
     },
     "cursor": {
       "dir": ".cursor-plugin",
       "displayName": "Databricks Skills",
       "commands": "./commands-cursor/",
       "rules": "./rules/",
-      "hooks": "./hooks/cursor-hooks.json"
+      "hooks": "./hooks/cursor-hooks.json",
+      "hooks_render": {
+        "out": "hooks/cursor-hooks.json",
+        "dialect": "cursor",
+        "tool_matcher": "Shell",
+        "platform_flag": "--platform cursor"
+      }
     }
   },
 
@@ -139,6 +164,17 @@
     "rule_closing": [
       "Then follow the skill's guidance (it drives the `databricks` CLI). If no product",
       "skill fits, databricks-core alone is enough."
+    ]
+  },
+
+  "//hooks": "Canonical hook wiring, rendered into each target's dialect by scripts/skills.py: hooks/hooks.json (Claude, auto-loaded), codex-hooks.json, copilot-hooks.json, cursor-hooks.json. The shared content (the scripts, their events, the description, the session-start matcher) lives here once; per-target dialect knobs (schema shape, event casing, env var, command form, tool matcher, whether the router is wired) live under targets.*.hooks_render. The router is wired only on Claude + Codex (the other two cannot inject context from a prompt-submit hook).",
+  "hooks": {
+    "description": "Databricks plugin hooks: route Databricks prompts into the skills, prime session context, and hint on auth failures.",
+    "session_start_matcher": "startup|clear|compact",
+    "entries": [
+      { "id": "router", "event": "prompt_submit", "script": "databricks-router.py" },
+      { "id": "context", "event": "session_start", "script": "databricks-context.py" },
+      { "id": "auth", "event": "post_tool", "script": "databricks-auth-helper.py" }
     ]
   }
 }

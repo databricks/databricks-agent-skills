@@ -87,6 +87,12 @@ Cursor rule (`rules/databricks-routing.mdc`), so the two routing tables cannot
 drift. Add a product skill and CI fails until it has a `routing.table` row.
 Regenerate the same way: edit `plugin.meta.json`, run `scripts/skills.py generate`.
 
+The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,
+`copilot-hooks.json`, `cursor-hooks.json`) are generated from the `hooks` block
++ each target's `hooks_render` (the same three logical hooks rendered into each
+runtime's dialect). Edit `plugin.meta.json` and regenerate; only the wiring JSON
+is generated, the hook `*.py` scripts are hand-written.
+
 ## Plugin components (hooks + commands)
 
 The Claude Code plugin ships more than skills:
