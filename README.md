@@ -41,7 +41,7 @@ skill under [`./skills/`](./skills/)):
 **Via the Cursor plugin marketplace:**
 
 ```text
-/add-plugin databricks-skills
+/add-plugin databricks
 ```
 
 The Cursor plugin ships the skills plus the `databricks-setup` /
@@ -127,7 +127,7 @@ originally imported from
 
 When installed as a Claude Code plugin, the `databricks` plugin adds slash
 commands and three hooks (prompt routing, session context, auth-failure hints)
-on top of the skills. The Cursor plugin (`databricks-skills`) ships the same
+on top of the skills. The Cursor plugin (`databricks`) ships the same
 commands and two of the hooks; see the Cursor note below.
 (These ship via the plugin marketplaces; the CLI `databricks aitools install`
 path installs skills only today; see the note at the end.)

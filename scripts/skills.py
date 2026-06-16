@@ -622,9 +622,10 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
 
     Two Cursor-specific traps this guards:
 
-    - The plugin `name` is the frozen Cursor install identifier. Cursor keys
-      installations and updates on it, so renaming orphans every existing
-      install from auto-updates (see .cursor-plugin/NOTES.md).
+    - The plugin `name` is the Cursor install identifier. Cursor keys
+      installations and updates on it, so changing it orphans every existing
+      install from auto-updates without a coordinated Cursor-side migration
+      (see .cursor-plugin/NOTES.md).
     - Cursor default-discovers `hooks/hooks.json` (the Claude-format wiring,
       whose event names Cursor cannot parse) when the manifest declares no
       hooks path, so the explicit "hooks" pointer is load-bearing.
@@ -639,11 +640,12 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
     except json.JSONDecodeError as exc:
         return [f".cursor-plugin/plugin.json is not valid JSON: {exc}"]
 
-    if plugin.get("name") != "databricks-skills":
+    if plugin.get("name") != "databricks":
         errors.append(
-            '.cursor-plugin/plugin.json "name" must stay "databricks-skills": it is '
-            "the frozen Cursor marketplace install identifier; renaming it orphans "
-            "every existing install (see .cursor-plugin/NOTES.md)."
+            '.cursor-plugin/plugin.json "name" must stay "databricks": it is the '
+            "Cursor marketplace install identifier; changing it orphans every "
+            "existing install without a coordinated Cursor-side migration "
+            "(see .cursor-plugin/NOTES.md)."
         )
 
     declared_hooks = plugin.get("hooks")

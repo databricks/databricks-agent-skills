@@ -112,7 +112,7 @@ These ship with the Claude Code plugin (the whole repo is the plugin via
 auth hinter via `copilot-hooks.json`, catalogued in
 `.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks
 via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
-Cursor marketplace plugin (`databricks-skills`) ships the context primer and
+Cursor marketplace plugin (`databricks`) ships the context primer and
 auth hinter via `cursor-hooks.json`; the router stays Claude-only there. The
 Copilot cloud agent takes no plugins; it only reads hooks vendored into the
 target repo's `.github/hooks/`. The Databricks CLI install path
