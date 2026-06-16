@@ -42,10 +42,23 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md#skill-anatomy) for the full per-skill fi
 ### Skills management
 
 ```bash
-python3 scripts/skills.py              # sync Codex metadata + icons, then generate manifest (default)
+python3 scripts/skills.py              # sync metadata/icons, then generate manifest.json + all plugin manifests (default)
 python3 scripts/skills.py sync         # sync Codex metadata + icons only
-python3 scripts/skills.py validate     # check Codex metadata + icons + manifest are up to date (CI)
+python3 scripts/skills.py validate     # check metadata + icons + manifest + plugin manifests are up to date (CI)
 ```
+
+## Plugin manifests (generated from `plugin.meta.json`)
+
+The four `plugin.json` files (`.claude-plugin/`, `.codex-plugin/`,
+`.github/plugin/`, `.cursor-plugin/`) and the three `marketplace.json` files
+(`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`) are **generated**
+from [`plugin.meta.json`](./plugin.meta.json) by `scripts/skills.py generate`.
+**Do not hand-edit them** (each generated directory carries a `README.md`
+marker). To change the plugin version, description, keywords, or per-target
+config, edit `plugin.meta.json` and run `python3 scripts/skills.py generate`; CI
+(`validate`) fails on any drift. The version lives only in `plugin.meta.json`
+and propagates to all four targets. Adding a stable skill requires an entry in
+the `skills` map (with a `keyword`).
 
 ## Plugin components (hooks + commands)
 

@@ -560,9 +560,36 @@ def build_codex_marketplace(meta: dict) -> dict:
     }
 
 
+# Marker dropped in every generated-manifest directory. The JSON files
+# themselves cannot carry a "do not edit" comment (their loaders / the Claude
+# marketplace $schema reject unknown keys), so this sibling README is the
+# in-folder signal that the directory is generated. It is part of the generated
+# set, so the drift check keeps it present and current.
+_GENERATED_README = """\
+<!-- GENERATED FILE: do not edit by hand. -->
+
+# Generated plugin manifests
+
+The plugin manifest files in this directory (`plugin.json` and/or
+`marketplace.json`) are generated from the repo-root `plugin.meta.json` by
+`scripts/skills.py`. To change them, edit `plugin.meta.json` and run
+`python3 scripts/skills.py generate`. CI re-renders these files and fails on any
+drift, so hand-edits are reverted. See `CONTRIBUTING.md` ("Plugin metadata").
+"""
+
+# Directories whose plugin/marketplace JSON is generated; each gets the marker.
+_GENERATED_MANIFEST_DIRS = (
+    ".claude-plugin",
+    ".codex-plugin",
+    ".github/plugin",
+    ".cursor-plugin",
+    ".agents/plugins",
+)
+
+
 def generated_plugin_files(meta: dict) -> dict:
     """Map every generated plugin file (repo-relative path -> canonical text)."""
-    return {
+    files = {
         ".claude-plugin/plugin.json": _serialize_plugin_json(build_claude_plugin(meta)),
         ".codex-plugin/plugin.json": _serialize_plugin_json(build_codex_plugin(meta)),
         ".github/plugin/plugin.json": _serialize_plugin_json(build_copilot_plugin(meta)),
@@ -577,6 +604,9 @@ def generated_plugin_files(meta: dict) -> dict:
             build_codex_marketplace(meta)
         ),
     }
+    for directory in _GENERATED_MANIFEST_DIRS:
+        files[f"{directory}/README.md"] = _GENERATED_README
+    return files
 
 
 def generate_plugins(repo_root: Path, meta: dict) -> int:

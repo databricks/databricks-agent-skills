@@ -35,8 +35,15 @@ class GeneratedPluginsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             written = skills.generate_plugins(root, self.meta)
-            self.assertEqual(written, 7)
+            self.assertEqual(written, len(skills.generated_plugin_files(self.meta)))
             self.assertEqual(skills.check_generated_plugins(root, self.meta), [])
+
+    def test_each_dir_has_generated_marker(self):
+        # Every generated-manifest directory ships a README marker so a reader
+        # browsing the folder sees it is generated.
+        files = skills.generated_plugin_files(self.meta)
+        for directory in skills._GENERATED_MANIFEST_DIRS:
+            self.assertIn(f"{directory}/README.md", files)
 
     def test_content_drift_detected(self):
         with tempfile.TemporaryDirectory() as d:
