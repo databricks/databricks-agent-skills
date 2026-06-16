@@ -85,7 +85,14 @@ Precision is tuned to avoid over-routing:
   (`github.com/databricks/...`) does not route. URLs whose hostname contains
   `databricks` (workspace and docs hosts) still do.
 
-Edit those three lists when the product surface changes. Behavior is pinned by
+These three lists, plus the injected instruction, live in `plugin.meta.json`'s
+`routing` block and are generated into `_routing_data.json` (next to this
+script), which the router loads at import. To change them, edit
+`plugin.meta.json` and run `python3 scripts/skills.py generate`; do not
+hand-edit `_routing_data.json`. If that file is ever missing or unreadable the
+router falls back to a minimal inline config that routes only literal
+`databricks` mentions (fail-open), so an install that loses it keeps working but
+loses product-keyword routing until it is restored. Behavior is pinned by
 `tests/databricks_router_test.py`.
 
 ## `databricks-context.py`: context primer (SessionStart)

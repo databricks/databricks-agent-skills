@@ -195,6 +195,27 @@ class RoutingDataLoadTest(unittest.TestCase):
         self.assertTrue(router._FALLBACK_INSTRUCTION.strip())
         self.assertTrue(router._FALLBACK_REMINDER.strip())
 
+    def test_bad_regex_returns_none(self):
+        # A shape-valid file with an uncompilable pattern must fall back rather
+        # than crash the router at import.
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "_routing_data.json"
+            bad.write_text(
+                '{"strong": ["(unclosed"], "ambiguous": [], "suppress": [], '
+                '"instruction": "x", "reminder": "y"}'
+            )
+            self.assertIsNone(router._load_routing_data(bad))
+
+    def test_wrong_type_returns_none(self):
+        # strong must be a list, not a string (which list() would shred into chars).
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "_routing_data.json"
+            bad.write_text(
+                '{"strong": "databricks", "ambiguous": [], "suppress": [], '
+                '"instruction": "x", "reminder": "y"}'
+            )
+            self.assertIsNone(router._load_routing_data(bad))
+
 
 if __name__ == "__main__":
     unittest.main()

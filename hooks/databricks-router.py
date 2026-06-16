@@ -53,7 +53,14 @@ _FALLBACK_REMINDER = (
 
 
 def _load_routing_data(path=None):
-    """Load the generated _routing_data.json next to this file; None on any problem."""
+    """Load the generated _routing_data.json next to this file; None on any problem.
+
+    Returns None (so the inline fallback engages) for a missing, unreadable,
+    malformed, wrong-typed, or regex-invalid file. The patterns are compiled
+    here, so a corrupt data file degrades the router to "route obvious
+    databricks mentions" rather than raising at import (which would otherwise
+    take the whole hook down, fallback included).
+    """
     try:
         if path is None:
             path = Path(__file__).resolve().parent / "_routing_data.json"
@@ -65,6 +72,16 @@ def _load_routing_data(path=None):
     if not all(
         k in data for k in ("strong", "ambiguous", "suppress", "instruction", "reminder")
     ):
+        return None
+    if not all(isinstance(data[k], list) for k in ("strong", "ambiguous", "suppress")):
+        return None
+    if not all(isinstance(data[k], str) for k in ("instruction", "reminder")):
+        return None
+    try:
+        for key in ("strong", "ambiguous", "suppress"):
+            for pattern in data[key]:
+                re.compile(pattern)
+    except (re.error, TypeError):
         return None
     return data
 

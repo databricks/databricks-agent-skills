@@ -11,7 +11,11 @@ rule (rules/databricks-routing.mdc). These tests pin two things:
    what the router already uses, switching the router to load it changes nothing.
    (After the cutover these stay equal because the router loads exactly this.)
 2. The two rendered routing tables (router instruction + .mdc) name the same
-   skills, and every stable product skill is covered.
+   skills, every stable product skill is covered, and every regex compiles.
+
+Byte-identity of the generated data to the pre-P2 hand-authored router config
+was verified once at cutover time against git history; the invariant these
+tests enforce going forward is that meta and the generated data stay in sync.
 
 Stdlib-only; run with: python3 -m unittest discover -s tests -p "*_test.py"
 """
@@ -71,6 +75,11 @@ class GeneratedRoutingFilesTest(unittest.TestCase):
         data = skills.build_routing_data(self.meta)
         for key in ("strong", "ambiguous", "suppress", "instruction", "reminder"):
             self.assertIn(key, data)
+
+    def test_all_patterns_compile(self):
+        # A bad regex in meta would pass the text-only drift check yet crash the
+        # router at import; this guards against shipping one.
+        self.assertEqual(skills.check_routing_patterns(_REPO, self.meta), [])
 
 
 class RoutingCoverageTest(unittest.TestCase):

@@ -823,6 +823,30 @@ def check_routing_coverage(repo_root: Path, meta: dict) -> list[str]:
     return errors
 
 
+def check_routing_patterns(repo_root: Path, meta: dict) -> list[str]:
+    """Every routing regex in plugin.meta.json must compile.
+
+    The strong/ambiguous/suppress patterns round-trip through JSON into
+    hooks/_routing_data.json, which the router compiles at import. A bad pattern
+    would pass generate and the (text-only) drift check yet crash the router in
+    a real install, silently disabling all routing. Compiling them here makes a
+    bad pattern fail CI first. (The router also degrades to its fallback on a
+    bad pattern, but this catches it before it ever ships.)
+    """
+    errors: list[str] = []
+    routing = meta.get("routing", {})
+    for bucket in ("strong", "ambiguous", "suppress"):
+        for pattern in routing.get(bucket, []):
+            try:
+                re.compile(pattern)
+            except (re.error, TypeError) as exc:
+                errors.append(
+                    f'plugin.meta.json "routing"."{bucket}" pattern {pattern!r} '
+                    f"is not a valid regex: {exc}"
+                )
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # Plugin components (hooks + commands)
 # ---------------------------------------------------------------------------
@@ -1484,6 +1508,17 @@ def main() -> None:
                         file=sys.stderr,
                     )
                     for err in routing_coverage:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
+
+                pattern_errors = check_routing_patterns(repo_root, meta)
+                if pattern_errors:
+                    print(
+                        f"ERROR: a routing regex in {META_FILE} does not compile "
+                        "(it would crash the prompt router in a real install):",
+                        file=sys.stderr,
+                    )
+                    for err in pattern_errors:
                         print(f"  - {err}", file=sys.stderr)
                     ok = False
 
