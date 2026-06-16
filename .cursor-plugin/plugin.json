@@ -1,7 +1,7 @@
 {
   "name": "databricks",
   "displayName": "Databricks Skills",
-  "description": "Databricks skills for CLI, Apps, Unity Catalog, Model Serving, Declarative Automation Bundles (DABs), and more.",
+  "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
   "version": "0.2.4",
   "author": {
     "name": "Databricks"

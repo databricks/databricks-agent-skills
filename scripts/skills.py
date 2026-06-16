@@ -20,22 +20,17 @@ SHARED_ASSETS = [
 STABLE_REPO_DIR = "skills"
 EXPERIMENTAL_REPO_DIR = "experimental"
 
-# Stable-skill -> Claude marketplace plugin keyword. Used by
-# check_plugin_manifest to verify .claude-plugin/plugin.json keywords stay
-# aligned with the shipped skills. Descriptions live in each skill's SKILL.md
-# frontmatter and are synthesized into the manifest via _build_stable_entry.
-SKILL_METADATA = {
-    "databricks-core": {"plugin_keyword": "cli"},
-    "databricks-apps": {"plugin_keyword": "apps"},
-    "databricks-app-design": {"plugin_keyword": "app-design"},
-    "databricks-jobs": {"plugin_keyword": "jobs"},
-    "databricks-lakebase": {"plugin_keyword": "lakebase"},
-    "databricks-dabs": {"plugin_keyword": "dabs"},
-    "databricks-model-serving": {"plugin_keyword": "model-serving"},
-    "databricks-pipelines": {"plugin_keyword": "pipelines"},
-    "databricks-serverless-migration": {"plugin_keyword": "serverless"},
-    "databricks-vector-search": {"plugin_keyword": "vector-search"},
-}
+# Plugin-level metadata (version, identity, keywords, description, per-target
+# shape) is the single source of truth in plugin.meta.json at the repo root.
+# load_meta reads it; the build_* renderers below generate every target's
+# plugin.json + marketplace.json from it. The skill -> plugin-keyword map that
+# used to live here (SKILL_METADATA) now lives in plugin.meta.json "skills".
+META_FILE = "plugin.meta.json"
+
+
+def load_meta(repo_root: Path) -> dict:
+    """Load plugin.meta.json (the cross-target plugin source of truth)."""
+    return json.loads((repo_root / META_FILE).read_text())
 
 
 def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
@@ -160,9 +155,13 @@ def extract_description_from_skill(skill_path: Path) -> str:
 
 
 # Markers that separate the "what this skill does" lead-in from the
-# "Use when ..." trigger list. The Codex marketplace short_description should
-# only contain the lead-in.
-_SHORT_DESC_MARKERS = (". Use when", ". Use this", ". Triggers", ". ALWAYS")
+# trigger/instruction tail. The marketplace short_description should only
+# contain the lead-in. ". Load this" trims the parent skill's "Load this first
+# ..., then load the matching product skill" agent-instruction tail
+# (databricks-core), which otherwise overran the 200-char cap and truncated
+# mid-word to "...Load this firs...". First marker found (in list order) wins,
+# so this only affects descriptions that don't already match an earlier marker.
+_SHORT_DESC_MARKERS = (". Use when", ". Use this", ". Triggers", ". ALWAYS", ". Load this")
 
 
 def synthesize_short_description(skill_path: Path) -> str:
@@ -398,77 +397,253 @@ def validate_manifest(repo_root: Path) -> bool:
     return True
 
 
-def validate_plugin_manifests(repo_root: Path) -> list[str]:
-    """Validate .claude-plugin/plugin.json and .claude-plugin/marketplace.json
-    stay in sync with the set of skills shipped in this repo.
+# ---------------------------------------------------------------------------
+# Plugin manifests (generated from plugin.meta.json for every target)
+# ---------------------------------------------------------------------------
+#
+# One logical plugin ships to four targets (Claude Code, Codex, Copilot,
+# Cursor) plus a marketplace catalog for three of them. Every target used to
+# keep a hand-edited copy of the same plugin-level metadata (version,
+# description, keywords, author, ...) and they drifted: version duplicated 4x,
+# Codex missing the app-design keyword, Cursor's description stale. plugin.meta.json
+# is now the single source; the build_* renderers below assemble each target's
+# file from it in that target's exact key order, and check_generated_plugins
+# fails CI on any drift. Stdlib-only, like the rest of this file.
+#
+# These JSON files are consumed by strict plugin loaders / a JSON-schema
+# validator (the Claude marketplace `$schema`), so they carry NO "//" comment
+# key (unlike manifest.json, whose consumer tolerates it). Their generated
+# status is documented in CONTRIBUTING.md and enforced by the drift check.
 
-    The two manifests power Claude Code marketplace discovery; if a new skill
-    lands without a corresponding plugin keyword bump, the marketplace listing
-    silently goes stale. This check forces SKILL_METADATA, plugin.json, and
-    marketplace.json to stay aligned.
+_CLAUDE_MARKETPLACE_SCHEMA = (
+    "https://json.schemastore.org/claude-code-plugin-marketplace.json"
+)
 
-    Returns a list of error strings (empty means all good).
+
+def _serialize_plugin_json(obj: dict) -> str:
+    """Canonical on-disk form for a generated plugin JSON file.
+
+    2-space indent, insertion-ordered keys (NOT sorted — each target's key
+    order is reproduced by the build_* function), trailing newline.
+    """
+    return json.dumps(obj, indent=2) + "\n"
+
+
+def build_keywords(meta: dict) -> list[str]:
+    """Compose the plugin keyword list from meta.
+
+    keywords = keywords_lead + [each skill's keyword, in meta order] +
+    keywords_tail. The lead/tail hold cross-cutting terms owned by no single
+    skill ("databricks", "data-engineering"); the middle is one keyword per
+    shipped skill, ordered by the insertion order of meta["skills"].
+    """
+    skill_keywords = [entry["keyword"] for entry in meta["skills"].values()]
+    return [
+        *meta.get("keywords_lead", []),
+        *skill_keywords,
+        *meta.get("keywords_tail", []),
+    ]
+
+
+def build_claude_plugin(meta: dict) -> dict:
+    return {
+        "name": meta["name"],
+        "description": meta["description"],
+        "version": meta["version"],
+        "author": meta["author"],
+        "homepage": meta["homepage"],
+        "repository": meta["repository"],
+        "license": meta["license"],
+        "keywords": build_keywords(meta),
+        "skills": "./skills/",
+        "commands": meta["targets"]["claude"]["commands"],
+    }
+
+
+def build_codex_plugin(meta: dict) -> dict:
+    target = meta["targets"]["codex"]
+    return {
+        "name": meta["name"],
+        "description": meta["description"],
+        "version": meta["version"],
+        "author": meta["author"],
+        "homepage": meta["homepage"],
+        "repository": meta["repository"],
+        "license": meta["license"],
+        "keywords": build_keywords(meta),
+        "skills": "./skills/",
+        "hooks": target["hooks"],
+        "interface": target["interface"],
+    }
+
+
+def build_copilot_plugin(meta: dict) -> dict:
+    target = meta["targets"]["copilot"]
+    return {
+        "name": meta["name"],
+        "displayName": target["displayName"],
+        "description": meta["description"],
+        "version": meta["version"],
+        "author": meta["author"],
+        "homepage": meta["homepage"],
+        "repository": meta["repository"],
+        "license": meta["license"],
+        "skills": "./skills/",
+        "hooks": target["hooks"],
+    }
+
+
+def build_cursor_plugin(meta: dict) -> dict:
+    target = meta["targets"]["cursor"]
+    # Cursor omits homepage/repository/license and ships the author name only.
+    return {
+        "name": meta["name"],
+        "displayName": target["displayName"],
+        "description": meta["description"],
+        "version": meta["version"],
+        "author": {"name": meta["author"]["name"]},
+        "skills": "./skills/",
+        "commands": target["commands"],
+        "rules": target["rules"],
+        "hooks": target["hooks"],
+    }
+
+
+def build_claude_marketplace(meta: dict) -> dict:
+    market = meta["marketplace"]
+    return {
+        "$schema": _CLAUDE_MARKETPLACE_SCHEMA,
+        "name": market["name"],
+        "description": market["description"],
+        "owner": market["owner"],
+        "plugins": [
+            {
+                "name": meta["name"],
+                "source": "./",
+                "category": meta["category"],
+                "description": meta["description"],
+            }
+        ],
+    }
+
+
+def build_copilot_marketplace(meta: dict) -> dict:
+    market = meta["marketplace"]
+    return {
+        "name": market["name"],
+        "description": market["description"],
+        "owner": market["owner"],
+        "plugins": [
+            {
+                "name": meta["name"],
+                "source": "./",
+                "category": meta["category"],
+                "description": meta["description"],
+            }
+        ],
+    }
+
+
+def build_codex_marketplace(meta: dict) -> dict:
+    market = meta["marketplace"]
+    return {
+        "name": market["name"],
+        "interface": {"displayName": market["displayName"]},
+        "plugins": [
+            {
+                "name": meta["name"],
+                "description": meta["description"],
+                "category": meta["category"],
+                "source": {"source": "local", "path": "./"},
+            }
+        ],
+    }
+
+
+def generated_plugin_files(meta: dict) -> dict:
+    """Map every generated plugin file (repo-relative path -> canonical text)."""
+    return {
+        ".claude-plugin/plugin.json": _serialize_plugin_json(build_claude_plugin(meta)),
+        ".codex-plugin/plugin.json": _serialize_plugin_json(build_codex_plugin(meta)),
+        ".github/plugin/plugin.json": _serialize_plugin_json(build_copilot_plugin(meta)),
+        ".cursor-plugin/plugin.json": _serialize_plugin_json(build_cursor_plugin(meta)),
+        ".claude-plugin/marketplace.json": _serialize_plugin_json(
+            build_claude_marketplace(meta)
+        ),
+        ".github/plugin/marketplace.json": _serialize_plugin_json(
+            build_copilot_marketplace(meta)
+        ),
+        ".agents/plugins/marketplace.json": _serialize_plugin_json(
+            build_codex_marketplace(meta)
+        ),
+    }
+
+
+def generate_plugins(repo_root: Path, meta: dict) -> int:
+    """Write every target's plugin.json + marketplace.json from meta.
+
+    Idempotent: always writes the full set and returns its size.
+    """
+    files = generated_plugin_files(meta)
+    for rel, text in files.items():
+        path = repo_root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    return len(files)
+
+
+def check_meta_skill_coverage(repo_root: Path, meta: dict) -> list[str]:
+    """Every stable skill must have a plugin.meta.json entry, and vice versa.
+
+    This is the coverage guard: add a skill under skills/ and forget to list it
+    in plugin.meta.json (so it gets no plugin keyword) and this fails, instead
+    of the keyword silently going missing from every target's plugin.json.
     """
     errors: list[str] = []
+    meta_skills = meta.get("skills", {})
+    disk_skills = {d.name for d in iter_skill_dirs(repo_root)}
 
-    plugin_path = repo_root / ".claude-plugin" / "plugin.json"
-    marketplace_path = repo_root / ".claude-plugin" / "marketplace.json"
-
-    if not plugin_path.exists():
-        errors.append(f"Missing {plugin_path.relative_to(repo_root)}")
-    if not marketplace_path.exists():
-        errors.append(f"Missing {marketplace_path.relative_to(repo_root)}")
-    if errors:
-        return errors
-
-    try:
-        plugin = json.loads(plugin_path.read_text())
-    except json.JSONDecodeError as exc:
-        return [f"{plugin_path.relative_to(repo_root)} is not valid JSON: {exc}"]
-    try:
-        marketplace = json.loads(marketplace_path.read_text())
-    except json.JSONDecodeError as exc:
-        return [f"{marketplace_path.relative_to(repo_root)} is not valid JSON: {exc}"]
-
-    keywords = {k.lower() for k in plugin.get("keywords", [])}
-
-    for skill_dir in iter_skill_dirs(repo_root):
-        meta = SKILL_METADATA.get(skill_dir.name)
-        if meta is None:
-            errors.append(
-                f"Stable skill '{skill_dir.name}' has no SKILL_METADATA entry in "
-                "scripts/skills.py. Add one with a 'plugin_keyword' so its Claude "
-                "marketplace keyword in .claude-plugin/plugin.json stays in sync."
-            )
-            continue
-        expected_keyword = meta.get("plugin_keyword")
-        if not expected_keyword:
-            errors.append(
-                f"SKILL_METADATA['{skill_dir.name}'] is missing 'plugin_keyword'. "
-                "Add one so .claude-plugin/plugin.json keywords coverage can be validated."
-            )
-            continue
-        if expected_keyword.lower() not in keywords:
-            errors.append(
-                f"Skill '{skill_dir.name}' has no corresponding entry in "
-                f".claude-plugin/plugin.json 'keywords' (looking for '{expected_keyword}'). "
-                "Add it so the Claude marketplace listing stays in sync."
-            )
-
-    plugin_name = plugin.get("name")
-    market_plugins = marketplace.get("plugins", [])
-    market_entry = next((p for p in market_plugins if p.get("name") == plugin_name), None)
-    if market_entry is None:
+    for name in sorted(disk_skills - set(meta_skills)):
         errors.append(
-            f".claude-plugin/marketplace.json has no entry for plugin '{plugin_name}'."
+            f"Stable skill '{name}' has no entry in plugin.meta.json \"skills\". "
+            'Add one with a "keyword" so it gets a plugin keyword.'
         )
-    else:
-        if market_entry.get("description") != plugin.get("description"):
+    for name in sorted(set(meta_skills) - disk_skills):
+        errors.append(
+            f"plugin.meta.json \"skills\" lists '{name}' but skills/{name}/ does "
+            "not exist. Remove the entry or restore the skill."
+        )
+    for name, entry in meta_skills.items():
+        if not isinstance(entry, dict) or not entry.get("keyword"):
             errors.append(
-                ".claude-plugin/marketplace.json plugin description must match "
-                ".claude-plugin/plugin.json description (they drift independently otherwise)."
+                f'plugin.meta.json skills["{name}"] is missing a "keyword".'
             )
+    return errors
 
+
+def check_generated_plugins(repo_root: Path, meta: dict) -> list[str]:
+    """Fail if any generated plugin file drifts from what meta would produce."""
+    errors: list[str] = []
+    for rel, expected in generated_plugin_files(meta).items():
+        path = repo_root / rel
+        if not path.exists():
+            errors.append(f"Missing generated file {rel}.")
+            continue
+        actual = path.read_text()
+        if actual == expected:
+            continue
+        # Distinguish a content change from a pure formatting change for a
+        # clearer message, mirroring validate_manifest's two-stage check.
+        try:
+            same_content = json.loads(actual) == json.loads(expected)
+        except json.JSONDecodeError:
+            same_content = False
+        if same_content:
+            errors.append(
+                f"{rel} is not in canonical generated form (whitespace / key order)."
+            )
+        else:
+            errors.append(f"{rel} is out of date with plugin.meta.json.")
     return errors
 
 
@@ -573,7 +748,7 @@ def check_plugin_components(repo_root: Path) -> list[str]:
     try:
         plugin = json.loads(plugin_path.read_text()) if plugin_path.exists() else {}
     except json.JSONDecodeError as exc:
-        # validate_plugin_manifests reports the broken manifest itself; never
+        # check_generated_plugins reports the broken manifest itself; never
         # crash here, just skip the manifest-dependent checks.
         return [f".claude-plugin/plugin.json is not valid JSON: {exc}"]
 
@@ -792,8 +967,8 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
     if claude_version and plugin.get("version") != claude_version:
         errors.append(
             f'.codex-plugin/plugin.json version ({plugin.get("version")}) must match '
-            f".claude-plugin/plugin.json ({claude_version}); scripts/bump_version.py "
-            "keeps them in sync at release time."
+            f".claude-plugin/plugin.json ({claude_version}); both are generated from "
+            'plugin.meta.json "version" -- run `python3 scripts/skills.py generate`.'
         )
 
     skills_rel = plugin.get("skills")
@@ -882,8 +1057,8 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
     if claude_version and plugin.get("version") != claude_version:
         errors.append(
             f'.github/plugin/plugin.json version ({plugin.get("version")}) must match '
-            f".claude-plugin/plugin.json ({claude_version}); scripts/bump_version.py "
-            "keeps them in sync at release time."
+            f".claude-plugin/plugin.json ({claude_version}); both are generated from "
+            'plugin.meta.json "version" -- run `python3 scripts/skills.py generate`.'
         )
 
     skills_rel = plugin.get("skills")
@@ -1055,6 +1230,12 @@ def main() -> None:
                 f"{', '.join(manifest['skills'].keys())}"
             )
 
+            meta = load_meta(repo_root)
+            written_plugins = generate_plugins(repo_root, meta)
+            print(
+                f"Generated {written_plugins} plugin manifest file(s) from {META_FILE}"
+            )
+
         case "validate":
             ok = True
 
@@ -1071,15 +1252,37 @@ def main() -> None:
             if not validate_manifest(repo_root):
                 ok = False
 
-            plugin_errors = validate_plugin_manifests(repo_root)
-            if plugin_errors:
+            try:
+                meta = load_meta(repo_root)
+            except (OSError, json.JSONDecodeError) as exc:
                 print(
-                    "ERROR: .claude-plugin manifests are out of sync with skills:",
+                    f"ERROR: cannot read {META_FILE} (the plugin source of truth): {exc}",
                     file=sys.stderr,
                 )
-                for err in plugin_errors:
-                    print(f"  - {err}", file=sys.stderr)
+                meta = None
                 ok = False
+
+            if meta is not None:
+                coverage_errors = check_meta_skill_coverage(repo_root, meta)
+                if coverage_errors:
+                    print(
+                        f"ERROR: {META_FILE} \"skills\" is out of sync with skills/:",
+                        file=sys.stderr,
+                    )
+                    for err in coverage_errors:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
+
+                drift_errors = check_generated_plugins(repo_root, meta)
+                if drift_errors:
+                    print(
+                        "ERROR: generated plugin manifests are out of date with "
+                        f"{META_FILE}:",
+                        file=sys.stderr,
+                    )
+                    for err in drift_errors:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
 
             component_errors = check_plugin_components(repo_root)
             if component_errors:
@@ -1133,10 +1336,10 @@ def main() -> None:
 
             if not ok:
                 print(
-                    "\nRun `python3 scripts/skills.py generate` to fix the "
-                    "manifest, and update .claude-plugin/plugin.json + "
-                    "marketplace.json by hand for any plugin-keyword/description "
-                    "mismatches.",
+                    "\nRun `python3 scripts/skills.py generate` to regenerate "
+                    "manifest.json and every target's plugin.json + marketplace.json "
+                    f"from {META_FILE}, then commit the result. For coverage errors, "
+                    f"add the missing skill to {META_FILE} \"skills\" first.",
                     file=sys.stderr,
                 )
                 sys.exit(1)

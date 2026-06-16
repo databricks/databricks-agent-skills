@@ -108,7 +108,7 @@
       "version": "0.1.0"
     },
     "databricks-core": {
-      "description": "Databricks CLI operations and the parent/entry-point skill for all Databricks work: authentication, profile selection, data exploration, bundles, and Genie natural-language data Q&A. Load this firs...",
+      "description": "Databricks CLI operations and the parent/entry-point skill for all Databricks work: authentication, profile selection, data exploration, bundles, and Genie natural-language data Q&A.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",

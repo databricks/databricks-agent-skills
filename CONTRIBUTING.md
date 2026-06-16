@@ -31,7 +31,8 @@ If the synthesised display name comes out wrong (e.g. acronyms or product names 
 mkdir -p skills/databricks-foo/references
 $EDITOR skills/databricks-foo/SKILL.md      # write SKILL.md with frontmatter
 
-# 2. For stable skills only: add a description to scripts/skills.py SKILL_METADATA.
+# 2. For stable skills only: add the skill to plugin.meta.json "skills"
+#    with a "keyword" (this is its Claude/Codex plugin marketplace keyword).
 
 # 3. Generate Codex metadata + icons + manifest in one shot.
 python3 scripts/skills.py generate
@@ -44,13 +45,40 @@ python3 scripts/skills.py validate
 
 ### CI
 
-`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches `skills/**`, `experimental/**`, `assets/**`, `scripts/skills.py`, or `manifest.json`. Validation enforces:
+`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.codex-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
 
 - Every skill has `agents/openai.yaml`.
 - Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
 - `manifest.json` matches what `scripts/skills.py generate` would produce.
+- Every stable skill has a `plugin.meta.json` "skills" entry (and vice versa).
+- Every target's `plugin.json` + `marketplace.json` is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the four targets).
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
+
+## Plugin metadata (`plugin.meta.json`)
+
+The repo ships one logical plugin to four targets (Claude Code, Codex, Copilot,
+Cursor) plus a marketplace catalog for three of them. All cross-target plugin
+metadata, version, name, description, author, license, keywords, per-target
+display names, and hook/command/rule wiring, lives once in **`plugin.meta.json`**
+at the repo root. `scripts/skills.py generate` renders it into every target's
+`plugin.json` and `marketplace.json`:
+
+- `.claude-plugin/{plugin,marketplace}.json`
+- `.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json`
+- `.github/plugin/{plugin,marketplace}.json`
+- `.cursor-plugin/plugin.json`
+
+**Edit `plugin.meta.json`, then run `python3 scripts/skills.py generate`.** Never
+hand-edit the generated files; CI re-renders them in memory and fails on any byte
+drift. (The generated JSON carries no "do-not-edit" comment key because the
+plugin loaders / the Claude marketplace `$schema` reject unknown keys; their
+generated status is documented here and enforced by the drift check.)
+
+The plugin keyword list is composed as `keywords_lead + [each skill's keyword] +
+keywords_tail`, in the insertion order of the `skills` map. The plugin `name` is
+`databricks` for every target and is load-bearing (it keys Cursor/Claude
+installs); the generator never emits a different value.
 
 ## Plugin components (hooks + commands)
 
@@ -99,9 +127,10 @@ Releases are cut by the **Release** workflow (`.github/workflows/release.yml`),
 triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
 
 1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
-   both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` to the
-   release version and regenerates `manifest.json`.
-2. Commits the bump to `main`.
+   `plugin.meta.json` (the single source) and regenerates every target's
+   `plugin.json` + `marketplace.json` and `manifest.json` from it, so all four
+   targets carry the same version.
+2. Commits the bump (`plugin.meta.json` + the regenerated manifests) to `main`.
 3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
    then creates the GitHub release (`gh release create --verify-tag`).
 

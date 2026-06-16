@@ -34,10 +34,17 @@ jobs:
             exit 1
           fi
 
-      - name: Bump plugin manifests and regenerate manifest
+      - name: Bump version in plugin.meta.json and regenerate manifests
         env:
           VERSION: ${{ inputs.version }}
         run: python3 scripts/bump_version.py "$VERSION"
+
+      - name: Validate generated manifests before publishing
+        # Abort the release if anything is inconsistent (drift, a skill missing
+        # from plugin.meta.json, missing Codex metadata, ...) BEFORE the commit
+        # and tag are pushed, instead of failing the post-push CI after the
+        # release is already published.
+        run: python3 scripts/skills.py validate
 
       - name: Commit version bump
         env:
@@ -45,7 +52,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/plugin.json .cursor-plugin/plugin.json manifest.json
+          # plugin.meta.json is the source; the rest are generated from it.
+          # Stage all of them (unchanged files are a no-op) so a release can
+          # never commit a partial set, e.g. bump the Claude manifest but leave
+          # the Codex/Copilot ones behind.
+          git add \
+            plugin.meta.json \
+            .claude-plugin/plugin.json \
+            .codex-plugin/plugin.json \
+            .github/plugin/plugin.json \
+            .cursor-plugin/plugin.json \
+            .claude-plugin/marketplace.json \
+            .github/plugin/marketplace.json \
+            .agents/plugins/marketplace.json \
+            manifest.json
           if git diff --cached --quiet; then
             echo "Manifests already at $VERSION; nothing to commit"
           else
