@@ -51,7 +51,7 @@ def _check_generated_files(repo_root: Path, files: dict) -> list[str]:
                 f"{rel} is not in canonical generated form (whitespace / key order)."
             )
         else:
-            errors.append(f"{rel} is out of date with plugin.meta.json.")
+            errors.append(f"{rel} is out of date with {META_FILE}.")
     return errors
 
 

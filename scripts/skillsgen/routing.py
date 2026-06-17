@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from skillsgen.common import _check_generated_files, _read_frontmatter
+from skillsgen.common import META_FILE, _check_generated_files, _read_frontmatter
 from skillsgen.discovery import iter_skill_dirs
 
 
@@ -141,7 +141,7 @@ def check_routing_coverage(repo_root: Path, meta: dict) -> list[str]:
         if parent in (None, "databricks-core") and name not in table_skills:
             errors.append(
                 f"Stable skill '{name}' (parent {parent or 'none'}) has no routing row "
-                'in plugin.meta.json "routing"."table"; add one so the prompt router '
+                f'in {META_FILE} "routing"."table"; add one so the prompt router '
                 "and the Cursor rule can steer prompts to it."
             )
     return errors
@@ -165,7 +165,7 @@ def check_routing_patterns(repo_root: Path, meta: dict) -> list[str]:
                 re.compile(pattern)
             except (re.error, TypeError) as exc:
                 errors.append(
-                    f'plugin.meta.json "routing"."{bucket}" pattern {pattern!r} '
+                    f'{META_FILE} "routing"."{bucket}" pattern {pattern!r} '
                     f"is not a valid regex: {exc}"
                 )
     return errors

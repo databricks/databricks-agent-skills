@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from skillsgen.common import _check_generated_files, _serialize_plugin_json
+from skillsgen.common import META_FILE, _check_generated_files, _serialize_plugin_json
 from skillsgen.discovery import iter_skill_dirs
 
 
@@ -246,18 +246,18 @@ def check_meta_skill_coverage(repo_root: Path, meta: dict) -> list[str]:
 
     for name in sorted(disk_skills - set(meta_skills)):
         errors.append(
-            f"Stable skill '{name}' has no entry in plugin.meta.json \"skills\". "
+            f"Stable skill '{name}' has no entry in {META_FILE} \"skills\". "
             'Add one with a "keyword" so it gets a plugin keyword.'
         )
     for name in sorted(set(meta_skills) - disk_skills):
         errors.append(
-            f"plugin.meta.json \"skills\" lists '{name}' but skills/{name}/ does "
+            f"{META_FILE} \"skills\" lists '{name}' but skills/{name}/ does "
             "not exist. Remove the entry or restore the skill."
         )
     for name, entry in meta_skills.items():
         if not isinstance(entry, dict) or not entry.get("keyword"):
             errors.append(
-                f'plugin.meta.json skills["{name}"] is missing a "keyword".'
+                f'{META_FILE} skills["{name}"] is missing a "keyword".'
             )
     return errors
 

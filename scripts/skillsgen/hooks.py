@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from skillsgen.common import _check_generated_files, _serialize_plugin_json
+from skillsgen.common import META_FILE, _check_generated_files, _serialize_plugin_json
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ def check_no_orphan_hook_scripts(repo_root: Path, meta: dict) -> list[str]:
     for py in sorted((repo_root / "hooks").glob("*.py")):
         if py.name not in wired:
             errors.append(
-                f"hooks/{py.name} exists but is not wired into plugin.meta.json "
+                f"hooks/{py.name} exists but is not wired into {META_FILE} "
                 '"hooks"."entries" (and is not allow-listed). Wire it or remove it.'
             )
     return errors
