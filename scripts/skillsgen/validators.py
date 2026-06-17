@@ -300,17 +300,9 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
             "identifier; the marketplace entry and install docs key on it)."
         )
 
-    claude_path = repo_root / ".claude-plugin" / "plugin.json"
-    try:
-        claude_version = json.loads(claude_path.read_text()).get("version")
-    except Exception:
-        claude_version = None
-    if claude_version and plugin.get("version") != claude_version:
-        errors.append(
-            f'.codex-plugin/plugin.json version ({plugin.get("version")}) must match '
-            f".claude-plugin/plugin.json ({claude_version}); both are generated from "
-            'plugin.meta.json "version" -- run `python3 scripts/skills.py generate`.'
-        )
+    # No Claude-vs-Codex version cross-check: both plugin.json are generated from
+    # meta["version"], and check_generated_plugins enforces byte-exact equality
+    # against the source, so any version drift is already caught there.
 
     skills_rel = plugin.get("skills")
     if not isinstance(skills_rel, str) or not (repo_root / _norm_rel_path(skills_rel)).is_dir():
@@ -325,23 +317,8 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
             '.codex-plugin/plugin.json must declare "hooks": "./hooks/codex-hooks.json". '
             "Without it Codex defaults to hooks/hooks.json, the Claude Code wiring."
         )
-    codex_hooks = repo_root / "hooks" / "codex-hooks.json"
-    if not codex_hooks.exists():
-        errors.append("Missing hooks/codex-hooks.json.")
-    else:
-        try:
-            cfg = json.loads(codex_hooks.read_text())
-        except json.JSONDecodeError as exc:
-            errors.append(f"hooks/codex-hooks.json is not valid JSON: {exc}")
-            cfg = None
-        if cfg is not None:
-            blob = json.dumps(cfg)
-            for script in sorted(set(re.findall(r"hooks/[\w.-]+\.py", blob))):
-                if not (repo_root / script).exists():
-                    errors.append(
-                        f"hooks/codex-hooks.json references '{script}' which does not exist."
-                    )
-        _check_hook_event_names("hooks/codex-hooks.json", cfg, _CODEX_EVENTS, errors)
+    cfg = _check_hook_wiring(repo_root, "hooks/codex-hooks.json", errors)
+    _check_hook_event_names("hooks/codex-hooks.json", cfg, _CODEX_EVENTS, errors)
 
     market_path = repo_root / ".agents" / "plugins" / "marketplace.json"
     if not market_path.exists():
@@ -390,17 +367,9 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
             "identifier; the marketplace entry and install docs key on it)."
         )
 
-    claude_path = repo_root / ".claude-plugin" / "plugin.json"
-    try:
-        claude_version = json.loads(claude_path.read_text()).get("version")
-    except Exception:
-        claude_version = None
-    if claude_version and plugin.get("version") != claude_version:
-        errors.append(
-            f'.github/plugin/plugin.json version ({plugin.get("version")}) must match '
-            f".claude-plugin/plugin.json ({claude_version}); both are generated from "
-            'plugin.meta.json "version" -- run `python3 scripts/skills.py generate`.'
-        )
+    # No Claude-vs-Copilot version cross-check: both plugin.json are generated
+    # from meta["version"], and check_generated_plugins enforces byte-exact
+    # equality against the source, so any version drift is already caught there.
 
     skills_rel = plugin.get("skills")
     if not isinstance(skills_rel, str) or not (repo_root / _norm_rel_path(skills_rel)).is_dir():
@@ -416,25 +385,10 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
             '"./hooks/copilot-hooks.json" (the Copilot-format wiring); '
             "hooks/hooks.json is the Claude Code wiring."
         )
-    copilot_hooks = repo_root / "hooks" / "copilot-hooks.json"
-    if not copilot_hooks.exists():
-        errors.append("Missing hooks/copilot-hooks.json.")
-    else:
-        try:
-            cfg = json.loads(copilot_hooks.read_text())
-        except json.JSONDecodeError as exc:
-            errors.append(f"hooks/copilot-hooks.json is not valid JSON: {exc}")
-            cfg = None
-        if cfg is not None:
-            if cfg.get("version") != 1:
-                errors.append('hooks/copilot-hooks.json must declare "version": 1.')
-            blob = json.dumps(cfg)
-            for script in sorted(set(re.findall(r"hooks/[\w.-]+\.py", blob))):
-                if not (repo_root / script).exists():
-                    errors.append(
-                        f"hooks/copilot-hooks.json references '{script}' which does not exist."
-                    )
-        _check_hook_event_names("hooks/copilot-hooks.json", cfg, _COPILOT_EVENTS, errors)
+    cfg = _check_hook_wiring(repo_root, "hooks/copilot-hooks.json", errors)
+    if cfg is not None and cfg.get("version") != 1:
+        errors.append('hooks/copilot-hooks.json must declare "version": 1.')
+    _check_hook_event_names("hooks/copilot-hooks.json", cfg, _COPILOT_EVENTS, errors)
 
     market_path = repo_root / ".github" / "plugin" / "marketplace.json"
     if not market_path.exists():
