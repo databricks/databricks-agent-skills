@@ -1,6 +1,6 @@
 ---
 name: databricks-model-serving
-description: "Databricks Model Serving endpoint lifecycle and ops. Use when asked to: create, query, update, scale, or delete serving endpoints via CLI or the MLflow Deployments client; configure traffic routing for A/B / canary deployments; do zero-downtime version swaps; manage AI Gateway rate limits and usage tracking; discover Foundation Model API endpoints at runtime; integrate an endpoint into a Databricks App. NOT for: training models, MLflow autologging, UC model registration, custom PyFunc authoring, or hand-rolled ResponsesAgent code (use databricks-ml-training); no-code Knowledge Assistants or Supervisor Agents (use databricks-agent-bricks); MLflow evaluation / scorers (use databricks-mlflow-evaluation)."
+description: "Databricks Model Serving endpoint lifecycle and ops. Use when asked to: create, query, update, scale, or delete serving endpoints via CLI or the MLflow Deployments client; configure traffic routing for A/B / canary deployments; do zero-downtime version swaps; retrieve endpoint OpenAPI schemas; inspect serving logs, metrics, and permissions; manage AI Gateway rate limits and usage tracking; discover Foundation Model API endpoints at runtime; integrate an endpoint into a Databricks App; stream from off-platform clients (Vercel AI SDK v6, standalone Node.js) into a Databricks AI Gateway. NOT for: training models, MLflow autologging, UC model registration, custom PyFunc authoring, or hand-rolled ResponsesAgent code (use databricks-ml-training); no-code Knowledge Assistants or Supervisor Agents (use databricks-agent-bricks); MLflow evaluation / scorers (use databricks-mlflow-evaluation)."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.4.0"
@@ -221,17 +221,7 @@ Then wire the endpoint into your app via the `serving()` plugin or a custom rout
 
 ### Develop & deploy new models
 
-This skill is ops-focused (manage existing endpoints). For the dev-side flow — train a model, register to Unity Catalog, log a PyFunc or `ResponsesAgent`, deploy — see the references below.
-
-| Reference | When to read |
-|---|---|
-| [references/training-and-serving.md](references/training-and-serving.md) | Train + register classical ML with `mlflow.autolog`, alias-based promotion (`@prod`), batch scoring via `spark_udf`, real-time endpoint create + zero-downtime version swap, async deploy via `jobs submit --no-wait`. Includes the Foundation Model API endpoints runtime-list and the gotchas table. |
-| [references/custom-pyfunc.md](references/custom-pyfunc.md) | When `autolog` isn't enough — file-based `PythonModel` ("Models from Code"), `infer_signature`, `code_paths`, pre-deploy validation with `mlflow.models.predict(env_manager="uv")`. |
-| [references/genai-agents.md](references/genai-agents.md) | Hand-rolled `ResponsesAgent` with LangGraph + `UCFunctionToolkit` + `VectorSearchRetrieverTool`. Includes the `create_text_output_item` helper-method gotcha and the `resources=[...]` passthrough-auth list. |
-
-### Develop & deploy new models
-
-This skill is ops-focused (manage existing endpoints). For the dev-side flow — training, MLflow tracking, UC registration, custom PyFunc authoring, and hand-rolled `ResponsesAgent` code — see **[databricks-ml-training](../../experimental/databricks-ml-training/SKILL.md)** (experimental).
+This skill is ops-focused (manage existing endpoints). For the dev-side flow — training, MLflow tracking, UC registration, custom PyFunc authoring, and hand-rolled `ResponsesAgent` code — see **[databricks-ml-training](../databricks-ml-training/SKILL.md)** (experimental).
 
 ## Foundation Model API endpoints
 
