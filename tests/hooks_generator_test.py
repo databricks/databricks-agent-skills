@@ -82,6 +82,35 @@ class GeneratedHooksTest(unittest.TestCase):
         self.assertEqual(skills.build_copilot_hooks(self.meta)["version"], 1)
         self.assertEqual(skills.build_cursor_hooks(self.meta)["version"], 1)
 
+    def test_declared_hooks_matches_render_out(self):
+        # The plugin.json "hooks" path is derived from the one hooks_render.out,
+        # so the declaration and the generation output cannot disagree.
+        builders = {
+            "codex": skills.build_codex_plugin,
+            "copilot": skills.build_copilot_plugin,
+            "cursor": skills.build_cursor_plugin,
+        }
+        for key, builder in builders.items():
+            out = self.meta["targets"][key]["hooks_render"]["out"]
+            self.assertEqual(builder(self.meta)["hooks"], "./" + out)
+
+    def test_claude_plugin_declares_no_hooks(self):
+        # Claude auto-loads hooks/hooks.json; declaring it would double-load.
+        self.assertNotIn("hooks", skills.build_claude_plugin(self.meta))
+
+    def test_no_orphan_hook_scripts(self):
+        self.assertEqual(skills.check_no_orphan_hook_scripts(_REPO, self.meta), [])
+
+    def test_orphan_hook_script_is_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "hooks").mkdir()
+            for script in skills._hook_scripts(self.meta).values():
+                (root / "hooks" / script).write_text("")
+            (root / "hooks" / "databricks-stray.py").write_text("")
+            errors = skills.check_no_orphan_hook_scripts(root, self.meta)
+            self.assertTrue(any("databricks-stray.py" in e for e in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

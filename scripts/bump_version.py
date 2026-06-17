@@ -32,7 +32,7 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 # generator, which owns their canonical format.
 VERSION_FIELD_RE = re.compile(r'("version"\s*:\s*")[^"]*(")')
 
-META_FILE = Path("plugin.meta.json")
+META_FILE = Path("metaplugin/plugin.meta.json")
 
 
 def normalize_version(raw: str) -> str:
@@ -76,8 +76,8 @@ def main() -> None:
     meta_path = repo_root / META_FILE
     if not meta_path.exists():
         raise SystemExit(
-            f"ERROR: {META_FILE} not found at the repo root. It is the plugin "
-            "source of truth and must be committed; did you forget to `git add` it?"
+            f"ERROR: {META_FILE} not found. It is the plugin source of truth and "
+            "must be committed; did you forget to `git add` it?"
         )
     changed = set_version(meta_path, version)
     print(f"{'set' if changed else 'unchanged'} {META_FILE} -> {version}")
@@ -85,6 +85,12 @@ def main() -> None:
     meta = skills.load_meta(repo_root)
     written = skills.generate_plugins(repo_root, meta)
     print(f"regenerated {written} plugin manifest file(s) from {META_FILE}")
+
+    written_routing = skills.generate_routing(repo_root, meta)
+    print(f"regenerated {written_routing} routing file(s) from {META_FILE}")
+
+    written_hooks = skills.generate_hooks(repo_root, meta)
+    print(f"regenerated {written_hooks} hook-wiring file(s) from {META_FILE}")
 
     manifest = skills.generate_manifest(repo_root)
     (repo_root / "manifest.json").write_text(skills.serialize_manifest(manifest))
