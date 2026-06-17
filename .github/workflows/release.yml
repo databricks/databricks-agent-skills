@@ -52,10 +52,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # metaplugin/plugin.meta.json is the source; the rest are generated
-          # from it. Stage all of them (unchanged files are a no-op) so a release
-          # can never commit a partial set, e.g. bump the Claude manifest but
-          # leave the Codex/Copilot ones behind.
+          # metaplugin/plugin.meta.json is the source; bump_version.py regenerates
+          # the full set from it: the four plugin.json + three marketplace.json,
+          # the routing files, the four hook-wiring dialects, and manifest.json.
+          # Stage every one (unchanged files are a no-op) so a release can never
+          # commit a partial set, e.g. bump the Claude manifest but leave the
+          # Codex/Copilot ones, the routing data, or the hook wiring behind.
           git add \
             metaplugin/plugin.meta.json \
             .claude-plugin/plugin.json \
@@ -65,7 +67,24 @@ jobs:
             .claude-plugin/marketplace.json \
             .github/plugin/marketplace.json \
             .agents/plugins/marketplace.json \
+            hooks/_routing_data.json \
+            rules/databricks-routing.mdc \
+            rules/README.md \
+            hooks/hooks.json \
+            hooks/codex-hooks.json \
+            hooks/copilot-hooks.json \
+            hooks/cursor-hooks.json \
             manifest.json
+          # Guard the "stage the full set" invariant: if bump_version.py ever
+          # regenerates a tracked file not staged above (a new generated artifact
+          # added without updating this list), fail loudly instead of publishing
+          # the tag and leaving the regenerated file uncommitted -- which
+          # post-merge CI on main would then flag as drift.
+          if ! git diff --quiet; then
+            echo "Error: bump_version.py changed tracked files not staged for the release commit:"
+            git diff --name-only
+            exit 1
+          fi
           if git diff --cached --quiet; then
             echo "Manifests already at $VERSION; nothing to commit"
           else
