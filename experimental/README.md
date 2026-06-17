@@ -1,18 +1,20 @@
 > ⚠️ **Experimental: best-effort, not officially supported**
 >
-> The skills in this directory are imported from
+> The skills in this directory were originally imported from
 > [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
-> on a best-effort basis. They may be useful, but they are **not officially
-> supported** as part of `databricks-agent-skills`:
+> on a best-effort basis. **`ai-dev-kit` is now deprecated** —
+> `databricks/databricks-agent-skills` is the canonical home for these skills
+> going forward, and updates land here directly rather than via re-sync.
+>
+> They are still **not officially supported** as part of `databricks-agent-skills`:
 >
 > - They do not follow the same review / quality bar as the skills in
 >   [`../skills/`](../skills/).
-> - They may be out of date relative to upstream `ai-dev-kit`.
 > - They are not installed by `databricks aitools install` by default —
 >   you have to opt in (see the root README).
 >
 > File issues against this directory in this repo; do not file issues against
-> `ai-dev-kit` for skills installed via `databricks-agent-skills`.
+> the deprecated `ai-dev-kit` repo.
 
 ---
 
@@ -41,10 +43,10 @@ See the root [README](../README.md) for details on the stable install path.
 - **databricks-agent-bricks** - Knowledge Assistants, Genie Spaces, Supervisor Agents
 - **databricks-mlflow-evaluation** - End-to-end agent evaluation workflow
 - **databricks-unstructured-pdf-generation** - Generate synthetic PDFs for RAG
-- **databricks-vector-search** - Vector similarity search for RAG and semantic search
 
 ### 📊 Analytics & Dashboards
 - **databricks-aibi-dashboards** - Databricks AI/BI dashboards (with SQL validation workflow)
+- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files (**requires the `databricks-metric-views` skill** — it provides the baseline YAML spec/patterns this advisor builds on)
 - **databricks-metric-views** - Metric Views for governed metrics
 - **databricks-unity-catalog** - System tables for lineage, audit, billing
 

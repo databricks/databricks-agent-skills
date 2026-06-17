@@ -1,6 +1,10 @@
 ---
 name: databricks-apps-python
 description: "Builds Databricks applications. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required. Handles OAuth authorization, app resources, SQL warehouse and Lakebase connectivity, model serving, foundation model APIs, and deployment. Use when building web apps, dashboards, ML demos, or REST APIs for Databricks, or when the user mentions AppKit, Streamlit, Dash, Gradio, Flask, FastAPI, Reflex, or Databricks app."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks Applications
@@ -39,7 +43,7 @@ databricks apps deploy
 ### AI-assisted development
 ```bash
 # Install agent skills for AI-powered scaffolding
-databricks experimental aitools skills install
+databricks aitools install
 
 # Query AppKit docs inline
 npx @databricks/appkit docs "your question here"
@@ -252,7 +256,6 @@ class EntityIn(BaseModel):
 
 ## Related Skills
 
-- **databricks-app-apx** - full-stack apps with FastAPI + React
 - **databricks-dabs** - deploying apps via DABs
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - backend SDK integration
 - **databricks-lakebase** - adding persistent PostgreSQL state (autoscaling managed PG with branching)

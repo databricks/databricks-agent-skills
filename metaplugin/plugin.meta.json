@@ -1,0 +1,177 @@
+{
+  "//": "Single source of truth for the databricks plugin across all targets (Claude, Codex, Copilot, Cursor). Edit this file, then run `python3 scripts/skills.py generate`. The 4 plugin.json + 3 marketplace.json files are generated from here; CI fails on drift. Do not hand-edit the generated files.",
+  "version": "0.2.4",
+  "name": "databricks",
+  "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
+  "category": "development",
+  "author": {
+    "name": "Databricks",
+    "url": "https://databricks.com"
+  },
+  "homepage": "https://github.com/databricks/databricks-agent-skills",
+  "repository": "https://github.com/databricks/databricks-agent-skills",
+  "license": "LicenseRef-Databricks",
+
+  "keywords_lead": ["databricks"],
+  "keywords_tail": ["data-engineering"],
+
+  "marketplace": {
+    "name": "databricks-agent-skills",
+    "description": "Databricks agent skills for AI coding assistants.",
+    "owner": { "name": "Databricks" },
+    "displayName": "Databricks Agent Skills"
+  },
+
+  "targets": {
+    "claude": {
+      "dir": ".claude-plugin",
+      "commands": "./commands/",
+      "hooks_render": {
+        "out": "hooks/hooks.json",
+        "dialect": "nested",
+        "env_root": "${CLAUDE_PLUGIN_ROOT}",
+        "tool_matcher": "Bash",
+        "description": true
+      }
+    },
+    "codex": {
+      "dir": ".codex-plugin",
+      "hooks_render": {
+        "out": "hooks/codex-hooks.json",
+        "dialect": "nested",
+        "env_root": "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}",
+        "tool_matcher": "(?i)bash|shell|exec",
+        "description": false
+      },
+      "interface": {
+        "displayName": "Databricks",
+        "shortDescription": "Databricks skills and hooks for Codex.",
+        "category": "development",
+        "brandColor": "#FF3621",
+        "logo": "./assets/databricks.png",
+        "composerIcon": "./assets/databricks.svg"
+      }
+    },
+    "copilot": {
+      "dir": ".github/plugin",
+      "displayName": "Databricks",
+      "hooks_render": {
+        "out": "hooks/copilot-hooks.json",
+        "dialect": "copilot",
+        "tool_matcher": "(?i)bash|shell|terminal"
+      }
+    },
+    "cursor": {
+      "dir": ".cursor-plugin",
+      "displayName": "Databricks Skills",
+      "commands": "./commands-cursor/",
+      "rules": "./rules/",
+      "hooks_render": {
+        "out": "hooks/cursor-hooks.json",
+        "dialect": "cursor",
+        "tool_matcher": "Shell",
+        "platform_flag": "--platform cursor"
+      }
+    }
+  },
+
+  "//skills": "Per-skill plugin metadata. Insertion order defines the keyword order in plugin.json: keywords = keywords_lead + [each skill's keyword] + keywords_tail. Repo-owned (does NOT live in SKILL.md frontmatter, which syncs from the internal source). Prompt-routing config lives in the separate routing block below.",
+  "skills": {
+    "databricks-core": { "keyword": "cli" },
+    "databricks-apps": { "keyword": "apps" },
+    "databricks-app-design": { "keyword": "app-design" },
+    "databricks-lakebase": { "keyword": "lakebase" },
+    "databricks-model-serving": { "keyword": "model-serving" },
+    "databricks-jobs": { "keyword": "jobs" },
+    "databricks-pipelines": { "keyword": "pipelines" },
+    "databricks-dabs": { "keyword": "dabs" },
+    "databricks-serverless-migration": { "keyword": "serverless" },
+    "databricks-vector-search": { "keyword": "vector-search" }
+  },
+
+  "//routing": "Prompt-router + Cursor-rule routing config, rendered by scripts/skills.py. strong/ambiguous/suppress are regex patterns (backslashes are doubled for JSON). The router (hooks/databricks-router.py) loads the generated hooks/_routing_data.json; the Cursor rule (rules/databricks-routing.mdc) and the router instruction are both rendered from the single `table`, so the two routing tables cannot drift.",
+  "routing": {
+    "strong": [
+      "\\bdatabricks\\b",
+      "\\bunity\\s+catalog\\b",
+      "\\blakeflow\\b",
+      "\\blakebase\\b",
+      "\\bdbfs\\b",
+      "\\bdbutils\\b",
+      "\\bdbsql\\b",
+      "\\bdatabricks\\.yml\\b",
+      "\\basset\\s+bundle\\b",
+      "\\bdabs\\b",
+      "\\b(?:lakeflow|spark)\\s+declarative\\s+pipelines?\\b",
+      "\\bdelta\\s+live\\s+tables?\\b",
+      "\\bmosaic\\s+ai\\b",
+      "\\bdelta\\s+sharing\\b",
+      "\\bcloudfiles\\b"
+    ],
+    "ambiguous": [
+      "\\bgenie\\b",
+      "\\bdelta\\s+(lake|tables?)\\b",
+      "\\bdeclarative\\s+pipelines?\\b",
+      "\\bmodel\\s+serving\\b",
+      "\\bvector\\s+search\\b",
+      "\\bmlflow\\b",
+      "\\bpyspark\\b",
+      "\\bspark\\s*\\.\\s*(sql|read|write|table)\\b",
+      "\\bserverless\\s+(compute|warehouse|migration)\\b",
+      "\\bmedallion\\s+(architecture|tables?)\\b",
+      "\\bsql\\s+warehouse\\b",
+      "\\bauto\\s+loader\\b"
+    ],
+    "suppress": [
+      "\\bbigquery\\b",
+      "\\bredshift\\b",
+      "\\bsynapse\\b",
+      "\\bsnowflake\\b",
+      "\\bgit\\s+(commit|push|pull|status|log|diff|branch|rebase|merge|clone|stash)\\b",
+      "\\b(read|edit|open|write|create|delete)\\s+(the\\s+|this\\s+|a\\s+|that\\s+)?file\\b",
+      "\\bunit\\s+tests?\\b",
+      "\\bnpm\\b",
+      "\\bpip\\s+install\\b",
+      "\\bdocker\\b",
+      "\\bkubernetes\\b",
+      "\\bjenkins(?:file)?\\b"
+    ],
+    "//table": "Ordered product-skill routing table. Both the router instruction and the Cursor .mdc rule render their rows from here. A skill's `note` is appended after the skill name (Genie's experimental caveat).",
+    "table": [
+      { "label": "Jobs / Lakeflow / workflows", "skill": "databricks-jobs" },
+      { "label": "Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT)", "skill": "databricks-pipelines" },
+      { "label": "Apps / AppKit", "skill": "databricks-apps" },
+      { "label": "Asset Bundles / DABs / databricks.yml", "skill": "databricks-dabs" },
+      { "label": "Model Serving / endpoints", "skill": "databricks-model-serving" },
+      { "label": "Lakebase / Postgres", "skill": "databricks-lakebase" },
+      { "label": "Vector Search / RAG", "skill": "databricks-vector-search" },
+      { "label": "Classic-to-serverless migration", "skill": "databricks-serverless-migration" },
+      { "label": "Genie / natural-language data Q&A", "skill": "databricks-core", "note": " (Genie CLI support is experimental)" }
+    ],
+    "instruction_preamble": "[DATABRICKS] This request is Databricks-related. Handle it through the Databricks skills rather than ad hoc commands. Use the Skill tool to load `databricks-core` first (the parent skill: CLI, auth, profile selection, data exploration), then load the product skill that matches the request:",
+    "instruction_closing": "Then follow the skill's guidance (it drives the `databricks` CLI). If no product skill fits, databricks-core alone is enough.",
+    "reminder": "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks skills (databricks-core plus the matching product skill); load any that are not already loaded.",
+    "rule_description": "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.",
+    "rule_preamble": [
+      "This request is Databricks-related. Handle it through the Databricks skills",
+      "rather than ad hoc commands. Load the `databricks-core` skill first (the parent:",
+      "CLI, auth, profile selection, data exploration), then load the product skill",
+      "that matches the request:"
+    ],
+    "rule_closing": [
+      "Then follow the skill's guidance (it drives the `databricks` CLI). If no product",
+      "skill fits, databricks-core alone is enough."
+    ]
+  },
+
+  "//hooks": "Canonical hook wiring, rendered into each target's dialect by scripts/skills.py: hooks/hooks.json (Claude, auto-loaded), codex-hooks.json, copilot-hooks.json, cursor-hooks.json. The shared content (the scripts, their events, the description, the session-start matcher) lives here once; per-target dialect knobs (schema shape, event casing, env var, command form, tool matcher, whether the router is wired) live under targets.*.hooks_render. The router is wired only on Claude + Codex (the other two cannot inject context from a prompt-submit hook).",
+  "hooks": {
+    "description": "Databricks plugin hooks: route Databricks prompts into the skills, prime session context, and hint on auth failures.",
+    "session_start_matcher": "startup|clear|compact",
+    "entries": [
+      { "id": "router", "event": "prompt_submit", "script": "databricks-router.py" },
+      { "id": "context", "event": "session_start", "script": "databricks-context.py" },
+      { "id": "auth", "event": "post_tool", "script": "databricks-auth-helper.py" }
+    ]
+  }
+}

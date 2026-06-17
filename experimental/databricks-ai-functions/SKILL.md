@@ -1,6 +1,10 @@
 ---
 name: databricks-ai-functions
 description: "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse → chunk → index → query)."
+compatibility: Requires databricks CLI (>= v1.0.0)
+metadata:
+  version: "0.1.0"
+parent: databricks-core
 ---
 
 # Databricks AI Functions
@@ -54,7 +58,7 @@ SELECT
     ticket_id,
     ticket_text,
     ai_classify(ticket_text, ARRAY('urgent', 'not urgent', 'spam')) AS priority,
-    ai_extract(ticket_text, ARRAY('product', 'error_code', 'date'))  AS entities,
+    ai_extract(ticket_text, '["product", "error_code", "date"]')     AS entities,
     ai_analyze_sentiment(ticket_text)                                 AS sentiment
 FROM support_tickets;
 ```
@@ -65,12 +69,14 @@ from pyspark.sql.functions import expr
 df = spark.table("support_tickets")
 df = (
     df.withColumn("priority",  expr("ai_classify(ticket_text, array('urgent', 'not urgent', 'spam'))"))
-      .withColumn("entities",  expr("ai_extract(ticket_text, array('product', 'error_code', 'date'))"))
+      .withColumn("entities",  expr("ai_extract(ticket_text, '[\"product\", \"error_code\", \"date\"]')"))
       .withColumn("sentiment", expr("ai_analyze_sentiment(ticket_text)"))
 )
-# Access nested STRUCT fields from ai_extract
-df.select("ticket_id", "priority", "sentiment",
-          "entities.product", "entities.error_code", "entities.date").display()
+# ai_extract returns a VARIANT (fields under :response). Use colon (:) notation — dot returns NULL on a VARIANT.
+df.selectExpr("ticket_id", "priority", "sentiment",
+              "entities:response:product::string    AS product",
+              "entities:response:error_code::string AS error_code",
+              "entities:response:date::string       AS date").display()
 ```
 
 ## Common Patterns
@@ -117,12 +123,14 @@ df = (
     spark.read.format("binaryFile")
     .load("/Volumes/catalog/schema/landing/documents/")
     .withColumn("parsed", expr("ai_parse_document(content)"))
+    # ai_parse_document returns a VARIANT — navigate with the colon (:) operator, never dot.
+    # Shape: { "document": { "pages": [...], "elements": [...] }, "error_status": ..., "metadata": ... }
     .selectExpr("path",
-                "parsed:pages[*].elements[*].content AS text_blocks",
-                "parsed:error AS parse_error")
+                "concat_ws('\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks",
+                "parsed:error_status AS parse_error")
     .filter("parse_error IS NULL")
     .withColumn("summary",  expr("ai_summarize(text_blocks, 50)"))
-    .withColumn("entities", expr("ai_extract(text_blocks, array('date', 'amount', 'vendor'))"))
+    .withColumn("entities", expr("ai_extract(text_blocks, '[\"date\", \"amount\", \"vendor\"]')"))
 )
 ```
 
@@ -190,6 +198,6 @@ FROM ai_forecast(
 | All functions return NULL | Input column is NULL. Filter with `WHERE col IS NOT NULL` before calling. |
 | `ai_translate` fails for a language | Supported: English, German, French, Italian, Portuguese, Hindi, Spanish, Thai. Use `ai_query` with a multilingual model for others. |
 | `ai_classify` returns unexpected labels | Use clear, mutually exclusive label names. Fewer labels (2–5) produces more reliable results. |
-| `ai_query` raises on some rows in a batch job | Add `failOnError => false` — returns a STRUCT with `.response` and `.error` instead of raising. |
+| `ai_query` raises on some rows in a batch job | Add `failOnError => false` — returns a STRUCT with `.response` and `.errorMessage` instead of raising. |
 | Batch job runs slowly | Use DBR **15.4 ML LTS** cluster (not serverless or interactive) for optimized batch inference throughput. |
 | Want to swap models without editing pipeline code | Store all model names and prompts in `config.yml` — see [references/4-document-processing-pipeline.md](references/4-document-processing-pipeline.md) for the pattern. |

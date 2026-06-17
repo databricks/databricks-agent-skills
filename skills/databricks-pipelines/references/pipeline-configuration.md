@@ -4,7 +4,9 @@ JSON field reference for `databricks pipelines create --json '{...}'` and `datab
 
 Defaults to **serverless + Unity Catalog**. Don't set `serverless: false` unless the user explicitly needs R, Spark RDD APIs, or JAR / Maven libraries.
 
-## Canonical Create
+## Canonical Create (dev / iteration defaults)
+
+For dev, demo, and iteration work, always pass these fields:
 
 ```bash
 databricks pipelines create --json '{
@@ -13,14 +15,26 @@ databricks pipelines create --json '{
   "schema": "my_schema",
   "serverless": true,
   "continuous": false,
+  "development": true,
   "channel": "PREVIEW",
+  "configuration": {
+    "pipelines.numUpdateRetryAttempts": "0",
+    "pipelines.maxFlowRetryAttempts": "0"
+  },
   "libraries": [{"glob": {"include": "/Workspace/Users/<user>/my_pipeline/**"}}]
 }'
 ```
 
-**Always pass `"continuous": false` explicitly.** A continuous pipeline auto-restarts failed updates forever (`cause: RETRY_ON_FAILURE`), burning serverless cost and trapping polling loops. Only set `true` when the user explicitly asks for an always-on streaming pipeline.
+> **Tuned for demo / iteration.** The `pipelines.*RetryAttempts: "0"` overrides disable retries so a broken update fails fast (~30s) instead of retrying for 10+ min on the same root cause. For production, **drop these overrides** so the platform's retry defaults (5 update / 2 flow) absorb transient infra failures.
 
-The variant blocks below show only the **deltas** to add or change — don't re-paste the whole JSON.
+Per-field rationale:
+
+- **`continuous: false`** — triggered runs. `true` auto-restarts failed updates forever (`cause: RETRY_ON_FAILURE`), burning cost and trapping polling loops. Only `true` when the user explicitly asks for always-on streaming.
+- **`development: true`** — faster startup, relaxed validation, no retry-on-failure. Required for any edit/re-run loop.
+- **`pipelines.numUpdateRetryAttempts: "0"` + `maxFlowRetryAttempts: "0"`** — belt-and-suspenders against retries. Even with `development`, some configs still retry. Drop for prod.
+- **`channel: "PREVIEW"`** — latest features. `"CURRENT"` (default) for production stability.
+
+Variant snippets below show only the **deltas** to add/replace in the canonical JSON.
 
 ---
 
@@ -176,14 +190,20 @@ For continuous pipelines, the 5-hour window when daily restarts may occur:
 
 Each block shows what to add to (or replace in) the canonical create JSON.
 
-### Development mode
+### Production mode (remove dev defaults)
+
+The canonical create above is tuned for iteration. For production, **remove** `"development": true` and the two `pipelines.*RetryAttempts` overrides so the platform's retry defaults (5 / 2) can absorb transient infra failures. Add ownership tags:
 
 ```json
-"development": true,
-"tags": {"environment": "development", "owner": "data-team"}
+"channel": "CURRENT",
+"tags": {"environment": "production", "owner": "data-team"}
 ```
 
+Switch `"channel"` to `"CURRENT"` for stable runtime behavior.
+
 ### Non-serverless / dedicated cluster
+
+Required only for R, Spark RDD APIs, or JAR/Maven libraries.
 
 ```json
 "serverless": false,
@@ -191,9 +211,10 @@ Each block shows what to add to (or replace in) the canonical create JSON.
 "edition": "ADVANCED",
 "clusters": [{
   "label": "default",
-  "num_workers": 4,
+  "autoscale": {"min_workers": 2, "max_workers": 8, "mode": "ENHANCED"},  // or "num_workers": 4 for fixed
   "node_type_id": "i3.xlarge",
-  "custom_tags": {"cost_center": "analytics"}
+  "spark_conf": {"spark.sql.adaptive.enabled": "true"},
+  "custom_tags": {"environment": "production"}
 }]
 ```
 
@@ -202,18 +223,6 @@ Each block shows what to add to (or replace in) the canonical create JSON.
 ```json
 "continuous": true,
 "configuration": {"spark.sql.shuffle.partitions": "auto"}
-```
-
-### Production autoscaling cluster
-
-```json
-"clusters": [{
-  "label": "default",
-  "autoscale": {"min_workers": 2, "max_workers": 8, "mode": "ENHANCED"},
-  "node_type_id": "i3.xlarge",
-  "spark_conf": {"spark.sql.adaptive.enabled": "true"},
-  "custom_tags": {"environment": "production"}
-}]
 ```
 
 ### Email notifications
@@ -269,55 +278,31 @@ databricks pipelines update <pipeline_id> --json '{
 }'
 ```
 
-Then trigger a new run with `databricks pipelines start-update <pipeline_id> [--full-refresh]`. See [workflows.md](workflows.md#step-4-start-an-update-and-poll-that-update) for the polling pattern — never poll top-level `pipelines get` state for run completion.
+Then trigger a new run with `databricks pipelines start-update <pipeline_id> [--full-refresh]`. See [2-rapid-iteration-with-cli.md](2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update) for the polling pattern — never poll top-level `pipelines get` state for run completion.
 
 ---
 
 ## Multi-Schema Patterns
 
-**Preferred: one pipeline, multiple schemas** via fully-qualified table names. Simpler than running multiple pipelines.
+**Preferred: one pipeline, multiple schemas** via fully-qualified table names. Simpler than running multiple pipelines. For trivial cases where all tables share one schema, use name prefixes (`bronze_*`, `silver_*`, `gold_*`).
 
-For trivial cases where all tables go to the same schema, use name prefixes (`bronze_*`, `silver_*`, `gold_*`).
-
-### Same catalog, separate schemas (parameterized)
-
-Set pipeline defaults to bronze; pull silver/gold schemas from configuration:
+Set pipeline defaults to one schema (e.g. bronze); pull the rest from `configuration`:
 
 ```python
-from pyspark import pipelines as dp
-from pyspark.sql.functions import col
+silver_schema = spark.conf.get("silver_schema")  # add silver_catalog too for cross-catalog
+gold_schema   = spark.conf.get("gold_schema")
 
-silver_schema  = spark.conf.get("silver_schema")
-gold_schema    = spark.conf.get("gold_schema")
-landing_schema = spark.conf.get("landing_schema")
+@dp.table(name="orders_bronze")                                  # uses pipeline default schema
+def orders_bronze(): ...
 
-@dp.table(name="orders_bronze")
-def orders_bronze():
-    return spark.readStream.table(f"{landing_schema}.orders_raw")
-
-@dp.table(name=f"{silver_schema}.orders_clean")
-def orders_clean():
-    return spark.read.table("orders_bronze").filter(col("order_id").isNotNull())
+@dp.table(name=f"{silver_schema}.orders_clean")                  # other schema, same catalog
+def orders_clean(): ...
 
 @dp.materialized_view(name=f"{gold_schema}.orders_by_date")
-def orders_by_date():
-    return (spark.read.table(f"{silver_schema}.orders_clean")
-            .groupBy("order_date").count())
+def orders_by_date(): ...
 ```
 
-Pass `silver_schema` / `gold_schema` / `landing_schema` via the pipeline's `configuration` block.
-
-### Custom catalog AND schema per layer
-
-For cross-catalog scenarios, use fully-qualified names directly:
-
-```python
-@dp.table(name=f"{silver_catalog}.{silver_schema}.orders_clean")
-def orders_clean():
-    return spark.read.table("orders_bronze").filter(col("order_id").isNotNull())
-```
-
-Same approach in SQL via fully-qualified `catalog.schema.table` in `CREATE OR REFRESH ...`.
+For cross-catalog: use three-part `f"{cat}.{schema}.{table}"` in `name=`. SQL uses the same fully-qualified form in `CREATE OR REFRESH ...`.
 
 ---
 

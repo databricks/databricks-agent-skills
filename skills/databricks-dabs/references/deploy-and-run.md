@@ -1,5 +1,39 @@
 # Deploy and Run Declarative Automation Bundles
 
+## Initialization
+
+Start a new bundle interactively:
+
+```bash
+databricks bundle init
+```
+
+Built-in templates:
+
+| Template             | Use for                                            |
+| -------------------- | -------------------------------------------------- |
+| `default-python`     | Python project with jobs and a pipeline            |
+| `default-sql`        | SQL project with jobs                              |
+| `default-scala`      | Scala/Java project                                 |
+| `lakeflow-pipelines` | Lakeflow Declarative Pipelines (Python or SQL)     |
+| `dbt-sql`            | dbt integration                                    |
+| `default-minimal`    | Minimal bundle skeleton                            |
+
+Pass a template name or a Git URL pointing at a template directory to skip the interactive picker.
+
+## Generate from Existing Resources
+
+If a workspace already has the resource, generate its bundle YAML instead of writing it by hand:
+
+```bash
+databricks bundle generate job <job-id>
+databricks bundle generate pipeline <pipeline-id>
+databricks bundle generate dashboard <dashboard-id>
+databricks bundle generate app <app-name>
+```
+
+This writes a resource file under `resources/` plus any referenced source assets.
+
 ## Validation
 
 Validate bundle configuration:
@@ -32,6 +66,13 @@ Run resources:
 
 View status: `bundle summary`
 
+## Destroy
+
+`bundle destroy` removes everything the bundle previously deployed to the target workspace. It is destructive; confirm the target before running it.
+
+- `bundle destroy -t dev`
+- `bundle destroy -t prod`
+
 ## Monitoring and Logs
 
 ```bash
@@ -56,3 +97,5 @@ databricks apps logs <app-name> --profile <profile-name>
 | **App not starting after deploy**  | Apps require `databricks bundle run <resource_key>` to start            |
 | **App env vars not working**       | Environment variables go in `app.yaml` (source dir), not databricks.yml |
 | **Debugging any app issue**        | First step: `databricks apps logs <app-name>`                           |
+| **Variable shows as `${var.name}` literal** | Variable not declared in `databricks.yml` `variables:`, missing from the active target, or wrong syntax (use `${var.<name>}`) |
+| **Validation errors unclear**      | Re-run with `databricks bundle validate --strict --debug`                |

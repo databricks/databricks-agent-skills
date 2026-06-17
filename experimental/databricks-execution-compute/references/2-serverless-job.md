@@ -2,8 +2,6 @@
 
 **Use when:** Running intensive Python code remotely (ML training, heavy processing) that doesn't need Spark, or when code shouldn't depend on the local machine staying connected.
 
-> `<SKILL_ROOT>` in examples = the directory containing the parent SKILL.md — substitute the absolute install path (e.g. `~/.claude/skills/databricks-execution-compute`).
-
 ## When to Choose Serverless Job
 
 - ML model training (runs independently of local machine)
@@ -85,22 +83,6 @@ dbutils.notebook.exit(json.dumps({"accuracy": 0.95, "model_path": "/Volumes/..."
 
 Max output size is 5 MB. Larger results should be written to a Volume/object store and referenced by path.
 
-## Convenience wrapper
-
-`scripts/compute.py execute-code` does upload + submit + wait + cleanup in one command and returns a single JSON with `success`, `state`, `output` (the `dbutils.notebook.exit` payload), `error`, `run_id`, `run_page_url`, `execution_duration_ms`.
-
-Minimal:
-
-`python <SKILL_ROOT>/scripts/compute.py execute-code --file train.py --compute-type serverless`
-
-With dependencies:
-
-`python <SKILL_ROOT>/scripts/compute.py execute-code --file /path/to/train.py --compute-type serverless --timeout 1500 --environments '[{"environment_key":"ml_env","spec":{"client":"4","dependencies":["scikit-learn==1.5.2","mlflow==2.22.0","xgboost==2.1.3"]}}]'`
-
-Long dependency list from a file:
-
-`python <SKILL_ROOT>/scripts/compute.py execute-code --file /path/to/train.py --compute-type serverless --environments @env.json`
-
 ## Common Issues
 
 | Issue | Solution |
@@ -109,7 +91,7 @@ Long dependency list from a file:
 | `ModuleNotFoundError` | Add the package to the environments spec with `"client": "4"` |
 | Dependencies listed but not installed | `"client": "1"` silently drops `dependencies`; use `"client": "4"` |
 | `get-run-output` returns empty `notebook_output` | You passed the parent run_id, not `.tasks[0].run_id` |
-| Job times out | Default 1800 s on the script wrapper; raise `--timeout` or use `jobs submit --no-wait` + your own polling |
+| Job times out | Use `databricks jobs submit --no-wait` and poll `get-run` yourself, or set `tasks[].timeout_seconds` in the submit JSON to extend the per-task limit |
 
 ## When NOT to Use
 

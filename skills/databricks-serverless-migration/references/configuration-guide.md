@@ -343,9 +343,9 @@ In the Databricks UI:
 
 ### Key Changes
 
-- **Remove** `job_clusters` / `new_cluster` — serverless manages infrastructure
-- **Add** `environments` with serverless spec
-- **Replace** `job_cluster_key` with `environment_key` in each task
+- **Remove** `job_clusters` / `new_cluster` — serverless manages infrastructure. Removing the cluster reference is what makes a task run on serverless compute.
+- **Remove** `job_cluster_key` (and any `existing_cluster_id` / `new_cluster`) from each task. Tasks with no cluster reference and no `compute` block run on serverless compute by default.
+- **Add** an `environments` array at the job level if the task needs Python dependencies, and reference one via `environment_key` per task. `environment_key` declares *dependencies* (PyPI / workspace files / etc.), it does **not** replace `job_cluster_key` as a compute selector. A task can have `environment_key` set without specifying compute, and it will still run on serverless.
 - **Remove** `init_scripts` — move to environment `dependencies`
 - **Remove** `num_workers`, `node_type_id`, `spark_version` — all auto-managed
 

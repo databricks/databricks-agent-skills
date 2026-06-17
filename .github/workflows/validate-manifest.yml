@@ -6,8 +6,19 @@ on:
       - 'skills/**'
       - 'experimental/**'
       - 'assets/**'
-      - 'scripts/skills.py'
+      - 'scripts/**'
       - 'manifest.json'
+      - 'metaplugin/**'
+      - '.claude-plugin/**'
+      - '.codex-plugin/**'
+      - '.github/plugin/**'
+      - '.cursor-plugin/**'
+      - '.agents/**'
+      - 'hooks/**'
+      - 'commands/**'
+      - 'commands-cursor/**'
+      - 'rules/**'
+      - 'tests/**'
   push:
     branches:
       - main
@@ -27,3 +38,6 @@ jobs:
 
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
+
+      - name: Test plugin hooks
+        run: python3 -m unittest discover -s tests -p '*_test.py' -v
