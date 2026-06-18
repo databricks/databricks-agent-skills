@@ -158,16 +158,13 @@ def check_plugin_components(repo_root: Path) -> list[str]:
 
 
 def check_skill_frontmatter(repo_root: Path) -> list[str]:
-    """Validate every skill's SKILL.md frontmatter survives a strict YAML parser.
+    """Flag SKILL.md frontmatter that a strict YAML parser would reject.
 
-    This repo reads frontmatter with regex, not a YAML parser, so a malformed
-    `description` (e.g. an unquoted ':' that strict YAML reads as a mapping
-    separator) loads fine here but is silently dropped by strict-YAML skill
-    consumers. This is the skills/ + experimental/ counterpart to the commands/
-    description check in check_plugin_components.
-
-    Each SKILL.md must have frontmatter, carry a `description`, and not contain
-    an unquoted ':' in that description.
+    Checked with a regex, not yaml.safe_load, because this package is
+    stdlib-only (the protected CI runner has no pypi). The failure that bites in
+    practice: an unquoted ':' in `description`, which strict-YAML skill loaders
+    read as a mapping separator and silently drop. Skills counterpart to the
+    commands check in check_plugin_components.
 
     Returns a list of error strings (empty means all good).
     """
