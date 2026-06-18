@@ -200,6 +200,16 @@ class SkillFrontmatterTest(unittest.TestCase):
             )
             self.assertEqual(skills.check_skill_frontmatter(root), [])
 
+    def test_unquoted_no_colon_ok(self):
+        # The common, valid shape: a plain bare scalar with no colon. Guards
+        # against the regex over-matching and flagging legitimate descriptions.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root, "databricks-plain", "Use when building dashboards and charts."
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
 
 if __name__ == "__main__":
     unittest.main()
