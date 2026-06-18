@@ -101,6 +101,7 @@ from skillsgen.validators import (
     _COPILOT_EVENTS,
     _check_hook_event_names,
     check_plugin_components,
+    check_skill_frontmatter,
     _HOOK_PY_RE,
     _check_hook_wiring,
     check_cursor_plugin,

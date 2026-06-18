@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from skillsgen.common import _norm_rel_path, _read_frontmatter
+from skillsgen.discovery import iter_all_skill_dirs
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +154,34 @@ def check_plugin_components(repo_root: Path) -> list[str]:
                     )
         _check_hook_event_names("hooks/hooks.json", hooks_cfg, _CLAUDE_EVENTS, errors)
 
+    return errors
+
+
+def check_skill_frontmatter(repo_root: Path) -> list[str]:
+    """Flag SKILL.md frontmatter that a strict YAML parser would reject.
+
+    Checked with a regex, not yaml.safe_load, because this package is
+    stdlib-only (the protected CI runner has no pypi). The failure that bites in
+    practice: an unquoted ':' in `description`, which strict-YAML skill loaders
+    read as a mapping separator and silently drop. Skills counterpart to the
+    commands check in check_plugin_components.
+
+    Returns a list of error strings (empty means all good).
+    """
+    errors: list[str] = []
+    for skill_dir in iter_all_skill_dirs(repo_root):
+        rel = (skill_dir / "SKILL.md").relative_to(repo_root)
+        frontmatter = _read_frontmatter(skill_dir / "SKILL.md")
+        if frontmatter is None:
+            errors.append(f"Skill '{rel}' is missing YAML frontmatter.")
+        elif not re.search(r"^description:\s*\S", frontmatter, re.MULTILINE):
+            errors.append(f"Skill '{rel}' frontmatter is missing a 'description'.")
+        elif re.search(r"^description:[ \t]*[^\s\"'>|].*:(?:\s|$)", frontmatter, re.MULTILINE):
+            errors.append(
+                f"Skill '{rel}' has an unquoted ':' in its description, which "
+                "strict YAML parsers reject (the skill is then silently dropped "
+                "at load time). Quote the whole description string."
+            )
     return errors
 
 

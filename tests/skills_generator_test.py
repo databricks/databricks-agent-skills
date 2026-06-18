@@ -167,5 +167,49 @@ class MetaSkillCoverageTest(unittest.TestCase):
             self.assertTrue(any("keyword" in e for e in errors), errors)
 
 
+class SkillFrontmatterTest(unittest.TestCase):
+    def _make_skill(self, root: Path, name: str, description: str) -> None:
+        skill_dir = root / "skills" / name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: {description}\n---\n"
+        )
+
+    def test_repo_skills_are_clean(self):
+        # Pins the databricks-app-design fix and guards every shipped skill: no
+        # SKILL.md may carry a description a strict YAML parser would reject.
+        self.assertEqual(skills.check_skill_frontmatter(_REPO), [])
+
+    def test_unquoted_colon_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root, "databricks-bad", "Use when answering questions: pick a chart."
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("databricks-bad" in e and "unquoted ':'" in e for e in errors),
+                errors,
+            )
+
+    def test_quoted_colon_ok(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root, "databricks-good", '"Use when answering questions: pick a chart."'
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    def test_unquoted_no_colon_ok(self):
+        # The common, valid shape: a plain bare scalar with no colon. Guards
+        # against the regex over-matching and flagging legitimate descriptions.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root, "databricks-plain", "Use when building dashboards and charts."
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()

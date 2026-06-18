@@ -1,7 +1,7 @@
 ---
 name: databricks-app-design
 parent: databricks-apps
-description: Design the UX of Databricks data apps — dashboards, KPI pages, reports, charts, tables, and Genie/chat data assistants — mapped to concrete AppKit components. Use when BUILDING or reviewing any UI that displays data or answers data questions: choosing genre, layout, charts, KPIs, semantic color, required states (loading/empty/error), IBCS notation, and AI-result trust (showing generated SQL/sources for Genie/chat). NOT for authoring managed AI/BI (Lakeview) dashboards (→ databricks-aibi-dashboards), non-data frontend (forms, settings, auth, marketing), or scaffolding/build/deploy (→ databricks-apps). Complements databricks-apps; use it alongside whenever the app has a dashboard, chart, table, KPI, report, or Genie/chat/AI surface.
+description: "Design the UX of Databricks data apps — dashboards, KPI pages, reports, charts, tables, and Genie/chat data assistants — mapped to concrete AppKit components. Use when BUILDING or reviewing any UI that displays data or answers data questions: choosing genre, layout, charts, KPIs, semantic color, required states (loading/empty/error), IBCS notation, and AI-result trust (showing generated SQL/sources for Genie/chat). NOT for authoring managed AI/BI (Lakeview) dashboards (→ databricks-aibi-dashboards), non-data frontend (forms, settings, auth, marketing), or scaffolding/build/deploy (→ databricks-apps). Complements databricks-apps; use it alongside whenever the app has a dashboard, chart, table, KPI, report, or Genie/chat/AI surface."
 metadata:
   version: 0.1.0
 ---
