@@ -30,6 +30,7 @@ from skillsgen.validators import (
     check_cursor_plugin,
     check_plugin_components,
     check_routing_tables,
+    check_skill_frontmatter,
 )
 
 
@@ -100,6 +101,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in metadata_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            frontmatter_errors = check_skill_frontmatter(repo_root)
+            if frontmatter_errors:
+                print(
+                    "ERROR: skill SKILL.md frontmatter is invalid:",
+                    file=sys.stderr,
+                )
+                for err in frontmatter_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 
