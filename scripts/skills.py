@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from skillsgen.common import (
+    BUNDLE_DIR,
     META_FILE,
     load_meta,
     _serialize_plugin_json,
@@ -61,12 +62,33 @@ from skillsgen.plugins import (
     build_claude_marketplace,
     build_copilot_marketplace,
     build_codex_marketplace,
+    build_cursor_marketplace,
+    marketplace_ref,
+    _scoped_sources,
     _GENERATED_README,
     _GENERATED_MANIFEST_DIRS,
     generated_plugin_files,
     generate_plugins,
     check_meta_skill_coverage,
     check_generated_plugins,
+    check_scoped_sources,
+)
+from skillsgen.bundle import (
+    PROVIDERS,
+    _provider_specs,
+    _is_noise,
+    _iter_copy,
+    _provider_hook_files,
+    expected_bundle,
+    generate_bundle,
+    _iter_disk_bundle_files,
+    check_generated_bundle,
+)
+from skillsgen.commands import (
+    COMMANDS_SRC_DIR,
+    iter_command_sources,
+    render_command_files,
+    check_command_templates,
 )
 from skillsgen.routing import (
     _routing_rows,

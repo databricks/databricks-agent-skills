@@ -82,21 +82,17 @@ class GeneratedHooksTest(unittest.TestCase):
         self.assertEqual(skills.build_copilot_hooks(self.meta)["version"], 1)
         self.assertEqual(skills.build_cursor_hooks(self.meta)["version"], 1)
 
-    def test_declared_hooks_matches_render_out(self):
-        # The plugin.json "hooks" path is derived from the one hooks_render.out,
-        # so the declaration and the generation output cannot disagree.
-        builders = {
-            "codex": skills.build_codex_plugin,
-            "copilot": skills.build_copilot_plugin,
-            "cursor": skills.build_cursor_plugin,
-        }
-        for key, builder in builders.items():
-            out = self.meta["targets"][key]["hooks_render"]["out"]
-            self.assertEqual(builder(self.meta)["hooks"], "./" + out)
-
-    def test_claude_plugin_declares_no_hooks(self):
-        # Claude auto-loads hooks/hooks.json; declaring it would double-load.
-        self.assertNotIn("hooks", skills.build_claude_plugin(self.meta))
+    def test_no_plugin_declares_hooks(self):
+        # Each per-provider bundle ships its wiring as hooks/hooks.json, which the
+        # agent auto-discovers from the plugin root, so no plugin.json declares a
+        # "hooks" path (declaring the auto-discovered file double-loads it).
+        for builder in (
+            skills.build_claude_plugin,
+            skills.build_codex_plugin,
+            skills.build_copilot_plugin,
+            skills.build_cursor_plugin,
+        ):
+            self.assertNotIn("hooks", builder(self.meta))
 
     def test_no_orphan_hook_scripts(self):
         self.assertEqual(skills.check_no_orphan_hook_scripts(_REPO, self.meta), [])

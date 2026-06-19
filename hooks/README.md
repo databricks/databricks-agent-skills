@@ -17,6 +17,14 @@ matcher, and whether the router is wired). To change hook wiring, edit
 hand-edit these JSON files (CI fails on drift). The hook *scripts* (`*.py`) are
 hand-written; only the wiring JSON is generated.
 
+In the per-provider bundle, each provider ships its dialect's wiring as
+`plugins/databricks/<provider>/hooks/hooks.json` (plus the scripts it references),
+which the agent **auto-discovers** from the plugin root — so no `plugin.json`
+declares a `"hooks"` path (declaring the auto-discovered file would double-load
+it). The four distinct names above exist only at the repo root so the single
+generation step doesn't collide; the bundle renames each to `hooks.json` in its
+provider folder.
+
 ### Changing or adding a hook
 
 - **Change a hook's behavior**: edit its `*.py` script. There is one shared copy
@@ -36,9 +44,9 @@ hand-written; only the wiring JSON is generated.
   data edit. `check_no_orphan_hook_scripts` (run by `validate`) fails if a
   `hooks/*.py` is left unwired.
 
-`cursor-hooks.json` wires the Cursor plugin and **is** declared explicitly (as
-`"hooks"` in `.cursor-plugin/plugin.json`), because Cursor's default plugin
-discovery would otherwise parse the Claude-format `hooks.json`. It runs the
+`cursor-hooks.json` is the Cursor-dialect wiring; the bundle ships it as the
+Cursor folder's `hooks/hooks.json`, which Cursor auto-discovers from the plugin
+root (no `"hooks"` declaration). It runs the
 context primer (`sessionStart`) and the auth hinter (`postToolUse`, matcher
 `Shell`) with `--platform cursor`, which switches the scripts' output envelope
 to Cursor's `additional_context` and renders the Cursor command names
@@ -55,8 +63,9 @@ and auth-hint hooks are effectively no-ops on Cursor today; the rule loads
 through the rules engine, not the hook-injection path, so it is unaffected.
 Native skill selection also helps.
 
-`copilot-hooks.json` wires the GitHub Copilot plugin (declared as `"hooks"` in
-`.github/plugin/plugin.json`). It uses PascalCase event names, which selects
+`copilot-hooks.json` is the GitHub Copilot wiring; the bundle ships it as the
+Copilot folder's `hooks/hooks.json`, which Copilot auto-discovers from the plugin
+root (no `"hooks"` declaration). It uses PascalCase event names, which selects
 Copilot's Claude-compatible payload dialect, so the scripts run unchanged and
 emit the Claude output envelope. Only two hooks are wired: the context primer
 (`SessionStart`) and the auth hinter (`PostToolUse`). Copilot's hooks run on the
@@ -69,10 +78,10 @@ on skill descriptions and instruction files.
 Each entry carries `bash` and `powershell` command variants per Copilot's hook
 format.
 
-`codex-hooks.json` wires the Codex plugin and **is** declared explicitly (as
-`"hooks"` in `.codex-plugin/plugin.json`), because Codex's default plugin hook
-file is `hooks/hooks.json`, the Claude wiring. Codex uses Claude's event names
-and payload/output schema, so all three scripts run unchanged. Script paths
+`codex-hooks.json` is the Codex-dialect wiring; the bundle ships it as the Codex
+folder's `hooks/hooks.json`, Codex's default plugin hook file, which it
+auto-discovers from the plugin root (no `"hooks"` declaration). Codex uses
+Claude's event names and payload/output schema, so all three scripts run unchanged. Script paths
 resolve via the `PLUGIN_ROOT` env var Codex exports to hook processes (with
 `CLAUDE_PLUGIN_ROOT` as fallback; Codex exports both). Codex hash-pins plugin
 hooks: users approve them via `/hooks` after install and after every update,
@@ -153,11 +162,13 @@ Covered by `tests/databricks_auth_helper_test.py`.
 
 ## Distribution note
 
-These ship with the Claude Code plugin (the whole repo is the plugin via
-`marketplace.json` `source: "./"`), with the GitHub Copilot plugin (primer +
-auth hinter via `copilot-hooks.json`, catalogued in
-`.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks
-via `codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). The
+These ship inside each provider's bundle folder under `plugins/databricks/<provider>/`
+that that agent fetches (each `marketplace.json` catalog points a scoped source at
+its own subfolder): with the Claude Code plugin, with the GitHub Copilot plugin
+(primer + auth hinter via `copilot-hooks.json`, catalogued in
+`.github/plugin/marketplace.json`), and with the Codex plugin (all three hooks via
+`codex-hooks.json`, catalogued in `.agents/plugins/marketplace.json`). Only the
+hook scripts a provider's wiring references are copied into its folder. The
 Cursor marketplace plugin (`databricks`) ships the context primer and auth
 hinter via `cursor-hooks.json` plus the routing rule
 (`rules/databricks-routing.mdc`); the router hook stays Claude/Codex-only. The

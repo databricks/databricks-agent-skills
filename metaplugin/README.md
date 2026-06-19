@@ -17,16 +17,27 @@ python3 scripts/skills.py validate   # what CI runs; fails on any byte drift
 CI re-renders all of these in memory and fails on any drift, so edits to them
 are reverted:
 
-- **Plugin manifests**: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
-  `.github/plugin/plugin.json`, `.cursor-plugin/plugin.json`
-- **Marketplace catalogs**: `.claude-plugin/marketplace.json`,
-  `.github/plugin/marketplace.json`, `.agents/plugins/marketplace.json`
+- **The per-provider bundles**: `plugins/databricks/{claude,codex,copilot,cursor}/`.
+  Each is self-contained — its `plugin.json`, a copy of `skills/`, the hook wiring
+  + scripts it uses, and (only where applicable) `commands/`, `rules/`, `assets/`.
+  Every agent fetches its own provider subfolder (scoped).
+- **Marketplace catalogs** (at the repo root): `.claude-plugin/marketplace.json`,
+  `.github/plugin/marketplace.json`, `.agents/plugins/marketplace.json`,
+  `.cursor-plugin/marketplace.json` (Cursor's is new). Each points a scoped source
+  at *its own* provider subfolder, e.g. `plugins/databricks/claude` (currently
+  `ref: main`; a mechanical follow-up flips it to tag-pinning), configured under
+  `plugin.meta.json` `marketplace.source`.
 - **Hook wiring**: `hooks/hooks.json`, `hooks/codex-hooks.json`,
-  `hooks/copilot-hooks.json`, `hooks/cursor-hooks.json`
+  `hooks/copilot-hooks.json`, `hooks/cursor-hooks.json` (per-dialect, at the root
+  so generation doesn't collide). The bundle renames each into its provider
+  folder as `hooks/hooks.json`, which the agent auto-discovers (no declaration).
 - **Prompt routing**: `hooks/_routing_data.json` and `rules/databricks-routing.mdc`
   (both rendered from the one `routing` table, so they cannot drift)
-- **Skill manifest**: `manifest.json`
-- The `README.md` marker in each generated directory above
+- **Rendered commands**: each provider's command files, rendered from the
+  templated `commands/*.md` source into its bundle folder
+- **Skill manifest**: `manifest.json` (stable skills' `repo_dir` stays `skills`;
+  the CLI files-channel fetches the root `skills/`)
+- The `README.md` marker in each generated manifest directory
 
 ## NOT generated — edited in place
 
@@ -39,7 +50,9 @@ runtime path:
   propagates to every target. `plugin.meta.json` only wires *which* script runs
   on *which* event, in each runtime's dialect (the `hooks` block + each target's
   `hooks_render`).
-- **Slash commands**: `commands/*.md` (Claude / Codex), `commands-cursor/*.md` (Cursor)
+- **Slash-command templates**: `commands/*.md` — one templated source per command
+  (`{{ claude-or-codex | cursor }}` alternation); the per-provider rendered files
+  are generated into each bundle folder.
 - **Skills**: `skills/**` and `experimental/**`
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) ("Plugin metadata") for the full field

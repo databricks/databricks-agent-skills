@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Pipelines"
+  short_description: "Pipelines for ETL and streaming"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-pipelines for Databricks Pipelines ETL and streaming."

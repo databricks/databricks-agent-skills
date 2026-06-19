@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from skillsgen.common import META_FILE, _check_generated_files, _serialize_plugin_json
+from skillsgen.common import (
+    META_FILE,
+    _check_generated_files,
+    _norm_rel_path,
+    _serialize_plugin_json,
+)
 from skillsgen.discovery import iter_skill_dirs
 
 
@@ -45,15 +50,12 @@ def build_keywords(meta: dict) -> list[str]:
     ]
 
 
-def _declared_hooks(meta: dict, target_key: str) -> str:
-    """The plugin.json "hooks" path, derived from the single hooks_render.out.
-
-    The plugin.json declaration and the generation output name the same file;
-    deriving the declaration from hooks_render.out leaves one source of truth, so
-    there is no second hand-maintained path to drift from or typo. (Claude is
-    exempt: it auto-loads hooks/hooks.json and must not declare it.)
-    """
-    return "./" + meta["targets"][target_key]["hooks_render"]["out"]
+# No plugin.json declares a "hooks" path. Each per-provider bundle folder ships
+# its wiring as hooks/hooks.json (in that provider's dialect), which every agent
+# auto-discovers from the plugin root. Declaring it would double-load (Claude
+# fails outright; the others auto-discover the same file). The shared layout
+# needed per-provider names (codex-hooks.json, ...) only because hooks/hooks.json
+# there was the Claude wiring; per-provider folders remove that conflict.
 
 
 def build_claude_plugin(meta: dict) -> dict:
@@ -83,7 +85,6 @@ def build_codex_plugin(meta: dict) -> dict:
         "license": meta["license"],
         "keywords": build_keywords(meta),
         "skills": "./skills/",
-        "hooks": _declared_hooks(meta, "codex"),
         "interface": target["interface"],
     }
 
@@ -100,7 +101,6 @@ def build_copilot_plugin(meta: dict) -> dict:
         "repository": meta["repository"],
         "license": meta["license"],
         "skills": "./skills/",
-        "hooks": _declared_hooks(meta, "copilot"),
     }
 
 
@@ -116,21 +116,61 @@ def build_cursor_plugin(meta: dict) -> dict:
         "skills": "./skills/",
         "commands": target["commands"],
         "rules": target["rules"],
-        "hooks": _declared_hooks(meta, "cursor"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Marketplace catalogs (one per target, at the repo root) + their scoped source
+# ---------------------------------------------------------------------------
+#
+# Each catalog points a *scoped* source at the built bundle (meta.marketplace.
+# source.subdir, i.e. plugins/databricks). The four plugin.json live under that
+# subdir, so an install fetches only the subdir (a sparse/partial clone), not
+# the whole repo: that is what makes the fetch cheap and dodges the Copilot
+# fsmonitor crash and the Codex root-source bug. The three ref-capable tools
+# (Claude, Codex, Copilot) pin the release tag (ref_template stamped with the
+# version), so installs serve a frozen release. Cursor cannot pin a ref, so its
+# entry carries the bare relative subdir and tracks the default branch, where
+# the bundle is release-frozen.
+
+
+def marketplace_ref(meta: dict) -> str:
+    """The release tag the ref-capable catalogs pin, e.g. ``v0.3.0``."""
+    src = meta["marketplace"]["source"]
+    return src["ref_template"].format(version=meta["version"])
+
+
+def _scoped_sources(meta: dict) -> dict:
+    """Per-target marketplace ``source`` objects, each scoped to that provider's
+    bundle subfolder (plugins/databricks/<provider>). An install fetches only its
+    own provider's payload."""
+    src = meta["marketplace"]["source"]
+    subdir = src["subdir"]
+    ref = marketplace_ref(meta)
+
+    def path(provider: str) -> str:
+        return f"{subdir}/{provider}"
+
+    return {
+        # git-subdir does a sparse partial clone of just `path`.
+        "claude": {"source": "git-subdir", "url": src["repo"], "path": path("claude"), "ref": ref},
+        "copilot": {"source": "github", "repo": src["repo"], "path": path("copilot"), "ref": ref},
+        "codex": {"source": "git-subdir", "url": src["git_url"], "path": path("codex"), "ref": ref},
+        # Cursor: bare relative subdir, no ref (its index tracks the default branch).
+        "cursor": path("cursor"),
     }
 
 
 def build_claude_marketplace(meta: dict) -> dict:
-    market = meta["marketplace"]
     return {
         "$schema": _CLAUDE_MARKETPLACE_SCHEMA,
-        "name": market["name"],
-        "description": market["description"],
-        "owner": market["owner"],
+        "name": meta["marketplace"]["name"],
+        "description": meta["marketplace"]["description"],
+        "owner": meta["marketplace"]["owner"],
         "plugins": [
             {
                 "name": meta["name"],
-                "source": "./",
+                "source": _scoped_sources(meta)["claude"],
                 "category": meta["category"],
                 "description": meta["description"],
             }
@@ -139,15 +179,14 @@ def build_claude_marketplace(meta: dict) -> dict:
 
 
 def build_copilot_marketplace(meta: dict) -> dict:
-    market = meta["marketplace"]
     return {
-        "name": market["name"],
-        "description": market["description"],
-        "owner": market["owner"],
+        "name": meta["marketplace"]["name"],
+        "description": meta["marketplace"]["description"],
+        "owner": meta["marketplace"]["owner"],
         "plugins": [
             {
                 "name": meta["name"],
-                "source": "./",
+                "source": _scoped_sources(meta)["copilot"],
                 "category": meta["category"],
                 "description": meta["description"],
             }
@@ -156,16 +195,35 @@ def build_copilot_marketplace(meta: dict) -> dict:
 
 
 def build_codex_marketplace(meta: dict) -> dict:
-    market = meta["marketplace"]
+    src = meta["marketplace"]["source"]
+    entry = {
+        "name": meta["name"],
+        "description": meta["description"],
+        "category": meta["category"],
+        "source": _scoped_sources(meta)["codex"],
+    }
+    # Codex's git-subdir install of skills+hooks needs a `policy` block; its
+    # exact shape is the one pending smoke test (proposal open question), so it
+    # is emitted only once meta.marketplace.source.codex_policy is filled in.
+    if src.get("codex_policy") is not None:
+        entry["policy"] = src["codex_policy"]
     return {
-        "name": market["name"],
-        "interface": {"displayName": market["displayName"]},
+        "name": meta["marketplace"]["name"],
+        "interface": {"displayName": meta["marketplace"]["displayName"]},
+        "plugins": [entry],
+    }
+
+
+def build_cursor_marketplace(meta: dict) -> dict:
+    """NEW root catalog for Cursor (the monorepo pattern: source = the subdir)."""
+    return {
+        "name": meta["marketplace"]["name"],
         "plugins": [
             {
                 "name": meta["name"],
-                "description": meta["description"],
+                "source": _scoped_sources(meta)["cursor"],
                 "category": meta["category"],
-                "source": {"source": "local", "path": "./"},
+                "description": meta["description"],
             }
         ],
     }
@@ -188,23 +246,26 @@ The plugin manifest files in this directory (`plugin.json` and/or
 drift, so hand-edits are reverted. See `CONTRIBUTING.md` ("Plugin metadata").
 """
 
-# Directories whose plugin/marketplace JSON is generated; each gets the marker.
+# Root-level directories whose marketplace catalog is generated; each gets the
+# marker. The four plugin.json no longer live at the root — they are generated
+# into the bundle (plugins/databricks/<target-dir>/) by skillsgen.bundle. The
+# root keeps only the per-target marketplace.json catalogs (Cursor's is new).
 _GENERATED_MANIFEST_DIRS = (
     ".claude-plugin",
-    ".codex-plugin",
     ".github/plugin",
-    ".cursor-plugin",
     ".agents/plugins",
+    ".cursor-plugin",
 )
 
 
 def generated_plugin_files(meta: dict) -> dict:
-    """Map every generated plugin file (repo-relative path -> canonical text)."""
+    """Map every generated ROOT-level plugin file (repo-relative path -> text).
+
+    Root level = the four marketplace catalogs (one per target) plus the README
+    marker in each catalog directory. The plugin.json manifests are part of the
+    bundle, owned by skillsgen.bundle.generated_bundle_files.
+    """
     files = {
-        ".claude-plugin/plugin.json": _serialize_plugin_json(build_claude_plugin(meta)),
-        ".codex-plugin/plugin.json": _serialize_plugin_json(build_codex_plugin(meta)),
-        ".github/plugin/plugin.json": _serialize_plugin_json(build_copilot_plugin(meta)),
-        ".cursor-plugin/plugin.json": _serialize_plugin_json(build_cursor_plugin(meta)),
         ".claude-plugin/marketplace.json": _serialize_plugin_json(
             build_claude_marketplace(meta)
         ),
@@ -213,6 +274,9 @@ def generated_plugin_files(meta: dict) -> dict:
         ),
         ".agents/plugins/marketplace.json": _serialize_plugin_json(
             build_codex_marketplace(meta)
+        ),
+        ".cursor-plugin/marketplace.json": _serialize_plugin_json(
+            build_cursor_marketplace(meta)
         ),
     }
     for directory in _GENERATED_MANIFEST_DIRS:
@@ -265,3 +329,38 @@ def check_meta_skill_coverage(repo_root: Path, meta: dict) -> list[str]:
 def check_generated_plugins(repo_root: Path, meta: dict) -> list[str]:
     """Fail if any generated plugin file drifts from what meta would produce."""
     return _check_generated_files(repo_root, generated_plugin_files(meta))
+
+
+def check_scoped_sources(meta: dict) -> list[str]:
+    """Assert every catalog points a scoped source at the bundle, never "./".
+
+    The drift check proves the committed catalogs match the generator; this
+    proves the generator itself never regresses to a whole-repo "./" source,
+    which would drag the entire tree into every install and reintroduce the
+    Copilot fsmonitor crash and the Codex root-source bug the subdir fixes.
+    """
+    errors: list[str] = []
+    subdir = meta["marketplace"]["source"]["subdir"]
+    expected = {
+        ".claude-plugin/marketplace.json": (build_claude_marketplace(meta), f"{subdir}/claude"),
+        ".github/plugin/marketplace.json": (build_copilot_marketplace(meta), f"{subdir}/copilot"),
+        ".agents/plugins/marketplace.json": (build_codex_marketplace(meta), f"{subdir}/codex"),
+        ".cursor-plugin/marketplace.json": (build_cursor_marketplace(meta), f"{subdir}/cursor"),
+    }
+    for rel, (catalog, want) in expected.items():
+        for plugin in catalog.get("plugins", []):
+            src = plugin.get("source")
+            path = src if isinstance(src, str) else (src or {}).get("path")
+            normalized = _norm_rel_path(path) if isinstance(path, str) else None
+            if normalized in ("", "."):
+                errors.append(
+                    f"{rel} uses a whole-repo source; it must be scoped to "
+                    f"{want} (a './' source drags the whole tree into every "
+                    "install and reintroduces the Copilot/Codex bugs)."
+                )
+            elif normalized != want:
+                errors.append(
+                    f"{rel} source path is {path!r}; expected the provider "
+                    f"subfolder {want!r}."
+                )
+    return errors

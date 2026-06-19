@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from skillsgen.common import _norm_rel_path, _read_frontmatter
+from skillsgen.common import BUNDLE_DIR, _norm_rel_path, _read_frontmatter
 from skillsgen.discovery import iter_all_skill_dirs
 
 
@@ -12,11 +12,13 @@ from skillsgen.discovery import iter_all_skill_dirs
 # Plugin components (hooks + commands)
 # ---------------------------------------------------------------------------
 #
-# hooks/ and commands/ ship with the Claude Code plugin (the whole repo is the
-# plugin via .claude-plugin/marketplace.json `source: "./"`), but they are NOT
-# skills, so they live outside the manifest's skills map. These checks keep them
-# honest without pulling them into the skill model. Stdlib-only, like the rest
-# of this file, so the protected CI runner (no pypi) can run them.
+# hooks/ and commands/ ship with the Claude Code plugin (the catalog points a
+# scoped source at the bundle, plugins/databricks/, which carries copies of
+# both), but they are NOT skills, so they live outside the manifest's skills
+# map. These checks keep the SOURCE honest (the bundle is a drift-checked copy)
+# without pulling them into the skill model. The Claude plugin.json they are
+# declared in now lives in the bundle, so this reads it from there. Stdlib-only,
+# like the rest of this file, so the protected CI runner (no pypi) can run them.
 
 _HOOK_SCRIPT_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/(\S+?\.py)")
 
@@ -86,43 +88,45 @@ def check_plugin_components(repo_root: Path) -> list[str]:
     """
     errors: list[str] = []
 
-    plugin_path = repo_root / ".claude-plugin" / "plugin.json"
+    # The Claude plugin is the bundle folder plugins/databricks/claude/; its
+    # commands/ and hooks/ are generated copies, resolved relative to it.
+    base = repo_root / BUNDLE_DIR / "claude"
+    rel_base = f"{BUNDLE_DIR}/claude"
+    plugin_path = base / ".claude-plugin" / "plugin.json"
     try:
         plugin = json.loads(plugin_path.read_text()) if plugin_path.exists() else {}
     except json.JSONDecodeError as exc:
         # check_generated_plugins reports the broken manifest itself; never
         # crash here, just skip the manifest-dependent checks.
-        return [f".claude-plugin/plugin.json is not valid JSON: {exc}"]
+        return [f"{rel_base}/.claude-plugin/plugin.json is not valid JSON: {exc}"]
 
-    commands_dir = repo_root / "commands"
+    commands_dir = base / "commands"
     if commands_dir.is_dir():
         if "commands" not in plugin:
             errors.append(
-                'commands/ exists but .claude-plugin/plugin.json does not declare '
+                f'{rel_base}/commands/ exists but its plugin.json does not declare '
                 '"commands": "./commands/". Add it, or the commands silently stop '
                 "shipping."
             )
         md_files = sorted(commands_dir.glob("*.md"))
         if not md_files:
-            errors.append("commands/ exists but contains no *.md command files.")
+            errors.append(f"{rel_base}/commands/ exists but contains no *.md command files.")
         for md in md_files:
             frontmatter = _read_frontmatter(md)
             if frontmatter is None:
-                errors.append(
-                    f"Command 'commands/{md.name}' is missing YAML frontmatter."
-                )
+                errors.append(f"Command '{rel_base}/commands/{md.name}' is missing YAML frontmatter.")
             elif not re.search(r"^description:\s*\S", frontmatter, re.MULTILINE):
                 errors.append(
-                    f"Command 'commands/{md.name}' frontmatter is missing a 'description'."
+                    f"Command '{rel_base}/commands/{md.name}' frontmatter is missing a 'description'."
                 )
             elif re.search(r"^description:[ \t]*[^\s\"'>|].*:(?:\s|$)", frontmatter, re.MULTILINE):
                 errors.append(
-                    f"Command 'commands/{md.name}' has an unquoted ':' in its "
+                    f"Command '{rel_base}/commands/{md.name}' has an unquoted ':' in its "
                     "description, which strict YAML parsers reject. Quote the "
                     "whole description string."
                 )
 
-    hooks_json = repo_root / "hooks" / "hooks.json"
+    hooks_json = base / "hooks" / "hooks.json"
     if hooks_json.exists():
         # Claude Code auto-loads the standard hooks/hooks.json. Declaring that
         # same path in plugin.json double-loads it and fails the plugin with a
@@ -143,16 +147,16 @@ def check_plugin_components(repo_root: Path) -> list[str]:
         try:
             hooks_cfg = json.loads(hooks_json.read_text())
         except json.JSONDecodeError as exc:
-            errors.append(f"hooks/hooks.json is not valid JSON: {exc}")
+            errors.append(f"{rel_base}/hooks/hooks.json is not valid JSON: {exc}")
             hooks_cfg = None
         if hooks_cfg is not None:
             blob = json.dumps(hooks_cfg)
             for rel in sorted(set(_HOOK_SCRIPT_RE.findall(blob))):
-                if not (repo_root / rel).exists():
+                if not (base / rel).exists():
                     errors.append(
-                        f"hooks/hooks.json references '{rel}' which does not exist."
+                        f"{rel_base}/hooks/hooks.json references '{rel}' which does not exist."
                     )
-        _check_hook_event_names("hooks/hooks.json", hooks_cfg, _CLAUDE_EVENTS, errors)
+        _check_hook_event_names(f"{rel_base}/hooks/hooks.json", hooks_cfg, _CLAUDE_EVENTS, errors)
 
     return errors
 
@@ -226,51 +230,44 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
     """
     errors: list[str] = []
 
-    plugin_path = repo_root / ".cursor-plugin" / "plugin.json"
+    base = repo_root / BUNDLE_DIR / "cursor"
+    rel_base = f"{BUNDLE_DIR}/cursor"
+    plugin_path = base / ".cursor-plugin" / "plugin.json"
     if not plugin_path.exists():
         return [f"Missing {plugin_path.relative_to(repo_root)}"]
     try:
         plugin = json.loads(plugin_path.read_text())
     except json.JSONDecodeError as exc:
-        return [f".cursor-plugin/plugin.json is not valid JSON: {exc}"]
+        return [f"{rel_base}/.cursor-plugin/plugin.json is not valid JSON: {exc}"]
 
     if plugin.get("name") != "databricks":
         errors.append(
-            '.cursor-plugin/plugin.json "name" must stay "databricks": it is the '
-            "Cursor marketplace install identifier; changing it orphans every "
-            "existing install without a coordinated Cursor-side migration "
-            "(see .cursor-plugin/NOTES.md)."
+            f'{rel_base}/.cursor-plugin/plugin.json "name" must stay "databricks": '
+            "it is the Cursor marketplace install identifier; changing it orphans "
+            "every existing install without a coordinated Cursor-side migration."
         )
 
-    declared_hooks = plugin.get("hooks")
-    declared = _norm_rel_path(declared_hooks) if isinstance(declared_hooks, str) else ""
-    if declared == "hooks/hooks.json":
+    # Cursor auto-discovers hooks/hooks.json from the plugin root; this folder's
+    # hooks.json is the Cursor-dialect wiring, so the manifest must NOT declare a
+    # "hooks" path.
+    if "hooks" in plugin:
         errors.append(
-            '.cursor-plugin/plugin.json "hooks" must not point at hooks/hooks.json '
-            "(the Claude Code wiring with Claude event names); Cursor needs "
-            "hooks/cursor-hooks.json."
+            f'{rel_base}/.cursor-plugin/plugin.json must NOT declare "hooks": Cursor '
+            "auto-discovers hooks/hooks.json (this folder's Cursor wiring)."
         )
-    if (repo_root / "hooks" / "cursor-hooks.json").exists():
-        if declared != "hooks/cursor-hooks.json":
-            errors.append(
-                "hooks/cursor-hooks.json exists but .cursor-plugin/plugin.json does "
-                'not declare "hooks": "./hooks/cursor-hooks.json". Without the '
-                "explicit pointer Cursor default-discovers the Claude-format "
-                "hooks/hooks.json and the hooks break."
-            )
-        cfg = _check_hook_wiring(repo_root, "hooks/cursor-hooks.json", errors)
-        if cfg is not None and cfg.get("version") != 1:
-            errors.append('hooks/cursor-hooks.json must declare "version": 1.')
-        _check_hook_event_names("hooks/cursor-hooks.json", cfg, _CURSOR_EVENTS, errors)
+    cfg = _check_hook_wiring(repo_root, f"{rel_base}/hooks/hooks.json", errors)
+    if cfg is not None and cfg.get("version") != 1:
+        errors.append(f'{rel_base}/hooks/hooks.json must declare "version": 1.')
+    _check_hook_event_names(f"{rel_base}/hooks/hooks.json", cfg, _CURSOR_EVENTS, errors)
 
     commands_rel = plugin.get("commands")
     if isinstance(commands_rel, str):
-        commands_dir = repo_root / _norm_rel_path(commands_rel)
+        commands_dir = base / _norm_rel_path(commands_rel)
         md_files = sorted(commands_dir.glob("*.md")) if commands_dir.is_dir() else []
         if not md_files:
             errors.append(
-                f'.cursor-plugin/plugin.json declares commands at "{commands_rel}" '
-                "but no *.md command files exist there."
+                f'{rel_base}/.cursor-plugin/plugin.json declares commands at '
+                f'"{commands_rel}" but no *.md command files exist there.'
             )
         for md in md_files:
             frontmatter = _read_frontmatter(md)
@@ -284,12 +281,12 @@ def check_cursor_plugin(repo_root: Path) -> list[str]:
 
     rules_rel = plugin.get("rules")
     if isinstance(rules_rel, str):
-        rules_dir = repo_root / _norm_rel_path(rules_rel)
+        rules_dir = base / _norm_rel_path(rules_rel)
         mdc_files = sorted(rules_dir.glob("*.mdc")) if rules_dir.is_dir() else []
         if not mdc_files:
             errors.append(
-                f'.cursor-plugin/plugin.json declares rules at "{rules_rel}" but no '
-                "*.mdc rule files exist there."
+                f'{rel_base}/.cursor-plugin/plugin.json declares rules at '
+                f'"{rules_rel}" but no *.mdc rule files exist there.'
             )
         for mdc in mdc_files:
             frontmatter = _read_frontmatter(mdc)
@@ -315,18 +312,20 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
     """
     errors: list[str] = []
 
-    plugin_path = repo_root / ".codex-plugin" / "plugin.json"
+    base = repo_root / BUNDLE_DIR / "codex"
+    rel_base = f"{BUNDLE_DIR}/codex"
+    plugin_path = base / ".codex-plugin" / "plugin.json"
     if not plugin_path.exists():
         return [f"Missing {plugin_path.relative_to(repo_root)}"]
     try:
         plugin = json.loads(plugin_path.read_text())
     except json.JSONDecodeError as exc:
-        return [f".codex-plugin/plugin.json is not valid JSON: {exc}"]
+        return [f"{rel_base}/.codex-plugin/plugin.json is not valid JSON: {exc}"]
 
     if plugin.get("name") != "databricks":
         errors.append(
-            '.codex-plugin/plugin.json "name" must be "databricks" (the install '
-            "identifier; the marketplace entry and install docs key on it)."
+            f'{rel_base}/.codex-plugin/plugin.json "name" must be "databricks" (the '
+            "install identifier; the marketplace entry and install docs key on it)."
         )
 
     # No Claude-vs-Codex version cross-check: both plugin.json are generated from
@@ -334,20 +333,23 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
     # against the source, so any version drift is already caught there.
 
     skills_rel = plugin.get("skills")
-    if not isinstance(skills_rel, str) or not (repo_root / _norm_rel_path(skills_rel)).is_dir():
+    if not isinstance(skills_rel, str) or not (base / _norm_rel_path(skills_rel)).is_dir():
         errors.append(
-            '.codex-plugin/plugin.json "skills" must point at an existing directory.'
+            f'{rel_base}/.codex-plugin/plugin.json "skills" must point at an '
+            "existing directory."
         )
 
-    hooks_rel = plugin.get("hooks")
-    declared = _norm_rel_path(hooks_rel) if isinstance(hooks_rel, str) else ""
-    if declared != "hooks/codex-hooks.json":
+    # Codex auto-discovers hooks/hooks.json from the plugin root; this folder's
+    # hooks.json is the Codex-dialect wiring, so the manifest must NOT declare a
+    # "hooks" path (declaring the auto-discovered file double-loads it).
+    if "hooks" in plugin:
         errors.append(
-            '.codex-plugin/plugin.json must declare "hooks": "./hooks/codex-hooks.json". '
-            "Without it Codex defaults to hooks/hooks.json, the Claude Code wiring."
+            f'{rel_base}/.codex-plugin/plugin.json must NOT declare "hooks": Codex '
+            "auto-discovers hooks/hooks.json (this folder's Codex wiring); declaring "
+            "it double-loads."
         )
-    cfg = _check_hook_wiring(repo_root, "hooks/codex-hooks.json", errors)
-    _check_hook_event_names("hooks/codex-hooks.json", cfg, _CODEX_EVENTS, errors)
+    cfg = _check_hook_wiring(repo_root, f"{rel_base}/hooks/hooks.json", errors)
+    _check_hook_event_names(f"{rel_base}/hooks/hooks.json", cfg, _CODEX_EVENTS, errors)
 
     market_path = repo_root / ".agents" / "plugins" / "marketplace.json"
     if not market_path.exists():
@@ -382,18 +384,20 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
     """
     errors: list[str] = []
 
-    plugin_path = repo_root / ".github" / "plugin" / "plugin.json"
+    base = repo_root / BUNDLE_DIR / "copilot"
+    rel_base = f"{BUNDLE_DIR}/copilot"
+    plugin_path = base / ".github" / "plugin" / "plugin.json"
     if not plugin_path.exists():
         return [f"Missing {plugin_path.relative_to(repo_root)}"]
     try:
         plugin = json.loads(plugin_path.read_text())
     except json.JSONDecodeError as exc:
-        return [f".github/plugin/plugin.json is not valid JSON: {exc}"]
+        return [f"{rel_base}/.github/plugin/plugin.json is not valid JSON: {exc}"]
 
     if plugin.get("name") != "databricks":
         errors.append(
-            '.github/plugin/plugin.json "name" must be "databricks" (the install '
-            "identifier; the marketplace entry and install docs key on it)."
+            f'{rel_base}/.github/plugin/plugin.json "name" must be "databricks" (the '
+            "install identifier; the marketplace entry and install docs key on it)."
         )
 
     # No Claude-vs-Copilot version cross-check: both plugin.json are generated
@@ -401,23 +405,24 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
     # equality against the source, so any version drift is already caught there.
 
     skills_rel = plugin.get("skills")
-    if not isinstance(skills_rel, str) or not (repo_root / _norm_rel_path(skills_rel)).is_dir():
+    if not isinstance(skills_rel, str) or not (base / _norm_rel_path(skills_rel)).is_dir():
         errors.append(
-            '.github/plugin/plugin.json "skills" must point at an existing directory.'
+            f'{rel_base}/.github/plugin/plugin.json "skills" must point at an '
+            "existing directory."
         )
 
-    hooks_rel = plugin.get("hooks")
-    declared = _norm_rel_path(hooks_rel) if isinstance(hooks_rel, str) else ""
-    if declared != "hooks/copilot-hooks.json":
+    # Copilot auto-discovers hooks/hooks.json from the plugin root; this folder's
+    # hooks.json is the Copilot-dialect wiring, so the manifest must NOT declare a
+    # "hooks" path.
+    if "hooks" in plugin:
         errors.append(
-            '.github/plugin/plugin.json must declare "hooks": '
-            '"./hooks/copilot-hooks.json" (the Copilot-format wiring); '
-            "hooks/hooks.json is the Claude Code wiring."
+            f'{rel_base}/.github/plugin/plugin.json must NOT declare "hooks": Copilot '
+            "auto-discovers hooks/hooks.json (this folder's Copilot wiring)."
         )
-    cfg = _check_hook_wiring(repo_root, "hooks/copilot-hooks.json", errors)
+    cfg = _check_hook_wiring(repo_root, f"{rel_base}/hooks/hooks.json", errors)
     if cfg is not None and cfg.get("version") != 1:
-        errors.append('hooks/copilot-hooks.json must declare "version": 1.')
-    _check_hook_event_names("hooks/copilot-hooks.json", cfg, _COPILOT_EVENTS, errors)
+        errors.append(f'{rel_base}/hooks/hooks.json must declare "version": 1.')
+    _check_hook_event_names(f"{rel_base}/hooks/hooks.json", cfg, _COPILOT_EVENTS, errors)
 
     market_path = repo_root / ".github" / "plugin" / "marketplace.json"
     if not market_path.exists():
