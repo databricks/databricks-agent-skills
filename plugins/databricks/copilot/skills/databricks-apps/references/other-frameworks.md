@@ -89,7 +89,7 @@ env:
 
 ### databricks.yml — Bundle/Deployment Configuration
 - Defines the **app resource** for DABs (Declarative Automation Bundles)
-- `config:` section only takes effect after `bundle run`, NOT just `bundle deploy`
+- Deploy with `databricks apps deploy` — it applies `config:` and starts the app. A bare `bundle deploy` uploads code but leaves the app stopped.
 
 ```yaml
 # databricks.yml
@@ -120,7 +120,7 @@ targets:
 | Rule | Why |
 |------|-----|
 | Always provide BOTH `app.yaml` AND `databricks.yml` config | UI deployments use app.yaml; DABs uses databricks.yml |
-| Always run `bundle deploy` THEN `bundle run <app-name>` | `deploy` uploads code; `run` applies config and starts the app |
+| Deploy apps with `databricks apps deploy` (one command) | It validates, uploads code, applies config, and **starts** the app. A bare `bundle deploy` leaves it stopped. |
 | Never use `${var.xxx}` in config env values | Variables are NOT resolved in config — values appear literally |
 
 ## 3. Using OBO in Non-AppKit Apps

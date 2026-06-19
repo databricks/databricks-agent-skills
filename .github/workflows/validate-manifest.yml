@@ -10,7 +10,6 @@ on:
       - 'manifest.json'
       - 'metaplugin/**'
       - '.claude-plugin/**'
-      - '.codex-plugin/**'
       - '.github/plugin/**'
       - '.cursor-plugin/**'
       - '.agents/**'

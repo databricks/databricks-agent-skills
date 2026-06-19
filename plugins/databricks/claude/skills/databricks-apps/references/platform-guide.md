@@ -106,16 +106,13 @@ env:
 ⚠️ **USER CONSENT REQUIRED** — always confirm with the user before deploying.
 
 ```bash
-# Option A: single command (recommended) — validates, deploys, and runs
+# Recommended — validates, deploys, and starts the app (returns its URL)
 databricks apps deploy -t <TARGET> --profile <PROFILE>
-
-# Option B: step by step
-databricks apps validate --profile <PROFILE>
-databricks bundle deploy -t <TARGET> --profile <PROFILE>
-databricks bundle run <APP_RESOURCE_NAME> -t <TARGET> --profile <PROFILE>
 ```
 
-❌ **Common mistake:** Running only `bundle deploy` and expecting the app to update. Deploy uploads code but does NOT apply config changes or restart the app. Use `databricks apps deploy` or add `bundle run` after `bundle deploy`.
+❌ **Common mistake:** Running only `databricks bundle deploy`. A bare `bundle deploy` uploads the app but creates it with `no_compute`, so it stays **stopped** with no URL. Use `databricks apps deploy` instead — or run `databricks bundle run <APP_RESOURCE_NAME>` after `bundle deploy`.
+
+> AppKit-scaffolded apps set `lifecycle.started: true` in `databricks.yml`, so even a bare `bundle deploy` starts them.
 
 ### ⚠️ Destructive Updates Warning
 
@@ -165,7 +162,7 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `PERMISSION_DENIED` after deploy | SP missing permissions | Grant SP access to all declared resources |
-| App deploys but config doesn't change | Only ran `bundle deploy` | Also run `bundle run <app-name>` |
+| App deployed but not running / config unchanged | Ran only `bundle deploy` (creates app with `no_compute`, stays stopped) | Use `databricks apps deploy` (deploys *and* starts); or run `bundle run <app-name>` after deploy |
 | `File is larger than 10485760 bytes` | Bundled dependencies | Use requirements.txt / package.json |
 | OBO scopes missing after deploy | Destructive update wiped them | Re-apply scopes after each deploy |
 | `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
