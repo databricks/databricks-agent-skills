@@ -413,8 +413,6 @@
         "databricks-serverless-storage-check/eval/tests/test_integration.py",
         "databricks-serverless-storage-check/eval/tests/test_unit.py",
         "databricks-serverless-storage-check/eval/thinking_instructions.md",
-        "databricks-serverless-storage-check/references/pattern-catalog.md",
-        "databricks-serverless-storage-check/references/remediation-guide.md",
         "databricks-serverless-storage-check/scripts/preflight.py",
         "databricks-serverless-storage-check/scripts/test_preflight.py",
         "references/code-patterns.md",
@@ -426,6 +424,7 @@
         "references/mlflow-uc-patterns.md",
         "references/multi-source-enumeration.md",
         "references/networking-and-security.md",
+        "references/serverless-storage-check.md",
         "references/streaming-migration.md"
       ],
       "repo_dir": "skills",
@@ -447,8 +446,6 @@
         "eval/tests/test_integration.py",
         "eval/tests/test_unit.py",
         "eval/thinking_instructions.md",
-        "references/pattern-catalog.md",
-        "references/remediation-guide.md",
         "scripts/preflight.py",
         "scripts/test_preflight.py"
       ],

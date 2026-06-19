@@ -85,7 +85,7 @@ The boundary between safe and unsafe local-disk use on serverless:
 
 > **Local disk (`/local_disk0`, `/tmp`, `trustedTemp`) is per-task only.** Anything one task writes that another task reads MUST live on `/Volumes` or `/Workspace`.
 
-This is verbatim from the BSI thread guidance: when the parent task writes to local disk and the child task tries to read it, the child may be on a different node and the file won't exist (or will hit `Permission denied`). See [`references/remediation-guide.md`](references/remediation-guide.md) for concrete before/after patterns.
+This is verbatim from the BSI thread guidance: when the parent task writes to local disk and the child task tries to read it, the child may be on a different node and the file won't exist (or will hit `Permission denied`). See [`../references/serverless-storage-check.md`](../references/serverless-storage-check.md) for concrete before/after patterns.
 
 ## Pattern catalog (summary)
 
@@ -99,7 +99,7 @@ This is verbatim from the BSI thread guidance: when the parent task writes to lo
 | `FANOUT006` | Blocker | Hardcoded path matching the BSI signature `/local_disk0/spark-*/trustedTemp/...` |
 | `ENV001` | Info | Run output contains `ENVIRONMENT_SETUP_ERROR.PYTHON_NOTEBOOK_ENVIRONMENT` — route to escalation |
 
-Full rules, sample matches, and per-pattern fixes are in [`references/pattern-catalog.md`](references/pattern-catalog.md).
+Full rules, sample matches, and per-pattern fixes are in [`../references/serverless-storage-check.md`](../references/serverless-storage-check.md).
 
 ## Remediation summary
 
@@ -119,7 +119,7 @@ When the scanner flags a finding, prefer fixes in this order:
 
 4. **Keep `/local_disk0/tmp`** for **intra-task scratch only**. Never for cross-task.
 
-Full before/after code is in [`references/remediation-guide.md`](references/remediation-guide.md).
+Full before/after code is in [`../references/serverless-storage-check.md`](../references/serverless-storage-check.md).
 
 ## What this skill does NOT cover
 
@@ -140,8 +140,7 @@ If the scanner emits `ENV001`:
 
 ## Reference docs
 
-- [Pattern catalog](references/pattern-catalog.md) — all detection rules with examples
-- [Remediation guide](references/remediation-guide.md) — before/after code for Volumes, Workspace, and taskValues handoffs
+- [Pattern catalog & remediation guide](../references/serverless-storage-check.md) — all detection rules with examples and before/after fixes for Volumes, Workspace, and taskValues handoffs
 
 ## External documentation
 
