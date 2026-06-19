@@ -94,7 +94,7 @@ databricks apps logs <app-name> --profile <profile-name>
 | ---------------------------------- | ----------------------------------------------------------------------- |
 | **Path resolution fails**          | Use `../src/` in resources/\*.yml, `./src/` in databricks.yml           |
 | **Hardcoded catalog in dashboard** | Use dataset_catalog parameter (CLI v0.281.0+)                           |
-| **App not starting after deploy**  | Apps require `databricks bundle run <resource_key>` to start            |
+| **App not starting after deploy**  | Use `databricks apps deploy` (deploys *and* starts the app); a bare `bundle deploy` leaves it stopped. Or run `databricks bundle run <resource_key>` after deploy. |
 | **App env vars not working**       | Environment variables go in `app.yaml` (source dir), not databricks.yml |
 | **Debugging any app issue**        | First step: `databricks apps logs <app-name>`                           |
 | **Variable shows as `${var.name}` literal** | Variable not declared in `databricks.yml` `variables:`, missing from the active target, or wrong syntax (use `${var.<name>}`) |

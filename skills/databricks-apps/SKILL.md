@@ -221,7 +221,7 @@ Databricks Apps supports any framework that runs as an HTTP server. LLMs already
 After deploying, verify the app is running:
 
 ```bash
-databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING
+databricks apps get <app-name> --profile <PROFILE> -o json   # Check app_status.state: RUNNING; the `url` field is the app's URL
 databricks apps logs <app-name> --follow --profile <PROFILE>  # Stream live logs (Ctrl+C to stop)
 ```
 
