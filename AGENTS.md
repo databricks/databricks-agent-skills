@@ -25,5 +25,7 @@ first:
   adding a hook").
 - **Never hand-edit generated files** (the per-target `plugin.json` /
   `marketplace.json`, the `hooks/*-hooks.json` wiring, `hooks/_routing_data.json`,
-  `rules/databricks-routing.mdc`, `manifest.json`). CI re-renders them and fails
-  on any drift.
+  `rules/databricks-routing.mdc`, `manifest.json`, and the entire
+  `plugins/databricks/` bundle — a generated copy of the source). CI re-renders
+  them and fails on any drift, including a bundle that does not match a fresh
+  build. Edit the source and run `scripts/skills.py generate`.

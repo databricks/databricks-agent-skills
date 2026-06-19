@@ -1,7 +1,8 @@
 ---
-description: "Read-only Databricks health check: CLI, profiles, auth validity via one API call. Pass `full` to also check compute and recent job failures."
+{{description: "Read-only Databricks health check: CLI, profiles, auth validity via one API call. Pass `full` to also check compute and recent job failures."
 argument-hint: "[profile] [full]"
-allowed-tools: Bash(databricks:*), Read
+allowed-tools: Bash(databricks:*), Read|name: databricks-doctor
+description: "Read-only Databricks health check: CLI, profiles, auth validity via one API call. Add `full` after the command to also check compute and recent job failures."}}
 ---
 
 # Databricks Doctor
@@ -16,7 +17,7 @@ report the rest as unknown.
 1. **CLI**: `databricks --version`. Flag only if it's missing; don't gate on a
    specific version (the CLI surfaces its own update notice).
 2. **Profiles**: `databricks auth profiles`. List configured profiles and
-   validity. If `$1` is given, use that profile for the rest. Otherwise, if more
+   validity. {{If `$1` is given, use that profile|If the user named a profile after the command, use it}} for the rest. Otherwise, if more
    than one profile exists, ask the user which to use (**never auto-select**).
 3. **Auth method**: `databricks auth describe --profile <profile>` shows the
    effective host, user, and credential source (never pass `--sensitive`).
@@ -26,8 +27,7 @@ report the rest as unknown.
    For account-level profiles (an `accounts.*` host), `current-user me` does
    not exist; report what `auth describe` resolved instead.
 
-Stop here by default. Run the extended checks below only when the user passed
-`full` or asked about compute or jobs:
+Stop here by default. Run the extended checks below only when the user {{passed `full`|typed `full` after the command}} or asked about compute or jobs:
 
 5. **Compute**: `databricks warehouses list` and `databricks clusters list` for
    the profile. Note what's running.
@@ -36,6 +36,6 @@ Stop here by default. Run the extended checks below only when the user passed
    recent failures.
 
 Then print a compact table: **check | status (✅/⚠️/❌) | detail**. End with the
-single most useful next action (e.g. "run `/databricks:setup` to add a profile").
+single most useful next action (e.g. "run `{{/databricks:setup|/databricks-setup}}` to add a profile").
 
 This is a status check; it only reads, so don't run anything that changes state.

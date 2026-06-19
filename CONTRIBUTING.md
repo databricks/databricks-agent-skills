@@ -45,30 +45,37 @@ python3 scripts/skills.py validate
 
 ### CI
 
-`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.codex-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
+`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), the `plugins/**` bundle, `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
 
 - Every skill has `agents/openai.yaml`.
 - Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
-- `manifest.json` matches what `scripts/skills.py generate` would produce.
+- `manifest.json` matches what `scripts/skills.py generate` would produce (stable skills' `repo_dir` stays `skills`; the CLI files-channel fetches the root `skills/`).
 - Every stable skill has a `plugin.meta.json` "skills" entry (and vice versa).
-- Every target's `plugin.json` + `marketplace.json` is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the four targets).
+- Every target's `plugin.json` + each root `marketplace.json` catalog is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the four targets).
+- The whole `plugins/databricks/` per-provider bundle matches a fresh build of the source — no missing, stale, hand-edited, or extra file.
+- Every catalog source is scoped to its provider subfolder `plugins/databricks/<provider>` (never a whole-repo `"./"`).
 
 If validation fails the error tells you which file is missing or stale; the fix is always `python3 scripts/skills.py generate` and committing the result.
 
 ## Plugin metadata (`metaplugin/plugin.meta.json`)
 
 The repo ships one logical plugin to four targets (Claude Code, Codex, Copilot,
-Cursor) plus a marketplace catalog for three of them. All cross-target plugin
+Cursor), each with its own marketplace catalog. All cross-target plugin
 metadata, version, name, description, author, license, keywords, per-target
-display names, and hook/command/rule wiring, lives once in
-**`metaplugin/plugin.meta.json`**. `scripts/skills.py generate` renders it into
-every target's
-`plugin.json` and `marketplace.json`:
+display names, the scoped-source config (`marketplace.source`), and
+hook/command/rule wiring, lives once in **`metaplugin/plugin.meta.json`**.
+`scripts/skills.py generate` renders it into a **per-provider** bundle under
+`plugins/databricks/<provider>/` and the four root catalogs, each pointing a
+scoped source at *its own* provider subfolder (currently `ref: main`; a follow-up
+flips it to tag-pinning):
 
-- `.claude-plugin/{plugin,marketplace}.json`
-- `.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json`
-- `.github/plugin/{plugin,marketplace}.json`
-- `.cursor-plugin/plugin.json`
+- per-provider bundles (each self-contained, only what that provider uses):
+  - `plugins/databricks/claude/`   — `.claude-plugin/plugin.json` + `skills/` + `commands/` + `hooks/`
+  - `plugins/databricks/codex/`    — `.codex-plugin/plugin.json` + `skills/` + `hooks/` + `assets/`
+  - `plugins/databricks/copilot/`  — `.github/plugin/plugin.json` + `skills/` + `hooks/`
+  - `plugins/databricks/cursor/`   — `.cursor-plugin/plugin.json` + `skills/` + `commands/` + `rules/` + `hooks/`
+- root catalogs: `.claude-plugin/marketplace.json`, `.github/plugin/marketplace.json`,
+  `.agents/plugins/marketplace.json`, `.cursor-plugin/marketplace.json`
 
 **Edit `metaplugin/plugin.meta.json`, then run `python3 scripts/skills.py generate`.** Never
 hand-edit the generated files; CI re-renders them in memory and fails on any byte
@@ -114,9 +121,14 @@ The Claude Code plugin ships more than skills:
   **`hooks/hooks.json` is auto-loaded by Claude Code, so do NOT add a `"hooks"`
   key to `.claude-plugin/plugin.json`, or the plugin fails to load with a
   "Duplicate hooks file" error.**
-- `commands/`: one `*.md` per slash command (`/databricks:<name>`), declared via
-  `"commands"` in `.claude-plugin/plugin.json`. Each needs frontmatter
-  (`description`, optional `argument-hint`, `allowed-tools`).
+- `commands/`: one **templated** `*.md` per slash command — the single source
+  for both the Claude/Codex form (`/databricks:<name>`) and the Cursor form
+  (`/databricks-<name>`). The two differ in frontmatter, `$1`-vs-prose argument
+  phrasing, and `:`-vs-`-` namespacing, so the source uses an inline
+  `{{ claude-or-codex text | cursor text }}` alternation. `generate` renders each
+  provider's command file into its bundle folder (`plugins/databricks/claude/commands/<name>.md`,
+  `plugins/databricks/cursor/commands/databricks-<name>.md`). Codex and Copilot
+  ship no commands. Edit the template, not the rendered output.
 
 `scripts/skills.py validate` (run in CI) checks that `hooks/hooks.json` is valid
 JSON referencing scripts that exist, that plugin.json does not double-declare the
@@ -124,9 +136,10 @@ standard hooks file, and that every command carries a `description` (quoted if i
 contains a `:`, since strict YAML rejects unquoted colons). The validate
 workflow also runs all hook test files.
 
-These components ship via the plugin marketplace (the whole repo is the plugin).
-`databricks aitools install` packages `skills/` only today; extending it to
-hooks/commands is CLI-side follow-up work.
+These components ship via the plugin marketplace inside the `plugins/databricks/`
+bundle (each catalog points a scoped source at it, so an install fetches only
+that subdir). `databricks aitools install` packages `skills/` only today;
+extending it to hooks/commands is CLI-side follow-up work.
 
 ## Security
 
@@ -148,11 +161,22 @@ triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
 
 1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
    `plugin.meta.json` (the single source) and regenerates every target's
-   `plugin.json` + `marketplace.json` and `manifest.json` from it, so all four
-   targets carry the same version.
-2. Commits the bump (`plugin.meta.json` + the regenerated manifests) to `main`.
+   `plugin.json` + each `marketplace.json` catalog, `manifest.json`, and the
+   `plugins/databricks/` bundle from it, so all four targets carry the same
+   version.
+2. Commits the bump (`plugin.meta.json` + the regenerated catalogs, manifest, and
+   the `plugins/databricks/` bundle) to `main`.
 3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
    then creates the GitHub release (`gh release create --verify-tag`).
+
+The catalogs currently track `main` (`ref: main`), so the bundle the catalogs
+serve is whatever is committed on `main` — releases bump the version but do not
+change which ref installs follow. A planned follow-up flips
+`marketplace.source.ref_template` to `v{version}`; once it lands, each release
+re-stamps the ref-capable catalogs to the new tag, and the release tag must
+contain the `plugins/databricks/` bundle (it does, since the bundle is committed
+on `main`). Cut that bump-and-tag in one motion so a catalog never names a tag
+that does not exist yet.
 
 Bumping the plugin `version` on every release is **required**: Claude Code's
 plugin marketplace keys updates on the `version` field, so a release that ships

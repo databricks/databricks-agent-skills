@@ -12,6 +12,12 @@ from pathlib import Path
 # metaplugin/plugin.meta.json "skills".
 META_FILE = "metaplugin/plugin.meta.json"
 
+# The built bundle every agent fetches (scoped via each catalog's source). The
+# four plugin.json live under <BUNDLE_DIR>/<target-dir>/ and the stable skills at
+# <BUNDLE_DIR>/skills; the marketplace catalogs at the repo root point a scoped
+# source here. Built and drift-checked by skillsgen/bundle.py.
+BUNDLE_DIR = "plugins/databricks"
+
 
 def load_meta(repo_root: Path) -> dict:
     """Load plugin.meta.json (the cross-target plugin source of truth)."""

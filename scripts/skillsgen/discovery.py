@@ -13,6 +13,9 @@ SHARED_ASSETS = [
 # Stable directory: "skills/<name>/". Experimental: "experimental/<name>/".
 # The wire format carries each entry's source directory in `repo_dir`; consumers
 # derive experimental state from that. No parallel `experimental_skills` map.
+# The CLI's files-channel fetches stable skills from the root skills/ (the
+# editable source on the published repo), so repo_dir stays "skills" even though
+# the plugin bundles carry their own per-provider copies under plugins/databricks/.
 STABLE_REPO_DIR = "skills"
 EXPERIMENTAL_REPO_DIR = "experimental"
 

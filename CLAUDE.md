@@ -49,16 +49,38 @@ python3 scripts/skills.py validate     # check metadata + icons + manifest + plu
 
 ## Plugin manifests (generated from `metaplugin/plugin.meta.json`)
 
-The four `plugin.json` files (`.claude-plugin/`, `.codex-plugin/`,
-`.github/plugin/`, `.cursor-plugin/`) and the three `marketplace.json` files
-(`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`) are **generated**
-from [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json) by `scripts/skills.py generate`.
-**Do not hand-edit them** (each generated directory carries a `README.md`
-marker). To change the plugin version, description, keywords, or per-target
-config, edit `metaplugin/plugin.meta.json` and run `python3 scripts/skills.py generate`; CI
-(`validate`) fails on any drift. The version lives only in `metaplugin/plugin.meta.json`
+Each agent fetches its own **per-provider** bundle under
+`plugins/databricks/<provider>/` (`claude/`, `codex/`, `copilot/`, `cursor/`).
+Every folder is fully generated and self-contained, holding only what that
+provider uses: its `plugin.json`, a copy of `skills/`, the hook wiring it needs
+(plus the referenced `*.py` scripts and, where the router is wired, `_routing_data.json`),
+and — only where applicable — `commands/` (Claude, Cursor), `rules/` (Cursor),
+and `assets/` (Codex's interface logo). At the repo root, four `marketplace.json`
+catalogs (`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`,
+`.cursor-plugin/` — Cursor's is new) each point a **scoped source** at *its own*
+provider subfolder (`plugins/databricks/<provider>`), so an install fetches only
+that provider's payload. The catalogs currently track `main`; a mechanical
+follow-up flips them to tag-pinning. The bundles, the catalogs, every
+`plugin.json`, the hook wiring, the routing files, the rendered commands, and
+`manifest.json` are all **generated** from
+[`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json) (and the templated
+`commands/` source) by `scripts/skills.py generate`. **Do not hand-edit them** —
+edit the source and regenerate. (Each generated manifest dir carries a `README.md`
+marker; `plugins/**` is marked `linguist-generated` so the bundle stays out of
+review noise.) CI (`validate`) fails on any drift, including a bundle that does
+not match a fresh build. The version lives only in `metaplugin/plugin.meta.json`
 and propagates to all four targets. Adding a stable skill requires an entry in
 the `skills` map (with a `keyword`).
+
+Everything under `plugins/` is generated, committed, and drift-checked (it is not
+gitignored in this repo). The catalogs' scoped source is configured under
+`marketplace.source` in `metaplugin/plugin.meta.json`; today every catalog tracks
+`main` (`ref: main`), where the committed bundle lives, so the change is safe to
+land with no release. A mechanical follow-up flips `ref_template` to `v{version}`
+so the ref-capable tools (Claude, Codex, Copilot) serve frozen release tags
+instead of main HEAD; Cursor cannot pin a ref and always tracks the default
+branch. The CLI's raw-skills (files-channel) installer is unaffected — it keeps
+fetching the root `skills/`, so the manifest's stable `repo_dir` stays `skills`.
 
 The generator itself lives in `scripts/skillsgen/` (a package split by concern:
 plugins, routing, hooks, validators, ...); `scripts/skills.py` is a thin façade
@@ -96,8 +118,9 @@ there. Declaring the standard path double-loads it and fails the plugin with a
 references existing scripts, plugin.json does not double-declare hooks, every
 command has frontmatter). After changing hook behavior, run the hook test
 suite: `python3 -m unittest discover -s tests -p '*_test.py'`.
-These ship via the plugin marketplace
-(whole-repo source); `databricks aitools install` currently installs skills only.
+These ship via the plugin marketplace inside the `plugins/databricks/` bundle
+(each catalog points a scoped source at it); `databricks aitools install`
+currently installs skills only.
 
 **Marketplace entries are load-bearing for installed plugins.** Never remove a
 shipped plugin's entry from `.claude-plugin/marketplace.json` (and never rename

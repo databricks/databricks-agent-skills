@@ -96,6 +96,11 @@ def main() -> None:
     (repo_root / "manifest.json").write_text(skills.serialize_manifest(manifest))
     print("regenerated manifest.json")
 
+    # Last: the bundle copies skills/, hooks/, commands/, rules/, assets/ and the
+    # wiring regenerated above, plus the four plugin.json with the new version.
+    written_bundle = skills.generate_bundle(repo_root, meta)
+    print(f"regenerated {written_bundle} file(s) in the plugins/databricks/ bundle")
+
 
 if __name__ == "__main__":
     main()

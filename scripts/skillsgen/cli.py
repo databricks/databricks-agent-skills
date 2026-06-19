@@ -11,8 +11,11 @@ from skillsgen.manifest import generate_manifest, serialize_manifest, validate_m
 from skillsgen.plugins import (
     check_generated_plugins,
     check_meta_skill_coverage,
+    check_scoped_sources,
     generate_plugins,
 )
+from skillsgen.bundle import check_generated_bundle, generate_bundle
+from skillsgen.commands import check_command_templates
 from skillsgen.routing import (
     check_generated_routing,
     check_routing_coverage,
@@ -89,6 +92,13 @@ def main() -> None:
             written_hooks = generate_hooks(repo_root, meta)
             print(
                 f"Generated {written_hooks} hook-wiring file(s) from {META_FILE}"
+            )
+
+            # The bundle copies skills/, hooks/, commands/, rules/, assets/ and
+            # the wiring just generated, so this must run last.
+            written_bundle = generate_bundle(repo_root, meta)
+            print(
+                f"Generated {written_bundle} file(s) in the plugins/databricks/ bundle"
             )
 
         case "validate":
@@ -204,6 +214,28 @@ def main() -> None:
                         print(f"  - {err}", file=sys.stderr)
                     ok = False
 
+                source_errors = check_scoped_sources(meta)
+                if source_errors:
+                    print(
+                        "ERROR: a marketplace catalog source is not scoped to the "
+                        "plugins/databricks/ bundle:",
+                        file=sys.stderr,
+                    )
+                    for err in source_errors:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
+
+                bundle_drift = check_generated_bundle(repo_root, meta)
+                if bundle_drift:
+                    print(
+                        "ERROR: the plugins/databricks/ bundle is out of date with "
+                        "the source (it is a generated copy):",
+                        file=sys.stderr,
+                    )
+                    for err in bundle_drift:
+                        print(f"  - {err}", file=sys.stderr)
+                    ok = False
+
             component_errors = check_plugin_components(repo_root)
             if component_errors:
                 print(
@@ -251,6 +283,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in routing_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            template_errors = check_command_templates(repo_root)
+            if template_errors:
+                print(
+                    "ERROR: command templates (commands/*.md) are malformed:",
+                    file=sys.stderr,
+                )
+                for err in template_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

@@ -1,5 +1,5 @@
 {
-  "//": "Single source of truth for the databricks plugin across all targets (Claude, Codex, Copilot, Cursor). Edit this file, then run `python3 scripts/skills.py generate`. The 4 plugin.json + 3 marketplace.json files are generated from here; CI fails on drift. Do not hand-edit the generated files.",
+  "//": "Single source of truth for the databricks plugin across all targets (Claude, Codex, Copilot, Cursor). Edit this file, then run `python3 scripts/skills.py generate`. Generated from here: the 4 plugin.json (under plugins/databricks/), the 4 marketplace.json catalogs (at the repo root), and the whole plugins/databricks/ bundle (a copy/transform of skills/hooks/commands/rules/assets that agents fetch scoped). CI fails on drift. Do not hand-edit the generated files.",
   "version": "0.2.5",
   "name": "databricks",
   "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
@@ -19,7 +19,14 @@
     "name": "databricks-agent-skills",
     "description": "Databricks agent skills for AI coding assistants.",
     "owner": { "name": "Databricks" },
-    "displayName": "Databricks Agent Skills"
+    "displayName": "Databricks Agent Skills",
+    "//source": "How each catalog points at the built bundle. The four plugin.json live under <subdir>/<target-dir>/, so agents fetch only <subdir> (a scoped/sparse clone). ref_template is the git ref each ref-capable catalog (Claude/Codex/Copilot) pins. It currently tracks `main`, where the bundle is committed, so this change is safe to land standalone with no release. A mechanical follow-up flips ref_template to `v{version}` so installs serve frozen release tags instead of main HEAD (the proposal's goal); `{version}` is filled from `version` above. Cursor cannot pin a ref, so it omits one and also tracks the default branch. NOTE: the Codex entry still needs its `policy` block + a remote git-subdir-at-a-tag smoke test (open question in the proposal); add `codex_policy` here once verified.",
+    "source": {
+      "subdir": "plugins/databricks",
+      "repo": "databricks/databricks-agent-skills",
+      "git_url": "https://github.com/databricks/databricks-agent-skills.git",
+      "ref_template": "main"
+    }
   },
 
   "targets": {
@@ -64,7 +71,7 @@
     "cursor": {
       "dir": ".cursor-plugin",
       "displayName": "Databricks Skills",
-      "commands": "./commands-cursor/",
+      "commands": "./commands/",
       "rules": "./rules/",
       "hooks_render": {
         "out": "hooks/cursor-hooks.json",

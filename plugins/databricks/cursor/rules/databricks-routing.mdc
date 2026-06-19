@@ -1,0 +1,22 @@
+---
+description: Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.
+alwaysApply: false
+---
+
+This request is Databricks-related. Handle it through the Databricks skills
+rather than ad hoc commands. Load the `databricks-core` skill first (the parent:
+CLI, auth, profile selection, data exploration), then load the product skill
+that matches the request:
+
+- Jobs / Lakeflow / workflows -> databricks-jobs
+- Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> databricks-pipelines
+- Apps / AppKit -> databricks-apps
+- Asset Bundles / DABs / databricks.yml -> databricks-dabs
+- Model Serving / endpoints -> databricks-model-serving
+- Lakebase / Postgres -> databricks-lakebase
+- Vector Search / RAG -> databricks-vector-search
+- Classic-to-serverless migration -> databricks-serverless-migration
+- Genie / natural-language data Q&A -> databricks-core (Genie CLI support is experimental)
+
+Then follow the skill's guidance (it drives the `databricks` CLI). If no product
+skill fits, databricks-core alone is enough.

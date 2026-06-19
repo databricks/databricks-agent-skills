@@ -53,20 +53,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # metaplugin/plugin.meta.json is the source; bump_version.py regenerates
-          # the full set from it: the four plugin.json + three marketplace.json,
-          # the routing files, the four hook-wiring dialects, and manifest.json.
-          # Stage every one (unchanged files are a no-op) so a release can never
-          # commit a partial set, e.g. bump the Claude manifest but leave the
-          # Codex/Copilot ones, the routing data, or the hook wiring behind.
+          # the full set from it: the four marketplace.json catalogs (Cursor's is
+          # new), the routing files, the four hook-wiring dialects, manifest.json,
+          # and the whole plugins/databricks/ bundle (copies + the four plugin.json
+          # with the bumped version). Stage every one (unchanged files are a no-op)
+          # so a release can never commit a partial set. The four plugin.json now
+          # live INSIDE the bundle, so the `plugins/databricks` directory covers
+          # them. (The catalogs currently pin `ref: main`; once the tag-pinning
+          # follow-up lands they re-stamp to the new tag here too.)
           git add \
             metaplugin/plugin.meta.json \
-            .claude-plugin/plugin.json \
-            .codex-plugin/plugin.json \
-            .github/plugin/plugin.json \
-            .cursor-plugin/plugin.json \
             .claude-plugin/marketplace.json \
             .github/plugin/marketplace.json \
             .agents/plugins/marketplace.json \
+            .cursor-plugin/marketplace.json \
             hooks/_routing_data.json \
             rules/databricks-routing.mdc \
             rules/README.md \
@@ -74,7 +74,8 @@ jobs:
             hooks/codex-hooks.json \
             hooks/copilot-hooks.json \
             hooks/cursor-hooks.json \
-            manifest.json
+            manifest.json \
+            plugins/databricks
           # Guard the "stage the full set" invariant: if bump_version.py ever
           # regenerates a tracked file not staged above (a new generated artifact
           # added without updating this list), fail loudly instead of publishing

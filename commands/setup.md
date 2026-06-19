@@ -1,7 +1,8 @@
 ---
-description: "Set up Databricks CLI auth: install check, then an OAuth / PAT / service-principal profile (workspace or account-level), then verify."
+{{description: "Set up Databricks CLI auth: install check, then an OAuth / PAT / service-principal profile (workspace or account-level), then verify."
 argument-hint: "[workspace-or-account-url]"
-allowed-tools: Bash(databricks:*), Read
+allowed-tools: Bash(databricks:*), Read|name: databricks-setup
+description: "Set up Databricks CLI auth: install check, then an OAuth / PAT / service-principal profile (workspace or account-level), then verify."}}
 ---
 
 # Databricks Setup
@@ -18,8 +19,7 @@ wrapper around it.
 2. **Existing profiles?** `databricks auth profiles`. Show what's already
    configured. If a working profile exists, ask whether to reuse it or add a new
    one.
-3. **Pick an auth method** (ask the user; `$1` may be a workspace or account
-   console URL):
+3. **Pick an auth method** (ask the user; {{`$1` may be a workspace or account console URL|they may have typed a workspace or account console URL after the command}}):
    - **OAuth U2M** (default, interactive):
      `databricks auth login --host <workspace-url> --profile <name>`. Opens a
      browser. Best for laptops. If the user doesn't know their workspace URL,
@@ -50,4 +50,4 @@ wrapper around it.
    and account ID.
 
 Never echo tokens or secrets back. Never auto-select a profile. When done,
-suggest `/databricks:doctor` for a full health check.
+suggest `{{/databricks:doctor|/databricks-doctor}}` for a full health check.

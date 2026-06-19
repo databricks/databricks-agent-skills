@@ -8,7 +8,12 @@
   "plugins": [
     {
       "name": "databricks",
-      "source": "./",
+      "source": {
+        "source": "git-subdir",
+        "url": "databricks/databricks-agent-skills",
+        "path": "plugins/databricks/claude",
+        "ref": "main"
+      },
       "category": "development",
       "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."
     }

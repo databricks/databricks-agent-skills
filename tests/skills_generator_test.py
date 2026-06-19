@@ -10,6 +10,7 @@ target's output. Stdlib-only; run with:
 """
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -46,16 +47,18 @@ class GeneratedPluginsTest(unittest.TestCase):
             self.assertIn(f"{directory}/README.md", files)
 
     def test_content_drift_detected(self):
+        # The root generated set is now the marketplace catalogs (the four
+        # plugin.json moved into the bundle). Edit a catalog and expect drift.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             skills.generate_plugins(root, self.meta)
-            target = root / ".claude-plugin" / "plugin.json"
+            target = root / ".claude-plugin" / "marketplace.json"
             data = json.loads(target.read_text())
-            data["version"] = "9.9.9"
+            data["description"] = "drifted"
             target.write_text(json.dumps(data, indent=2) + "\n")
             errors = skills.check_generated_plugins(root, self.meta)
             self.assertTrue(
-                any("out of date" in e and ".claude-plugin/plugin.json" in e for e in errors),
+                any("out of date" in e and ".claude-plugin/marketplace.json" in e for e in errors),
                 errors,
             )
 
@@ -63,7 +66,7 @@ class GeneratedPluginsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             skills.generate_plugins(root, self.meta)
-            target = root / ".codex-plugin" / "plugin.json"
+            target = root / ".agents" / "plugins" / "marketplace.json"
             # Same content, non-canonical formatting (4-space + sorted keys).
             data = json.loads(target.read_text())
             target.write_text(json.dumps(data, indent=4, sort_keys=True) + "\n")
@@ -76,10 +79,10 @@ class GeneratedPluginsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             skills.generate_plugins(root, self.meta)
-            (root / ".cursor-plugin" / "plugin.json").unlink()
+            (root / ".cursor-plugin" / "marketplace.json").unlink()
             errors = skills.check_generated_plugins(root, self.meta)
             self.assertTrue(
-                any("Missing generated file .cursor-plugin/plugin.json" in e for e in errors),
+                any("Missing generated file .cursor-plugin/marketplace.json" in e for e in errors),
                 errors,
             )
 
@@ -209,6 +212,124 @@ class SkillFrontmatterTest(unittest.TestCase):
                 root, "databricks-plain", "Use when building dashboards and charts."
             )
             self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+
+class BundleTest(unittest.TestCase):
+    """The per-provider bundles under plugins/databricks/<provider>/."""
+
+    # Source dirs the per-provider build copies/renders from.
+    _SRC_DIRS = ("skills", "hooks", "commands", "rules", "assets")
+
+    def setUp(self):
+        self.meta = skills.load_meta(_REPO)
+
+    def test_repo_bundle_is_canonical(self):
+        # The committed bundle equals a fresh build (copies + generated
+        # plugin.json + rendered commands), with no missing or extra files.
+        self.assertEqual(skills.check_generated_bundle(_REPO, self.meta), [])
+
+    def _seed(self, root: Path) -> Path:
+        # Copy the real source tree (skills/, the generated wiring+routing in
+        # hooks/ and rules/, the command templates, assets/) so a per-provider
+        # build can run, then build the bundle.
+        for d in self._SRC_DIRS:
+            shutil.copytree(_REPO / d, root / d)
+        skills.generate_bundle(root, self.meta)
+        return root
+
+    def test_generate_bundle_roundtrips_clean(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            self.assertEqual(skills.check_generated_bundle(root, self.meta), [])
+
+    def test_copied_file_drift_detected(self):
+        # Hand-editing a copied file inside a provider folder must fail the check.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            (root / "plugins/databricks/claude/skills/databricks-core/SKILL.md").write_text("tampered")
+            errors = skills.check_generated_bundle(root, self.meta)
+            self.assertTrue(any("out of date" in e for e in errors), errors)
+
+    def test_extra_file_detected(self):
+        # A hand-added file in a provider folder (no source) must be flagged.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            (root / "plugins/databricks/codex/skills/STRAY.md").write_text("hand-added")
+            errors = skills.check_generated_bundle(root, self.meta)
+            self.assertTrue(
+                any("STRAY.md" in e and "not produced by the generator" in e for e in errors),
+                errors,
+            )
+
+    def test_generated_plugin_json_drift_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            target = root / "plugins/databricks/claude/.claude-plugin/plugin.json"
+            data = json.loads(target.read_text())
+            data["version"] = "9.9.9"
+            target.write_text(json.dumps(data, indent=2) + "\n")
+            errors = skills.check_generated_bundle(root, self.meta)
+            self.assertTrue(
+                any("claude/.claude-plugin/plugin.json" in e and "out of date" in e for e in errors),
+                errors,
+            )
+
+    def test_copilot_has_no_router(self):
+        # Each provider folder ships only what it uses: Copilot's wiring does not
+        # reference the router, so no router script or routing data is copied.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            cph = root / "plugins/databricks/copilot/hooks"
+            self.assertFalse((cph / "databricks-router.py").exists())
+            self.assertFalse((cph / "_routing_data.json").exists())
+            self.assertTrue((cph / "databricks-context.py").exists())
+
+    def test_bundle_skips_vcs_noise(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for dd in self._SRC_DIRS:
+                shutil.copytree(_REPO / dd, root / dd)
+            noise = root / "skills" / "databricks-core" / "__pycache__"
+            noise.mkdir(parents=True, exist_ok=True)
+            (noise / "x.pyc").write_text("x")
+            (root / "skills" / "databricks-core" / ".DS_Store").write_text("x")
+            skills.generate_bundle(root, self.meta)
+            seeded = root / "plugins/databricks/claude/skills/databricks-core"
+            self.assertFalse((seeded / ".DS_Store").exists())
+            self.assertFalse((seeded / "__pycache__").exists())
+
+
+class ScopedSourcesTest(unittest.TestCase):
+    """Every marketplace catalog points a scoped source at its provider subfolder."""
+
+    def setUp(self):
+        self.meta = skills.load_meta(_REPO)
+        self.subdir = self.meta["marketplace"]["source"]["subdir"]
+
+    def test_repo_catalogs_are_scoped(self):
+        self.assertEqual(skills.check_scoped_sources(self.meta), [])
+
+    def test_each_catalog_points_at_its_provider_subfolder(self):
+        # Currently ref "main" (the bundle is committed there); the tag-pinning
+        # follow-up flips marketplace.source.ref_template to "v{version}".
+        self.assertEqual(skills.marketplace_ref(self.meta), "main")
+        claude = skills.build_claude_marketplace(self.meta)["plugins"][0]["source"]
+        self.assertEqual(claude["path"], f"{self.subdir}/claude")
+        self.assertEqual(claude["ref"], "main")
+        codex = skills.build_codex_marketplace(self.meta)["plugins"][0]["source"]
+        self.assertEqual(codex["path"], f"{self.subdir}/codex")
+
+    def test_cursor_source_is_bare_provider_subfolder_no_ref(self):
+        # Cursor cannot pin a ref; its source is the bare relative subfolder.
+        cursor = skills.build_cursor_marketplace(self.meta)["plugins"][0]["source"]
+        self.assertEqual(cursor, f"{self.subdir}/cursor")
+
+    def test_wrong_subfolder_rejected(self):
+        # check_scoped_sources requires each catalog's path to be its own provider
+        # subfolder; a source pointing elsewhere (here the whole repo) must fail.
+        bad = json.loads(json.dumps(self.meta))
+        bad["marketplace"]["source"]["subdir"] = "."
+        self.assertTrue(skills.check_scoped_sources(bad))
 
 
 if __name__ == "__main__":

@@ -162,12 +162,13 @@ skills, not commands, so they aren't duplicated here.)
   `databricks auth login` before retrying. Never blocks or rewrites commands.
 
 **Cursor.** Cursor has a flat `/` menu (no `plugin:command` namespacing), so
-the same commands ship as `/databricks-setup` and `/databricks-doctor` from
-[`commands-cursor/`](./commands-cursor/). Hooks are wired via
-[`hooks/cursor-hooks.json`](./hooks/cursor-hooks.json) (declared explicitly in
-`.cursor-plugin/plugin.json`): the context primer (`sessionStart`) and the
-auth-failure hint (`postToolUse`), both invoked with `--platform cursor` so
-they emit Cursor's output shape and reference the Cursor command names. The
+the same commands ship as `/databricks-setup` and `/databricks-doctor`,
+rendered from the one templated [`commands/`](./commands/) source into the
+Cursor bundle folder. The Cursor-dialect hook wiring ships as the Cursor bundle
+folder's `hooks/hooks.json` (auto-discovered from the plugin root, no
+declaration): the context primer (`sessionStart`) and the auth-failure hint
+(`postToolUse`), both invoked with `--platform cursor` so they emit Cursor's
+output shape and reference the Cursor command names. The
 prompt-router hook does not port (Cursor's `beforeSubmitPrompt` cannot inject
 context), so routing instead ships as a Cursor rule
 ([`rules/databricks-routing.mdc`](./rules/databricks-routing.mdc)) that injects
@@ -240,12 +241,17 @@ The manifest is consumed by the CLI to discover available skills.
 
 ### Plugin manifest management
 
-The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor)
-plus three marketplace catalogs. Their `plugin.json` / `marketplace.json` files
-are **generated** from a single source of truth,
+The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor).
+Every agent fetches the built `plugins/databricks/` bundle (a generated copy of
+the source plus the four per-target `plugin.json`); four `marketplace.json`
+catalogs at the repo root each point a scoped source at it (currently tracking
+`main`; tag-pinning to frozen releases is a mechanical follow-up). The
+bundle, the catalogs, the four `plugin.json`, and `manifest.json` are all
+**generated** from a single source of truth,
 [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json), by `scripts/skills.py`. Do not
 hand-edit the generated files (each generated directory also carries a
-`README.md` saying so) — edit `metaplugin/plugin.meta.json` and regenerate:
+`README.md` saying so, and `plugins/**` is marked `linguist-generated`) — edit
+`metaplugin/plugin.meta.json` and regenerate:
 
 ```bash
 python3 scripts/skills.py generate   # regenerates manifest.json + all plugin manifests
