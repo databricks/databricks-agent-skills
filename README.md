@@ -244,8 +244,7 @@ The manifest is consumed by the CLI to discover available skills.
 The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor).
 Every agent fetches the built `plugins/databricks/` bundle (a generated copy of
 the source plus the four per-target `plugin.json`); four `marketplace.json`
-catalogs at the repo root each point a scoped source at it (currently tracking
-`main`; tag-pinning to frozen releases is a mechanical follow-up). The
+catalogs at the repo root each point a scoped source at it (tracking `main`). The
 bundle, the catalogs, the four `plugin.json`, and `manifest.json` are all
 **generated** from a single source of truth,
 [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json), by `scripts/skills.py`. Do not

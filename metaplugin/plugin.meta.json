@@ -20,7 +20,7 @@
     "description": "Databricks agent skills for AI coding assistants.",
     "owner": { "name": "Databricks" },
     "displayName": "Databricks Agent Skills",
-    "//source": "How each catalog points at the built bundle. The four plugin.json live under <subdir>/<target-dir>/, so agents fetch only <subdir> (a scoped/sparse clone). ref_template is the git ref each ref-capable catalog (Claude/Codex/Copilot) pins. It currently tracks `main`, where the bundle is committed, so this change is safe to land standalone with no release. A mechanical follow-up flips ref_template to `v{version}` so installs serve frozen release tags instead of main HEAD (the proposal's goal); `{version}` is filled from `version` above. Cursor cannot pin a ref, so it omits one and also tracks the default branch. NOTE: the Codex entry still needs its `policy` block + a remote git-subdir-at-a-tag smoke test (open question in the proposal); add `codex_policy` here once verified.",
+    "//source": "How each catalog points at the built bundle. The four plugin.json live under <subdir>/<target-dir>/, so agents fetch only <subdir> (a scoped/sparse clone). ref_template is the git ref the ref-capable catalogs (Claude/Codex/Copilot) use; it is `main`, where the committed bundle lives, so installs follow the latest committed bundle. The catalogs are not pinned to release tags by design. Cursor cannot pin a ref anyway and tracks the default branch. NOTE: the Codex entry still needs its `policy` block + a remote git-subdir-at-a-tag smoke test (open question in the proposal); add `codex_policy` here once verified.",
     "source": {
       "subdir": "plugins/databricks",
       "repo": "databricks/databricks-agent-skills",
