@@ -13,12 +13,27 @@ jobs:
     runs-on:
       group: databricks-protected-runner-group
       labels: linux-ubuntu-latest
+    # release-is holds the DECO-SDK-Tagging GitHub App credentials below.
+    environment: "release-is"
     permissions:
       contents: write
     steps:
+      # Push as the DECO-SDK-Tagging App, not github-actions[bot]. main's
+      # rulesets require PR + merge queue and reject a direct bot push; the App
+      # is on the ruleset bypass list (branch + tag creation), so it can push
+      # the bump commit and the tag directly. Same pattern as databricks-sdk-go.
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.DECO_SDK_TAGGING_APP_ID }}
+          private-key: ${{ secrets.DECO_SDK_TAGGING_PRIVATE_KEY }}
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: main
+          # Persist the App token so the pushes below carry its credentials.
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -50,8 +65,10 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Commit as the App. The email must be the App's noreply address or
+          # the commit will not be verified.
+          git config user.name "Databricks SDK Release Bot"
+          git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
           # metaplugin/plugin.meta.json is the source; bump_version.py regenerates
           # the full set from it: the four marketplace.json catalogs (Cursor's is
           # new), the routing files, the four hook-wiring dialects, manifest.json,
@@ -107,7 +124,7 @@ jobs:
 
       - name: Create release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
           VERSION: ${{ inputs.version }}
         run: |
           gh release create "$VERSION" \
