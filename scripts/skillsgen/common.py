@@ -18,10 +18,60 @@ META_FILE = "metaplugin/plugin.meta.json"
 # source here. Built and drift-checked by skillsgen/bundle.py.
 BUNDLE_DIR = "plugins/databricks"
 
+# The release version lives in its own file (NOT in plugin.meta.json) so the
+# release workflow can own it and the private mirror can exclude it wholesale
+# (a mirror can drop a file, not a single field). load_meta resolves it into
+# meta["version"]; require_version fails loud if no version source is available
+# where the version is actually used (stamping the per-target plugin.json, and
+# the marketplace ref once it pins v{version}).
+VERSION_FILE = "metaplugin/version.meta.json"
+
+# Canonical generated plugin.json, read as the version-of-record fallback when
+# version.meta.json is absent (e.g. a content regenerate on the mirror side, where
+# the version file is excluded): preserving the already-committed version keeps
+# such a regenerate from disturbing the released version.
+_VERSION_FALLBACK_PLUGIN = f"{BUNDLE_DIR}/claude/.claude-plugin/plugin.json"
+
+
+def _resolve_version(repo_root: Path) -> str | None:
+    """Resolve the release version: version.meta.json (current_version), else the
+    version already committed in the canonical plugin.json, else None (in which
+    case require_version fails loud at the point the version is needed)."""
+    version_path = repo_root / VERSION_FILE
+    if version_path.exists():
+        return json.loads(version_path.read_text())["current_version"]
+    fallback = repo_root / _VERSION_FALLBACK_PLUGIN
+    if fallback.exists():
+        return json.loads(fallback.read_text()).get("version")
+    return None
+
 
 def load_meta(repo_root: Path) -> dict:
-    """Load plugin.meta.json (the cross-target plugin source of truth)."""
-    return json.loads((repo_root / META_FILE).read_text())
+    """Load plugin.meta.json (the cross-target plugin source of truth) and
+    resolve the release version into meta["version"] (see _resolve_version)."""
+    meta = json.loads((repo_root / META_FILE).read_text())
+    version = _resolve_version(repo_root)
+    if version is not None:
+        meta["version"] = version
+    return meta
+
+
+def require_version(meta: dict) -> str:
+    """Return the release version, or fail loud if no version source was found.
+
+    Routed through here at every point that stamps the version into generated
+    output, so a generate/validate run with no version source fails with a clear
+    message instead of silently emitting a blank or wrong version."""
+    version = meta.get("version")
+    if not version:
+        raise SystemExit(
+            f"ERROR: no plugin version available. '{VERSION_FILE}' was not found "
+            f"at the repo root (it holds current_version/next_version and is the "
+            f"version source for the generated plugin.json), and no committed "
+            f"'{_VERSION_FALLBACK_PLUGIN}' was present to fall back to. Restore "
+            f"{VERSION_FILE}, or run generation in the public repo where it lives."
+        )
+    return version
 
 
 def _serialize_plugin_json(obj: dict) -> str:

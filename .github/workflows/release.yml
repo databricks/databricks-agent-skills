@@ -1,14 +1,13 @@
 name: Release
 
-# Publishes the version already committed in metaplugin/plugin.meta.json: it
-# validates, tags, and cuts the GitHub release, and no-ops if that version is
-# already published. It never bumps the version or pushes to main -- the only
-# writes are the tag and the release. The version is bumped in a separate
-# version-bump commit that lands on main before this runs.
+# Cuts a release for the version recorded in version.meta.json (next_version):
+# regenerate the manifests stamped with it, commit the bumped tree + tag to main,
+# cut the GitHub release, and (via the bump script) advance version.meta.json.
+# Manual dispatch only; the version is auto-numbered from version.meta.json, so
+# there is no version input. The version commit and tag are the writes to main,
+# pushed as the DECO-SDK-Tagging App (on the branch + tag ruleset bypass lists).
 on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}   # manual re-trigger; no inputs
+  workflow_dispatch: {}
 
 jobs:
   release:
@@ -20,10 +19,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Push the tag as the DECO-SDK-Tagging App, not github-actions[bot]. main's
-      # rulesets require PR + merge queue and reject a direct bot push; the App is
-      # on the ruleset bypass list (tag creation), so it can push the tag
-      # directly. Same pattern as databricks-sdk-go.
+      # Push as the DECO-SDK-Tagging App, not github-actions[bot]. main's rulesets
+      # require PR + merge queue and reject a direct bot push; the App is on the
+      # bypass list (branch + tag creation), so it can push the version commit and
+      # the tag directly. Same pattern as databricks-sdk-go.
       - name: Generate GitHub App token
         id: generate-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
@@ -34,7 +33,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: main
-          # Persist the App token so the tag push below carries its credentials.
+          # Persist the App token so the pushes below carry its credentials.
           token: ${{ steps.generate-token.outputs.token }}
 
       - name: Set up Python
@@ -42,48 +41,87 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Read version from plugin.meta.json
+      - name: Read release version from version.meta.json
         id: version
+        # next_version is the version to release. Read it BEFORE the bump (the
+        # bump advances it), so the tag below matches what we release.
         run: |
-          V="v$(python3 -c 'import json; print(json.load(open("metaplugin/plugin.meta.json"))["version"])')"
+          V="v$(python3 -c 'import json; print(json.load(open("metaplugin/version.meta.json"))["next_version"])')"
           if [[ ! "$V" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: plugin.meta.json version is not vX.Y.Z: $V"; exit 1
+            echo "Error: version.meta.json next_version is not X.Y.Z: $V"; exit 1
           fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
 
-      - name: Skip if already published
-        id: guard
+      - name: Abort if already published
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Query the remote tags directly; no local tag fetch needed.
+          # next_version should never already be tagged. If it is, version.meta.json
+          # is stale (a prior release did not advance it). Fail loudly rather than
+          # silently skip, since this is a deliberate manual release.
           if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-            echo "already=true" >> "$GITHUB_OUTPUT"
-            echo "$VERSION is already published; nothing to do."
-          else
-            echo "already=false" >> "$GITHUB_OUTPUT"
+            echo "Error: $VERSION is already published. Advance next_version in version.meta.json."
+            exit 1
           fi
 
-      - name: Validate manifests before publishing
-        if: steps.guard.outputs.already == 'false'
-        # Safety gate: the tree on main is already generated and consistent, so
-        # this is a no-op pass. It aborts the release if drift somehow reached
-        # main, before a tag is cut.
+      - name: Bump to the release version and regenerate
+        # Stamps next_version into the manifests + bundle, then advances
+        # version.meta.json (current_version = released, next_version = next patch).
+        run: python3 scripts/bump_version.py
+
+      - name: Validate generated manifests before publishing
+        # Aborts the release if anything is inconsistent BEFORE the commit and tag
+        # are pushed, instead of failing post-push CI after the release is live.
         run: python3 scripts/skills.py validate
 
-      - name: Create annotated tag
-        if: steps.guard.outputs.already == 'false'
+      - name: Commit the release version
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Email must be the App's noreply address or the tag/commit is unverified.
+          # Commit as the App (the email must be its noreply address or the commit
+          # is unverified). The bump regenerates version.meta.json + the four
+          # plugin.json (with the new version) + the catalogs/wiring/manifest +
+          # the plugins/databricks/ bundle; stage the full set so a release never
+          # commits a partial tree.
           git config user.name "Databricks SDK Release Bot"
           git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
+          git add \
+            metaplugin/version.meta.json \
+            .claude-plugin/marketplace.json \
+            .github/plugin/marketplace.json \
+            .agents/plugins/marketplace.json \
+            .cursor-plugin/marketplace.json \
+            hooks/_routing_data.json \
+            rules/databricks-routing.mdc \
+            rules/README.md \
+            hooks/hooks.json \
+            hooks/codex-hooks.json \
+            hooks/copilot-hooks.json \
+            hooks/cursor-hooks.json \
+            manifest.json \
+            plugins/databricks
+          # Guard: fail loudly if the bump changed a tracked file not staged above
+          # (a new generated artifact added without updating this list), instead of
+          # tagging while leaving it uncommitted for post-merge CI to flag as drift.
+          if ! git diff --quiet; then
+            echo "Error: bump changed tracked files not staged for the release commit:"
+            git diff --name-only
+            exit 1
+          fi
+          git commit -s -m "chore(release): $VERSION"
+          git push origin HEAD:main
+
+      - name: Create annotated tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # git identity is configured by the commit step above and persists for
+          # the job. Annotated tag (records tagger metadata), pushed at the version
+          # commit just created.
           git tag -a "$VERSION" -m "$VERSION"
           git push origin "$VERSION"
 
       - name: Create release
-        if: steps.guard.outputs.already == 'false'
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
           VERSION: ${{ steps.version.outputs.version }}

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from skillsgen.common import (
     META_FILE,
+    require_version,
     _check_generated_files,
     _norm_rel_path,
     _serialize_plugin_json,
@@ -62,7 +63,7 @@ def build_claude_plugin(meta: dict) -> dict:
     return {
         "name": meta["name"],
         "description": meta["description"],
-        "version": meta["version"],
+        "version": require_version(meta),
         "author": meta["author"],
         "homepage": meta["homepage"],
         "repository": meta["repository"],
@@ -78,7 +79,7 @@ def build_codex_plugin(meta: dict) -> dict:
     return {
         "name": meta["name"],
         "description": meta["description"],
-        "version": meta["version"],
+        "version": require_version(meta),
         "author": meta["author"],
         "homepage": meta["homepage"],
         "repository": meta["repository"],
@@ -95,7 +96,7 @@ def build_copilot_plugin(meta: dict) -> dict:
         "name": meta["name"],
         "displayName": target["displayName"],
         "description": meta["description"],
-        "version": meta["version"],
+        "version": require_version(meta),
         "author": meta["author"],
         "homepage": meta["homepage"],
         "repository": meta["repository"],
@@ -111,7 +112,7 @@ def build_cursor_plugin(meta: dict) -> dict:
         "name": meta["name"],
         "displayName": target["displayName"],
         "description": meta["description"],
-        "version": meta["version"],
+        "version": require_version(meta),
         "author": {"name": meta["author"]["name"]},
         "skills": "./skills/",
         "commands": target["commands"],
@@ -135,9 +136,14 @@ def build_cursor_plugin(meta: dict) -> dict:
 
 
 def marketplace_ref(meta: dict) -> str:
-    """The release tag the ref-capable catalogs pin, e.g. ``v0.3.0``."""
-    src = meta["marketplace"]["source"]
-    return src["ref_template"].format(version=meta["version"])
+    """The git ref each ref-capable catalog pins: ``main`` today, or the release
+    tag (e.g. ``v0.3.0``) once ref_template flips to ``v{version}``. Only the
+    latter consumes the version, so resolve it lazily and don't require a version
+    source when the ref does not interpolate one."""
+    template = meta["marketplace"]["source"]["ref_template"]
+    if "{version}" in template:
+        return template.format(version=require_version(meta))
+    return template
 
 
 def _scoped_sources(meta: dict) -> dict:

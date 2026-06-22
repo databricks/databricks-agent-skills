@@ -156,56 +156,55 @@ Examples in skills and references must follow secure defaults:
 
 ## Releasing
 
-Publishing is **one-way**: the **Release** workflow
-(`.github/workflows/release.yml`) only *reads* the version already committed on
-`main` and publishes it. It never bumps the version or pushes a commit to
-`main`; the only writes it makes are the release tag and the GitHub release.
+The release version lives in **`metaplugin/version.meta.json`** (a sibling of
+`plugin.meta.json`), so the release workflow owns it and it is managed
+automatically:
+
+```json
+{ "current_version": "0.2.6", "next_version": "0.2.7" }
+```
+
+`current_version` is the latest published release; `next_version` is what the
+next release will tag.
 
 ### Cutting a release
 
-1. **Bump the version in its own PR.** Run `python3 scripts/bump_version.py
-   vX.Y.Z`, which sets the `version` field in `metaplugin/plugin.meta.json` (the
-   single source) and regenerates every target from it (each `plugin.json`, the
-   four `marketplace.json` catalogs, `manifest.json`, and the
-   `plugins/databricks/` bundle), so all four targets carry the same version.
-   Commit the regenerated tree and open a PR.
-2. **Merge the bump PR.** The push to `main` triggers the Release workflow. It
-   reads the new version from `plugin.meta.json`, confirms no `vX.Y.Z` tag exists
-   yet, runs `scripts/skills.py validate` as a safety gate, creates the annotated
-   `vX.Y.Z` tag, pushes it, and creates the GitHub release (`gh release create
-   --verify-tag`).
+Run the **Release** workflow (`.github/workflows/release.yml`) via manual
+dispatch (it takes no inputs). It:
 
-That is the whole release: no manual version argument, no separate publish step.
+1. Reads `next_version` from `version.meta.json` as the version to release, and
+   aborts if that tag already exists (a stale `next_version`).
+2. Runs `scripts/bump_version.py`, which regenerates every target's `plugin.json`,
+   the four `marketplace.json` catalogs, `manifest.json`, the routing/hook wiring,
+   and the `plugins/databricks/` bundle stamped with the release version, then
+   advances `version.meta.json` (`current_version` becomes the released version;
+   `next_version` is bumped to the next patch).
+3. Validates the regenerated tree, commits it to `main` as the DECO-SDK-Tagging
+   App (on the ruleset bypass list), creates the annotated `vX.Y.Z` tag, and cuts
+   the GitHub release.
 
-### What does not cut a release
-
-- **Content-only merges** (anything that leaves the `version` field unchanged):
-  the workflow still runs on the push to `main`, but the tag for the current
-  version already exists, so the idempotency guard short-circuits and it no-ops.
-- **A manual `workflow_dispatch`** (it takes no inputs): this re-runs the publish
-  for whatever version is on `main` and no-ops if that version is already tagged.
-  It cannot force-release an arbitrary version.
-
-The tag is pushed by the DECO-SDK-Tagging GitHub App, which is on the branch and
-tag-creation ruleset bypass lists; `main` otherwise requires every change to go
-through a PR and the merge queue.
+So a release is one dispatch and the version is auto-numbered. To cut a **minor
+or major** instead of a patch, set `next_version` in `version.meta.json` (e.g. to
+`0.3.0`) first; the workflow releases it and then sets the next patch from there.
 
 ### Notes
 
-- **Bumping the `version` is required** for every release. Claude Code's plugin
-  marketplace keys updates on the `version` field, so a release that ships
-  without bumping it leaves marketplace clients on the cached copy and they never
-  see the new skills.
-- The catalogs currently track `main` (`ref: main`), so the bundle they serve is
-  whatever is committed on `main`; bumping the version does not change which ref
-  installs follow. A planned follow-up flips `marketplace.source.ref_template` to
-  `v{version}` so the ref-capable catalogs re-stamp to each release tag (the tag
-  contains the `plugins/databricks/` bundle, since it is committed on `main`).
-- **If a release half-completes** (the tag was pushed but the GitHub release was
-  not created, for example the job died between the two steps), the guard treats
-  the version as already published and skips it on the next run. Recover by
-  creating the release manually (`gh release create vX.Y.Z --verify-tag
-  --generate-notes`) or by deleting the tag and re-running the workflow.
+- **Bumping the `version` is required** for every release: Claude Code's plugin
+  marketplace keys updates on the `version` field in `plugin.json`, so a release
+  that ships without bumping it leaves marketplace clients on the cached copy.
+  That is why the bumped version is committed to `main` (in `version.meta.json`
+  and the four `plugin.json`), where the catalogs currently serve it (`ref: main`).
+- `version.meta.json` is the version source for generation. `scripts/skills.py
+  generate` / `validate` read `current_version` from it; if it is absent they fall
+  back to the version already committed in `plugin.json`, and fail loudly if no
+  version source is available at all.
+- The catalogs currently track `main` (`ref: main`). A planned follow-up flips
+  `marketplace.source.ref_template` to `v{version}` so the ref-capable catalogs
+  pin each release tag.
+- **If a release half-completes** (committed and tagged, but the GitHub release
+  was not created), create it manually (`gh release create vX.Y.Z --verify-tag
+  --generate-notes`). Because the bump already advanced `next_version`,
+  re-dispatching cuts the next version, not a duplicate.
 - After releasing, open a follow-up PR to update
   [`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
   `databricks aitools install` resolves to the new version.

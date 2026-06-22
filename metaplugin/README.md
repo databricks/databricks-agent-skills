@@ -12,6 +12,12 @@ python3 scripts/skills.py generate   # re-render everything listed below
 python3 scripts/skills.py validate   # what CI runs; fails on any byte drift
 ```
 
+The release **version** lives in the sibling `version.meta.json`
+(`current_version` / `next_version`), not in `plugin.meta.json`. It is owned and
+auto-advanced by the release workflow (see [CONTRIBUTING.md](../CONTRIBUTING.md),
+"Releasing"); `generate` / `validate` read `current_version` from it to stamp
+each provider's `plugin.json`.
+
 ## Generated from this file (do NOT hand-edit)
 
 CI re-renders all of these in memory and fails on any drift, so edits to them
