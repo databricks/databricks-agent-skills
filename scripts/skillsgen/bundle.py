@@ -5,7 +5,7 @@ Each provider gets its own self-contained, fully generated folder:
     plugins/databricks/
     ├── claude/    .claude-plugin/plugin.json + skills/ + commands/ + hooks/(hooks.json, router+context+auth, _routing_data.json)
     ├── codex/     .codex-plugin/plugin.json  + skills/ + hooks/(codex-hooks.json, router+context+auth, _routing_data.json) + assets/
-    ├── copilot/   .github/plugin/plugin.json + skills/ + hooks/(copilot-hooks.json, context+auth)
+    ├── copilot/   .github/plugin/plugin.json + skills/ + hooks.json + hooks/(context+auth)
     └── cursor/    .cursor-plugin/plugin.json + skills/ + commands/ + rules/ + hooks/(cursor-hooks.json, context+auth)
 
 Each catalog's scoped source points at one of these subfolders, so an install
@@ -74,20 +74,21 @@ def _iter_copy(repo_root: Path, src_dir: str):
             yield path, path.relative_to(repo_root).as_posix()
 
 
-def _provider_hook_files(repo_root: Path, wiring_out: str) -> dict:
+def _provider_hook_files(repo_root: Path, provider: str, wiring_out: str) -> dict:
     """{provider-relative path -> bytes} for a provider's hooks/ subset.
 
     The wiring JSON is copied from the root generation (named per provider there,
-    e.g. hooks/codex-hooks.json, to avoid a root collision) and written into the
-    folder as the uniform `hooks/hooks.json`, which the agent auto-discovers from
-    its plugin root (no plugin.json "hooks" declaration). Plus exactly the hook
-    scripts the wiring references, and _routing_data.json only when the router is
-    wired.
+    e.g. hooks/codex-hooks.json, to avoid a root collision). Most providers get
+    the wiring as `hooks/hooks.json`, but Copilot-format plugins use root-level
+    `hooks.json` (VS Code/Copilot auto-discovery looks there). Plus exactly the
+    hook scripts the wiring references, and _routing_data.json only when the
+    router is wired.
     """
     files: dict = {}
     wiring_path = repo_root / wiring_out
     wiring_text = wiring_path.read_text()
-    files["hooks/hooks.json"] = wiring_path.read_bytes()
+    wiring_rel = "hooks.json" if provider == "copilot" else "hooks/hooks.json"
+    files[wiring_rel] = wiring_path.read_bytes()
     scripts = sorted(set(_HOOK_PY_RE.findall(wiring_text)))
     for script in scripts:
         files[script] = (repo_root / script).read_bytes()
@@ -116,7 +117,7 @@ def expected_bundle(repo_root: Path, meta: dict) -> dict:
             expected[f"{base}/{rel}"] = src_abs.read_bytes()
 
         # hooks/: this provider's wiring + referenced scripts (+ routing data).
-        for rel, data in _provider_hook_files(repo_root, target["hooks_render"]["out"]).items():
+        for rel, data in _provider_hook_files(repo_root, provider, target["hooks_render"]["out"]).items():
             expected[f"{base}/{rel}"] = data
 
         # commands/: rendered from the templated source (Claude/Cursor only).
