@@ -11,7 +11,7 @@
         "source": "github",
         "repo": "databricks/databricks-agent-skills",
         "path": "plugins/databricks/copilot",
-        "ref": "main"
+        "ref": "v0.2.6"
       },
       "category": "development",
       "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."

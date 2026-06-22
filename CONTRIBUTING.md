@@ -66,8 +66,9 @@ display names, the scoped-source config (`marketplace.source`), and
 hook/command/rule wiring, lives once in **`metaplugin/plugin.meta.json`**.
 `scripts/skills.py generate` renders it into a **per-provider** bundle under
 `plugins/databricks/<provider>/` and the four root catalogs, each pointing a
-scoped source at *its own* provider subfolder (currently `ref: main`; a follow-up
-flips it to tag-pinning):
+scoped source at *its own* provider subfolder. Claude, Codex, and Copilot pin
+`v{version}` release tags; Cursor tracks the default branch because its catalog
+format cannot pin a ref:
 
 - per-provider bundles (each self-contained, only what that provider uses):
   - `plugins/databricks/claude/`   — `.claude-plugin/plugin.json` + `skills/` + `commands/` + `hooks/`
@@ -169,14 +170,12 @@ triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
 3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
    then creates the GitHub release (`gh release create --verify-tag`).
 
-The catalogs currently track `main` (`ref: main`), so the bundle the catalogs
-serve is whatever is committed on `main` — releases bump the version but do not
-change which ref installs follow. A planned follow-up flips
-`marketplace.source.ref_template` to `v{version}`; once it lands, each release
-re-stamps the ref-capable catalogs to the new tag, and the release tag must
-contain the `plugins/databricks/` bundle (it does, since the bundle is committed
-on `main`). Cut that bump-and-tag in one motion so a catalog never names a tag
-that does not exist yet.
+The ref-capable catalogs pin `v{version}` release tags, so each release re-stamps
+Claude, Codex, and Copilot catalogs to the new tag. The release tag must contain
+the `plugins/databricks/` bundle (it does, since the bundle is committed on
+`main`). Cut the bump-and-tag in one motion so a catalog never names a tag that
+does not exist yet. Cursor cannot pin a ref and continues to track the default
+branch.
 
 Bumping the plugin `version` on every release is **required**: Claude Code's
 plugin marketplace keys updates on the `version` field, so a release that ships

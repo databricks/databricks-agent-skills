@@ -74,11 +74,9 @@ the `skills` map (with a `keyword`).
 
 Everything under `plugins/` is generated, committed, and drift-checked (it is not
 gitignored in this repo). The catalogs' scoped source is configured under
-`marketplace.source` in `metaplugin/plugin.meta.json`; today every catalog tracks
-`main` (`ref: main`), where the committed bundle lives, so the change is safe to
-land with no release. A mechanical follow-up flips `ref_template` to `v{version}`
-so the ref-capable tools (Claude, Codex, Copilot) serve frozen release tags
-instead of main HEAD; Cursor cannot pin a ref and always tracks the default
+`marketplace.source` in `metaplugin/plugin.meta.json`; ref-capable tools
+(Claude, Codex, Copilot) pin `v{version}` release tags instead of main HEAD.
+Cursor cannot pin a ref and always tracks the default
 branch. The CLI's raw-skills (files-channel) installer is unaffected — it keeps
 fetching the root `skills/`, so the manifest's stable `repo_dir` stays `skills`.
 

@@ -17,6 +17,8 @@ from pathlib import Path
 
 _REPO = Path(__file__).resolve().parent.parent
 _spec = importlib.util.spec_from_file_location("skills", _REPO / "scripts" / "skills.py")
+assert _spec is not None
+assert _spec.loader is not None
 skills = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(skills)
 
@@ -284,6 +286,16 @@ class BundleTest(unittest.TestCase):
             self.assertFalse((cph / "_routing_data.json").exists())
             self.assertTrue((cph / "databricks-context.py").exists())
 
+    def test_copilot_bundle_uses_root_hooks_file(self):
+        # VS Code treats .github/plugin/plugin.json as a Copilot-format plugin;
+        # its hook auto-discovery looks for hooks.json at the plugin root, not
+        # hooks/hooks.json (the Claude-format location).
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            cph = root / "plugins/databricks/copilot"
+            self.assertTrue((cph / "hooks.json").exists())
+            self.assertFalse((cph / "hooks" / "hooks.json").exists())
+
     def test_bundle_skips_vcs_noise(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -310,14 +322,17 @@ class ScopedSourcesTest(unittest.TestCase):
         self.assertEqual(skills.check_scoped_sources(self.meta), [])
 
     def test_each_catalog_points_at_its_provider_subfolder(self):
-        # Currently ref "main" (the bundle is committed there); the tag-pinning
-        # follow-up flips marketplace.source.ref_template to "v{version}".
-        self.assertEqual(skills.marketplace_ref(self.meta), "main")
+        release_ref = f"v{self.meta['version']}"
+        self.assertEqual(skills.marketplace_ref(self.meta), release_ref)
         claude = skills.build_claude_marketplace(self.meta)["plugins"][0]["source"]
         self.assertEqual(claude["path"], f"{self.subdir}/claude")
-        self.assertEqual(claude["ref"], "main")
+        self.assertEqual(claude["ref"], release_ref)
+        copilot = skills.build_copilot_marketplace(self.meta)["plugins"][0]["source"]
+        self.assertEqual(copilot["path"], f"{self.subdir}/copilot")
+        self.assertEqual(copilot["ref"], release_ref)
         codex = skills.build_codex_marketplace(self.meta)["plugins"][0]["source"]
         self.assertEqual(codex["path"], f"{self.subdir}/codex")
+        self.assertEqual(codex["ref"], release_ref)
 
     def test_cursor_source_is_bare_provider_subfolder_no_ref(self):
         # Cursor cannot pin a ref; its source is the bare relative subfolder.

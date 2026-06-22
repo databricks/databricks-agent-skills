@@ -12,7 +12,7 @@
         "source": "git-subdir",
         "url": "https://github.com/databricks/databricks-agent-skills.git",
         "path": "plugins/databricks/codex",
-        "ref": "main"
+        "ref": "v0.2.6"
       }
     }
   ]
