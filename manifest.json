@@ -108,15 +108,15 @@
       "version": "0.1.0"
     },
     "databricks-core": {
-      "description": "Databricks CLI operations and the parent/entry-point skill for all Databricks work: authentication, profile selection, data exploration, bundles, and Genie natural-language data Q&A.",
+      "description": "Databricks CLI operations and the parent/entry-point skill for Databricks CLI use: authentication, profile selection, and bundles.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "data-exploration.md",
         "databricks-cli-auth.md",
-        "databricks-cli-install.md"
+        "databricks-cli-install.md",
+        "manual-data-exploration.md"
       ],
       "repo_dir": "skills",
       "version": "0.1.0"
@@ -135,6 +135,17 @@
         "references/sdp-pipelines.md"
       ],
       "repo_dir": "skills",
+      "version": "0.0.1"
+    },
+    "databricks-data-discovery": {
+      "description": "Discover, explore, and query Databricks data via Genie. This skill MUST be invoked \u2014 instead of browsing catalogs/schemas/tables yourself \u2014 whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or sample/profile a table, answer a natural-language question about the data, or write or generate a SQL query \u2014 for analytics, dashboards, apps, or ad-hoc questions. Routes to Genie (natural-language Q&A and query generation over all your Unity Catalog data) first, then falls back to information_schema + SQL discovery.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ],
+      "repo_dir": "experimental",
       "version": "0.0.1"
     },
     "databricks-dbsql": {

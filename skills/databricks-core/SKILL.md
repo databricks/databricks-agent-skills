@@ -1,6 +1,6 @@
 ---
 name: "databricks-core"
-description: "Databricks CLI operations and the parent/entry-point skill for all Databricks work: authentication, profile selection, data exploration, bundles, and Genie natural-language data Q&A. Load this first for any Databricks task (CLI, auth, profiles, exploring catalogs/tables), then load the matching product skill. Contains up-to-date guidelines for Databricks-related CLI tasks."
+description: "Databricks CLI operations and the parent/entry-point skill for Databricks CLI use: authentication, profile selection, and bundles. Load this first for CLI, auth, profile, and bundle tasks, then load the matching product skill. For finding or exploring data, answering questions about the data, or generating SQL, load the databricks-data-discovery skill (it routes to Genie One). Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.0"
@@ -18,6 +18,12 @@ For specific products, use dedicated skills:
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
 - **databricks-model-serving** - Model Serving endpoint management and inference
+
+For **data discovery, exploration, and query generation** — finding tables,
+answering natural-language questions about the data, or generating SQL — use
+**databricks-data-discovery** if it is installed (experimental; it asks Genie One
+first, then falls back to manual exploration). If it isn't installed, use the
+AI-tool commands below and [Manual Data Exploration](manual-data-exploration.md).
 
 ## Prerequisites
 
@@ -75,7 +81,11 @@ hyphen to an underscore or otherwise normalize them. In SQL, backtick-quote any 
 with special characters (e.g. `` `my-catalog`.schema.table ``); unquoted hyphens cause a
 parse error.
 
-See [Data Exploration](data-exploration.md) for details.
+These commands are first-class for running known SQL and profiling — Genie isn't
+required for that. For natural-language data questions, locating data you can't
+pin down, or generating a query from a question, prefer the `databricks-data-discovery`
+skill (above) if it's installed. See [Manual Data Exploration](manual-data-exploration.md)
+for the full command surface, quoting rules, and troubleshooting.
 
 ## Quick Reference
 
@@ -138,11 +148,11 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 |------|------------------------|
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
-| Exploring tables/schemas | [Data Exploration](data-exploration.md) |
+| Exploring tables/schemas | [Manual Data Exploration](manual-data-exploration.md) (or `databricks-data-discovery` if installed) |
 | Deploying jobs/pipelines | Use `/databricks-dabs` |
 
 ## Reference Guides
 
 - [CLI Installation](databricks-cli-install.md)
 - [CLI Authentication](databricks-cli-auth.md)
-- [Data Exploration](data-exploration.md)
+- [Manual Data Exploration](manual-data-exploration.md)

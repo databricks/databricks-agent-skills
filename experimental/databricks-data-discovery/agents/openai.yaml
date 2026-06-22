@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Data Discovery"
+  short_description: "Discover, explore, and query Databricks data via Genie. This skill MUST be invoked — instead of browsing catalogs/schemas/tables yourself — whenever the user asks to find or locate data ('what tabl..."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-data-discovery for discover, explore, and query databricks data via genie. this skill must be invoked — instead of browsing catalogs/schemas/tables yourself — whenever the user asks to find or locate data ('what tabl."
