@@ -1,76 +1,128 @@
 name: Release
 
+# Cuts a release for the version recorded in version.meta.json (next_version):
+# regenerate the manifests stamped with it, commit the bumped tree + tag to main,
+# cut the GitHub release, and (via the bump script) advance version.meta.json.
+# Manual dispatch only; the version is auto-numbered from version.meta.json, so
+# there is no version input. The version commit and tag are the writes to main,
+# pushed as the DECO-SDK-Tagging App (on the branch + tag ruleset bypass lists).
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Tag version (e.g. v0.1.0)'
-        required: true
-        type: string
+  workflow_dispatch: {}
 
 jobs:
   release:
     runs-on:
       group: databricks-protected-runner-group
       labels: linux-ubuntu-latest
+    # release-is holds the DECO-SDK-Tagging GitHub App credentials below.
+    environment: "release-is"
     permissions:
       contents: write
     steps:
+      # Push as the DECO-SDK-Tagging App, not github-actions[bot]. main's rulesets
+      # require PR + merge queue and reject a direct bot push; the App is on the
+      # bypass list (branch + tag creation), so it can push the version commit and
+      # the tag directly. Same pattern as databricks-sdk-go.
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.DECO_SDK_TAGGING_APP_ID }}
+          private-key: ${{ secrets.DECO_SDK_TAGGING_PRIVATE_KEY }}
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: main
+          # Persist the App token so the pushes below carry its credentials.
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
 
-      - name: Validate tag format
-        env:
-          VERSION: ${{ inputs.version }}
+      - name: Read release version from version.meta.json
+        id: version
+        # next_version is the version to release. Read it BEFORE the bump (the
+        # bump advances it), so the tag below matches what we release.
         run: |
-          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: version must match vX.Y.Z format"
+          V="v$(python3 -c 'import json; print(json.load(open("metaplugin/version.meta.json"))["next_version"])')"
+          if [[ ! "$V" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: version.meta.json next_version is not X.Y.Z: $V"; exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Abort if already published
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # next_version should never already be tagged. If it is, version.meta.json
+          # is stale (a prior release did not advance it). Fail loudly rather than
+          # silently skip, since this is a deliberate manual release.
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "Error: $VERSION is already published. Advance next_version in version.meta.json."
             exit 1
           fi
 
-      - name: Bump plugin manifests and regenerate manifest
-        env:
-          VERSION: ${{ inputs.version }}
-        run: python3 scripts/bump_version.py "$VERSION"
+      - name: Bump to the release version and regenerate
+        # Stamps next_version into the manifests + bundle, then advances
+        # version.meta.json (current_version = released, next_version = next patch).
+        run: python3 scripts/bump_version.py
 
-      - name: Commit version bump
+      - name: Validate generated manifests before publishing
+        # Aborts the release if anything is inconsistent BEFORE the commit and tag
+        # are pushed, instead of failing post-push CI after the release is live.
+        run: python3 scripts/skills.py validate
+
+      - name: Commit the release version
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/plugin.json .cursor-plugin/plugin.json manifest.json
-          if git diff --cached --quiet; then
-            echo "Manifests already at $VERSION; nothing to commit"
-          else
-            git commit -s -m "chore(release): bump plugin manifests to $VERSION"
-            git push origin HEAD:main
+          # Commit as the App (the email must be its noreply address or the commit
+          # is unverified). The bump regenerates version.meta.json + the four
+          # plugin.json (with the new version) + the catalogs/wiring/manifest +
+          # the plugins/databricks/ bundle; stage the full set so a release never
+          # commits a partial tree.
+          git config user.name "Databricks SDK Release Bot"
+          git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
+          git add \
+            metaplugin/version.meta.json \
+            .claude-plugin/marketplace.json \
+            .github/plugin/marketplace.json \
+            .agents/plugins/marketplace.json \
+            .cursor-plugin/marketplace.json \
+            hooks/_routing_data.json \
+            rules/databricks-routing.mdc \
+            rules/README.md \
+            hooks/hooks.json \
+            hooks/codex-hooks.json \
+            hooks/copilot-hooks.json \
+            hooks/cursor-hooks.json \
+            manifest.json \
+            plugins/databricks
+          # Guard: fail loudly if the bump changed a tracked file not staged above
+          # (a new generated artifact added without updating this list), instead of
+          # tagging while leaving it uncommitted for post-merge CI to flag as drift.
+          if ! git diff --quiet; then
+            echo "Error: bump changed tracked files not staged for the release commit:"
+            git diff --name-only
+            exit 1
           fi
+          git commit -s -m "chore(release): $VERSION"
+          git push origin HEAD:main
 
       - name: Create annotated tag
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # git identity is already configured by the "Commit version bump"
-          # step above and persists for the job via .git/config.
-          # Annotated tag (objecttype=tag), not lightweight (objecttype=commit):
-          # records tagger metadata and is the prerequisite for `git tag -v`
-          # verification if tag signing is ever enabled.
+          # git identity is configured by the commit step above and persists for
+          # the job. Annotated tag (records tagger metadata), pushed at the version
+          # commit just created.
           git tag -a "$VERSION" -m "$VERSION"
           git push origin "$VERSION"
 
       - name: Create release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          gh release create "$VERSION" \
-            --title "$VERSION" \
-            --generate-notes \
-            --verify-tag
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "$VERSION" --title "$VERSION" --generate-notes --verify-tag

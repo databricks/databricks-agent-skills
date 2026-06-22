@@ -1,0 +1,20 @@
+{
+  "name": "databricks-agent-skills",
+  "description": "Databricks agent skills for AI coding assistants.",
+  "owner": {
+    "name": "Databricks"
+  },
+  "plugins": [
+    {
+      "name": "databricks",
+      "source": {
+        "source": "github",
+        "repo": "databricks/databricks-agent-skills",
+        "path": "plugins/databricks/copilot",
+        "ref": "main"
+      },
+      "category": "development",
+      "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration."
+    }
+  ]
+}

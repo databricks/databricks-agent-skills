@@ -2,6 +2,8 @@
 
 This guide covers creating and managing Genie Spaces for SQL-based data exploration.
 
+> **CLI is the default.** The canonical, environment-agnostic commands (`databricks genie create-space`, `update-space`, `get-space`, `trash-space`) live in the parent [SKILL.md](../SKILL.md). This reference documents the **MCP tool surface** (`manage_genie`, `get_table_stats_and_schema`) — use it when the Databricks MCP server is configured (e.g. inside an IDE) and you prefer one-call shortcuts over CLI + `jq`. The [Exact Field Schemas](#exact-field-schemas-verified-against-the-genie-api) section is **tool-agnostic** — the same `serialized_space` shapes apply whether you push them via CLI or MCP.
+
 ## What is a Genie Space?
 
 A Genie Space connects to Unity Catalog tables and translates natural language questions into SQL — understanding schemas, generating queries, executing them on a SQL warehouse, and presenting results conversationally.

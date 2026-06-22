@@ -2,6 +2,8 @@
 
 Use the Genie Conversation API to ask natural language questions to a curated Genie Space.
 
+> **CLI is the default.** The canonical, environment-agnostic conversation commands (`databricks genie start-conversation`, `create-message`, `get-message`, `get-message-attachment-query-result`) live in the parent [SKILL.md §Conversation API](../SKILL.md#conversation-api). This reference documents the **`ask_genie` MCP tool** — use it when the Databricks MCP server is configured (e.g. inside an IDE), since it wraps the full start → poll → fetch loop into a single call. The when-to-use guidance, response handling, and example workflows below apply to both paths.
+
 ## Overview
 
 The `ask_genie` tool allows you to programmatically send questions to a Genie Space and receive SQL-generated answers. Instead of writing SQL directly, you delegate the query generation to Genie, which has been curated with business logic, instructions, and certified queries.

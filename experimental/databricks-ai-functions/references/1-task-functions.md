@@ -98,6 +98,22 @@ df.withColumn(
 
 Returns VARIANT `{"response": {...}, "error_message": null}`. Returns `NULL` if content is `NULL`.
 
+**Versions** — the current `ai_extract` (a JSON-string schema, e.g. `'["brand", "model"]'`, optionally pinned with `options => map('version', '2.1')`) is **v2.1, which returns a VARIANT, not a STRUCT** — so you access its fields with colon notation. The legacy `ai_extract(content, ARRAY('brand', 'model'))` array-of-labels form (v1) returns a STRUCT accessed with dot notation. Prefer the JSON-string → VARIANT (v2.1) form for new pipelines.
+
+**Accessing the result** — `ai_extract` returns a `VARIANT` (the extracted fields live under `:response`), **not a `STRUCT`**. Navigate it with the colon (`:`) path operator and cast the leaf. **Dot notation (`result.response.brand`) returns `NULL` silently on a VARIANT column — always use colon (`:`).**
+
+```sql
+WITH extracted AS (
+  SELECT product_name, ai_extract(product_name, '["brand", "model"]') AS result
+  FROM products
+)
+SELECT
+  result:response:brand::STRING AS brand,    -- colon path, then cast
+  result:response:model::STRING AS model,
+  result:error_message::STRING  AS extract_error
+FROM extracted;
+```
+
 ```sql
 -- simple schema
 SELECT ai_extract(
@@ -333,11 +349,13 @@ error_status[]       -- errors per page (if any)
 ```
 
 ```sql
--- Parse and extract text blocks
+-- Parse and extract text blocks.
+-- The result is a VARIANT { "document": { "pages": [...], "elements": [...] }, "error_status": ..., "metadata": ... }
+-- Navigate it with the colon (:) operator — dot notation returns NULL on a VARIANT column.
 SELECT
     path,
-    parsed:pages[*].elements[*].content AS text_blocks,
-    parsed:error AS parse_error
+    concat_ws('\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks,
+    parsed:error_status AS parse_error
 FROM (
     SELECT path, ai_parse_document(content) AS parsed
     FROM read_files('/Volumes/catalog/schema/landing/docs/', format => 'binaryFile')
@@ -362,10 +380,11 @@ df = (
     spark.read.format("binaryFile")
     .load("/Volumes/catalog/schema/landing/docs/")
     .withColumn("parsed", expr("ai_parse_document(content)"))
+    # ai_parse_document returns a VARIANT — navigate with the colon (:) operator, never dot.
     .selectExpr(
         "path",
-        "parsed:pages[*].elements[*].content AS text_blocks",
-        "parsed:error AS parse_error",
+        "concat_ws('\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks",
+        "parsed:error_status AS parse_error",
     )
     .filter("parse_error IS NULL")
 )
@@ -373,7 +392,7 @@ df = (
 # Chain with task-specific functions on the extracted text
 df = (
     df.withColumn("summary",  expr("ai_summarize(text_blocks, 50)"))
-      .withColumn("entities", expr("ai_extract(text_blocks, array('date', 'amount', 'vendor'))"))
+      .withColumn("entities", expr("ai_extract(text_blocks, '[\"date\", \"amount\", \"vendor\"]')"))
       .withColumn("category", expr("ai_classify(text_blocks, array('invoice', 'contract', 'report'))"))
 )
 df.display()

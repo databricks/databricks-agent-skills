@@ -6,9 +6,18 @@ on:
       - 'skills/**'
       - 'experimental/**'
       - 'assets/**'
-      - 'scripts/skills.py'
+      - 'scripts/**'
       - 'manifest.json'
+      - 'metaplugin/**'
       - '.claude-plugin/**'
+      - '.github/plugin/**'
+      - '.cursor-plugin/**'
+      - '.agents/**'
+      - 'plugins/**'
+      - 'hooks/**'
+      - 'commands/**'
+      - 'rules/**'
+      - 'tests/**'
   push:
     branches:
       - main
@@ -26,5 +35,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      # This repo is published as a source-only mirror from an internal source of
+      # truth. Generated artifacts (the plugins/ bundle, manifest.json, the
+      # marketplace catalogs, the rendered hook/routing files) are regenerated and
+      # committed only on release (see release.yml). Between releases a PR carries
+      # source changes with intentionally stale generated files, so regenerate
+      # from source here before validating. This is a DRY RUN: the regenerated
+      # files are never committed (CI checkouts are ephemeral). It lets `validate`
+      # and the generator tests run against a consistent tree, so a source change
+      # that breaks generation, frontmatter, routing, or a test fails at PR time
+      # instead of silently waiting until the next release.
+      - name: Regenerate from source (dry run; not committed)
+        run: python3 scripts/skills.py generate
+
       - name: Validate manifest is up to date
         run: python3 scripts/skills.py validate
+
+      - name: Test plugin hooks
+        run: python3 -m unittest discover -s tests -p '*_test.py' -v

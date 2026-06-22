@@ -1,0 +1,19 @@
+{
+  "name": "databricks-agent-skills",
+  "interface": {
+    "displayName": "Databricks Agent Skills"
+  },
+  "plugins": [
+    {
+      "name": "databricks",
+      "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
+      "category": "development",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/databricks/databricks-agent-skills.git",
+        "path": "plugins/databricks/codex",
+        "ref": "main"
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@ name: databricks-aibi-dashboards
 description: "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 parent: databricks-core
 ---
 
@@ -12,6 +12,8 @@ parent: databricks-core
 Create Databricks AI/BI dashboards (formerly Lakeview dashboards).
 A dashboard should be showing something relevant for a human, typically some KPI on the top, and based on the story, some graph (often temporal), and we see "something happens".
 **Follow these guidelines strictly.**
+
+> **When a custom app fits better:** A managed AI/BI dashboard is the right tool for read-only KPIs, charts, and filters over governed tables. If the user instead needs a *custom-code interactive app* — write-back / data entry, bespoke UI or interactions beyond the dashboard grid, embedded or auth-gated workflows, or a conversational Genie/chat assistant as the primary surface — build a Databricks App instead with the `databricks-apps` skill (which brings in `databricks-app-design` for the data-screen UX). Linking an "Ask Genie" space to *this* dashboard stays here (see Linking a Genie Space below).
 
 ## Quick Reference
 
@@ -30,17 +32,34 @@ A dashboard should be showing something relevant for a human, typically some KPI
 
 ---
 
-## CRITICAL: Widget Version Requirements
+## Widget Index (Version + Where Documented)
 
 > **Wrong version = broken widget!** This is the #1 cause of dashboard errors.
 
-| Widget Type | Version | Notes |
-|-------------|---------|-------|
-| `counter` | **2** | KPI cards |
-| `table` | **2** | Data tables |
-| `bar`, `line`, `area`, `pie`, `scatter` | **3** | Charts |
-| `combo`, `choropleth-map` | **1** | Advanced charts |
-| `filter-*` | **2** | All filter types |
+| Widget Type | Version | Documented in |
+|-------------|---------|---------------|
+| text (markdown, no spec block) | N/A | [1-widget-specifications.md#text-headersdescriptions](references/1-widget-specifications.md#text-headersdescriptions) |
+| `counter` (KPI + sparkline + comparison) | **2** | [1-widget-specifications.md#counter-kpi](references/1-widget-specifications.md#counter-kpi) |
+| `table` | **2** | [1-widget-specifications.md#table](references/1-widget-specifications.md#table) |
+| `bar`, `line` | **3** | [1-widget-specifications.md#line--bar-charts](references/1-widget-specifications.md#line--bar-charts) |
+| `pie` | **3** | [1-widget-specifications.md#pie-chart](references/1-widget-specifications.md#pie-chart) |
+| `symbol-map` (lat/lon point map) | **2** | [1-widget-specifications.md#symbol-map-bubble-map](references/1-widget-specifications.md#symbol-map-bubble-map) |
+| `area` | **3** | [2-advanced-widget-specifications.md#area-chart](references/2-advanced-widget-specifications.md#area-chart) |
+| `scatter` | **3** | [2-advanced-widget-specifications.md#scatter-plot--bubble-chart](references/2-advanced-widget-specifications.md#scatter-plot--bubble-chart) |
+| `combo` (bar+line, dual-axis) | **1** | [2-advanced-widget-specifications.md#combo-chart-bar--line](references/2-advanced-widget-specifications.md#combo-chart-bar--line) |
+| `choropleth-map` (regions colored by value) | **1** | [2-advanced-widget-specifications.md#choropleth-map](references/2-advanced-widget-specifications.md#choropleth-map) |
+| `forecast-line` (with `AI_FORECAST` SQL) | **1** | [2-advanced-widget-specifications.md#forecast-line-with-ai_forecast](references/2-advanced-widget-specifications.md#forecast-line-with-ai_forecast) |
+| `pivot` (with conditional cell rules) | **3** | [2-advanced-widget-specifications.md#pivot](references/2-advanced-widget-specifications.md#pivot) |
+| `histogram` (with `bin(col, binWidth=N)`) | **3** | [2-advanced-widget-specifications.md#histogram](references/2-advanced-widget-specifications.md#histogram) |
+| `sankey` | **1** | [2-advanced-widget-specifications.md#sankey](references/2-advanced-widget-specifications.md#sankey) |
+| `heatmap` | **3** | [2-advanced-widget-specifications.md#heatmap](references/2-advanced-widget-specifications.md#heatmap) |
+| `funnel` | **1** | [2-advanced-widget-specifications.md#funnel](references/2-advanced-widget-specifications.md#funnel) |
+| `box` | **1** | [2-advanced-widget-specifications.md#box](references/2-advanced-widget-specifications.md#box) |
+| `waterfall` | **1** | [2-advanced-widget-specifications.md#waterfall](references/2-advanced-widget-specifications.md#waterfall) |
+| `filter-single-select`, `filter-multi-select`, `filter-date-range-picker` | **2** | [3-filters.md#filter-widget-structure](references/3-filters.md#filter-widget-structure) |
+| `range-slider` | **2** | [3-filters.md#range-slider-numeric-range-filter](references/3-filters.md#range-slider-numeric-range-filter) |
+
+> Cohort retention charts are built as a `pivot` with a color-scale cell style — there is no `cohort` widget type. See pivot in [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md).
 
 ---
 
@@ -101,7 +120,7 @@ If values don't match expectations, ensure the query is correct, fix the data if
 
 Before writing JSON, plan your dashboard:
 
-1. You must know the expected specific JSON structure. For this, **Read reference files**: [references/1-widget-specifications.md](references/1-widget-specifications.md), [references/3-filters.md](references/3-filters.md), [references/4-examples.md](references/4-examples.md)
+1. You must know the expected specific JSON structure. For this, **Read reference files**: [1-widget-specifications.md](references/1-widget-specifications.md), [3-filters.md](references/3-filters.md), [4-examples.md](references/4-examples.md)
 
 2. Think: **What widgets?** Map each visualization to a dataset:
    | Widget | Type | Dataset | Has filter field? |
@@ -196,25 +215,77 @@ Every dashboard's `serialized_dashboard` content must follow this exact structur
 ```
 
 **Structural rules (violations cause "failed to parse serialized dashboard"):**
-- `queryLines`: Array of strings, NOT `"query": "string"`
+- `queryLines`: Array of strings, NOT `"query": "string"`. Elements are **joined verbatim** with no separator — end each line with `\n` (or strip `-- comments`). A line ending in `-- comment` with no newline swallows the next line.
 - Widgets: INLINE in `layout[].widget`, NOT a separate `"widgets"` array
 - `pageType`: Required on every page (`PAGE_TYPE_CANVAS` or `PAGE_TYPE_GLOBAL_FILTERS`)
 - Query binding: `query.fields[].name` must exactly match `encodings.*.fieldName`
 
-### Linking a Genie Space (Optional)
+### Theme & Color (always set this — it makes or breaks the dashboard)
 
-To add an "Ask Genie" button to the dashboard, or to link a genie space/room with an ID, add `uiSettings.genieSpace` to the JSON:
+Top-level `uiSettings.theme` controls colors, fonts, and widget chrome across every widget on the dashboard. Without it, the dashboard inherits the workspace default and looks generic. **Set the full block on every dashboard you create** — a coherent palette is the single highest-impact polish item.
+
+Mental model — **60/30/10 rule** mapped to theme keys: **60% neutral** = canvas/widget/border backgrounds (set `widgetBorderColor = widgetBackgroundColor` to hide borders); **30% secondary** = `fontColor` + `visualizationColors` (the content weight); **10% accent** = `selectionColor` for filters / tabs / active selections — pick something distinct from text and palette; a safe-blue around `#2272B4` matches the hyperlink convention and works as a default.
 
 ```json
 {
   "datasets": [...],
   "pages": [...],
   "uiSettings": {
-    "genieSpace": {
-      "isEnabled": true,
-      "overrideId": "your-genie-space-id-here",
-      "enablementMode": "ENABLED"
+    "theme": {
+      "canvasBackgroundColor": {"light": "#FCFCFC", "dark": "#1F272D"},
+      "widgetBackgroundColor": {"light": "#FFFFFF", "dark": "#11171C"},
+      "fontColor":             {"light": "#11171C", "dark": "#E8ECF0"},
+      "selectionColor":        {"light": "#2272B4", "dark": "#8ACAFF"},
+      "visualizationColors": [
+        "#FFA600", "#FF7054", "#DE5582", "#995495",
+        "#4E5185", "#1D425C", "#99DDB4"
+      ],
+      "widgetHeaderAlignment": "LEFT"
     }
+  }
+}
+```
+
+**Theme keys** (mechanics):
+
+- `visualizationColors`: ordered palette every chart series and category mapping cycles through. **Positions are 0-indexed**: `position: 0` = first color (`#FFA600` above), `position: 6` = seventh (`#99DDB4`). Length 5–8 is typical.
+- Background / font / selection colors take `light` + `dark` pairs; the dashboard auto-selects based on viewer mode.
+- `widgetHeaderAlignment`: `"LEFT"` (default), `"CENTER"`, or `"RIGHT"`.
+- Per-widget color references: `{"themeColorType": "visualizationColors", "position": N}` (0-indexed) to pin to a palette slot, or `{"hex": "#FF0000"}` for an exact color outside the palette.
+
+**Palette-design rules** (this is what separates a polished dashboard from a noisy one):
+
+1. **One coherent color family per dashboard, distinct across the suite.** Walk **across hues** (e.g., amber → coral → pink → purple → navy), not one color faded toward white — a single-hue lightness ramp reads as one color and the viewer can't tell categories apart. Adjacent stops must be visually distinct: if you squint and two blur into one, push them further apart. Single-hue ramps are for **quantitative** widgets only (`colorRamp.mode: "custom-sequential"`), never for `visualizationColors`.
+2. **Pin semantic colors as literal hex, outside the palette.** "Bad" = a warm coral (e.g. `#FF7E5C`), "good" = a calm teal/green. Use `color.scale.mappings` with a bare hex string — `{"value": "Critical", "color": "#FF7E5C"}` — **not** `{"hex": "..."}` or `themeColorType: position` (both are silently dropped on chart widgets). Reuse the good-teal that's already in the palette so it never clashes.
+3. **Color non-categorical widgets explicitly so they join the family.** Maps & heatmaps: `colorRamp.mode: "custom-sequential"` with `{start, end}` from the family (if directional: `start` = bad color, `end` = good color). Forecast / multi-series: pin per-series via `color.scale.mappings` keyed on `displayName` (actual = solid family color, forecast = contrast/alert, threshold = muted tone). Sparkline counters: set `value.color` to a family color, not grey.
+4. **"Lighter / more pastel" tweak**: nudge all stops up in lightness *together*; don't recolor individual ones. Re-sync the pinned semantic hex values; keep enough contrast on the alert color that it still reads as a warning.
+
+**Starter palettes** (pick one and adapt — extend to 7-8 stops if needed; semantic red/green stay as literal hex per rule 2):
+
+```
+#094074  #3C6997  #5ADBFF  #FFDD4A  #FE9000
+#003F5C  #594E90  #BC4C96  #FF5F66  #FFA600
+#4A8CC7  #F59770  #FFD84A  #F0E09E  #6DD980
+#440154  #3B528B  #21918C  #5EC962  #FDE725
+#4E79A7  #F28E2C  #E15759  #76B7B2  #59A14F
+#0072B2  #E69F00  #009E73  #CC79A7  #D55E00
+#0D0887  #7E03A8  #CC4778  #F89441  #F0F921
+#6929C4  #1192E8  #005D5D  #9F1853  #FA4D56
+```
+
+~4-5% of viewers have color blindness (mostly red/green). Rows 4 and 6 above (viridis, Okabe-Ito) are CB-safe by design; verify customized palettes via simulator (Adobe Color, `colorbrewer2.org`). Don't put red and green adjacent, and rely on lightness contrast — not hue alone — between adjacent stops.
+
+### Linking a Genie Space (Optional)
+
+To add an "Ask Genie" button to the dashboard, or to link a genie space/room with an ID, add `uiSettings.genieSpace` to the JSON (alongside `theme` if you have one):
+
+```json
+"uiSettings": {
+  "theme": { /* ... */ },
+  "genieSpace": {
+    "isEnabled": true,
+    "overrideId": "your-genie-space-id-here",
+    "enablementMode": "ENABLED"
   }
 }
 ```
@@ -233,13 +304,15 @@ Apply unless user specifies otherwise:
 
 ## Reference Files
 
+> **Before generating any dashboard JSON, read [4-examples.md](references/4-examples.md) first.** It's a complete reference dashboard exercising every construct (dataset measures + `MEASURE()`, sparkline counters, forecast-line with annotations, pivot with conditional cells, symbol-map, histogram, range-slider filter, theme). Use it to learn the JSON shape; then adapt to the user's data and demo story — keep the structure, swap the tables, metrics, palette, and narrative for the case you're building.
+
 | What are you building? | Reference |
 |------------------------|-----------|
-| Any widget (text, counter, table, chart) | [references/1-widget-specifications.md](references/1-widget-specifications.md) |
-| Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [references/2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
-| Dashboard with filters (global or page-level) | [references/3-filters.md](references/3-filters.md) |
-| Need a complete working template to adapt | [references/4-examples.md](references/4-examples.md) |
-| Debugging a broken dashboard | [references/5-troubleshooting.md](references/5-troubleshooting.md) |
+| **Start here** — full working dashboard template | [4-examples.md](references/4-examples.md) |
+| Any widget (text, counter, table, chart) | [1-widget-specifications.md](references/1-widget-specifications.md) |
+| Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
+| Dashboard with filters (global or page-level) | [3-filters.md](references/3-filters.md) |
+| Debugging a broken dashboard | [5-troubleshooting.md](references/5-troubleshooting.md) |
 
 ---
 
@@ -247,8 +320,11 @@ Apply unless user specifies otherwise:
 
 ### 1) DATASET ARCHITECTURE
 
-- **One dataset per domain** (e.g., orders, customers, products). Datasets shared across widgets benefit from the same filters.
-- **Exactly ONE valid SQL query per dataset** (no multiple queries separated by `;`)
+- **Fewer datasets is better — aim for one dataset that backs as many widgets as possible.** Clicking a value on a chart (e.g., a bar, a slice) acts as a filter on **that dataset**, and every other widget sharing the same dataset re-renders with the click applied. Splitting widgets across many narrow datasets breaks this cross-filtering and forces users to set explicit filter widgets for what should "just work". Prefer one wide dataset per domain (orders, cases, customers); only split when a widget genuinely needs different grain, pre-aggregation, or a parameter the others can't tolerate.
+- **Two ways to define a dataset**:
+  - **SQL query**: `{"name": "ds_x", "displayName": "...", "queryLines": ["SELECT ...", "FROM table"]}` — full control, can include `WITH` / `JOIN` / `AI_FORECAST` / etc.
+  - **UC asset shorthand**: `{"name": "ds_x", "displayName": "...", "asset_name": "catalog.schema.table_or_view"}` — no SQL needed. Works for regular tables, views, and metric views.
+- **Exactly ONE valid SQL query per dataset** when using `queryLines` (no multiple queries separated by `;`)
 - **Queries must use bare table names only** — no catalog, no schema prefix. Example: `FROM orders`, never `FROM gold.orders` or `FROM main.gold.orders`. The catalog and schema come from the `--dataset-catalog` and `--dataset-schema` flags at creation time. These flags only fill in missing parts — they do NOT override any catalog/schema written in the query.
 - SELECT must include all dimensions needed by widgets and all derived columns via `AS` aliases
 - Put ALL business logic (CASE/WHEN, COALESCE, ratios) into the dataset SELECT with explicit aliases
@@ -257,6 +333,39 @@ Apply unless user specifies otherwise:
   - Time series: `ORDER BY date` for chronological display
   - Rankings/Top-N: `ORDER BY metric DESC LIMIT 10` for "Top 10" charts
   - Categorical charts: `ORDER BY metric DESC` to show largest values first
+
+#### Dataset-level measures + `MEASURE()`
+
+Widget expressions are usually inline aggregations (`{"name": "sum(x)", "expression": "SUM(\`x\`)"}`). But you can also **declare reusable measures on the dataset itself** and reference them by name — every widget that consumes the dataset can use the same metric without redefining it.
+
+Two ways to define measures:
+
+1. **Dashboard-level `columns`** (works on any dataset — SQL query or `asset_name`):
+   ```json
+   {
+     "name": "ds_support",
+     "queryLines": ["SELECT * FROM support_cases"],
+     "columns": [
+       {"displayName": "Total Cases",     "description": "Count of cases",
+        "expression": "COUNT(`case_id`)"},
+       {"displayName": "Reopen Rate %",   "description": "% of reopened cases",
+        "expression": "SUM(CASE WHEN `reopened_flag` THEN 1 ELSE 0 END) * 100.0 / COUNT(`case_id`)"},
+       {"displayName": "Priority Level",  "description": "Sorted priority label",
+        "expression": "CASE WHEN `priority`='Critical' THEN '1-Critical' ELSE '4-Low' END"}
+     ]
+   }
+   ```
+
+2. **Metric-view source** — if the dataset's `asset_name` (or `FROM` clause) is a UC metric view, its YAML-defined measures are already queryable. **Do not redeclare them** in `columns`. See [databricks-metric-views](../databricks-metric-views/SKILL.md).
+
+Either way, widgets reference the measure by name:
+
+```json
+"fields": [{"name": "measure(Total Cases)", "expression": "MEASURE(`Total Cases`)"}],
+"encodings": {"value": {"fieldName": "measure(Total Cases)", "displayName": "Total Cases"}}
+```
+
+`MEASURE(\`...\`)` works in counter, table, bar, line, pie, pivot — any widget that takes a field expression. Mix it with inline aggregations freely.
 
 ### 2) WIDGET FIELD EXPRESSIONS
 
@@ -314,7 +423,9 @@ If you need conditional logic or multi-field formulas, compute a derived column 
 
 Each widget has a position: `{"x": 0, "y": 0, "width": 4, "height": 4}`
 
-**CRITICAL**: Each row must fill width=12 exactly. No gaps allowed.
+**Pick the subdivision based on the audience.** The 12-column grid divides cleanly into 3, 4, or 6 columns: a 3-column layout (each widget `width: 4`) reduces cognitive load and fits an executive overview; a 4-column (`width: 3`) is the all-rounder; a 6-column (`width: 2`) packs the most density for technical / operations dashboards where the reader is hunting through many metrics at once.
+
+**Default rule**: each row should fill width=12 exactly — no gaps. Once you're confident with the grid, you can stagger heights across columns (a tall widget on the left paired with several shorter ones on the right) so the two halves don't share row boundaries — see [4-examples.md](references/4-examples.md#layout-12-col-grid) for the pattern. Start with strict rows; relax only when the stagger reads better visually.
 
 ```
 CORRECT:                            WRONG:
@@ -395,6 +506,7 @@ If the range is very small relative to the scale (e.g., 83-89% on a 0-100 scale)
 
 ## Related Skills
 
+- **[databricks-apps](../../skills/databricks-apps/SKILL.md)** - when the user needs a custom-code interactive app (write-back, bespoke UI, in-app chat / Genie) instead of a managed dashboard
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - for querying the underlying data and system tables
-- **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** - for building the data pipelines that feed dashboards
+- **[databricks-pipelines](../databricks-pipelines/SKILL.md)** - for building the data pipelines that feed dashboards
 - **[databricks-jobs](../databricks-jobs/SKILL.md)** - for scheduling dashboard data refreshes

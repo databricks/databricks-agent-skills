@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "python3 hooks/databricks-context.py --platform cursor"
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "python3 hooks/databricks-auth-helper.py --platform cursor",
+        "matcher": "Shell"
+      }
+    ]
+  }
+}

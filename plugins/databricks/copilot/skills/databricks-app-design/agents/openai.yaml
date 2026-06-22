@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks App Design"
+  short_description: "Design custom-code Databricks App (AppKit/React) data-screen UX"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-app-design to design or critique the data screens of a custom-code Databricks App (AppKit/React) — KPI/overview pages, reports, charts, tables, and Genie surfaces."

@@ -27,16 +27,13 @@ Use this skill when:
 
 ### Inspect Source Table Schema
 
-Before creating a metric view, call `get_table_stats_and_schema` to understand available columns for dimensions and measures:
+Before creating a metric view, inspect the source table to understand available columns for dimensions and measures. Use the CLI `discover-schema` — one call returns columns, types, sample rows, null counts, and row count:
 
+```bash
+databricks experimental aitools tools discover-schema catalog.schema.orders
 ```
-get_table_stats_and_schema(
-    catalog="catalog",
-    schema="schema",
-    table_names=["orders"],
-    table_stat_level="SIMPLE"  # Use "DETAILED" for cardinality, min/max, histograms
-)
-```
+
+> **MCP alternative (if available):** `get_table_stats_and_schema(catalog="catalog", schema="schema", table_names=["orders"], table_stat_level="SIMPLE")` — use `"DETAILED"` for cardinality, min/max, and histograms.
 
 ### Create a Metric View
 
@@ -97,9 +94,139 @@ ORDER BY ALL
 | Querying | [query-patterns.md](query-patterns.md) | How to query metric views: `MEASURE()` basics, filtering/ordering, join-hierarchy rollups, window measures, casting, the MCP query tool, plus rules & gotchas (`CASE`+`MEASURE()` grouping, composed measures, no measures in `WHERE`/`GROUP BY`) |
 | Genie Integration | [genie-integration.md](genie-integration.md) | Design rules for AI-ready metric views: one-fact-source, base views, agent metadata (comments, synonyms, formats), domain organization (Genie-space build/validation lives in the databricks-genie skill) |
 
-## MCP Tools
+## SQL Operations
 
-Use the `manage_metric_views` tool for all metric view operations:
+Metric views are created and managed with plain SQL DDL — the **default** path, which works through any SQL warehouse (the `databricks` CLI, the SQL editor, or the Statement Execution API).
+
+### Create Metric View
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.orders_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  comment: "Orders KPIs for sales analysis"
+  source: catalog.schema.orders
+  filter: order_date > '2020-01-01'
+  dimensions:
+    - name: Order Month
+      expr: DATE_TRUNC('MONTH', order_date)
+      comment: "Month of order"
+    - name: Order Status
+      expr: status
+  measures:
+    - name: Order Count
+      expr: COUNT(1)
+    - name: Total Revenue
+      expr: SUM(total_price)
+      comment: "Sum of total price"
+$$;
+```
+
+### Query Metric View
+
+```sql
+SELECT
+  `Order Month`,
+  MEASURE(`Total Revenue`) AS total_revenue,
+  MEASURE(`Order Count`) AS order_count
+FROM catalog.schema.orders_metrics
+WHERE extract(year FROM `Order Month`) = 2024
+GROUP BY ALL
+ORDER BY ALL
+LIMIT 100;
+```
+
+### Describe Metric View
+
+```sql
+DESCRIBE TABLE EXTENDED catalog.schema.orders_metrics;
+
+-- Or get YAML definition
+SHOW CREATE TABLE catalog.schema.orders_metrics;
+```
+
+### Grant Access
+
+```sql
+GRANT SELECT ON VIEW catalog.schema.orders_metrics TO `data-consumers`;
+```
+
+### Drop Metric View
+
+```sql
+DROP VIEW IF EXISTS catalog.schema.orders_metrics;
+```
+
+### CLI Execution
+
+```bash
+# Execute SQL via CLI
+databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
+CREATE OR REPLACE VIEW catalog.schema.orders_metrics
+WITH METRICS
+LANGUAGE YAML
+AS \$\$
+  version: 1.1
+  source: catalog.schema.orders
+  dimensions:
+    - name: Order Month
+      expr: DATE_TRUNC('MONTH', order_date)
+  measures:
+    - name: Total Revenue
+      expr: SUM(total_price)
+\$\$
+"
+```
+
+> **Avoiding heredoc escaping**: the `\$\$` token-quoting above is fragile (it interacts with bash variable expansion, sed, and JSON encoding). For long DDL, prefer the Statement Execution API which takes the SQL as a JSON string:
+>
+> ```bash
+> databricks api post /api/2.0/sql/statements --json '{
+>   "warehouse_id": "WAREHOUSE_ID",
+>   "statement": "CREATE OR REPLACE VIEW catalog.schema.orders_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.orders\ndimensions:\n  - name: Order Month\n    expr: DATE_TRUNC(MONTH, order_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(total_price)\n$$"
+> }'
+> ```
+>
+> JSON-escaped strings are easier to template programmatically than shell heredocs.
+
+### Convert an Existing View to a Metric View
+
+To migrate a regular view to a metric view, treat its `SELECT` source as the metric view's `source`, then promote `GROUP BY` columns to `dimensions` and aggregations to `measures`. The new metric view does not replace the original — it sits alongside it as a governed metric layer.
+
+```sql
+-- Existing regular view (keep as-is or drop later)
+-- CREATE VIEW catalog.schema.orders_summary AS
+-- SELECT DATE_TRUNC('MONTH', order_date) AS month,
+--        SUM(total_price) AS revenue,
+--        COUNT(*) AS order_count
+-- FROM catalog.schema.orders
+-- GROUP BY 1;
+
+-- Equivalent metric view (new artifact, governed)
+CREATE OR REPLACE VIEW catalog.schema.orders_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  source: catalog.schema.orders
+  dimensions:
+    - name: Order Month
+      expr: DATE_TRUNC('MONTH', order_date)
+  measures:
+    - name: Revenue
+      expr: SUM(total_price)
+    - name: Order Count
+      expr: COUNT(1)
+$$
+```
+
+After verifying parity (`SELECT ... FROM <orders_metrics>` returns the same numbers as the original view), update downstream consumers and drop the original view.
+
+## MCP Tools (if available)
+
+When the Databricks **MCP server** is configured (e.g. inside an IDE wired to it), the `manage_metric_views` tool wraps the same operations into single calls:
 
 | Action | Description |
 |--------|-------------|
@@ -119,7 +246,7 @@ Use the `manage_metric_views` tool for all metric view operations:
 - `window` blocks for window measures
 - Per-dimension or per-measure `comment` fields
 
-For any of these, build the full YAML and execute it via `execute_sql` with `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$`. The persisted definition will round-trip correctly (verified: `describe` returns synonyms under each column's `metadata`).
+For any of these, build the full YAML and run the `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` DDL above (via CLI, SQL editor, or `execute_sql`). The persisted definition will round-trip correctly (verified: `describe` returns synonyms under each column's `metadata`).
 
 ### Create via MCP
 
@@ -165,7 +292,7 @@ manage_metric_views(
 )
 ```
 
-### Grant Access
+### Grant Access via MCP
 
 ```python
 manage_metric_views(

@@ -7,6 +7,7 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 - `widget.name`: alphanumeric + hyphens + underscores ONLY (max 60 characters)
 - `frame.title`: human-readable title (any characters allowed)
 - `frame.showTitle`: always set to `true` so users understand the widget
+- `frame.description` + `frame.showDescription: true`: optional subtext under the title (e.g., `"All-time; 0% before the 2025-06 launch"`) — useful for giving a KPI number context without cluttering the chart itself
 - `displayName`: use in encodings to label axes/values clearly (e.g., "Revenue ($)", "Growth Rate (%)")
 - `widget.queries[].name`: use `"main_query"` for chart/counter/table widgets. Filter widgets with multiple queries can use descriptive names (see [3-filters.md](3-filters.md))
 
@@ -22,6 +23,7 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 | bar | 3 | this file |
 | line | 3 | this file |
 | pie | 3 | this file |
+| symbol-map | 2 | this file |
 | area | 3 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
 | scatter | 3 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
 | combo | 1 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
@@ -74,28 +76,69 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 - `widgetType`: "counter"
 - Percent values must be 0-1 in the data (not 0-100)
 
-### Number Formatting
+**Two strongly-recommended defaults:**
 
-```json
-"encodings": {
-  "value": {
-    "fieldName": "revenue",
-    "displayName": "Total Revenue",
-    "format": {
-      "type": "number-currency",
-      "currencyCode": "USD",
-      "abbreviation": "compact",
-      "decimalPlaces": {"type": "max", "places": 2}
-    }
-  }
-}
-```
-
-Format types: `number`, `number-currency`, `number-percent`
+1. **Add a sparkline** (`period` encoding) when the dataset has a temporal column. A bare number is context-free; the small trend line behind the value tells the user "rising / falling / flat" at a glance. Skip it only if the KPI is truly time-invariant (snapshot count with no historical column available).
+   > For the sparkline to render, the dataset query must **keep the temporal dimension** — i.e., return one row per period (`GROUP BY DATE_TRUNC(...)`), not a single fully-aggregated row. The counter's `value` then re-aggregates those rows; the `period` field drives the line behind it.
+2. **Set a `format`** when the value has a unit — dollars, percent, large counts. "Revenue: 1287394.55" without `number-currency` formatting reads as noise. The only counters where `format` is fine to omit are unit-less small counts (e.g., "Open Tickets: 12") where the raw integer is already legible. See "Value formatting" below.
 
 ### Counter Patterns
 
-**Pre-aggregated dataset (1 row)** - use `disaggregated: true`:
+**Multi-row dataset with aggregation — the recommended default (supports filters + sparkline)** — use `disaggregated: false`:
+- Dataset query returns one row per period (`GROUP BY DATE_TRUNC(...)`) — keeps the temporal dimension so the counter can both re-aggregate to the headline value AND render the sparkline.
+- **CRITICAL**: Field `name` MUST match `fieldName` exactly (e.g., `"sum(spend)"`).
+- Include the `period` field in `query.fields` AND the `period` encoding in the spec.
+
+```json
+{
+  "widget": {
+    "name": "weekly-spend",
+    "queries": [{
+      "name": "main_query",
+      "query": {
+        "datasetName": "spend_ds",
+        "fields": [
+          {"name": "sum(spend)",       "expression": "SUM(`spend`)"},
+          {"name": "weekly(spend_at)", "expression": "DATE_TRUNC(\"WEEK\", `spend_at`)"}
+        ],
+        "disaggregated": false
+      }
+    }],
+    "spec": {
+      "version": 2,
+      "widgetType": "counter",
+      "encodings": {
+        "value":  {
+          "fieldName": "sum(spend)",
+          "displayName": "Total Spend",
+          "format": {"type": "number-currency", "currencyCode": "USD",
+                     "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 2}}
+        },
+        "period": {"fieldName": "weekly(spend_at)"}
+      },
+      "frame": {"showTitle": true, "title": "Total Spend"}
+    }
+  },
+  "position": {"x": 0, "y": 0, "width": 4, "height": 3}
+}
+```
+
+Dataset SQL for the example above:
+
+```sql
+-- One row per week — the counter re-aggregates rows into the headline value
+-- AND uses the temporal column to draw the sparkline.
+SELECT DATE_TRUNC('WEEK', spend_at) AS spend_at, SUM(spend) AS spend
+FROM spend_table
+GROUP BY 1
+```
+
+In this example the headline number is the **total spend across the trend window** (the counter's `SUM(spend)` re-aggregates the weekly rows), and the sparkline shows the **per-week values** that make up that total. If you instead want the headline to be the **latest week's spend** (not the cumulative total), expose it as its own column in the dataset SQL (e.g., `MAX_BY(spend, spend_at) AS latest_weekly_spend`) and point `value.fieldName` at that column, while keeping the period rows for the sparkline.
+
+> **`MEASURE()` works here too.** If the dataset defines measures via `dataset.columns[]` or is sourced from a metric view, use `{"expression": "MEASURE(\`Total Cases\`)"}` as the field expression — same pattern, no duplication. See SKILL.md "Dataset-level measures + MEASURE()".
+
+**Pre-aggregated dataset (1 row, no sparkline)** — use `disaggregated: true`. Fallback shape when the metric is truly time-invariant or the data is already collapsed and no temporal column is available:
+
 ```json
 {
   "widget": {
@@ -112,7 +155,12 @@ Format types: `number`, `number-currency`, `number-percent`
       "version": 2,
       "widgetType": "counter",
       "encodings": {
-        "value": {"fieldName": "revenue", "displayName": "Total Revenue"}
+        "value": {
+          "fieldName": "revenue",
+          "displayName": "Total Revenue",
+          "format": {"type": "number-currency", "currencyCode": "USD",
+                     "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 2}}
+        }
       },
       "frame": {"showTitle": true, "title": "Total Revenue"}
     }
@@ -121,33 +169,71 @@ Format types: `number`, `number-currency`, `number-percent`
 }
 ```
 
-**Multi-row dataset with aggregation (supports filters)** - use `disaggregated: false`:
-- Dataset returns multiple rows (e.g., grouped by a filter dimension)
-- Use `"disaggregated": false` and aggregation expression
-- **CRITICAL**: Field `name` MUST match `fieldName` exactly (e.g., `"sum(spend)"`)
+### Sparkline (period encoding)
+
+The `period` field must be a temporal expression also present in `query.fields` — typically a `DATE_TRUNC(...)` over the dataset's timestamp column. Granularity choices:
+
+| Use | Why |
+|---|---|
+| `DATE_TRUNC("DAY", col)` | Short window (1-4 weeks), high-frequency metric |
+| `DATE_TRUNC("WEEK", col)` | Standard default for ops metrics over a quarter |
+| `DATE_TRUNC("MONTH", col)` | Long window (>1 year) or low-volume metric |
+
+Match the sparkline grain to whatever the surrounding charts use — consistent grain across the page makes the dashboard easier to read.
+
+### Value formatting
+
+Format types: `number`, `number-plain`, `number-currency`, `number-percent`.
+
+| Field type | Format | Why |
+|---|---|---|
+| Money | `number-currency` + `currencyCode: "USD"` (or `EUR` etc.) + `abbreviation: "compact"` | "$1.2M" is readable, "1287394.55" isn't |
+| Percentage | `number-percent` (data must be 0-1) | Renders "12.5%" from 0.125 |
+| Large count | `number` + `abbreviation: "compact"` | Renders "1.5K" / "2.3M" |
+| Small count (under ~1K) | `number` (no abbreviation) or omit `format` | Raw integer is fine |
+| Value with custom unit (e.g., "8 hrs", "2 weeks") | `number-plain` + `formatTemplate: "{{ @formatted }} hrs"` | Append a unit cleanly without baking it into the dataset |
+
+Optional `format.suffix` (e.g., `"suffix": "h"`) appends a short unit directly after the number without a template — simpler than `formatTemplate` when you just need a single-char unit.
+
+> **Counters backed by `MEASURE()`**: omit `format` when `format.type` is plain `"number"` — the combination triggers an "automatically fixed" warning on the rendered widget. Use `number-plain`, `number-currency`, `number-percent`, or no format at all.
 
 ```json
-{
-  "widget": {
-    "name": "total-spend",
-    "queries": [{
-      "name": "main_query",
-      "query": {
-        "datasetName": "by_category",
-        "fields": [{"name": "sum(spend)", "expression": "SUM(`spend`)"}],
-        "disaggregated": false
-      }
-    }],
-    "spec": {
-      "version": 2,
-      "widgetType": "counter",
-      "encodings": {
-        "value": {"fieldName": "sum(spend)", "displayName": "Total Spend"}
-      },
-      "frame": {"showTitle": true, "title": "Total Spend"}
-    }
-  },
-  "position": {"x": 0, "y": 0, "width": 4, "height": 3}
+"value": {
+  "fieldName": "revenue",
+  "displayName": "Total Revenue",
+  "format": {
+    "type": "number-currency",
+    "currencyCode": "USD",
+    "abbreviation": "compact",
+    "decimalPlaces": {"type": "max", "places": 2}
+  }
+}
+```
+
+### Counter comparison (delta vs previous period)
+
+Show the current value AND the change vs a previous period. Use a second field in `query.fields` whose expression filters/aggregates the comparison value, and reference it via the `target` encoding:
+
+```json
+"fields": [
+  {"name": "current",  "expression": "SUM(CASE WHEN week=:this_week THEN amount END)"},
+  {"name": "previous", "expression": "SUM(CASE WHEN week=:last_week THEN amount END)"}
+],
+"encodings": {
+  "value":  {"fieldName": "current",  "displayName": "This Week"},
+  "target": {"fieldName": "previous", "displayName": "vs Last Week"}
+}
+```
+
+### Counter format template (custom prefix/suffix text)
+
+Wrap the value with surrounding text. Use `{{@}}` for the raw value and `{{@formatted}}` for the formatted one. Reference other dataset fields with `{{FieldName}}`.
+
+```json
+"value": {
+  "fieldName": "sum(revenue)",
+  "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact"},
+  "formatTemplate": "{{@formatted}} (in {{Region}})"
 }
 ```
 
@@ -192,6 +278,40 @@ Format types: `number`, `number-currency`, `number-percent`
 }
 ```
 
+### Column-level options
+
+Each column object supports format, conditional styling, links, and tooltips. Common patterns:
+
+```json
+{
+  "fieldName": "amount",
+  "displayName": "Amount",
+  "format": {"type": "number-currency", "currencyCode": "USD",
+             "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 2}},
+
+  // Conditional background color (heat-map style)
+  "style": {
+    "type": "basic",
+    "rules": [
+      {"condition": {"operand": {"type": "data-value", "value": "10000"}, "operator": ">="},
+       "backgroundColor": {"themeColorType": "visualizationColors", "position": 0}},
+      {"condition": {"operand": {"type": "data-value", "value": "5000"},  "operator": ">="},
+       "backgroundColor": {"themeColorType": "visualizationColors", "position": 6}}
+    ]
+  },
+
+  // Make the cell a clickable link. {{@}} is the cell value, {{Field}} pulls another column.
+  "link": {"templatedURL": "/sql/dashboardsv3/{{@}}"},
+
+  // Hover tooltip
+  "tooltip": {"templatedText": "Customer ID: {{customer_id}}"}
+}
+```
+
+Other display types: `"image"` (renders base64 strings as images), `"html"` (sanitized HTML), `"json"` (collapsible JSON tree), `"color-scale"` (continuous color gradient on numeric values without explicit thresholds).
+
+> Same `style.rules` and `link`/`tooltip` patterns work on **pivot** cells — see pivot in [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md).
+
 ---
 
 ## Line / Bar Charts
@@ -201,6 +321,10 @@ Format types: `number`, `number-currency`, `number-percent`
 - **`x` and `y` are both REQUIRED** (one categorical/temporal dimension + one quantitative measure). `color` is optional for splitting into series.
 - `scale.type`: `"temporal"` (dates), `"quantitative"` (numbers), `"categorical"` (strings)
 - Use `"disaggregated": true` with pre-aggregated dataset data
+
+> **Two recommended defaults for time-series charts:**
+> - **Mark meaningful events with an annotation.** A single `vertical-line` for a product launch, incident, holiday, or campaign turns a generic trend into a readable story. See [Annotations](#annotations-event-markers) below.
+> - **For trend lines on time-series data, consider `forecast-line` with `AI_FORECAST`** instead of a plain `line`. Projects future values + confidence bands and makes a dashboard noticeably more compelling for demos. See [forecast-line in 2-advanced-widget-specifications.md](2-advanced-widget-specifications.md#forecast-line-with-ai_forecast).
 
 **Multiple series - two approaches:**
 
@@ -227,6 +351,7 @@ Format types: `number`, `number-currency`, `number-percent`
 |------|---------------|
 | Stacked (default) | No `mark` field |
 | Grouped | `"mark": {"layout": "group"}` |
+| 100% stacked | `"mark": {"layout": "stack-100"}` |
 
 ### Horizontal Bar Chart
 
@@ -238,10 +363,66 @@ Swap `x` and `y` - put quantitative on `x`, categorical/temporal on `y`:
 }
 ```
 
-### Color Scale
+### Categorical sort with a custom order
 
-> **CRITICAL**: For bar/line/pie, color scale ONLY supports `type` and `sort`.
-> Do NOT use `scheme`, `colorRamp`, or `mappings` (only for choropleth-map).
+When the dimension has natural ordering that ASC/DESC won't capture (priority levels, weekdays, named tiers), pin the order explicitly:
+
+```json
+"x": {
+  "fieldName": "channel",
+  "scale": {
+    "type": "categorical",
+    "sort": {"by": "custom-order", "orderedValues": ["Chat", "Email", "In-App", "Phone"]}
+  }
+}
+```
+
+Other `sort.by` values: `"alphabetical"`, `"value"` (sort by the y measure), `"cell"` / `"cell-reversed"` (pivot only).
+
+### Color Scale + per-value mappings
+
+Default behaviour: theme colors are assigned to categories in order. To pin specific values (e.g., "Critical" must always be red), use `mappings`:
+
+```json
+"color": {
+  "fieldName": "Priority Level",
+  "scale": {
+    "type": "categorical",
+    "mappings": [
+      {"value": "1-Critical", "color": "#FF7E5C"},
+      {"value": "4-Low",      "color": "#99DDB4"}
+    ]
+  }
+}
+```
+
+Inside `mappings[].color`, use a **bare hex string** (`"#FF0000"`) — that's the form chart widgets honor. Palette-position references (`themeColorType` / `position`) and the wrapped `{"hex": "..."}` object form are silently dropped on `mappings[].color`, so semantic pins must always be bare hex.
+
+> For continuous color ramps on quantitative encodings, use `colorRamp` — see Symbol Map below, or [Heatmap](2-advanced-widget-specifications.md#heatmap) and [Choropleth Map](2-advanced-widget-specifications.md#choropleth-map) in advanced specs.
+
+### Annotations (event markers)
+
+Mark an event on a time-series chart — release, holiday, incident — with a vertical line. Works on `line`, `area`, `bar`, `combo`, and `forecast-line`.
+
+```json
+"spec": {
+  "version": 3,
+  "widgetType": "line",
+  "encodings": { /* ... x, y, color ... */ },
+  "annotations": [
+    {
+      "type": "vertical-line",
+      "encodings": {
+        "x":     {"dataValue": "2024-11-28T12:00:00.000", "dataType": "DATETIME"},
+        "label": {"value": "Thanksgiving"},
+        "color": {"value": {"themeColorType": "visualizationColors", "position": 3}}
+      }
+    }
+  ]
+}
+```
+
+Multiple annotations are allowed — add more objects to the array. For non-datetime axes, use `"dataType": "STRING"` or `"NUMBER"` and set `dataValue` accordingly.
 
 ---
 
@@ -249,9 +430,9 @@ Swap `x` and `y` - put quantitative on `x`, categorical/temporal on `y`:
 
 - `version`: **3**
 - `widgetType`: "pie"
-- `angle`: quantitative field
-- `color`: categorical dimension
-- **Limit to 3-8 categories for readability**
+- **`angle` is REQUIRED** — quantitative field (the slice size). Omitting it renders all slices the same size, which is meaningless: the pie no longer encodes any quantity.
+- **`color` is REQUIRED** — categorical dimension (the slice grouping).
+- **Limit to 3-8 categories for readability.**
 
 ```json
 "spec": {
@@ -259,10 +440,52 @@ Swap `x` and `y` - put quantitative on `x`, categorical/temporal on `y`:
   "widgetType": "pie",
   "encodings": {
     "angle": {"fieldName": "revenue", "scale": {"type": "quantitative"}},
-    "color": {"fieldName": "category", "scale": {"type": "categorical"}}
+    "color": {"fieldName": "category", "scale": {"type": "categorical"}},
+    "label": {"show": true}
   }
 }
 ```
+
+---
+
+## Symbol Map (bubble map)
+
+Lat/lon scatter plot on a map. Use for **point data** (customer locations, sensor readings); use `choropleth-map` for **regions** (countries, states) colored by aggregate.
+
+> **Strongly preferred whenever the data has a geographic dimension.** A bubble map is one of the highest-signal visuals in a dashboard — "where is the action" reads at a glance and grabs attention better than a bar chart of the same data. If the dataset has lat/lon (or a country/state column → `choropleth-map`), include a map widget.
+
+- `version`: **2**
+- `widgetType`: "symbol-map"
+- Dataset must include latitude and longitude columns (or a `GEOMETRY`/`GEOGRAPHY` column).
+
+```json
+"spec": {
+  "version": 2,
+  "widgetType": "symbol-map",
+  "encodings": {
+    "coordinates": {
+      "latitude":  {"fieldName": "customer_latitude"},
+      "longitude": {"fieldName": "customer_longitude"}
+    },
+    "color": {
+      "fieldName": "sum(satisfaction_score)",
+      "scale": {"type": "quantitative",
+                "colorRamp": {"mode": "custom-sequential", "colors": {"start": "#FF7E5C", "end": "#99DDB4"}}},
+      "legend": {"hide": true}
+    },
+    "size": {"fieldName": "count(*)", "scale": {"type": "quantitative"}}
+  },
+  "mark": {"opacity": 0.7},
+  "frame": {"showTitle": true, "title": "Customer Locations"}
+}
+```
+
+**`colorRamp` modes:**
+
+- `{"mode": "custom-sequential", "colors": {"start": "#FF7E5C", "end": "#99DDB4"}}` — your own gradient between two hex stops. **Prefer this for themed dashboards** so the map ties into the palette; if directional, `start` = bad color, `end` = good color.
+- `{"mode": "scheme", "scheme": "<name>"}` — prebuilt ramps. Known names: `magma`, `viridis`, `plasma`, `inferno`, `YlGnBu`, `RdYlBu`, `blues`, `redyellowgreen`. Avoid `redyellowgreen` — clashes with most modern themes.
+
+For categorical color (e.g., colored by region), use `scale.type: "categorical"` with the same `mappings` syntax as bar charts. `mark.opacity` (0–1) controls point transparency — useful when many points cluster.
 
 ---
 
@@ -291,7 +514,7 @@ Add `format` to any encoding to display values appropriately:
 
 **Options:**
 - `abbreviation`: `"compact"` (K/M/B) or omit for full numbers
-- `decimalPlaces`: `{"type": "max", "places": N}` or `{"type": "fixed", "places": N}`
+- `decimalPlaces`: `{"type": "max", "places": N}` for "up to N decimals, trailing zeros suppressed" ($1.2M / $1.25M — casual headline), or `{"type": "exact", "places": N}` for "always exactly N decimals" ($1.20M — polished/financial)
 
 ---
 
@@ -313,7 +536,7 @@ Use `:param` syntax in SQL for dynamic filtering. Parameters can be bound to fil
 
 **Parameter types:**
 - Single value: `"dataType": "INTEGER"` / `"DECIMAL"` / `"STRING"`
-- Multi-select: Add `"complexType": "MULTI"`
+- Multi-select: `"complexType": "MULTI"` — binds as a SQL `ARRAY`, filter with `array_contains(:p, col)`, not `col IN (:p)`. Full pattern in [3-filters.md](3-filters.md#multi-select-parameters-multi).
 - Range: `"dataType": "DATE", "complexType": "RANGE"` - use `:param.min` / `:param.max`
 
 ---
