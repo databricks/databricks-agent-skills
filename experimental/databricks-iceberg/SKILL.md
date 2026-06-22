@@ -33,7 +33,7 @@ Databricks provides multiple ways to work with Apache Iceberg: native managed Ic
 | **External Iceberg Reads (Uniform)** | Delta table that auto-generates Iceberg metadata — read as Iceberg externally, write as Delta internally |
 | **Compatibility Mode** | UniForm variant for streaming tables and materialized views in SDP pipelines |
 | **Iceberg REST Catalog (IRC)** | Unity Catalog's built-in REST endpoint implementing the Iceberg REST Catalog spec — lets external engines (Spark, PyIceberg, Snowflake) access UC-managed Iceberg data |
-| **Iceberg v3** | Next-gen format (Beta, DBR 17.3+) — deletion vectors, VARIANT type, row lineage |
+| **Iceberg v3** | Next-gen format (Beta, DBR 18.0+) — deletion vectors, VARIANT type, row lineage |
 
 ---
 
@@ -78,7 +78,7 @@ AS SELECT * FROM raw_events;
 ALTER TABLE my_catalog.my_schema.customers
 SET TBLPROPERTIES (
   'delta.columnMapping.mode' = 'name',
-  'delta.enableIcebergCompatV2' = 'true',
+  'delta.enableIcebergCompatV3' = 'true',
   'delta.universalFormat.enabledFormats' = 'iceberg'
 );
 ```
@@ -127,7 +127,7 @@ SET TBLPROPERTIES (
 | **UniForm async delay** | Iceberg metadata generation is asynchronous. After a write, there may be a brief delay before external engines see the latest data. Check status with `DESCRIBE EXTENDED table_name`. |
 | **Compression codec change** | Managed Iceberg tables use `zstd` compression by default (not `snappy`). Older Iceberg readers that don't support zstd will fail. Verify reader compatibility or set `write.parquet.compression-codec` to `snappy`. |
 | **Snowflake 1000-commit limit** | Snowflake's Iceberg catalog integration can only see the last 1000 Iceberg commits. High-frequency writers must compact metadata or Snowflake will lose visibility of older data. |
-| **Deletion vectors with UniForm** | UniForm requires deletion vectors to be disabled (`delta.enableDeletionVectors = false`). If your table has deletion vectors enabled, disable them before enabling UniForm. |
+| **Deletion vectors with UniForm** | Use Iceberg v3 (`delta.enableIcebergCompatV3 = true`) when deletion vectors must stay enabled; Iceberg v2 UniForm requires deletion vectors to be disabled first. |
 | **No shallow clone for Iceberg** | `SHALLOW CLONE` is not supported for Iceberg tables. Use `DEEP CLONE` or `CREATE TABLE ... AS SELECT` instead. |
 | **Version mismatch with external engines** | Ensure external engines use an Iceberg library version compatible with the format version of your tables. Iceberg v3 tables require Iceberg library 1.9.0+. |
 
@@ -148,5 +148,5 @@ SET TBLPROPERTIES (
 - **[UniForm](https://docs.databricks.com/delta/uniform.html)** — Delta Universal Format
 - **[Iceberg REST Catalog](https://docs.databricks.com/external-access/iceberg)** — IRC endpoint and external engine access
 - **[Compatibility Mode](https://docs.databricks.com/external-access/compatibility-mode)** — UniForm for streaming tables and MVs
-- **[Iceberg v3](https://docs.databricks.com/iceberg/iceberg-v3)** — next-gen format features (Beta)
+- **[Iceberg v3](https://docs.databricks.com/iceberg/iceberg-v3)** — next-gen format features (Beta, DBR 18.0+)
 - **[Foreign Tables](https://docs.databricks.com/query-data/foreign-tables.html)** — reading external catalog data
