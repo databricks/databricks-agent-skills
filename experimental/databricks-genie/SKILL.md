@@ -249,26 +249,26 @@ Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces. See
 - [space-quality.md](references/space-quality.md) - Tool-agnostic quick reference: sizing, build & validation loop, benchmarks, regression, setup checklist, anti-patterns
 - [conversation.md](references/conversation.md) - Asking questions via the Conversation API (CLI-default, `ask_genie` where available)
 
-## Genie Code Agent Skills (in-product design & tuning)
+## Lifecycle Subskills (design & tuning)
 
-This skill is the **programmatic** path — it drives Genie Spaces from outside Databricks via the `databricks genie` CLI (and the `manage_genie` / `ask_genie` MCP tools where available): create, query, export, import, migrate.
+This skill is the **orchestration hub** and the canonical reference for the `databricks genie` CLI (and the `manage_genie` / `ask_genie` MCP tools where available): create, query, export, import, migrate.
 
-A companion suite of **Genie Code Agent** skills runs **inside Databricks Genie Code** and drives the native UI (Monitor tab, Query History Insights, native benchmark execution). They are read-only / plan-first with explicit approval gates before any change. Reach for them when the user is working interactively in the product rather than scripting from outside:
+A companion suite of **dual-host** lifecycle skills covers design and tuning. Each runs **either** inside Databricks Genie Code (driving the native UI — Monitor tab, Query History Insights, native benchmark execution) **or** from an external agent via the CLI/MCP; each opens with an **Execution Context** + **Mechanism Map** that resolves which path applies. They are read-only / plan-first with explicit approval gates before any change:
 
 | Skill | Use when |
 |-------|----------|
 | [create-genie-space](create-genie-space/SKILL.md) | Drafting/bootstrapping a focused Space from UC tables, views, and Metric Views (design-time) |
-| [diagnose-genie-space](diagnose-genie-space/SKILL.md) | Plan-only root-cause analysis of wrong SQL/answers, weak reports, or Monitor-tab feedback (no edits) |
+| [diagnose-genie-space](diagnose-genie-space/SKILL.md) | Plan-only root-cause analysis of wrong SQL/answers, weak reports, or feedback signals (no edits) |
 | [optimize-genie-space](optimize-genie-space/SKILL.md) | Approved iterative benchmark-driven quality tuning (one focused pass at a time) |
-| [optimize-genie-query](optimize-genie-query/SKILL.md) | Benchmark-query performance/cost triage via Query History Insights & Query Profile |
+| [optimize-genie-query](optimize-genie-query/SKILL.md) | Benchmark-query performance/cost triage via Query History metrics & Query Profile |
 
-Typical in-product flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). For the condensed, tool-agnostic version of the build/validation guidance these skills implement, see [space-quality.md](references/space-quality.md).
+Typical flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). For the condensed, tool-agnostic version of the build/validation guidance these skills implement, see [space-quality.md](references/space-quality.md).
 
 ## Genie Space Lifecycle (design → diagnose → optimize)
 
-The **methodology** in the Genie Code Agent suite is portable to this programmatic path — only the *mechanism* differs (CLI / MCP here vs the in-product UI there). Use this skill as the orchestration hub: for each phase, follow the canonical methodology and execute it with the CLI below (or the MCP equivalent where available); when the user is working inside Databricks Genie Code, route to the subskill instead.
+The lifecycle methodology is **host-portable** — only the *mechanism* differs (CLI / MCP vs the in-product UI). Use this skill as the orchestration hub: for each phase, follow the canonical methodology and execute it with the CLI below (or the MCP equivalent where available); the matching subskill carries the same methodology with its own Execution Context + Mechanism Map for either host.
 
-| Phase | Methodology (canonical source) | Execute via CLI (default) | MCP equivalent (if available) | In-product subskill |
+| Phase | Methodology (canonical source) | Execute via CLI (default) | MCP equivalent (if available) | Lifecycle subskill |
 |-------|-------------------------------|---------------------------|-------------------------------|---------------------|
 | **Design** | [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) — requirements, readiness, structured-context-first order, metric-view recommendation | `databricks experimental aitools tools discover-schema` / `... query` (read-only profiling) | `get_table_stats_and_schema`, `execute_sql` | `create-genie-space` |
 | **Create / update** | [space-quality.md](references/space-quality.md) — sizing, setup checklist; [spaces.md](references/spaces.md) | `databricks genie create-space` / `update-space` | `manage_genie(create_or_update)` | `create-genie-space` |
@@ -277,12 +277,13 @@ The **methodology** in the Genie Code Agent suite is portable to this programmat
 | **Optimize (quality)** | [optimize-genie-space → optimization-guide.md](optimize-genie-space/references/optimization-guide.md) — benchmark integrity, repair/pruning, baseline→candidate, regression | edit config via `update-space`; re-run `start-conversation` eval loop | `manage_genie(create_or_update)`; `ask_genie` eval loop | `optimize-genie-space` |
 | **Optimize (query)** | [optimize-genie-query → query-optimization-guide.md](optimize-genie-query/references/query-optimization-guide.md) — reduce work before adding compute | `EXPLAIN` via `aitools tools query`; read `system.query.history`, `system.access.audit` | `execute_sql` + `EXPLAIN`, `system.query.history` | `optimize-genie-query` |
 
-**Mechanism gaps (no CLI/MCP equivalent — in-product only):**
+**Mechanism notes (CLI substitutes vs in-product-only surfaces):**
 
-- **Native benchmark execution & scoring.** Programmatically, approximate it with a fixed-question-set loop (`start-conversation` / `ask_genie`) and compare SQL/results yourself; you don't get the native per-question eval UI.
-- **Monitor-tab feedback** (thumbs up/down trends, review requests) and **Query History Insights / Query Profile.** Substitute `system.query.history` / `system.access.audit` reads where possible, and state the limitation.
+- **Native benchmark execution & scoring.** The **Beta** `databricks genie genie-create-eval-run` / `genie-get-eval-run` / `genie-list-eval-runs` / `genie-list-eval-results` / `genie-get-eval-result-details` commands run and read native benchmark evaluations from the CLI (not wrapped by `manage_genie`/`ask_genie`). If those Beta commands are unavailable, fall back to a fixed-question-set loop (`start-conversation` / `ask_genie`) and compare SQL/results yourself.
+- **Query History Insights / Query Profile.** Most evidence is reachable via `GET /api/2.0/sql/history/queries` (`databricks query-history list`) with `include_metrics` (spill, pruning, scan bytes, cache, Photon time, queue time) — filter client-side on `query_source.genie_space_id`. Only the pre-computed **insight labels** and one-click **`/analyze`·`/optimize`** rewrite are UI-only; derive/validate those yourself.
+- **Monitor-tab feedback** (thumbs up/down trends, weekly digests) is **UI-only**. Substitute per-conversation reads (`list-conversations` / `list-conversation-messages` / `list-conversation-comments`) and `system.access.audit` event reads, and state that trend/digest aggregates are unavailable.
 
-When a phase depends on one of these gaps, say so explicitly and either approximate via the substitute above or recommend doing that phase inside Databricks Genie Code with the matching subskill.
+Each subskill opens with an **"Execution Context"** section (Genie Code native UI vs CLI/MCP) and a **"Mechanism Map"** table mapping its workflow steps to the CLI/MCP substitutes. When a phase depends on a UI-only surface, say so explicitly and either substitute as above or recommend doing that phase inside Databricks Genie Code with the matching subskill.
 
 ## Prerequisites
 

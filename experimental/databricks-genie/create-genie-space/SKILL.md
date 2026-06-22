@@ -1,11 +1,20 @@
 ---
 name: create-genie-space
-description: "Create or refine an initial Databricks Genie Space design from Unity Catalog tables, views, and Metric Views in Databricks Genie Code Agent mode. Use inside Databricks when users ask Genie Code to build, bootstrap, or draft a focused Space, inspect workspace data context, choose data sources, design structured context, examples, sample questions, Chat or Agent benchmarks, or prepare safe proposed Space changes without source data mutation."
+description: "Create or refine an initial Databricks Genie Space design from Unity Catalog tables, views, and Metric Views. Works inside Databricks Genie Code (native UI) or from an external agent via the Databricks CLI/MCP. Use when users ask to build, bootstrap, or draft a focused Space, inspect workspace data context, choose data sources, design structured context, examples, sample questions, Chat or Agent benchmarks, or prepare safe proposed Space changes without source data mutation."
 ---
 
-# Create Genie Space For Genie Code
+# Create Genie Space
 
-Create a focused Genie Space using Databricks-native context. Rely on Genie Code Agent mode to inspect Unity Catalog metadata, open workspace assets, run approved notebook or SQL editor steps, and read returned output.
+Create a focused Genie Space using Databricks-native context: inspect Unity Catalog metadata, profile candidate data sources, design the Space surfaces, and propose changes for approval — without mutating source data.
+
+## Execution Context
+
+This skill runs in either of two contexts. **The workflow below is identical; only the *mechanism* differs.**
+
+- **(a) Inside Databricks Genie Code (native UI)** — resolve `@`-assets, browse Unity Catalog, run approved notebook/SQL-editor steps, and review the proposed Space in the native editor.
+- **(b) Outside Databricks via CLI/MCP** (e.g. Claude Code) — use the Databricks CLI as the default, MCP where available. See [Mechanism Map](#mechanism-map-cli--mcp) below for the per-step command mapping.
+
+**Prerequisites (context b):** authenticated `databricks` CLI (profile or `DATABRICKS_HOST`/token), a running Pro or Serverless SQL warehouse with `CAN USE`, and `SELECT` on the source tables.
 
 ## Hard Rules
 
@@ -56,8 +65,21 @@ Provide:
 - The read-only validation performed and any limitations.
 - Any Metric View recommendation made for raw-table sources and the user's decision.
 
+## Mechanism Map (CLI / MCP)
+
+Per-step mapping of the workflow's native (Genie Code) actions to their CLI/MCP equivalents for context (b). The native surfaces are primary inside Databricks; the CLI is the default outside, with MCP as an optional convenience where the server is available.
+
+| Step | Native (Genie Code) | CLI substitute (default outside) | MCP substitute (if available) |
+|------|---------------------|----------------------------------|-------------------------------|
+| Profile a source (Workflow 4) | `@`-asset + notebook/SQL editor | `databricks experimental aitools tools discover-schema catalog.schema.table` (one call → columns, types, sample rows, null counts, row count); bounded `information_schema` via `databricks experimental aitools tools query` | `get_table_stats_and_schema`, `execute_sql` |
+| Inspect existing Metric View (Step 5) | native editor | `databricks experimental aitools tools query "DESCRIBE EXTENDED catalog.schema.mv"` | `manage_metric_views(action="describe")` |
+| Propose / apply the Space (Step 9) | native Space editor, user approves in UI | build `serialized_space` JSON and run `databricks genie create-space` / `update-space` — see parent [databricks-genie SKILL.md](../SKILL.md) for the verified field schema and stringify pattern | `manage_genie(action="create_or_update")` |
+| Validate the new Space | ask questions in the Space UI | `databricks genie start-conversation` + `get-message` + `get-message-attachment-query-result` | `ask_genie` |
+
+The "approve before live creation/update" rule still applies: outside Databricks, present the JSON config for user review and only run `create-space`/`update-space` after approval.
+
 ## Related Skills
 
 - **`databricks-metric-views`** — design rules for AI-ready Metric Views (`genie-integration.md`) and the `MEASURE()` query rules Genie must follow (`query-patterns.md`). Use existing Metric Views as governed sources here; when sources are raw tables for reusable KPIs, recommend creating a Metric View with this skill and confirm with the user first.
-- **`databricks-genie`** — the programmatic / MCP companion: create, query, export, import, and migrate Spaces from outside Databricks when you are not in Genie Code Agent mode.
+- **`databricks-genie`** — the parent orchestration hub for the full Space lifecycle (create, query, export, import, migrate) and the verified `serialized_space` field schema. This subskill provides the *create* methodology; route there for the end-to-end CLI/MCP command surface.
 - **`diagnose-genie-space`** / **`optimize-genie-space`** — diagnose and tune the Space after creation.

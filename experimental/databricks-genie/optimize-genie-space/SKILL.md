@@ -1,11 +1,20 @@
 ---
 name: optimize-genie-space
-description: "Optimize Databricks Genie Space quality through approved iterative tuning in Databricks Genie Code Agent mode. Use inside Databricks when users ask to make reviewed Space edits, repair or prune benchmarks, launch native Chat-mode or Agent-mode benchmark evaluations, compare baseline-to-candidate results, analyze regressions, and run one focused configuration pass at a time with bounded read-only data inspection."
+description: "Optimize Databricks Genie Space quality through approved iterative tuning. Works inside Databricks Genie Code (native UI) or from an external agent via the Databricks CLI/MCP. Use to make reviewed Space edits, repair or prune benchmarks, launch native Chat-mode or Agent-mode benchmark evaluations, compare baseline-to-candidate results, analyze regressions, and run one focused configuration pass at a time with bounded read-only data inspection."
 ---
 
-# Optimize Genie Space For Genie Code
+# Optimize Genie Space
 
-Improve a Genie Space iteratively inside Databricks. Use Genie Code Agent mode to inspect Space context, run approved read-only SQL, make reviewed Space edits, launch native benchmark evaluation, wait for completed output, and compare behavior across tuning passes. Distinguish Genie Code Agent mode, where this skill runs, from Genie benchmark Agent mode, where benchmark execution judges the whole Genie response.
+Improve a Genie Space iteratively: inspect Space context, make reviewed edits, launch benchmark evaluation, wait for completed output, and compare behavior across tuning passes — one focused pass at a time. Distinguish the **agent host** running this skill from Genie benchmark **Agent mode**, where benchmark execution judges the whole Genie response.
+
+## Execution Context
+
+This skill runs in either of two contexts. **The iterative tuning workflow below is identical; only the *mechanism* differs.**
+
+- **(a) Inside Databricks Genie Code (native UI)** — inspect Space context, make reviewed edits in the native editor, and launch native benchmark evaluation from the UI.
+- **(b) Outside Databricks via CLI/MCP** (e.g. Claude Code) — use the Databricks CLI as the default. Benchmark evaluation runs via the **Beta** `genie-*-eval-run` commands (CLI-only; not wrapped by `manage_genie`/`ask_genie`). See [Mechanism Map](#mechanism-map-cli--mcp).
+
+**Prerequisites (context b):** authenticated `databricks` CLI, a running SQL warehouse with `CAN USE`, edit access to the Space, and benchmark questions already defined in the Space.
 
 ## Hard Rules
 
@@ -108,10 +117,35 @@ Provide a concise optimization summary:
 - Next recommended pass:
 ```
 
+## Mechanism Map (CLI / MCP)
+
+Per-step mapping for context (b). Inside Databricks you use native benchmark execution and the per-question scoring UI; outside, you keep the same one-pass-at-a-time methodology and approval gates but drive evaluation with the **Beta** `genie-*-eval-run` CLI commands.
+
+| Step | Native (Genie Code) | CLI substitute (default outside) |
+|------|---------------------|----------------------------------|
+| Launch a benchmark run (Steps 5, 13–14) | native "Run benchmark" button | `databricks genie genie-create-eval-run SPACE_ID --json '{...}'` *(Beta)*. **Scope it:** `{"benchmark_question_ids":["<id>", ...]}` runs only those questions. ⚠️ An **empty body `{}` runs ALL questions**, and a **misspelled field also runs ALL questions** — the CLI only prints `Warning: unknown field` and then falls through to the all-questions default (it does **not** abort). Always double-check the field name is exactly `benchmark_question_ids` before launching, or you will silently kick off a full-benchmark run that consumes warehouse compute. |
+| Wait for / fetch run status | eval UI | `databricks genie genie-get-eval-run SPACE_ID EVAL_RUN_ID` — poll until complete (eval is asynchronous; do not compare until done) |
+| List prior runs (baseline) | eval history | `databricks genie genie-list-eval-runs SPACE_ID` |
+| Per-question results (Step 15 compare) | per-question scoring grid | `databricks genie genie-list-eval-results SPACE_ID EVAL_RUN_ID`, then `genie-get-eval-result-details SPACE_ID EVAL_RUN_ID RESULT_ID` |
+| Apply a Space edit (Step 12) | native editor | `databricks genie update-space` with the edited config (see parent [databricks-genie SKILL.md](../SKILL.md)) — present for approval first |
+| UC optimization-history persistence (Steps 6, 11, 16) | notebook/SQL | `databricks experimental aitools tools query` to create/append the approved history tables in `references/optimization-guide.md` |
+
+**Staged evaluation gates via scoping.** Use `benchmark_question_ids` to keep the gates cheap and the regression signal clean:
+
+- **Gate 1 (affected slice):** `genie-create-eval-run` with `benchmark_question_ids` = the failing question IDs only.
+- **Gate 2 (regression slice):** a run scoped to related previously-passing question IDs.
+- **Gate 3 (full benchmark):** empty body `{}` to run everything, only after Gates 1–2 look acceptable.
+
+Poll each run with `genie-get-eval-run` until `eval_run_status` is `DONE` (it advances `num_done`/`num_questions` while `RUNNING`), then compare per-question `assessment` / `assessment_reasons` from `genie-list-eval-results` + `genie-get-eval-result-details`.
+
+> The Beta `genie-*-eval-run` commands may change without notice. Treat absent/changed eval commands as a limitation and fall back to a fixed-question-set loop (`start-conversation` / `ask_genie`) with manual SQL/result comparison, stating that you are approximating native scoring.
+
+All hard rules still hold: get explicit approval before applying edits, changing benchmark definitions, or launching eval runs; make one focused pass; never mutate source data.
+
 ## Related Skills
 
 - **`diagnose-genie-space`** — plan-only root-cause analysis; precede a tuning pass with it when the failure cause is unclear.
 - **`optimize-genie-query`** — for query performance/cost issues rather than answer quality.
 - **`create-genie-space`** — initial Space design and bootstrap.
 - **`databricks-metric-views`** — `genie-integration.md` (Metric View design) and `query-patterns.md` (`MEASURE()` query rules). Recommend upstream semantic-model fixes with this skill instead of working around gaps with broad text instructions.
-- **`databricks-genie`** — the programmatic / MCP companion (create, query, export, import, migrate) for work outside Genie Code Agent mode.
+- **`databricks-genie`** — the parent orchestration hub for the full Space lifecycle (create, query, export, import, migrate) and the verified `serialized_space` field schema; route there for the end-to-end CLI/MCP command surface.

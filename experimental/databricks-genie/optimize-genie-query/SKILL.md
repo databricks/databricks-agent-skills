@@ -1,11 +1,20 @@
 ---
 name: optimize-genie-query
-description: "Run approved benchmark-driven Databricks Genie Space query performance triage in Genie Code Agent mode using Query History Insights, Query Profile, table layout, and SQL warehouse evidence. Use inside Databricks when users ask to investigate slow, expensive, queued, spilling, full-scan, poorly pruned, high-latency, high-cost, or warehouse-constrained Genie Space benchmark queries while preserving answer correctness."
+description: "Run approved benchmark-driven Databricks Genie Space query performance triage using Query History, Query Profile, table layout, and SQL warehouse evidence. Works inside Databricks Genie Code (native UI) or from an external agent via the Databricks CLI/REST. Use to investigate slow, expensive, queued, spilling, full-scan, poorly pruned, high-latency, high-cost, or warehouse-constrained Genie Space benchmark queries while preserving answer correctness."
 ---
 
-# Optimize Genie Query For Genie Code
+# Optimize Genie Query
 
-Analyze Genie Space benchmark-generated SQL from a performance and cost lens. In Genie Code Agent mode, start from benchmark questions, launch native benchmark execution only after explicit user approval, then use Query History Insights as the primary triage signal when available. Validate every insight against Query Profile, generated SQL, table layout, SQL warehouse evidence, Unity Catalog metadata, system tables, and bounded read-only SQL output as needed.
+Analyze Genie Space benchmark-generated SQL from a performance and cost lens. Start from benchmark questions, launch native benchmark execution only after explicit user approval, then triage query performance evidence. Validate every signal against Query Profile / query metrics, generated SQL, table layout, SQL warehouse evidence, Unity Catalog metadata, system tables, and bounded read-only SQL output as needed.
+
+## Execution Context
+
+This skill runs in either of two contexts. **The diagnostic workflow below is identical; only the *mechanism* differs.**
+
+- **(a) Inside Databricks Genie Code (native UI)** — use **Query History Insights** (Private Preview) as the primary triage signal and the `/analyze`·`/optimize` entry points, validated against Query Profile.
+- **(b) Outside Databricks via CLI/REST** (e.g. Claude Code) — pull query rows and Query-Profile-grade metrics from the **Query History REST API** (`databricks query-history list --include-metrics`). Two surfaces are UI-only: pre-computed **insight labels** (derive them yourself via the Issue Taxonomy) and the **`/analyze`·`/optimize` rewrite** (generate + `EXPLAIN`-validate yourself). See [Mechanism Map](#mechanism-map-cli--mcp).
+
+**Prerequisites (context b):** authenticated `databricks` CLI, `SELECT` on `system.query.history` / `system.compute.*` for the system-table templates, and access to the warehouse that ran the queries.
 
 ## Hard Rules
 
@@ -135,8 +144,36 @@ Use this shape:
 
 End with the next action: user confirmation needed for any mutating follow-up, a handoff to `diagnose-genie-space` or `optimize-genie-space` for semantic quality issues, or a recommendation-only summary when no change is justified.
 
+## Mechanism Map (CLI / MCP)
+
+Per-step mapping for context (b). Most evidence is reachable through the **Query History REST API** (`GET /api/2.0/sql/history/queries`, wrapped by `databricks query-history list`), which with `--include-metrics` returns Query-Profile-grade metrics. The two UI-only surfaces (insight labels, `/analyze`·`/optimize` rewrite) are noted in the [Execution Context](#execution-context) above and must be flagged as limitations in the report.
+
+| Evidence | Native (Genie Code) | CLI substitute (default outside) |
+|----------|---------------------|----------------------------------|
+| Genie-space query rows + metrics | Query History UI, filtered to the Space | `databricks api get /api/2.0/sql/history/queries --json '{"max_results":50,"include_metrics":true}'`, then filter client-side on `.query_source.genie_space_id` (see command below). The `metrics{}` block carries `spill_to_disk_bytes`, `pruned_files_count`, `read_files_count`, `read_bytes`, `read_cache_bytes`, `result_from_cache`, `photon_total_time_ms`, `compilation_time_ms`, `queue_end_time_ms`, `rows_read_count` |
+| Richer history / trends | Query History UI | `system.query.history` read-only templates in `references/query-optimization-guide.md` (via `databricks experimental aitools tools query`) |
+| Warehouse / layout evidence | UI | `system.compute.warehouse_events`, `system.compute.warehouses`, `DESCRIBE DETAIL`, `DESCRIBE TABLE EXTENDED` templates in the reference |
+| Launch benchmark run | native eval UI | `databricks genie genie-create-eval-run` *(Beta)* — see `optimize-genie-space` for the eval-run command set |
+
+Verified filter-by-Space command (client-side, since `filter_by` does not accept `query_source` over the GET-body path):
+
+```bash
+databricks api get /api/2.0/sql/history/queries \
+  --json '{"max_results":50,"include_metrics":true}' \
+| jq '[.res[] | select(.query_source.genie_space_id == "<genie-space-id>")]
+       | sort_by(-.duration)
+       | .[] | {query_id, status, duration,
+                spill: .metrics.spill_to_disk_bytes,
+                pruned_files: .metrics.pruned_files_count,
+                read_bytes: .metrics.read_bytes,
+                cache: .metrics.result_from_cache,
+                text: .query_text[0:200]}'
+```
+
+This skill stays **diagnostic / recommendation-first** regardless of mechanism: no `ALTER`/`OPTIMIZE`/`ANALYZE`, no Space/benchmark/warehouse edits — those remain user-approved follow-ups.
+
 ## Related Skills
 
 - **`diagnose-genie-space`** / **`optimize-genie-space`** — hand off here when the generated SQL is semantically wrong rather than just slow.
 - **`databricks-metric-views`** — `query-patterns.md` for correct `MEASURE()` query shapes, and `genie-integration.md` for Metric View design choices (e.g. base views) that affect query cost.
-- **`databricks-genie`** — the programmatic / MCP companion (create, query, export, import, migrate) for work outside Genie Code Agent mode.
+- **`databricks-genie`** — the parent orchestration hub for the full Space lifecycle (create, query, export, import, migrate) and the verified `serialized_space` field schema; route there for the end-to-end CLI/MCP command surface.
