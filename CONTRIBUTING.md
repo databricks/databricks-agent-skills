@@ -156,36 +156,59 @@ Examples in skills and references must follow secure defaults:
 
 ## Releasing
 
-Releases are cut by the **Release** workflow (`.github/workflows/release.yml`),
-triggered manually (`workflow_dispatch`) with a `vX.Y.Z` tag. The workflow:
+Publishing is **one-way**: the **Release** workflow
+(`.github/workflows/release.yml`) only *reads* the version already committed on
+`main` and publishes it. It never bumps the version or pushes a commit to
+`main`; the only writes it makes are the release tag and the GitHub release.
 
-1. Runs `scripts/bump_version.py <version>`, which sets the `version` field in
-   `plugin.meta.json` (the single source) and regenerates every target's
-   `plugin.json` + each `marketplace.json` catalog, `manifest.json`, and the
-   `plugins/databricks/` bundle from it, so all four targets carry the same
-   version.
-2. Commits the bump (`plugin.meta.json` + the regenerated catalogs, manifest, and
-   the `plugins/databricks/` bundle) to `main`.
-3. Creates an annotated `vX.Y.Z` tag (`git tag -a`) at that commit, pushes it,
-   then creates the GitHub release (`gh release create --verify-tag`).
+### Cutting a release
 
-The catalogs currently track `main` (`ref: main`), so the bundle the catalogs
-serve is whatever is committed on `main` — releases bump the version but do not
-change which ref installs follow. A planned follow-up flips
-`marketplace.source.ref_template` to `v{version}`; once it lands, each release
-re-stamps the ref-capable catalogs to the new tag, and the release tag must
-contain the `plugins/databricks/` bundle (it does, since the bundle is committed
-on `main`). Cut that bump-and-tag in one motion so a catalog never names a tag
-that does not exist yet.
+1. **Bump the version in its own PR.** Run `python3 scripts/bump_version.py
+   vX.Y.Z`, which sets the `version` field in `metaplugin/plugin.meta.json` (the
+   single source) and regenerates every target from it (each `plugin.json`, the
+   four `marketplace.json` catalogs, `manifest.json`, and the
+   `plugins/databricks/` bundle), so all four targets carry the same version.
+   Commit the regenerated tree and open a PR.
+2. **Merge the bump PR.** The push to `main` triggers the Release workflow. It
+   reads the new version from `plugin.meta.json`, confirms no `vX.Y.Z` tag exists
+   yet, runs `scripts/skills.py validate` as a safety gate, creates the annotated
+   `vX.Y.Z` tag, pushes it, and creates the GitHub release (`gh release create
+   --verify-tag`).
 
-Bumping the plugin `version` on every release is **required**: Claude Code's
-plugin marketplace keys updates on the `version` field, so a release that ships
-without bumping it leaves marketplace clients on the cached copy and they never
-see the new skills.
+That is the whole release: no manual version argument, no separate publish step.
 
-After releasing, open a follow-up PR to update
-[`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
-`databricks aitools install` resolves to the new version.
+### What does not cut a release
+
+- **Content-only merges** (anything that leaves the `version` field unchanged):
+  the workflow still runs on the push to `main`, but the tag for the current
+  version already exists, so the idempotency guard short-circuits and it no-ops.
+- **A manual `workflow_dispatch`** (it takes no inputs): this re-runs the publish
+  for whatever version is on `main` and no-ops if that version is already tagged.
+  It cannot force-release an arbitrary version.
+
+The tag is pushed by the DECO-SDK-Tagging GitHub App, which is on the branch and
+tag-creation ruleset bypass lists; `main` otherwise requires every change to go
+through a PR and the merge queue.
+
+### Notes
+
+- **Bumping the `version` is required** for every release. Claude Code's plugin
+  marketplace keys updates on the `version` field, so a release that ships
+  without bumping it leaves marketplace clients on the cached copy and they never
+  see the new skills.
+- The catalogs currently track `main` (`ref: main`), so the bundle they serve is
+  whatever is committed on `main`; bumping the version does not change which ref
+  installs follow. A planned follow-up flips `marketplace.source.ref_template` to
+  `v{version}` so the ref-capable catalogs re-stamp to each release tag (the tag
+  contains the `plugins/databricks/` bundle, since it is committed on `main`).
+- **If a release half-completes** (the tag was pushed but the GitHub release was
+  not created, for example the job died between the two steps), the guard treats
+  the version as already published and skips it on the next run. Recover by
+  creating the release manually (`gh release create vX.Y.Z --verify-tag
+  --generate-notes`) or by deleting the tag and re-running the workflow.
+- After releasing, open a follow-up PR to update
+  [`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
+  `databricks aitools install` resolves to the new version.
 
 ## Version resolution in Databricks CLI
 
