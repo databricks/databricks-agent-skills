@@ -24,9 +24,8 @@ are reverted:
 - **Marketplace catalogs** (at the repo root): `.claude-plugin/marketplace.json`,
   `.github/plugin/marketplace.json`, `.agents/plugins/marketplace.json`,
   `.cursor-plugin/marketplace.json` (Cursor's is new). Each points a scoped source
-  at *its own* provider subfolder, e.g. `plugins/databricks/claude` (currently
-  `ref: main`; a mechanical follow-up flips it to tag-pinning), configured under
-  `plugin.meta.json` `marketplace.source`.
+  at *its own* provider subfolder, e.g. `plugins/databricks/claude` (`ref: main`),
+  configured under `plugin.meta.json` `marketplace.source`.
 - **Hook wiring**: `hooks/hooks.json`, `hooks/codex-hooks.json`,
   `hooks/copilot-hooks.json`, `hooks/cursor-hooks.json` (per-dialect, at the root
   so generation doesn't collide). The bundle renames each into its provider

@@ -59,8 +59,8 @@ and `assets/` (Codex's interface logo). At the repo root, four `marketplace.json
 catalogs (`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`,
 `.cursor-plugin/` — Cursor's is new) each point a **scoped source** at *its own*
 provider subfolder (`plugins/databricks/<provider>`), so an install fetches only
-that provider's payload. The catalogs currently track `main`; a mechanical
-follow-up flips them to tag-pinning. The bundles, the catalogs, every
+that provider's payload. The catalogs track `main`, where the committed bundle
+lives. The bundles, the catalogs, every
 `plugin.json`, the hook wiring, the routing files, the rendered commands, and
 `manifest.json` are all **generated** from
 [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json) (and the templated
@@ -74,12 +74,10 @@ the `skills` map (with a `keyword`).
 
 Everything under `plugins/` is generated, committed, and drift-checked (it is not
 gitignored in this repo). The catalogs' scoped source is configured under
-`marketplace.source` in `metaplugin/plugin.meta.json`; today every catalog tracks
-`main` (`ref: main`), where the committed bundle lives, so the change is safe to
-land with no release. A mechanical follow-up flips `ref_template` to `v{version}`
-so the ref-capable tools (Claude, Codex, Copilot) serve frozen release tags
-instead of main HEAD; Cursor cannot pin a ref and always tracks the default
-branch. The CLI's raw-skills (files-channel) installer is unaffected — it keeps
+`marketplace.source` in `metaplugin/plugin.meta.json`; every catalog tracks
+`main` (`ref: main`), where the committed bundle lives, so installs follow the
+latest committed bundle. The catalogs are not pinned to release tags by design.
+The CLI's raw-skills (files-channel) installer is unaffected — it keeps
 fetching the root `skills/`, so the manifest's stable `repo_dir` stays `skills`.
 
 The generator itself lives in `scripts/skillsgen/` (a package split by concern:

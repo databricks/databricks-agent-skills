@@ -66,8 +66,7 @@ display names, the scoped-source config (`marketplace.source`), and
 hook/command/rule wiring, lives once in **`metaplugin/plugin.meta.json`**.
 `scripts/skills.py generate` renders it into a **per-provider** bundle under
 `plugins/databricks/<provider>/` and the four root catalogs, each pointing a
-scoped source at *its own* provider subfolder (currently `ref: main`; a follow-up
-flips it to tag-pinning):
+scoped source at *its own* provider subfolder (`ref: main`):
 
 - per-provider bundles (each self-contained, only what that provider uses):
   - `plugins/databricks/claude/`   — `.claude-plugin/plugin.json` + `skills/` + `commands/` + `hooks/`
@@ -196,11 +195,9 @@ through a PR and the merge queue.
   marketplace keys updates on the `version` field, so a release that ships
   without bumping it leaves marketplace clients on the cached copy and they never
   see the new skills.
-- The catalogs currently track `main` (`ref: main`), so the bundle they serve is
-  whatever is committed on `main`; bumping the version does not change which ref
-  installs follow. A planned follow-up flips `marketplace.source.ref_template` to
-  `v{version}` so the ref-capable catalogs re-stamp to each release tag (the tag
-  contains the `plugins/databricks/` bundle, since it is committed on `main`).
+- The catalogs track `main` (`ref: main`), so the bundle they serve is whatever
+  is committed on `main`; bumping the version does not change which ref installs
+  follow. The catalogs are not pinned to release tags by design.
 - **If a release half-completes** (the tag was pushed but the GitHub release was
   not created, for example the job died between the two steps), the guard treats
   the version as already published and skips it on the next run. Recover by
