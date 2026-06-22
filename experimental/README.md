@@ -41,6 +41,7 @@ See the root [README](../README.md) for details on the stable install path.
 ### 🤖 AI & Agents
 - **databricks-ai-functions** - Built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_query, ai_forecast, ai_parse_document, and more) with SQL and PySpark patterns, function selection guidance, document processing pipelines, and custom RAG (parse → chunk → index → query)
 - **databricks-agent-bricks** - Knowledge Assistants, Genie Spaces, Supervisor Agents
+- **databricks-graphrag** - GraphRAG and knowledge-graph augmented retrieval architecture: compare GraphRAG vs traditional RAG, combine AI Search with graph traversal, and evaluate relationship-aware retrieval
 - **databricks-mlflow-evaluation** - End-to-end agent evaluation workflow
 - **databricks-unstructured-pdf-generation** - Generate synthetic PDFs for RAG
 
