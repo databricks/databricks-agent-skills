@@ -17,13 +17,13 @@ matcher, and whether the router is wired). To change hook wiring, edit
 hand-edit these JSON files (CI fails on drift). The hook *scripts* (`*.py`) are
 hand-written; only the wiring JSON is generated.
 
-In the per-provider bundle, each provider ships its dialect's wiring as
-`plugins/databricks/<provider>/hooks/hooks.json` (plus the scripts it references),
-which the agent **auto-discovers** from the plugin root — so no `plugin.json`
-declares a `"hooks"` path (declaring the auto-discovered file would double-load
-it). The four distinct names above exist only at the repo root so the single
-generation step doesn't collide; the bundle renames each to `hooks.json` in its
-provider folder.
+In the per-provider bundle, each provider ships its dialect's wiring at the path
+that runtime auto-discovers: Claude, Codex, and Cursor use
+`plugins/databricks/<provider>/hooks/hooks.json`, while Copilot-format plugins
+use `plugins/databricks/copilot/hooks.json` at the provider root. Hook scripts
+still live under `hooks/`. No `plugin.json` declares a `"hooks"` path (declaring
+an auto-discovered file would double-load it). The four distinct names above
+exist only at the repo root so the single generation step doesn't collide.
 
 ### Changing or adding a hook
 
@@ -64,8 +64,8 @@ through the rules engine, not the hook-injection path, so it is unaffected.
 Native skill selection also helps.
 
 `copilot-hooks.json` is the GitHub Copilot wiring; the bundle ships it as the
-Copilot folder's `hooks/hooks.json`, which Copilot auto-discovers from the plugin
-root (no `"hooks"` declaration). It uses PascalCase event names, which selects
+Copilot folder's root `hooks.json`, which Copilot-format plugins auto-discover
+(no `"hooks"` declaration). It uses PascalCase event names, which selects
 Copilot's Claude-compatible payload dialect, so the scripts run unchanged and
 emit the Claude output envelope. Only two hooks are wired: the context primer
 (`SessionStart`) and the auth hinter (`PostToolUse`). Copilot's hooks run on the
