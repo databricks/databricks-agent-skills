@@ -13,6 +13,8 @@ Create Databricks AI/BI dashboards (formerly Lakeview dashboards).
 A dashboard should be showing something relevant for a human, typically some KPI on the top, and based on the story, some graph (often temporal), and we see "something happens".
 **Follow these guidelines strictly.**
 
+> **When a custom app fits better:** A managed AI/BI dashboard is the right tool for read-only KPIs, charts, and filters over governed tables. If the user instead needs a *custom-code interactive app* — write-back / data entry, bespoke UI or interactions beyond the dashboard grid, embedded or auth-gated workflows, or a conversational Genie/chat assistant as the primary surface — build a Databricks App instead with the `databricks-apps` skill (which brings in `databricks-app-design` for the data-screen UX). Linking an "Ask Genie" space to *this* dashboard stays here (see Linking a Genie Space below).
+
 ## Quick Reference
 
 | Task | Command |
@@ -504,6 +506,7 @@ If the range is very small relative to the scale (e.g., 83-89% on a 0-100 scale)
 
 ## Related Skills
 
+- **[databricks-apps](../../skills/databricks-apps/SKILL.md)** - when the user needs a custom-code interactive app (write-back, bespoke UI, in-app chat / Genie) instead of a managed dashboard
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - for querying the underlying data and system tables
 - **[databricks-pipelines](../databricks-pipelines/SKILL.md)** - for building the data pipelines that feed dashboards
 - **[databricks-jobs](../databricks-jobs/SKILL.md)** - for scheduling dashboard data refreshes
