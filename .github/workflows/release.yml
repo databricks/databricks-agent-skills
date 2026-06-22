@@ -1,12 +1,14 @@
 name: Release
 
+# Publishes the version already committed in metaplugin/plugin.meta.json: it
+# validates, tags, and cuts the GitHub release, and no-ops if that version is
+# already published. It never bumps the version or pushes to main -- the only
+# writes are the tag and the release. The version is bumped in a separate
+# version-bump commit that lands on main before this runs.
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Tag version (e.g. v0.1.0)'
-        required: true
-        type: string
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # manual re-trigger; no inputs
 
 jobs:
   release:
@@ -18,10 +20,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Push as the DECO-SDK-Tagging App, not github-actions[bot]. main's
-      # rulesets require PR + merge queue and reject a direct bot push; the App
-      # is on the ruleset bypass list (branch + tag creation), so it can push
-      # the bump commit and the tag directly. Same pattern as databricks-sdk-go.
+      # Push the tag as the DECO-SDK-Tagging App, not github-actions[bot]. main's
+      # rulesets require PR + merge queue and reject a direct bot push; the App is
+      # on the ruleset bypass list (tag creation), so it can push the tag
+      # directly. Same pattern as databricks-sdk-go.
       - name: Generate GitHub App token
         id: generate-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
@@ -32,7 +34,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: main
-          # Persist the App token so the pushes below carry its credentials.
+          # Persist the App token so the tag push below carries its credentials.
           token: ${{ steps.generate-token.outputs.token }}
 
       - name: Set up Python
@@ -40,94 +42,49 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Validate tag format
-        env:
-          VERSION: ${{ inputs.version }}
+      - name: Read version from plugin.meta.json
+        id: version
         run: |
-          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: version must match vX.Y.Z format"
-            exit 1
+          V="v$(python3 -c 'import json; print(json.load(open("metaplugin/plugin.meta.json"))["version"])')"
+          if [[ ! "$V" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: plugin.meta.json version is not vX.Y.Z: $V"; exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already published
+        id: guard
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Query the remote tags directly; no local tag fetch needed.
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$VERSION is already published; nothing to do."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bump version in plugin.meta.json and regenerate manifests
-        env:
-          VERSION: ${{ inputs.version }}
-        run: python3 scripts/bump_version.py "$VERSION"
-
-      - name: Validate generated manifests before publishing
-        # Abort the release if anything is inconsistent (drift, a skill missing
-        # from plugin.meta.json, missing Codex metadata, ...) BEFORE the commit
-        # and tag are pushed, instead of failing the post-push CI after the
-        # release is already published.
+      - name: Validate manifests before publishing
+        if: steps.guard.outputs.already == 'false'
+        # Safety gate: the tree on main is already generated and consistent, so
+        # this is a no-op pass. It aborts the release if drift somehow reached
+        # main, before a tag is cut.
         run: python3 scripts/skills.py validate
 
-      - name: Commit version bump
+      - name: Create annotated tag
+        if: steps.guard.outputs.already == 'false'
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Commit as the App. The email must be the App's noreply address or
-          # the commit will not be verified.
+          # Email must be the App's noreply address or the tag/commit is unverified.
           git config user.name "Databricks SDK Release Bot"
           git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
-          # metaplugin/plugin.meta.json is the source; bump_version.py regenerates
-          # the full set from it: the four marketplace.json catalogs (Cursor's is
-          # new), the routing files, the four hook-wiring dialects, manifest.json,
-          # and the whole plugins/databricks/ bundle (copies + the four plugin.json
-          # with the bumped version). Stage every one (unchanged files are a no-op)
-          # so a release can never commit a partial set. The four plugin.json now
-          # live INSIDE the bundle, so the `plugins/databricks` directory covers
-          # them. (The catalogs currently pin `ref: main`; once the tag-pinning
-          # follow-up lands they re-stamp to the new tag here too.)
-          git add \
-            metaplugin/plugin.meta.json \
-            .claude-plugin/marketplace.json \
-            .github/plugin/marketplace.json \
-            .agents/plugins/marketplace.json \
-            .cursor-plugin/marketplace.json \
-            hooks/_routing_data.json \
-            rules/databricks-routing.mdc \
-            rules/README.md \
-            hooks/hooks.json \
-            hooks/codex-hooks.json \
-            hooks/copilot-hooks.json \
-            hooks/cursor-hooks.json \
-            manifest.json \
-            plugins/databricks
-          # Guard the "stage the full set" invariant: if bump_version.py ever
-          # regenerates a tracked file not staged above (a new generated artifact
-          # added without updating this list), fail loudly instead of publishing
-          # the tag and leaving the regenerated file uncommitted -- which
-          # post-merge CI on main would then flag as drift.
-          if ! git diff --quiet; then
-            echo "Error: bump_version.py changed tracked files not staged for the release commit:"
-            git diff --name-only
-            exit 1
-          fi
-          if git diff --cached --quiet; then
-            echo "Manifests already at $VERSION; nothing to commit"
-          else
-            git commit -s -m "chore(release): bump plugin manifests to $VERSION"
-            git push origin HEAD:main
-          fi
-
-      - name: Create annotated tag
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          # git identity is already configured by the "Commit version bump"
-          # step above and persists for the job via .git/config.
-          # Annotated tag (objecttype=tag), not lightweight (objecttype=commit):
-          # records tagger metadata and is the prerequisite for `git tag -v`
-          # verification if tag signing is ever enabled.
           git tag -a "$VERSION" -m "$VERSION"
           git push origin "$VERSION"
 
       - name: Create release
+        if: steps.guard.outputs.already == 'false'
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          gh release create "$VERSION" \
-            --title "$VERSION" \
-            --generate-notes \
-            --verify-tag
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "$VERSION" --title "$VERSION" --generate-notes --verify-tag
