@@ -1,6 +1,6 @@
 {
   "//": "Single source of truth for the databricks plugin across all targets (Claude, Codex, Copilot, Cursor). Edit this file, then run `python3 scripts/skills.py generate`. Generated from here: the 4 plugin.json (under plugins/databricks/), the 4 marketplace.json catalogs (at the repo root), and the whole plugins/databricks/ bundle (a copy/transform of skills/hooks/commands/rules/assets that agents fetch scoped). CI fails on drift. Do not hand-edit the generated files.",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "name": "databricks",
   "description": "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.",
   "category": "development",
