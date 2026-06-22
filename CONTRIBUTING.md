@@ -66,8 +66,7 @@ display names, the scoped-source config (`marketplace.source`), and
 hook/command/rule wiring, lives once in **`metaplugin/plugin.meta.json`**.
 `scripts/skills.py generate` renders it into a **per-provider** bundle under
 `plugins/databricks/<provider>/` and the four root catalogs, each pointing a
-scoped source at *its own* provider subfolder (currently `ref: main`; a follow-up
-flips it to tag-pinning):
+scoped source at *its own* provider subfolder (`ref: main`):
 
 - per-provider bundles (each self-contained, only what that provider uses):
   - `plugins/databricks/claude/`   — `.claude-plugin/plugin.json` + `skills/` + `commands/` + `hooks/`
@@ -193,14 +192,14 @@ or major** instead of a patch, set `next_version` in `version.meta.json` (e.g. t
   marketplace keys updates on the `version` field in `plugin.json`, so a release
   that ships without bumping it leaves marketplace clients on the cached copy.
   That is why the bumped version is committed to `main` (in `version.meta.json`
-  and the four `plugin.json`), where the catalogs currently serve it (`ref: main`).
+  and the four `plugin.json`).
 - `version.meta.json` is the version source for generation. `scripts/skills.py
   generate` / `validate` read `current_version` from it; if it is absent they fall
   back to the version already committed in `plugin.json`, and fail loudly if no
   version source is available at all.
-- The catalogs currently track `main` (`ref: main`). A planned follow-up flips
-  `marketplace.source.ref_template` to `v{version}` so the ref-capable catalogs
-  pin each release tag.
+- The catalogs track `main` (`ref: main`), so the bundle they serve is whatever
+  is committed on `main`; bumping the version does not change which ref installs
+  follow. The catalogs are not pinned to release tags by design.
 - **If a release half-completes** (committed and tagged, but the GitHub release
   was not created), create it manually (`gh release create vX.Y.Z --verify-tag
   --generate-notes`). Because the bump already advanced `next_version`,

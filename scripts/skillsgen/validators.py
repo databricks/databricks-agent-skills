@@ -374,13 +374,13 @@ def check_codex_plugin(repo_root: Path) -> list[str]:
 def check_copilot_plugin(repo_root: Path) -> list[str]:
     """Validate the GitHub Copilot plugin manifests and hook wiring.
 
-    Copilot CLI resolves plugin manifests in order (.plugin/, repo root,
+    VS Code resolves plugin manifests in order (.plugin/, repo root,
     .github/plugin/, .claude-plugin/), so the .github/plugin/ manifest is what
-    makes the Copilot install Copilot-native instead of falling back to the
-    Claude manifest. Its "hooks" pointer must name the Copilot-format wiring
-    (hooks/copilot-hooks.json), not the Claude hooks/hooks.json. The
-    marketplace entry becomes load-bearing once users install from it (same
-    never-remove rule as the Claude marketplace).
+    makes the install Copilot-native instead of falling back to the Claude
+    manifest. Copilot-format plugins auto-discover their wiring at root
+    hooks.json (not Claude's hooks/hooks.json). The marketplace entry becomes
+    load-bearing once users install from it (same never-remove rule as the
+    Claude marketplace).
     """
     errors: list[str] = []
 
@@ -411,18 +411,17 @@ def check_copilot_plugin(repo_root: Path) -> list[str]:
             "existing directory."
         )
 
-    # Copilot auto-discovers hooks/hooks.json from the plugin root; this folder's
-    # hooks.json is the Copilot-dialect wiring, so the manifest must NOT declare a
-    # "hooks" path.
+    # Copilot auto-discovers root hooks.json from the plugin root, so the
+    # manifest must NOT declare a "hooks" path.
     if "hooks" in plugin:
         errors.append(
             f'{rel_base}/.github/plugin/plugin.json must NOT declare "hooks": Copilot '
-            "auto-discovers hooks/hooks.json (this folder's Copilot wiring)."
+            "auto-discovers root hooks.json."
         )
-    cfg = _check_hook_wiring(repo_root, f"{rel_base}/hooks/hooks.json", errors)
+    cfg = _check_hook_wiring(repo_root, f"{rel_base}/hooks.json", errors)
     if cfg is not None and cfg.get("version") != 1:
-        errors.append(f'{rel_base}/hooks/hooks.json must declare "version": 1.')
-    _check_hook_event_names(f"{rel_base}/hooks/hooks.json", cfg, _COPILOT_EVENTS, errors)
+        errors.append(f'{rel_base}/hooks.json must declare "version": 1.')
+    _check_hook_event_names(f"{rel_base}/hooks.json", cfg, _COPILOT_EVENTS, errors)
 
     market_path = repo_root / ".github" / "plugin" / "marketplace.json"
     if not market_path.exists():
