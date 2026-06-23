@@ -28,6 +28,8 @@ Prefer structured context over broad instructions. Add surfaces in this order �
 5. Synonyms and display names for business terms.
 6. Format assistance and entity matching for eligible categorical strings.
 7. Join specs for raw tables exposed together.
+
+Surfaces 4-6 plus hidden fields are all applied **per column** through `data_sources.tables[].column_configs[]` (`description`, `synonyms`, `enable_format_assistance`, `enable_entity_matching`, `exclude`). This array is optional, so a Space created without it ships with none of these — build it explicitly during creation, adding one entry per column that needs tuning. Enable format assistance and entity matching **selectively** (useful categorical dimensions/filters only — never blanket-enable on IDs, hashes, free text, lat/long, or raw measures). See the verified schema in `../../references/spaces.md` → Exact Field Schemas.
 8. SQL snippets for reusable filters, expressions, and measures not already governed by Metric Views.
 9. Example SQL for complex question patterns.
 10. SQL functions for trusted registered logic.
@@ -74,6 +76,11 @@ Canonical, deeper rules live in the `databricks-metric-views` skill: `genie-inte
 
 ## Examples And Benchmarks
 
+There is no fixed minimum count for SQL snippets, example SQL, or benchmarks — size each by **coverage**, not a quota. Manufacturing filler to hit a number competes with governed surfaces and violates the priority order above.
+
+- **SQL snippets (#8):** add only for reusable filters/expressions/measures the Metric View does not already govern. When the source is a well-modeled Metric View, **zero is often correct** — do not re-derive governed formulas as snippets.
+- **Example SQL (#9):** cover the distinct *query shapes* the Space's questions require — e.g. simple aggregate, group-by-dimension, time filter/window, ratio/`MEASURE()` composition, ranking, and CTE-then-join — rather than a target count. One good example per shape beats many near-duplicates.
+- **Benchmarks:** add ground truth per the intended execution mode (checked SQL for Chat, evaluation notes for Agent). No minimum applies at creation; if the Space is intended for later eval-driven tuning, aim toward the **≥30 valid-item** bar in `optimize-genie-space` (e.g. 2-4 phrasings per core question) so a benchmark-repair pass is not needed first.
 - Validate every example SQL, benchmark SQL, snippet, and join with read-only execution or `EXPLAIN` when possible.
 - Use real profiled values for parameter defaults, benchmark literals, and sample question wording.
 - Parameterized examples may use `:param_name`, but every parameter needs a description, type hint, and real default value.

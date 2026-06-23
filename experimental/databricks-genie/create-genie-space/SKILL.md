@@ -39,10 +39,11 @@ This skill runs in either of two contexts. **The workflow below is identical; on
    - space description: set this **first** — it states the Space's purpose/scope and is required for multi-agent routing (supervisor agents delegate based on it)
    - data sources: keep the attached tables/views/Metric Views focused
    - Metric View metadata: prefer governed Metric View semantics over duplicated SQL
-   - descriptions: table/Metric View/column descriptions that clarify business meaning and selection boundaries
-   - synonyms and display names: map business terms to fields
-   - format assistance and entity matching / prompt matching: enable only for eligible, useful categorical strings
-   - hidden fields: remove noisy technical columns from end-user context
+   - descriptions: table/Metric View/column descriptions that clarify business meaning and selection boundaries. **Column-level** descriptions are set via `data_sources.tables[].column_configs[].description` — see the verified schema in [references/spaces.md → Exact Field Schemas](../references/spaces.md#exact-field-schemas-verified-against-the-genie-api)
+   - synonyms and display names: map business terms to fields. **Column-level** synonyms go in `column_configs[].synonyms`
+   - format assistance and entity matching / prompt matching: set per column via `column_configs[].enable_format_assistance` / `.enable_entity_matching`. Enable **selectively** — only on useful categorical dimensions and filters users name directly; never blanket-enable on IDs, hashes, free text, lat/long, or raw measures
+   - hidden fields: remove noisy technical columns from end-user context via `column_configs[].exclude`
+   - **Build `column_configs` during creation** — it is optional in the schema, so a Space created without it ships with no per-column descriptions, synonyms, format assistance, entity matching, or hidden fields. Add an entry for each column that needs any of these, then attach the array to its table in `data_sources`
    - joins: add standard raw-table relationships only when evidence or user confirmation supports them
    - SQL expressions (snippets): reusable filters, expressions, and measures not already governed by Metric Views
    - example SQL: representative complex question patterns; instructive, not memorized benchmark answers

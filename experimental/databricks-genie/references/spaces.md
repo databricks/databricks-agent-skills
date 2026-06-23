@@ -229,7 +229,7 @@ This envelope enables cloning, backup, and cross-workspace migration. Use `manag
 |-----|----------|
 | `version` | Schema version (currently `2`) |
 | `config` | Space-level config: `sample_questions` shown in the UI |
-| `data_sources` | `tables` array — each entry has a fully-qualified `identifier` (`catalog.schema.table`) and optional `column_configs` (format assistance, entity matching per column) |
+| `data_sources` | `tables` array — each entry has a fully-qualified `identifier` (`catalog.schema.table`) and optional `column_configs` (per-column descriptions, synonyms, format assistance, entity matching, and hidden fields — see [§Exact Field Schemas](#exact-field-schemas-verified-against-the-genie-api)) |
 | `instructions` | `example_question_sqls` (certified Q&A pairs), `join_specs` (join relationships between tables), `sql_snippets` (`filters` and `measures` with display names and usage instructions) |
 | `benchmarks` | Evaluation Q&A pairs used to measure space quality |
 
@@ -245,6 +245,47 @@ Minimum structure:
 The API is strictly schema-validated and the protobuf shapes are not obvious. The errors you'll see when shapes are wrong include `Expected an array for <field>`, `Unknown field`, `<field> must be sorted by id`, and the cryptic `Invalid JSON in field 'serialized_space': Expected 'START_OBJECT' not 'VALUE_STRING'` (which actually means a sub-field has the wrong shape — typically a string where an array is expected).
 
 The verified shapes are below. Use them either by hand-constructing JSON with care, or by adapting the self-contained Python helper at the end of this section.
+
+**`data_sources.tables[].column_configs`** — per-column GenAI context: column descriptions, synonyms, format assistance, entity matching (a.k.a. prompt matching), and hidden fields. **Optional and selective** — only add an entry for a column that needs one; omit `column_configs` entirely when no column needs tuning. Each entry keys on `column_name`; the other fields are independent and any combination may appear:
+
+```json
+{
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "catalog.schema.table",
+        "column_configs": [
+          {
+            "column_name": "asset_type",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "blended_spread",
+            "description": ["Blended spread: zdm3yr for loans, OAS for everything else."],
+            "synonyms": ["spread", "avg spread", "blended spread"]
+          },
+          {
+            "column_name": "bloomberg_global_id",
+            "exclude": true
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Sub-field | Type | Purpose |
+|-----------|------|---------|
+| `column_name` | string | Required key; the column this entry configures. |
+| `description` | array of strings | Column-level business description (same array-of-strings shape as `text_instructions[].content`). |
+| `synonyms` | array of strings | Business terms that map to this column. |
+| `enable_format_assistance` | bool | Format assistance for the column's values. |
+| `enable_entity_matching` | bool | Entity matching / prompt matching — enable only for stable low/medium-cardinality strings users name directly. |
+| `exclude` | bool | Hides the column from end-user context (the "hidden fields" surface). |
+
+Enable `enable_format_assistance` / `enable_entity_matching` **selectively** — only on useful categorical dimensions and filters. Do **not** blanket-enable them on every column (IDs, hashes, free text, lat/long, raw measures): that adds noise and is the over-enabling the design guide warns against.
 
 **`config.sample_questions`** — user-visible suggested questions:
 
@@ -344,10 +385,18 @@ def build_serialized_space(
     instruction_rules: list[str] | None = None,
     example_sqls: list[tuple[str, str]] | None = None,    # (question, sql) pairs
     benchmarks: list[tuple[str, str]] | None = None,      # (question, expected_sql) pairs
+    column_configs: list[dict] | None = None,             # per-column GenAI context (see below)
 ) -> str:
+    table = {"identifier": metric_view_or_table}
+    if column_configs:
+        # Each dict: {"column_name": str, and any of "description": [str],
+        # "synonyms": [str], "enable_format_assistance": bool,
+        # "enable_entity_matching": bool, "exclude": bool}. Add entries only
+        # for columns that need tuning; enable format/entity matching selectively.
+        table["column_configs"] = sorted(column_configs, key=lambda c: c["column_name"])
     payload = {
         "version": 2,
-        "data_sources": {"tables": [{"identifier": metric_view_or_table}]},
+        "data_sources": {"tables": [table]},
     }
 
     if sample_questions:
@@ -407,6 +456,12 @@ serialized = build_serialized_space(
         ("Show me North America FYTD sales",
          "SELECT MEASURE(`Net Sales`) FROM main.sales.global_sales_metrics WHERE `Region`='NA' AND `Fiscal Year`=2026"),
     ],
+    column_configs=[
+        # Selective: format/entity matching only on categorical filters users name.
+        {"column_name": "Region", "enable_format_assistance": True, "enable_entity_matching": True,
+         "synonyms": ["geo", "geography"]},
+        {"column_name": "internal_hash_id", "exclude": True},
+    ],
 )
 
 # Push via the MCP tool:
@@ -421,7 +476,7 @@ manage_genie(
 #   databricks api patch /api/2.0/genie/spaces/01abc123... --json @patch.json
 ```
 
-**Workflow tip:** When updating an existing space, fetch its current `serialized_space` first (via `manage_genie(action="get", include_serialized_space=True)`), parse it, mutate the fields you care about, and push back. This preserves any fields the helper above doesn't model (column_configs, join_specs, sql_snippets, etc.).
+**Workflow tip:** When updating an existing space, fetch its current `serialized_space` first (via `manage_genie(action="get", include_serialized_space=True)`), parse it, mutate the fields you care about, and push back. This preserves any fields the helper above doesn't model (`join_specs`, `sql_snippets`, etc.). The helper *does* model `column_configs` (above) — pass it explicitly on create so a new space ships with per-column context instead of an empty default.
 
 > **Databricks-internal note:** If you have access to the internal `fe-internal-tools` plugin, its `GenieSpaceBuilder` (in `resources/genie_space_builder.py` of the `genie-rooms` skill) provides chainable helpers (`set_instructions`, `add_example_sql`, `add_benchmark`, `add_metric_view`, etc.) that wrap the same shape construction. External users should use the self-contained helper above.
 
