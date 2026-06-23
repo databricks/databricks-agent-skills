@@ -1,18 +1,18 @@
-# Creating Genie Spaces
+# Creating Genie Agents
 
-This guide covers creating and managing Genie Spaces for SQL-based data exploration.
+This guide covers creating and managing Genie Agents for SQL-based data exploration.
 
 > **CLI is the default.** The canonical, environment-agnostic commands (`databricks genie create-space`, `update-space`, `get-space`, `trash-space`) live in the parent [SKILL.md](../SKILL.md). This reference documents the **MCP tool surface** (`manage_genie`, `get_table_stats_and_schema`) — use it when the Databricks MCP server is configured (e.g. inside an IDE) and you prefer one-call shortcuts over CLI + `jq`. The [Exact Field Schemas](#exact-field-schemas-verified-against-the-genie-api) section is **tool-agnostic** — the same `serialized_space` shapes apply whether you push them via CLI or MCP.
 
-## What is a Genie Space?
+## What is a Genie Agent?
 
-A Genie Space connects to Unity Catalog tables and translates natural language questions into SQL — understanding schemas, generating queries, executing them on a SQL warehouse, and presenting results conversationally.
+A Genie Agent connects to Unity Catalog tables and translates natural language questions into SQL — understanding schemas, generating queries, executing them on a SQL warehouse, and presenting results conversationally.
 
 ## Creation Workflow
 
 ### Step 1: Inspect Table Schemas (Required)
 
-**Before creating a Genie Space, you MUST inspect the table schemas** to understand what data is available:
+**Before creating a Genie Agent, you MUST inspect the table schemas** to understand what data is available:
 
 ```python
 get_table_stats_and_schema(
@@ -37,7 +37,7 @@ Based on the schema information:
 3. **Understand relationships** - How do tables join together?
 4. **Plan sample questions** - What questions can this data answer?
 
-### Step 3: Create the Genie Space
+### Step 3: Create the Genie Agent
 
 Create the space with content tailored to the actual data:
 
@@ -151,15 +151,15 @@ Write sample questions that:
 
 ## Querying Metric Views in Genie
 
-When a Genie Space's data source is a **metric view** (not a plain table), all SQL — Genie-generated, in `example_question_sqls`, or in `text_instructions` — must follow the metric-view query rules. Getting them wrong produces `MISSING_AGGREGATION` errors that silently degrade answer quality. The short version:
+When a Genie Agent's data source is a **metric view** (not a plain table), all SQL — Genie-generated, in `example_question_sqls`, or in `text_instructions` — must follow the metric-view query rules. Getting them wrong produces `MISSING_AGGREGATION` errors that silently degrade answer quality. The short version:
 
 - A dimension inside a `CASE` that also calls `MEASURE()` must be in `GROUP BY` — use a CTE with `GROUP BY ALL`, then aggregate in the outer query.
 - Prefer a pre-built composed measure (e.g. `MEASURE(blended_spread)`) over rebuilding its branching with `CASE WHEN`.
 - Never put a measure in `WHERE` or `GROUP BY` — filter measure results with `HAVING` or an outer query/CTE.
 
-Author these into the space's example SQL and instructions so Genie writes correct SQL. Full rules, examples, and rationale live with the metric-view skill, since they apply to any query (dashboards, ad-hoc SQL, Genie): see [databricks-metric-views/query-patterns.md](../../databricks-metric-views/references/query-patterns.md). For designing metric views so Genie reasons well over them, see [databricks-metric-views/genie-integration.md](../../databricks-metric-views/references/genie-integration.md).
+Author these into the space's example SQL and instructions so Genie writes correct SQL. Full rules, examples, and rationale live with the metric-view skill, since they apply to any query (dashboards, ad-hoc SQL, Genie): see [databricks-metric-views/query-patterns.md](../../databricks-metric-views/references/query-patterns.md). For designing metric views so Genie reasons well over them, see [databricks-metric-views/genie-agent-integration.md](../../databricks-metric-views/references/genie-agent-integration.md).
 
-## Updating a Genie Space
+## Updating a Genie Agent
 
 `manage_genie(action="create_or_update")` handles both create and update automatically. There are two ways it locates an existing space to update:
 
@@ -228,7 +228,7 @@ This envelope enables cloning, backup, and cross-workspace migration. Use `manag
 | Key | Contents |
 |-----|----------|
 | `version` | Schema version (currently `2`) |
-| `config` | Space-level config: `sample_questions` shown in the UI |
+| `config` | Agent-level config: `sample_questions` shown in the UI |
 | `data_sources` | `tables` array — each entry has a fully-qualified `identifier` (`catalog.schema.table`) and optional `column_configs` (per-column descriptions, synonyms, format assistance, entity matching, and hidden fields — see [§Exact Field Schemas](#exact-field-schemas-verified-against-the-genie-api)) |
 | `instructions` | `example_question_sqls` (certified Q&A pairs), `join_specs` (join relationships between tables), `sql_snippets` (`filters` and `measures` with display names and usage instructions) |
 | `benchmarks` | Evaluation Q&A pairs used to measure space quality |
@@ -480,7 +480,7 @@ manage_genie(
 
 > **Databricks-internal note:** If you have access to the internal `fe-internal-tools` plugin, its `GenieSpaceBuilder` (in `resources/genie_space_builder.py` of the `genie-rooms` skill) provides chainable helpers (`set_instructions`, `add_example_sql`, `add_benchmark`, `add_metric_view`, etc.) that wrap the same shape construction. External users should use the self-contained helper above.
 
-### Exporting a Space
+### Exporting a Agent
 
 Use `manage_genie(action="export")` to export the full configuration (requires CAN EDIT permission):
 
@@ -503,7 +503,7 @@ details = manage_genie(action="get", space_id="01abc123...", include_serialized_
 serialized = details["serialized_space"]
 ```
 
-### Cloning a Space (Same Workspace)
+### Cloning a Agent (Same Workspace)
 
 ```python
 # Step 1: Export the source space
@@ -555,7 +555,7 @@ manage_genie(
 )
 ```
 
-### Batch Migration of Multiple Spaces
+### Batch Migration of Multiple Agents
 
 To migrate several spaces at once, loop through space IDs. The agent exports, remaps the catalog, then imports each:
 
@@ -569,7 +569,7 @@ For each space_id in [id1, id2, id3]:
 
 After migration, update `databricks.yml` with the new dev `space_id` values under the `dev` target's `genie_space_ids` variable.
 
-### Updating an Existing Space with New Config
+### Updating an Existing Agent with New Config
 
 To push a serialized config to an already-existing space (rather than creating a new one), use `manage_genie(action="create_or_update")` with `space_id=` and `serialized_space=`. The export → remap → push pattern is identical to the migration steps above; just replace `manage_genie(action="import")` with `manage_genie(action="create_or_update", space_id=TARGET_SPACE_ID, ...)` as the final call.
 
@@ -594,7 +594,7 @@ To push a serialized config to an already-existing space (rather than creating a
    get_table_stats_and_schema(catalog="catalog", schema="schema")
    ```
 
-4. **Create the Genie Space**:
+4. **Create the Genie Agent**:
    - `display_name`: "My Data Explorer"
    - `table_identifiers`: `["catalog.schema.silver_customers", "catalog.schema.silver_orders"]`
 

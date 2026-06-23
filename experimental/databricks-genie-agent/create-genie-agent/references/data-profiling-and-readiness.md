@@ -1,6 +1,6 @@
 # Data Profiling And Readiness
 
-Use this reference after candidate data sources are selected and before proposing Genie Space changes in Genie Code. Prefer Databricks-native metadata first, then run bounded read-only SQL only where it improves the plan.
+Use this reference after candidate data sources are selected and before proposing Genie Agent changes in Genie Code. Prefer Databricks-native metadata first, then run bounded read-only SQL only where it improves the plan.
 
 ## Phased Inspection
 

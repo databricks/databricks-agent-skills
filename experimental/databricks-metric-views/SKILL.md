@@ -92,7 +92,7 @@ ORDER BY ALL
 | YAML Syntax | [yaml-reference.md](yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
 | Creation Patterns | [create-patterns.md](create-patterns.md) | Common creation patterns: star schema, snowflake, filtered measures, window measures, ratios, materialization |
 | Querying | [query-patterns.md](query-patterns.md) | How to query metric views: `MEASURE()` basics, filtering/ordering, join-hierarchy rollups, window measures, casting, the MCP query tool, plus rules & gotchas (`CASE`+`MEASURE()` grouping, composed measures, no measures in `WHERE`/`GROUP BY`) |
-| Genie Integration | [genie-integration.md](genie-integration.md) | Design rules for AI-ready metric views: one-fact-source, base views, agent metadata (comments, synonyms, formats), domain organization (Genie-space build/validation lives in the databricks-genie skill) |
+| Genie Integration | [genie-agent-integration.md](genie-agent-integration.md) | Design rules for AI-ready metric views: one-fact-source, base views, agent metadata (comments, synonyms, formats), domain organization (Genie-agent build/validation lives in the databricks-genie-agent skill) |
 
 ## SQL Operations
 
@@ -377,8 +377,8 @@ Metric views work natively with:
 
 ## Related Skills
 
-- **`metric-view-advisor`** (from the `fe-metric-view-advisor` plugin) — interactive workflow that ingests tables, dashboards, SQL queries, Genie spaces, or KPI spreadsheets and **generates metric view YAML for you**. Use it when you want a guided scaffold from existing assets. Use this skill (`databricks-metric-views`) when you're authoring YAML directly or need the spec/pattern reference.
-- **`databricks-genie`** — create, manage, and validate Genie spaces that consume the metric views built here. See [genie-integration.md](genie-integration.md) for metric-view design rules and [query-patterns.md](query-patterns.md) for the `MEASURE()` query rules Genie must follow.
+- **`metric-view-advisor`** (from the `fe-metric-view-advisor` plugin) — interactive workflow that ingests tables, dashboards, SQL queries, Genie Agents, or KPI spreadsheets and **generates metric view YAML for you**. Use it when you want a guided scaffold from existing assets. Use this skill (`databricks-metric-views`) when you're authoring YAML directly or need the spec/pattern reference.
+- **`databricks-genie-agent`** — create, manage, and validate Genie Agents that consume the metric views built here. See [genie-agent-integration.md](genie-agent-integration.md) for metric-view design rules and [query-patterns.md](query-patterns.md) for the `MEASURE()` query rules Genie must follow.
 - **`databricks-aibi-dashboards`** — build AI/BI dashboards on top of metric views.
 
 ## Resources

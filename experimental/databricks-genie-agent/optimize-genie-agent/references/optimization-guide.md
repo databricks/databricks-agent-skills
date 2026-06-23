@@ -1,6 +1,6 @@
 # Genie Optimization Guide
 
-Use this reference when tuning a Genie Space in Databricks-native workflows.
+Use this reference when tuning a Genie Agent in Databricks-native workflows.
 
 ## Navigation
 
@@ -101,7 +101,7 @@ Prefer pruning questions that:
 - duplicate another item except for a date, category, region, or customer literal;
 - test a narrow one-off detail with low business value and no unique failure mode;
 - are trivial easy lookups when the same source or metric is already covered by stronger questions;
-- overweight one source, metric, dimension, or answer shape compared with the Space's intended usage.
+- overweight one source, metric, dimension, or answer shape compared with the Agent's intended usage.
 
 Use a coverage matrix before finalizing the pruned set:
 
@@ -119,7 +119,7 @@ Before applying pruning, state the retained denominator, removed or excluded que
 
 ## Repair Decision Stack
 
-Before applying a Space/config edit, answer:
+Before applying a Agent/config edit, answer:
 
 1. Is this a valid tuning failure?
    - Exclude invalid expected SQL, unclear evaluation notes, stale benchmark questions, permissions, warehouse/API failures, and incomplete eval output.
@@ -136,7 +136,7 @@ Before applying a Space/config edit, answer:
 6. What should be recorded for the next loop?
    - Cluster, attempted lever, expected impact, result, regressions, and whether to retry or avoid the approach.
 
-Every tuning pass must name the target failure cluster and repair lever before editing the Space/config.
+Every tuning pass must name the target failure cluster and repair lever before editing the Agent/config.
 
 ## Judge-Style Failure Triage
 
@@ -202,7 +202,7 @@ Repair priority:
 |---|---|---|---|
 | Wrong table/source selected | Generated SQL uses the wrong configured table or metric view | Improve source descriptions, source names/synonyms, and differentiating metadata | Broad text instruction saying "use table X" for one benchmark |
 | Wrong column selected | Correct source, wrong field | Column description, synonyms/business aliases, hide or de-emphasize confusing columns if supported | Example SQL unless the pattern is complex |
-| Wrong Metric View measure | Wrong measure selected or measure intent misunderstood | Space-exposed Metric View display names/descriptions when editable, or document an upstream semantic model gap | Duplicating governed measure logic in text instructions |
+| Wrong Metric View measure | Wrong measure selected or measure intent misunderstood | Agent-exposed Metric View display names/descriptions when editable, or document an upstream semantic model gap | Duplicating governed measure logic in text instructions |
 | Wrong metric formula outside Metric View | Wrong numerator, denominator, or aggregation | SQL snippet for reusable measure logic; representative example for complex formula | Global text instruction with metric math |
 | Wrong filter value | SQL uses wrong categorical literal or status mapping | Column description with value semantics, entity/value matching, format assistance, reusable filter snippet | Copying benchmark answer filter into example SQL |
 | Missing business filter | Expected SQL has a reusable business filter missing in generated SQL | Reusable filter SQL snippet or concise source/column metadata explaining default business scope | Long instruction list of every filter |
@@ -220,11 +220,11 @@ Repair priority:
 | Syntax failure | Generated SQL invalid | Inspect exact syntax issue; repair snippets/examples only if pattern repeats | Treating syntax failure as business logic failure |
 | Invalid expected SQL | Expected benchmark answer errors or is stale | Benchmark repair outside config tuning | Genie config tuning |
 | Incomplete eval / permissions / API | Eval did not complete or details missing | Infrastructure/access fix | Genie config tuning |
-| Space too broad / asset ambiguity | Failures scatter across many unrelated sources | Source scoping, descriptions, ambiguity reduction, possible Space split recommendation | More global instructions |
+| Agent too broad / asset ambiguity | Failures scatter across many unrelated sources | Source scoping, descriptions, ambiguity reduction, possible Agent split recommendation | More global instructions |
 
 ## Proactive Enrichment Before Repair
 
-Before proposing a patch, inspect the current Space/config and failing questions for low-risk enrichments:
+Before proposing a patch, inspect the current Agent/config and failing questions for low-risk enrichments:
 
 1. Are source descriptions missing, thin, or indistinguishable?
 2. Are business terms from failed questions absent from source/column descriptions or synonyms?
@@ -236,8 +236,8 @@ Before proposing a patch, inspect the current Space/config and failing questions
 8. Is a representative example needed for complex grain, ranking, window, or period logic?
 9. Do Agent-mode failures show missing investigation dimensions, weak evidence collection, unsupported synthesis, or missing caveats?
 10. Is text instruction being used as a dumping ground for logic that belongs in metadata, snippets, examples, or joins?
-11. Is the Space backed by Metric Views, and should the repair target Metric View metadata rather than raw table logic?
-12. Are there too many data sources in one Space, causing routing confusion?
+11. Is the Agent backed by Metric Views, and should the repair target Metric View metadata rather than raw table logic?
+12. Are there too many data sources in one Agent, causing routing confusion?
 
 ## Text Instruction Last-Resort Rule
 
@@ -293,7 +293,7 @@ After comparing reports, add an explicit keep/revise/rollback decision:
 
 - Baseline report:
 - Candidate report:
-- Candidate config or Space version:
+- Candidate config or Agent version:
 - Benchmark execution target:
 - Benchmark field strategy:
 - Valid denominator used:
@@ -356,7 +356,7 @@ Use this template for each candidate pass:
 ### Candidate edit
 - Target cluster:
 - Smallest repair lever:
-- Space/config surface to edit:
+- Agent/config surface to edit:
 - Why this should fix the cluster:
 - Why this is not benchmark leakage:
 - Why this should not regress related questions:
@@ -400,7 +400,7 @@ Recommended default: four tables.
 | Table | Grain | Purpose |
 |---|---|---|
 | `<catalog>.<schema>.genie_opt_runs` | one optimization pass / candidate edit | Run ledger, parent/child linkage, summary metrics, decision |
-| `<catalog>.<schema>.genie_opt_config_versions` | one Space/config snapshot | Before/after snapshots, config hash, rollback reference |
+| `<catalog>.<schema>.genie_opt_config_versions` | one Agent/config snapshot | Before/after snapshots, config hash, rollback reference |
 | `<catalog>.<schema>.genie_opt_eval_results` | one question result per eval run | Question-level benchmark logging, triage, movement analysis |
 | `<catalog>.<schema>.genie_opt_repair_analysis` | one failure cluster / repair hypothesis per pass | Root-cause analysis, chosen lever, evidence, reflection |
 
@@ -444,7 +444,7 @@ When persistence is enabled for each candidate pass:
 1. Write a run row.
 2. Capture the before config snapshot.
 3. Write repair analysis before editing.
-4. Apply the focused Space/config edit.
+4. Apply the focused Agent/config edit.
 5. Capture the after config snapshot.
 6. Write question-level eval results.
 7. Update the run summary, acceptance decision, and iteration reflection.

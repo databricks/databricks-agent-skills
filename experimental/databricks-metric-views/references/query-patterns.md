@@ -2,7 +2,7 @@
 
 How to write correct SQL **against** a metric view. For *creating* metric views (the YAML definitions these examples query), see [create-patterns.md](create-patterns.md).
 
-When the metric view is the data source for a Genie Space, encode these patterns and rules into the space's example SQL and instructions (see [databricks-genie spaces.md](../../databricks-genie/references/spaces.md)).
+When the metric view is the data source for a Genie Agent, encode these patterns and rules into the Agent's example SQL and instructions (see [databricks-genie-agent agents.md](../../databricks-genie-agent/references/agents.md)).
 
 ## Basics
 

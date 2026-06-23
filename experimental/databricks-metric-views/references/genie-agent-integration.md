@@ -1,8 +1,8 @@
-# Designing Metric Views for Genie Spaces
+# Designing Metric Views for Genie Agents
 
 Best practices for designing metric views that AI agents (Genie, multi-agent systems) can reliably reason over.
 
-> **Scope:** This page covers the **metric-view design** side. For building, sizing, validating, and benchmarking the Genie Space itself, see the `databricks-genie` lifecycle subskills — [create-genie-space → space-design-guide.md](../../databricks-genie/create-genie-space/references/space-design-guide.md) (sizing, build loop, anti-patterns) and [optimize-genie-space → optimization-guide.md](../../databricks-genie/optimize-genie-space/references/optimization-guide.md) (benchmark repair/pruning, regression). For the `MEASURE()` query rules Genie must follow, see [query-patterns.md](query-patterns.md).
+> **Scope:** This page covers the **metric-view design** side. For building, sizing, validating, and benchmarking the Genie Agent itself, see the `databricks-genie-agent` lifecycle subskills — [create-genie-agent → agent-design-guide.md](../../databricks-genie-agent/create-genie-agent/references/agent-design-guide.md) (sizing, build loop, anti-patterns) and [optimize-genie-agent → optimization-guide.md](../../databricks-genie-agent/optimize-genie-agent/references/optimization-guide.md) (benchmark repair/pruning, regression). For the `MEASURE()` query rules Genie must follow, see [query-patterns.md](query-patterns.md).
 
 ## Core Design Rules
 
@@ -20,7 +20,7 @@ When a KPI spans multiple fact tables or contains nested logic:
 
 1. Create a SQL view that joins the sources using CTEs (`WITH` statements).
 2. Build the metric view on top of that base view.
-3. **Remove the raw base view from the Genie space** once the metric view exists — keeping both creates redundancy and increases hallucination risk because the base view exposes unaggregated row-level data.
+3. **Remove the raw base view from the Genie Agent** once the metric view exists — keeping both creates redundancy and increases hallucination risk because the base view exposes unaggregated row-level data.
 
 ```sql
 -- Step 1: Base view joining two fact sources
@@ -134,8 +134,8 @@ measures:
 
 | Level | Maps To |
 |-------|---------|
-| **Domain** (e.g., "Marketing") | Genie space |
-| **Subdomain** (e.g., "Online Marketing") | Genie space (if domain is broad) |
+| **Domain** (e.g., "Marketing") | Genie Agent |
+| **Subdomain** (e.g., "Online Marketing") | Genie Agent (if domain is broad) |
 | **KPI group** (e.g., "Conversion Metrics") | One metric view |
 
 ### Naming Convention
@@ -149,13 +149,13 @@ finance_revenue_metrics
 finance_cost_metrics
 ```
 
-## Validating Metric Views in a Genie Space
+## Validating Metric Views in a Genie Agent
 
-Add and validate **one measure at a time**: add the measure, ask sample questions in the space, compare against the source-of-truth report, then save the validated query and benchmarks before moving on. Skipping this is the most common cause of broken Genie spaces. The full build/validation loop, example-SQL guidance, benchmarks, and regression testing live with the Genie skill — see [databricks-genie/create-genie-space → space-design-guide.md](../../databricks-genie/create-genie-space/references/space-design-guide.md).
+Add and validate **one measure at a time**: add the measure, ask sample questions in the Agent, compare against the source-of-truth report, then save the validated query and benchmarks before moving on. Skipping this is the most common cause of broken Genie Agents. The full build/validation loop, example-SQL guidance, benchmarks, and regression testing live with the Genie skill — see [databricks-genie-agent/create-genie-agent → agent-design-guide.md](../../databricks-genie-agent/create-genie-agent/references/agent-design-guide.md).
 
 ## Common Anti-Patterns (Metric-View Design)
 
-These are the **design-side** anti-patterns. For Genie-space build/validation anti-patterns (base view left in the space, adding many measures at once, no space description, complex `CASE` in example SQL), see [databricks-genie/create-genie-space → space-design-guide.md §Anti-Patterns](../../databricks-genie/create-genie-space/references/space-design-guide.md#anti-patterns).
+These are the **design-side** anti-patterns. For Genie-agent build/validation anti-patterns (base view left in the Agent, adding many measures at once, no Agent description, complex `CASE` in example SQL), see [databricks-genie-agent/create-genie-agent → agent-design-guide.md §Anti-Patterns](../../databricks-genie-agent/create-genie-agent/references/agent-design-guide.md#anti-patterns).
 
 | Anti-pattern | Why it fails | Fix |
 |--------------|--------------|-----|

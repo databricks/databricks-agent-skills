@@ -1,12 +1,12 @@
 # Genie Conversations
 
-Use the Genie Conversation API to ask natural language questions to a curated Genie Space.
+Use the Genie Conversation API to ask natural language questions to a curated Genie Agent.
 
 > **CLI is the default.** The canonical, environment-agnostic conversation commands (`databricks genie start-conversation`, `create-message`, `get-message`, `get-message-attachment-query-result`) live in the parent [SKILL.md §Conversation API](../SKILL.md#conversation-api). This reference documents the **`ask_genie` MCP tool** — use it when the Databricks MCP server is configured (e.g. inside an IDE), since it wraps the full start → poll → fetch loop into a single call. The when-to-use guidance, response handling, and example workflows below apply to both paths.
 
 ## Overview
 
-The `ask_genie` tool allows you to programmatically send questions to a Genie Space and receive SQL-generated answers. Instead of writing SQL directly, you delegate the query generation to Genie, which has been curated with business logic, instructions, and certified queries.
+The `ask_genie` tool allows you to programmatically send questions to a Genie Agent and receive SQL-generated answers. Instead of writing SQL directly, you delegate the query generation to Genie, which has been curated with business logic, instructions, and certified queries.
 
 ## When to Use `ask_genie`
 
@@ -14,10 +14,10 @@ The `ask_genie` tool allows you to programmatically send questions to a Genie Sp
 
 | Scenario | Why |
 |----------|-----|
-| Genie Space has curated business logic | Genie knows rules like "active customer = ordered in 90 days" |
-| User explicitly says "ask Genie" or "use my Genie Space" | User intent to use their curated space |
+| Genie Agent has curated business logic | Genie knows rules like "active customer = ordered in 90 days" |
+| User explicitly says "ask Genie" or "use my Genie Agent" | User intent to use their curated space |
 | Complex business metrics with specific definitions | Genie has certified queries for official metrics |
-| Testing a Genie Space after creating it | Validate the space works correctly |
+| Testing a Genie Agent after creating it | Validate the space works correctly |
 | User wants conversational data exploration | Genie handles context for follow-up questions |
 
 ### Use Direct SQL (`execute_sql`) Instead When:
@@ -26,7 +26,7 @@ The `ask_genie` tool allows you to programmatically send questions to a Genie Sp
 |----------|-----|
 | Simple ad-hoc query | Direct SQL is faster, no curation needed |
 | You already have the exact SQL | No need for Genie to regenerate |
-| Genie Space doesn't exist for this data | Can't use Genie without a space |
+| Genie Agent doesn't exist for this data | Can't use Genie without a space |
 | Need precise control over the query | Direct SQL gives exact control |
 
 ## MCP Tools
@@ -143,10 +143,10 @@ Claude:
    Genie used this SQL: SELECT ..."
 ```
 
-### Workflow 2: Testing a New Genie Space
+### Workflow 2: Testing a New Genie Agent
 
 ```
-User: "I just created a Genie Space for HR data. Can you test it?"
+User: "I just created a Genie Agent for HR data. Can you test it?"
 
 Claude:
 1. Gets the space_id from the user or recent manage_genie(action="create_or_update") result
@@ -216,7 +216,7 @@ ask_genie(space_id, "Calculate customer lifetime value for all customers",
 
 ## Troubleshooting
 
-### "Genie Space not found"
+### "Genie Agent not found"
 
 - Verify the `space_id` is correct
 - Check you have access to the space
@@ -232,10 +232,10 @@ ask_genie(space_id, "Calculate customer lifetime value for all customers",
 
 - Rephrase the question more clearly
 - Check if the question is answerable with the available tables
-- Add more instructions/curation to the Genie Space
+- Add more instructions/curation to the Genie Agent
 
 ### Unexpected Results
 
 - Review the generated SQL in the response
-- Add SQL instructions to the Genie Space via the Databricks UI
+- Add SQL instructions to the Genie Agent via the Databricks UI
 - Add sample questions that demonstrate correct patterns

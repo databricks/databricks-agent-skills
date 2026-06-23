@@ -1,6 +1,6 @@
 # Genie Failure Routing
 
-Use this reference to classify Genie Space failures and choose the smallest useful fix.
+Use this reference to classify Genie Agent failures and choose the smallest useful fix.
 
 ## Evidence To Gather
 

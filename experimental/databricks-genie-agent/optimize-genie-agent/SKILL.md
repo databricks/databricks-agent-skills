@@ -1,20 +1,22 @@
 ---
-name: optimize-genie-space
-description: "Optimize Databricks Genie Space quality through approved iterative tuning. Works inside Databricks Genie Code (native UI) or from an external agent via the Databricks CLI/MCP. Use to make reviewed Space edits, repair or prune benchmarks, launch native Chat-mode or Agent-mode benchmark evaluations, compare baseline-to-candidate results, analyze regressions, and run one focused configuration pass at a time with bounded read-only data inspection."
+name: optimize-genie-agent
+description: "Optimize Databricks Genie Agent quality through approved iterative tuning. Works inside Databricks Genie Code (native UI) or from an external agent via the Databricks CLI/MCP. Use to make reviewed Agent edits, repair or prune benchmarks, launch native Chat-mode or Agent-mode benchmark evaluations, compare baseline-to-candidate results, analyze regressions, and run one focused configuration pass at a time with bounded read-only data inspection."
 ---
 
-# Optimize Genie Space
+# Optimize Genie Agent
 
-Improve a Genie Space iteratively: inspect Space context, make reviewed edits, launch benchmark evaluation, wait for completed output, and compare behavior across tuning passes — one focused pass at a time. Distinguish the **agent host** running this skill from Genie benchmark **Agent mode**, where benchmark execution judges the whole Genie response.
+Improve a Genie Agent iteratively: inspect Agent context, make reviewed edits, launch benchmark evaluation, wait for completed output, and compare behavior across tuning passes — one focused pass at a time. Distinguish the **agent host** running this skill from Genie benchmark **Agent mode**, where benchmark execution judges the whole Genie response.
+
+> **Naming:** "Genie Agent" is the current name for what was formerly called a **Genie Space**. The two terms are interchangeable — "Genie Space" still appears in the Databricks UI, CLI (`create-space`, `serialized_space`, …), and API, and remains valid for backward compatibility.
 
 ## Execution Context
 
 This skill runs in either of two contexts. **The iterative tuning workflow below is identical; only the *mechanism* differs.**
 
-- **(a) Inside Databricks Genie Code (native UI)** — inspect Space context, make reviewed edits in the native editor, and launch native benchmark evaluation from the UI.
+- **(a) Inside Databricks Genie Code (native UI)** — inspect Agent context, make reviewed edits in the native editor, and launch native benchmark evaluation from the UI.
 - **(b) Outside Databricks via CLI/MCP** (e.g. Claude Code) — use the Databricks CLI as the default. Benchmark evaluation runs via the **Beta** `genie-*-eval-run` commands (CLI-only; not wrapped by `manage_genie`/`ask_genie`). See [Mechanism Map](#mechanism-map-cli--mcp).
 
-**Prerequisites (context b):** authenticated `databricks` CLI, a running SQL warehouse with `CAN USE`, edit access to the Space, and benchmark questions already defined in the Space.
+**Prerequisites (context b):** authenticated `databricks` CLI, a running SQL warehouse with `CAN USE`, edit access to the Agent, and benchmark questions already defined in the Agent.
 
 ## Hard Rules
 
@@ -26,16 +28,16 @@ This skill runs in either of two contexts. **The iterative tuning workflow below
 - Benchmark questions are shared definitions; Chat or Agent scoring is determined by benchmark execution mode.
 - Benchmark evaluation can be asynchronous. Do not compare a run until it has completed and produced per-question output.
 - Prefer structured Genie context over broad text instructions.
-- Get explicit user approval before applying Space edits, changing benchmark definitions, launching native benchmark evaluations, or writing Unity Catalog optimization history.
+- Get explicit user approval before applying Agent edits, changing benchmark definitions, launching native benchmark evaluations, or writing Unity Catalog optimization history.
 - Benchmark repair or pruning changes only benchmark definitions, never source data or Genie tuning surfaces.
-- Before applying a Space/config edit, classify failed and needs-review benchmark questions using the repair decision stack in `references/optimization-guide.md`.
-- Every tuning pass must name the target failure cluster, selected repair lever, Space/config surface, expected fixes, related previous-good regression questions, and evaluation gate.
+- Before applying a Agent/config edit, classify failed and needs-review benchmark questions using the repair decision stack in `references/optimization-guide.md`.
+- Every tuning pass must name the target failure cluster, selected repair lever, Agent/config surface, expected fixes, related previous-good regression questions, and evaluation gate.
 - If durable multi-pass history is needed, write only to user-approved Unity Catalog optimization-history tables. Persistence is optional and must never modify source data or source schemas.
 
 ## Workflow
 
-1. Confirm the target Space and optimization goal: higher benchmark score, a failure cluster, a specific user question pattern, or a general quality pass.
-2. Determine the benchmark execution target: Chat, Agent, or mixed. Infer it from the user's goal, benchmark UI/eval context, existing SQL answers, evaluation notes, and latest eval output. If it is ambiguous or the Space has no benchmark questions, ask the user whether to bootstrap or optimize for Chat execution, Agent execution, or both.
+1. Confirm the target Agent and optimization goal: higher benchmark score, a failure cluster, a specific user question pattern, or a general quality pass.
+2. Determine the benchmark execution target: Chat, Agent, or mixed. Infer it from the user's goal, benchmark UI/eval context, existing SQL answers, evaluation notes, and latest eval output. If it is ambiguous or the Agent has no benchmark questions, ask the user whether to bootstrap or optimize for Chat execution, Agent execution, or both.
 3. Review benchmark quality before tuning:
    - count valid benchmark items for the target execution mode
    - for Chat execution, require deterministic questions with checked SQL answers
@@ -54,9 +56,9 @@ This skill runs in either of two contexts. **The iterative tuning workflow below
 9. Cluster valid tuning failures by shared root cause using `references/optimization-guide.md`.
 10. Choose one failure cluster or small related cluster set and select the smallest structured repair lever.
 11. Write the before config snapshot and repair analysis only when approved Unity Catalog optimization-history tables are available.
-12. Apply approved Space edits using the selected structured surface:
+12. Apply approved Agent edits using the selected structured surface:
    - data source or column descriptions
-   - Metric View metadata exposed in the Space or an upstream semantic model recommendation
+   - Metric View metadata exposed in the Agent or an upstream semantic model recommendation
    - prompt matching settings
    - join specs
    - SQL snippets
@@ -81,7 +83,7 @@ This skill runs in either of two contexts. **The iterative tuning workflow below
 Provide a concise optimization summary:
 
 ```markdown
-# Genie Space Optimization: <space>
+# Genie Agent Optimization: <space>
 
 ## Benchmark Review
 - Execution target:
@@ -96,7 +98,7 @@ Provide a concise optimization summary:
 - Validity exclusions:
 - Target cluster:
 - Repair lever:
-- Space/config surface:
+- Agent/config surface:
 - Changes applied:
 - Why this was the smallest useful pass:
 - Regression questions watched:
@@ -127,7 +129,7 @@ Per-step mapping for context (b). Inside Databricks you use native benchmark exe
 | Wait for / fetch run status | eval UI | `databricks genie genie-get-eval-run SPACE_ID EVAL_RUN_ID` — poll until complete (eval is asynchronous; do not compare until done) |
 | List prior runs (baseline) | eval history | `databricks genie genie-list-eval-runs SPACE_ID` |
 | Per-question results (Step 15 compare) | per-question scoring grid | `databricks genie genie-list-eval-results SPACE_ID EVAL_RUN_ID`, then `genie-get-eval-result-details SPACE_ID EVAL_RUN_ID RESULT_ID` |
-| Apply a Space edit (Step 12) | native editor | `databricks genie update-space` with the edited config (see parent [databricks-genie SKILL.md](../SKILL.md)) — present for approval first |
+| Apply a Agent edit (Step 12) | native editor | `databricks genie update-space` with the edited config (see parent [databricks-genie SKILL.md](../SKILL.md)) — present for approval first |
 | UC optimization-history persistence (Steps 6, 11, 16) | notebook/SQL | `databricks experimental aitools tools query` to create/append the approved history tables in `references/optimization-guide.md` |
 
 **Staged evaluation gates via scoping.** Use `benchmark_question_ids` to keep the gates cheap and the regression signal clean:
@@ -144,8 +146,8 @@ All hard rules still hold: get explicit approval before applying edits, changing
 
 ## Related Skills
 
-- **`diagnose-genie-space`** — plan-only root-cause analysis; precede a tuning pass with it when the failure cause is unclear.
+- **`diagnose-genie-agent`** — plan-only root-cause analysis; precede a tuning pass with it when the failure cause is unclear.
 - **`optimize-genie-query`** — for query performance/cost issues rather than answer quality.
-- **`create-genie-space`** — initial Space design and bootstrap.
-- **`databricks-metric-views`** — `genie-integration.md` (Metric View design) and `query-patterns.md` (`MEASURE()` query rules). Recommend upstream semantic-model fixes with this skill instead of working around gaps with broad text instructions.
-- **`databricks-genie`** — the parent orchestration hub for the full Space lifecycle (create, query, export, import, migrate) and the verified `serialized_space` field schema; route there for the end-to-end CLI/MCP command surface.
+- **`create-genie-agent`** — initial Agent design and bootstrap.
+- **`databricks-metric-views`** — `genie-agent-integration.md` (Metric View design) and `query-patterns.md` (`MEASURE()` query rules). Recommend upstream semantic-model fixes with this skill instead of working around gaps with broad text instructions.
+- **`databricks-genie`** — the parent orchestration hub for the full Agent lifecycle (create, query, export, import, migrate) and the verified `serialized_space` field schema; route there for the end-to-end CLI/MCP command surface.
