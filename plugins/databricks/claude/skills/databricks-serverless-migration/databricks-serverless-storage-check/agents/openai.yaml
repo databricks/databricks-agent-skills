@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Serverless Storage Check"
+  short_description: "Detect cross-task file-sharing antipatterns in Databricks serverless jobs (writes to /local_disk0, /tmp, or trustedTemp that are read by sibling or child tasks on potentially different compute node..."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-serverless-storage-check for detect cross-task file-sharing antipatterns in databricks serverless jobs (writes to /local_disk0, /tmp, or trustedtemp that are read by sibling or child tasks on potentially different compute node."

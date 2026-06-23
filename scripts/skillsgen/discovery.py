@@ -21,7 +21,11 @@ EXPERIMENTAL_REPO_DIR = "experimental"
 
 
 def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
-    """Yield skill directories under `parent` that contain SKILL.md."""
+    """Yield skill directories under `parent` that contain SKILL.md.
+
+    For the stable skills dir, also yields one level of nested sub-skill
+    directories (e.g. skills/databricks-serverless-migration/databricks-serverless-storage-check/).
+    """
     skills_dir = repo_root / parent
     if not skills_dir.exists():
         return
@@ -33,6 +37,15 @@ def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
         if not (item / "SKILL.md").exists():
             continue
         yield item
+        if parent == STABLE_REPO_DIR:
+            for subitem in sorted(item.iterdir()):
+                if not subitem.is_dir():
+                    continue
+                if subitem.name.startswith("."):
+                    continue
+                if not (subitem / "SKILL.md").exists():
+                    continue
+                yield subitem
 
 
 def iter_experimental_skill_dirs(repo_root: Path):

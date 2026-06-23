@@ -1,6 +1,6 @@
 ---
 name: databricks-apps
-description: "Build apps on Databricks Apps platform. Use when asked to create dashboards, data apps, analytics tools, or visualizations. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
+description: "Build apps on Databricks Apps platform. Use when asked to create data apps, analytics tools, or custom interactive visualizations. A plain \"create a dashboard\" request means a managed AI/BI (Lakeview) dashboard → use databricks-aibi-dashboards, not this skill. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
   version: "0.1.2"
@@ -11,7 +11,9 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
-**For data UI design (required for any data-displaying app)**: if the app shows ANY data — a dashboard, KPI/overview page, report, chart, table, query results, OR a **conversational / chat / Genie natural-language assistant** — you MUST use the `databricks-app-design` skill (alongside this one) to decide layout, charts, KPIs, semantic color, required states, and AI-result trust, and map them to AppKit components. This includes chat/Genie apps, not just dashboards — if in doubt, use it.
+**Is this even a Databricks App?** Don't assume an app is the only way to show data. For a simple "dashboard with a few charts" and no app-specific need, the managed **AI/BI (Lakeview) dashboard** is the simpler path → use the `databricks-aibi-dashboards` skill, not this one. Reach for a custom Databricks App only when the user needs something AI/BI can't give them — bespoke interactivity/components, write-back, embedded or auth-gated workflows, a Genie/chat surface inside the app — or explicitly asks for an app. If it's genuinely ambiguous, surface both options (managed AI/BI dashboard vs custom app) and let the user choose instead of defaulting to an app. Once an app is the right call, it's fine for this skill to favor an app-based dashboard, and `databricks-app-design` covers building it well.
+
+**For data UI design (required for any data-displaying app)**: once you've confirmed the user wants a custom-code app (not a managed AI/BI dashboard — see above), if the app shows ANY data — a KPI/overview page, report, chart, table, query results, OR a **conversational / chat / Genie natural-language assistant** — you MUST use the `databricks-app-design` skill (alongside this one) to decide layout, charts, KPIs, semantic color, required states, and AI-result trust, and map them to AppKit components. This includes chat/Genie apps, not just static data views — if in doubt, use it.
 
 Build apps that deploy to Databricks Apps platform.
 
@@ -68,7 +70,9 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 If the user's app description involves storing or persisting data — forms, CRUD operations, user submissions, orders, todos, or other user-generated content — the app likely needs a Lakebase database.
 
 1. **Ask the user** whether the app needs persistent storage (Lakebase) before scaffolding. Do not silently add Lakebase.
-2. If confirmed, use the **`databricks-lakebase`** skill to create a Lakebase project and obtain the branch and database resource names.
+2. If confirmed, **ask whether to reuse an existing Lakebase project or create a new one** (same as the Genie flow below) — never create one silently. Use the **`databricks-lakebase`** skill to obtain the branch and database resource names:
+   - **Reusing:** list with `databricks postgres list-projects`, then `list-branches` / `list-databases`, and let the user pick the project, branch, and database; confirm which schema the app will own (a fresh/dedicated schema avoids the service-principal ownership conflict).
+   - **Creating:** create a new project (it auto-provisions a `production` branch + `databricks_postgres` database).
 3. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
 4. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
 
