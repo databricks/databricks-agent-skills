@@ -13,6 +13,15 @@ Start from the user's actual intent:
 
 Before deeper profiling, check feasibility. Flag missing measures, dimensions, time fields, Metric View measures, or join paths. Let the user add sources, adjust questions, or proceed with explicit limitations.
 
+## Space Sizing
+
+- **Hard limit:** 30 tables/views/Metric Views per Genie Space.
+- **Practical guidance:** keep Spaces focused — the tighter the domain, the better Genie performs. Aim well under the limit; 5 or fewer objects is a good starting target.
+- Organize Spaces by **business domain/subdomain**, not by report. A domain (e.g. "Marketing") maps to a Space; if a domain is broad, split by subdomain (e.g. "Online Marketing").
+- If a domain approaches 30 items, split it into multiple Spaces by subdomain.
+- Assign domain/subdomain tags to both Genie Spaces and their underlying tables/Metric Views for discoverability and observability.
+- Optional: mirror the hierarchy in Unity Catalog — one schema per domain or subdomain.
+
 ## Read-Only Discovery And Profiling
 
 Use workspace metadata first, then run focused read-only SQL only when metadata is not enough. Use `references/data-profiling-and-readiness.md` for SQL templates covering structure, row counts, grain, freshness/date ranges, null/empty/constant columns, cardinality, casing, boolean-as-string values, join overlap, Metric View `MEASURE()` behavior, PII/ETL/noisy fields, usage/lineage, and per-question readiness.
@@ -74,6 +83,23 @@ Canonical, deeper rules live in the `databricks-metric-views` skill: `genie-inte
 - Do not use `SELECT *` against Metric Views in examples or benchmarks.
 - If a Metric View output must be combined with another source, wrap the Metric View query in a CTE before joining.
 
+## Incremental Build & Validation
+
+Add and validate **one measure/question at a time**. Skipping this is the most common cause of broken Spaces — when you add many at once you cannot isolate which addition confused Genie.
+
+```text
+For each KPI / question:
+  1. Add ONE measure (or one Metric View) to the Space
+  2. Ask sample questions in the Genie Space
+  3. Compare Genie's result against the source-of-truth report
+  4. Save the validated query as an EXAMPLE SQL in the Space
+  5. Add 2-4 phrasings of the question to BENCHMARKS with ground-truth SQL
+  6. Run regression tests (rerun all benchmarks)
+  7. Only then add the next measure
+```
+
+Saved example queries are reused and imitated by Genie — keep them simple (prefer `WHERE` over `CASE`; avoid unnecessary subqueries/window functions) so each adds less reasoning load. Rerun all benchmarks after **every** change; a previously passing benchmark that now fails almost always means the latest addition confused Genie. For eval-driven tuning after creation, hand off to `../../optimize-genie-space/SKILL.md`.
+
 ## Examples And Benchmarks
 
 There is no fixed minimum count for SQL snippets, example SQL, or benchmarks — size each by **coverage**, not a quota. Manufacturing filler to hit a number competes with governed surfaces and violates the priority order above.
@@ -112,3 +138,13 @@ Check the draft for:
 - Example SQL that teaches reusable patterns, not memorized test questions.
 - Example SQL parameters with real defaults and descriptions.
 - Benchmarks with ground truth appropriate to the intended execution mode: checked SQL for deterministic Chat-style questions, evaluation notes for Agent-style multi-step analysis, and both when a deterministic question also needs full-response judging. Cover sources, filters, measures, joins, time logic, answer shapes, evidence quality, and response synthesis as applicable.
+
+## Anti-Patterns
+
+| Anti-pattern | Why it fails | Fix |
+|--------------|--------------|-----|
+| Both the base view AND the Metric View in the same Space | Genie sees unaggregated rows and must re-derive aggregation logic | Remove the base view from the Space once a Metric View exists on top of it |
+| Adding 10 measures at once before testing | Can't isolate which one broke Genie's reasoning | Add and validate one at a time |
+| Genie Space with no description | Multi-agent routing fails silently | Always set a Space description |
+| Complex `CASE` chains in saved example SQL | Increases Genie's reasoning load on similar questions | Simplify to `WHERE` filters; lean on composed measures |
+| Prompt matching / format assistance / entity matching blanket-enabled on every column | Wastes context on IDs, hashes, free text, and raw measures | Enable selectively, only on useful categorical dimensions and filters (see Design Priorities) |

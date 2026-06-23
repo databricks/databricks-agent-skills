@@ -246,8 +246,9 @@ Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces. See
 ## Reference Files
 
 - [spaces.md](references/spaces.md) - Creating and managing Genie Spaces; exact `serialized_space` field schemas; export/import/migration (CLI-default, MCP shortcuts where available)
-- [space-quality.md](references/space-quality.md) - Tool-agnostic quick reference: sizing, build & validation loop, benchmarks, regression, setup checklist, anti-patterns
 - [conversation.md](references/conversation.md) - Asking questions via the Conversation API (CLI-default, `ask_genie` where available)
+
+Sizing, the incremental build & validation loop, benchmarks/regression, and anti-patterns live with the lifecycle subskills: [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) (sizing, build loop, anti-patterns) and [optimize-genie-space → optimization-guide.md](optimize-genie-space/references/optimization-guide.md) (benchmark integrity, repair/pruning, regression gates).
 
 ## Lifecycle Subskills (design & tuning)
 
@@ -262,7 +263,7 @@ A companion suite of **dual-host** lifecycle skills covers design and tuning. Ea
 | [optimize-genie-space](optimize-genie-space/SKILL.md) | Approved iterative benchmark-driven quality tuning (one focused pass at a time) |
 | [optimize-genie-query](optimize-genie-query/SKILL.md) | Benchmark-query performance/cost triage via Query History metrics & Query Profile |
 
-Typical flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). For the condensed, tool-agnostic version of the build/validation guidance these skills implement, see [space-quality.md](references/space-quality.md).
+Typical flow: **create → diagnose → optimize-genie-space**, with **optimize-genie-query** for performance issues (it hands back to the quality skills if the SQL is semantically wrong). The build/validation guidance lives directly in these subskills — sizing, the incremental build loop, and anti-patterns in [create-genie-space](create-genie-space/references/space-design-guide.md); benchmark integrity, repair/pruning, and regression in [optimize-genie-space](optimize-genie-space/references/optimization-guide.md).
 
 ## Genie Space Lifecycle (design → diagnose → optimize)
 
@@ -271,8 +272,8 @@ The lifecycle methodology is **host-portable** — only the *mechanism* differs 
 | Phase | Methodology (canonical source) | Execute via CLI (default) | MCP equivalent (if available) | Lifecycle subskill |
 |-------|-------------------------------|---------------------------|-------------------------------|---------------------|
 | **Design** | [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) — requirements, readiness, structured-context-first order, metric-view recommendation | `databricks experimental aitools tools discover-schema` / `... query` (read-only profiling) | `get_table_stats_and_schema`, `execute_sql` | `create-genie-space` |
-| **Create / update** | [space-quality.md](references/space-quality.md) — sizing, setup checklist; [spaces.md](references/spaces.md) | `databricks genie create-space` / `update-space` | `manage_genie(create_or_update)` | `create-genie-space` |
-| **Query / evaluate** | [space-quality.md](references/space-quality.md) — incremental build & validation loop, benchmarks | `databricks genie start-conversation` / `get-message` over a question set; compare to source-of-truth | `ask_genie` over a question set | `optimize-genie-space` |
+| **Create / update** | [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) — sizing, build loop, health checks; [spaces.md](references/spaces.md) | `databricks genie create-space` / `update-space` | `manage_genie(create_or_update)` | `create-genie-space` |
+| **Query / evaluate** | [create-genie-space → space-design-guide.md](create-genie-space/references/space-design-guide.md) — incremental build & validation loop, benchmarks | `databricks genie start-conversation` / `get-message` over a question set; compare to source-of-truth | `ask_genie` over a question set | `optimize-genie-space` |
 | **Diagnose** | [diagnose-genie-space → failure-routing.md](diagnose-genie-space/references/failure-routing.md) — classify primary failure, smallest fix | reproduce via `start-conversation`; `get-space --include-serialized-space`; read `system.query.history` | `ask_genie`, `manage_genie(get, include_serialized_space)`, `execute_sql` | `diagnose-genie-space` |
 | **Optimize (quality)** | [optimize-genie-space → optimization-guide.md](optimize-genie-space/references/optimization-guide.md) — benchmark integrity, repair/pruning, baseline→candidate, regression | edit config via `update-space`; re-run `start-conversation` eval loop | `manage_genie(create_or_update)`; `ask_genie` eval loop | `optimize-genie-space` |
 | **Optimize (query)** | [optimize-genie-query → query-optimization-guide.md](optimize-genie-query/references/query-optimization-guide.md) — reduce work before adding compute | `EXPLAIN` via `aitools tools query`; read `system.query.history`, `system.access.audit` | `execute_sql` + `EXPLAIN`, `system.query.history` | `optimize-genie-query` |

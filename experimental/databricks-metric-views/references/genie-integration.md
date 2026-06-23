@@ -2,7 +2,7 @@
 
 Best practices for designing metric views that AI agents (Genie, multi-agent systems) can reliably reason over.
 
-> **Scope:** This page covers the **metric-view design** side. For building, sizing, validating, and benchmarking the Genie Space itself, see [databricks-genie/space-quality.md](../../databricks-genie/references/space-quality.md). For the `MEASURE()` query rules Genie must follow, see [query-patterns.md](query-patterns.md).
+> **Scope:** This page covers the **metric-view design** side. For building, sizing, validating, and benchmarking the Genie Space itself, see the `databricks-genie` lifecycle subskills — [create-genie-space → space-design-guide.md](../../databricks-genie/create-genie-space/references/space-design-guide.md) (sizing, build loop, anti-patterns) and [optimize-genie-space → optimization-guide.md](../../databricks-genie/optimize-genie-space/references/optimization-guide.md) (benchmark repair/pruning, regression). For the `MEASURE()` query rules Genie must follow, see [query-patterns.md](query-patterns.md).
 
 ## Core Design Rules
 
@@ -151,11 +151,11 @@ finance_cost_metrics
 
 ## Validating Metric Views in a Genie Space
 
-Add and validate **one measure at a time**: add the measure, ask sample questions in the space, compare against the source-of-truth report, then save the validated query and benchmarks before moving on. Skipping this is the most common cause of broken Genie spaces. The full build/validation loop, example-SQL guidance, benchmarks, and regression testing live with the Genie skill — see [databricks-genie/space-quality.md](../../databricks-genie/references/space-quality.md).
+Add and validate **one measure at a time**: add the measure, ask sample questions in the space, compare against the source-of-truth report, then save the validated query and benchmarks before moving on. Skipping this is the most common cause of broken Genie spaces. The full build/validation loop, example-SQL guidance, benchmarks, and regression testing live with the Genie skill — see [databricks-genie/create-genie-space → space-design-guide.md](../../databricks-genie/create-genie-space/references/space-design-guide.md).
 
 ## Common Anti-Patterns (Metric-View Design)
 
-These are the **design-side** anti-patterns. For Genie-space build/validation anti-patterns (base view left in the space, adding many measures at once, no space description, complex `CASE` in example SQL), see [databricks-genie/space-quality.md §Anti-Patterns](../../databricks-genie/references/space-quality.md#anti-patterns).
+These are the **design-side** anti-patterns. For Genie-space build/validation anti-patterns (base view left in the space, adding many measures at once, no space description, complex `CASE` in example SQL), see [databricks-genie/create-genie-space → space-design-guide.md §Anti-Patterns](../../databricks-genie/create-genie-space/references/space-design-guide.md#anti-patterns).
 
 | Anti-pattern | Why it fails | Fix |
 |--------------|--------------|-----|
