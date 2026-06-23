@@ -77,7 +77,7 @@ databricks postgres <subcommand> -h       # Flags, args, JSON fields
 
 ## Create a Project
 
-> **Do NOT list projects before creating.**
+> **First decide: reuse or create.** When building or attaching to an app, ask the user whether to reuse an existing project/branch/database — list them with `databricks postgres list-projects` (then `list-branches` / `list-databases`), let the user pick, and confirm which schema the app will own — or create a new project. Only skip listing and create directly when the user explicitly asked for a brand-new project.
 
 ```bash
 databricks postgres create-project <PROJECT_ID> \
@@ -195,6 +195,45 @@ databricks apps init --name <APP_NAME> --features lakebase \
 ```
 
 For the full app workflow, use the **`databricks-apps`** skill.
+
+### Attach Lakebase to an existing app
+
+`apps init --features lakebase` (above) wires the database at scaffold time. To
+attach a project to an **existing** app, update its resources.
+
+**Use the `postgres` resource key for an Autoscaling project** — its fields are
+`branch` + `database` (full resource paths from the table above). The legacy
+`database` key (`instance_name` + `database_name`) is for **Provisioned**
+instances only; using it for an Autoscaling project fails with
+`Database instance <name> does not exist`. Get the exact paths from
+`list-branches` / `list-databases` (the DB name is often hyphenated, e.g.
+`databricks-postgres`).
+
+Update the app's resources with **`databricks apps create-update`** — the method to use for any app (the older `databricks apps update` is legacy and can't change resources for an app in a space). `update_mask=resources` replaces the whole `resources` array, so read the app's current resources and **merge** the new one in (or you'll detach the rest). Pass everything in `--json`; only `APP_NAME` is positional:
+
+```bash
+databricks apps create-update <APP_NAME> --json @update.json --profile <PROFILE>   # waits for completion; --no-wait to return early
+```
+
+```json
+{
+  "update_mask": "resources",
+  "app": {
+    "resources": [
+      {
+        "name": "postgres",
+        "postgres": {
+          "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>",
+          "database": "projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID>",
+          "permission": "CAN_CONNECT_AND_CREATE"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Confirm the branch/database with the user — don't default to `production` silently.** The app's service principal must be able to create and **own** the schema(s) it uses there, so avoid a branch/database where those schema names are already owned by a user (the SP will hit `permission denied … 42501`) — a fresh/dedicated branch, or a new app-owned schema, is cleanest. See **Schema Permissions for Deployed Apps** below for the full ownership model.
 
 ### Schema Permissions for Deployed Apps
 

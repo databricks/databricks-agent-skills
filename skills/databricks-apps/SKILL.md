@@ -70,7 +70,9 @@ Before writing any SQL, use the parent `databricks-core` skill for data explorat
 If the user's app description involves storing or persisting data — forms, CRUD operations, user submissions, orders, todos, or other user-generated content — the app likely needs a Lakebase database.
 
 1. **Ask the user** whether the app needs persistent storage (Lakebase) before scaffolding. Do not silently add Lakebase.
-2. If confirmed, use the **`databricks-lakebase`** skill to create a Lakebase project and obtain the branch and database resource names.
+2. If confirmed, **ask whether to reuse an existing Lakebase project or create a new one** (same as the Genie flow below) — never create one silently. Use the **`databricks-lakebase`** skill to obtain the branch and database resource names:
+   - **Reusing:** list with `databricks postgres list-projects`, then `list-branches` / `list-databases`, and let the user pick the project, branch, and database; confirm which schema the app will own (a fresh/dedicated schema avoids the service-principal ownership conflict).
+   - **Creating:** create a new project (it auto-provisions a `production` branch + `databricks_postgres` database).
 3. Scaffold with `--features lakebase` and pass `--set lakebase.postgres.branch=<BRANCH_NAME> --set lakebase.postgres.database=<DATABASE_NAME>`.
 4. If the app **also** reads from Unity Catalog tables, proceed to the Data Access Decision Gate below to determine whether to add `--features analytics` or use Lakebase synced tables.
 

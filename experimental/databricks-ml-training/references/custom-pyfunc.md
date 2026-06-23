@@ -69,7 +69,7 @@ with mlflow.start_run():
         signature=infer_signature(sample_input, sample_output),
         input_example=sample_input,
         # Pin exact versions — endpoint rebuilds the env from these:
-        pip_requirements=["mlflow>=3.0", "xgboost==2.1.3", "scikit-learn==1.5.2", "pandas"],
+        pip_requirements=["mlflow==3.1.0", "xgboost==2.1.3", "scikit-learn==1.5.2", "pandas"],
         # Extra modules to ship with the model (e.g. shared util libs):
         # code_paths=["src/utils.py"],
         registered_model_name=FULL_NAME,
@@ -93,10 +93,10 @@ client.set_registered_model_alias(FULL_NAME, "prod", v)
 
 ## Consume
 
-Same two paths as autologged classical ML — see [training-and-serving.md](training-and-serving.md#consume-batch-scoring-over-delta).
+Same two paths as autologged classical ML — see [SKILL.md § batch scoring](../SKILL.md#consume-batch-scoring-over-delta).
 
 - **Batch**: `mlflow.pyfunc.spark_udf(spark, model_uri=f"models:/{FULL_NAME}@prod", env_manager="local")` over a Delta table.
-- **Real-time**: `client.create_endpoint(...)` (see training-and-serving.md). Query returns a DataFrame-shaped JSON since `predict` returns a DataFrame.
+- **Real-time**: `client.create_endpoint(...)` for the dev-side call; endpoint lifecycle in [databricks-model-serving](../../databricks-model-serving/SKILL.md). Query returns a DataFrame-shaped JSON since `predict` returns a DataFrame.
 
 ```bash
 databricks serving-endpoints query turbine-risk-endpoint --json '{
