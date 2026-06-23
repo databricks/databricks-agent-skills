@@ -286,6 +286,19 @@
       "repo_dir": "experimental",
       "version": "0.1.0"
     },
+    "databricks-ml-training": {
+      "description": "Train ML or custom-agent models on Databricks with MLflow tracking and Unity Catalog registration. Use when asked to: train classification/regression or deep-learning models (XGBoost, scikit-learn, LightGBM, PyTorch, etc.) with Optuna tuning, register to UC and promote `@prod`/`@challenger` aliases, batch-score via `spark_udf`, build custom PyFunc models, author a custom `ResponsesAgent` with UC Function/Vector Search tools, or submit a training notebook as a serverless one-time job. NOT for: endpoint ops (databricks-model-serving), Knowledge Assistants/Supervisor Agents (databricks-agent-bricks), MLflow evaluation (databricks-mlflow-evaluation).",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/custom-pyfunc.md",
+        "references/genai-agents.md"
+      ],
+      "repo_dir": "experimental",
+      "version": "0.1.0"
+    },
     "databricks-mlflow-evaluation": {
       "description": "MLflow 3 GenAI agent evaluation. Use when writing mlflow.genai.evaluate() code, creating @scorer functions, using built-in scorers (Guidelines, Correctness, Safety, RetrievalGroundedness), building eval datasets from traces, setting up trace ingestion and production monitoring, aligning judges with MemAlign from domain expert feedback, or running optimize_prompts() with GEPA for automated prompt improvement.",
       "files": [
@@ -309,19 +322,16 @@
       "version": "0.1.0"
     },
     "databricks-model-serving": {
-      "description": "Databricks Model Serving (ops) plus MLflow model development (dev): manage serving endpoints, train and register models to Unity Catalog with @prod aliases, batch-score via spark_udf, build custom...",
+      "description": "Databricks Model Serving endpoint lifecycle and ops.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/custom-pyfunc.md",
-        "references/genai-agents.md",
-        "references/off-platform-streaming.md",
-        "references/training-and-serving.md"
+        "references/off-platform-streaming.md"
       ],
       "repo_dir": "skills",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     "databricks-pipelines": {
       "description": "Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks.",

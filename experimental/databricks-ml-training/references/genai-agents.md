@@ -1,6 +1,6 @@
 # Custom GenAI agents with MLflow ResponsesAgent
 
-Edge case. **For most demos, use the `databricks-agent-bricks` skill** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
+Edge case. **For most demos, use [databricks-agent-bricks](../../databricks-agent-bricks/SKILL.md)** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
 
 ## What ResponsesAgent is
 
@@ -35,7 +35,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 
-LLM_ENDPOINT = "databricks-claude-sonnet-4-6"   # resolve at runtime — see training-and-serving.md
+LLM_ENDPOINT = "databricks-claude-sonnet-4-6"   # resolve at runtime — see databricks-model-serving
 VS_INDEX     = "ai_demo_gen.wind_farm.docs_index"
 UC_FUNCTIONS = ["ai_demo_gen.wind_farm.lookup_turbine_history"]
 SYSTEM_PROMPT = (
@@ -143,7 +143,7 @@ with mlflow.start_run():
         resources=resources,             # auto-auth — DO NOT skip
         input_example={"input": [{"role": "user", "content": "What's the maintenance history for turbine WTG-12?"}]},
         pip_requirements=[
-            "mlflow>=3.0",
+            "mlflow==3.1.0",
             "databricks-langchain",
             "langgraph==0.3.4",
             "databricks-agents",
@@ -184,31 +184,31 @@ Anything the agent calls that isn't covered here will hit auth errors at the end
 ```bash
 # 1. Is a deploy_agent run already active for this model? Match on run_name.
 databricks jobs list-runs --active-only --output json \
-  | jq --arg name "deploy_${MODEL_NAME}" '.[]? | select(.run_name == $name) | {run_id, state}'
+  | jq --arg name "deploy_${MODEL_NAME}" '.runs[]? | select(.run_name == $name) | {run_id, state}'
 
 # 2. Does the target endpoint already exist? If READY on the right version, skip the redeploy.
-databricks serving-endpoints get <endpoint_name> --output json 2>/dev/null \
+databricks serving-endpoints get <endpoint_name> 2>/dev/null \
   | jq '{ready: .state.ready, served: [.config.served_models[] | {name, model_version}]}'
 ```
 
 If either check returns a hit, follow the existing run with `jobs get-run <RUN_ID>` instead of submitting a new one.
 
 ```python
-# deploy_agent.py — runs as a notebook task, so args arrive as WIDGETS, not sys.argv.
-# Submit it with notebook_task.base_parameters = {"model_name", "version", "endpoint_name"}.
+# deploy_agent.py
 import json
 from databricks import agents
 
 dbutils.widgets.text("model_name", "")
 dbutils.widgets.text("version", "")
-dbutils.widgets.text("endpoint_name", "")          # optional
+dbutils.widgets.text("endpoint_name", "")
+
 model_name    = dbutils.widgets.get("model_name")
 version       = dbutils.widgets.get("version")
 endpoint_name = dbutils.widgets.get("endpoint_name") or None
 
 # Always pass endpoint_name explicitly — auto-derived names are
 # `agents_<catalog>-<schema>-<model>` with dots → dashes, which is unpredictable.
-kwargs = {"tags": {"project": "demo"}}
+kwargs = {"tags": {"ai_generated_source": "databricks-agent-skills"}}
 if endpoint_name:
     kwargs["endpoint_name"] = endpoint_name
 
@@ -221,7 +221,7 @@ dbutils.notebook.exit(json.dumps({
 }))
 ```
 
-Submit via the same `jobs submit --no-wait` pattern shown in [training-and-serving.md](training-and-serving.md#train--deploy-as-a-serverless-job) — `deploy_agent.py` as the notebook, passing the args as `notebook_task.base_parameters` (e.g. `{"model_name": FULL_NAME, "version": "3", "endpoint_name": "turbine-agent-endpoint"}`). The script reads them via `dbutils.widgets`.
+Submit via the same `jobs submit --no-wait` pattern shown in [SKILL.md § Train + deploy as a serverless job](../SKILL.md#train--deploy-as-a-serverless-job) — same script, just `deploy_agent.py` as the notebook.
 
 ## Query
 
