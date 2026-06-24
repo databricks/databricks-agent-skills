@@ -6,7 +6,7 @@ UniForm and Compatibility Mode make Delta tables readable as Iceberg by external
 
 ## External Iceberg Reads (fka UniForm) (GA)
 
-**Requirements**: Unity Catalog, DBR 14.3+, column mapping enabled, deletion vectors disabled, the Delta table must have a minReaderVersion >= 2 and minWriterVersion >= 7, both managed and external tables supported.
+**Requirements**: Unity Catalog, DBR 18.0+ for Iceberg v3, column mapping enabled, the Delta table must have a minReaderVersion >= 2 and minWriterVersion >= 7, both managed and external tables supported. Iceberg v3 supports deletion vectors; only Iceberg v2 UniForm requires deletion vectors to be disabled.
 
 UniForm adds automatic Iceberg metadata generation to regular Delta tables. The table remains Delta internally but is readable as Iceberg externally.
 
@@ -21,7 +21,7 @@ CREATE TABLE my_catalog.my_schema.customers (
 )
 TBLPROPERTIES (
   'delta.columnMapping.mode' = 'name',
-  'delta.enableIcebergCompatV2' = 'true',
+  'delta.enableIcebergCompatV3' = 'true',
   'delta.universalFormat.enabledFormats' = 'iceberg'
 );
 ```
@@ -32,8 +32,18 @@ TBLPROPERTIES (
 ALTER TABLE my_catalog.my_schema.customers
 SET TBLPROPERTIES (
   'delta.columnMapping.mode' = 'name',
-  'delta.enableIcebergCompatV2' = 'true',
+  'delta.enableIcebergCompatV3' = 'true',
   'delta.universalFormat.enabledFormats' = 'iceberg'
+);
+```
+
+### Upgrading an Existing UniForm Table from Iceberg v2 to v3
+
+```sql
+ALTER TABLE my_catalog.my_schema.customers
+SET TBLPROPERTIES (
+  'delta.enableIcebergCompatV3' = 'true',
+  'delta.enableIcebergCompatV2' = 'false'
 );
 ```
 
@@ -44,27 +54,17 @@ UniForm requires the following properties to be set explicitly:
 | Requirement | Details |
 |-------------|---------|
 | **Unity Catalog** | Table must be registered in UC |
-| **DBR 14.3+** | Minimum runtime version |
-| **Deletion vectors disabled** | Set `delta.enableDeletionVectors = false` before enabling UniForm |
-| **No column mapping conflicts** | If table uses `id` mode, migrate to `name` mode first |
+| **DBR 18.0+ for Iceberg v3** | Use Iceberg v3 for new UniForm examples and feature coverage |
+| **Column mapping enabled** | Use `delta.columnMapping.mode`; Databricks recommends `id` for most new-table compatibility, while `name` is suitable for existing tables and pipeline compatibility mode examples |
+| **Deletion vector behavior** | Iceberg v3 supports deletion vectors. Disable deletion vectors only when staying on Iceberg v2. |
 
-If deletion vectors are currently enabled:
+If an existing UniForm table is still on Iceberg v2 and you want to keep deletion vectors enabled, upgrade the table to Iceberg v3:
 
 ```sql
--- Disable deletion vectors first
-ALTER TABLE my_catalog.my_schema.customers
-SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'false');
-
--- Rewrite to remove existing deletion vectors
-REORG TABLE my_catalog.my_schema.customers
-APPLY (PURGE);
-
--- Then enable UniForm
 ALTER TABLE my_catalog.my_schema.customers
 SET TBLPROPERTIES (
-  'delta.columnMapping.mode' = 'name',
-  'delta.enableIcebergCompatV2' = 'true',
-  'delta.universalFormat.enabledFormats' = 'iceberg'
+  'delta.enableIcebergCompatV3' = 'true',
+  'delta.enableIcebergCompatV2' = 'false'
 );
 ```
 

@@ -2,7 +2,7 @@
 
 Managed Iceberg tables are native Apache Iceberg tables created and stored within Unity Catalog. They support full read/write operations in Databricks and are accessible to external engines via the UC Iceberg REST Catalog (IRC) endpoint.
 
-**Requirements**: Unity Catalog, DBR 16.4 LTS+ (Managed Iceberg v2), DBR 17.3+ (Managed Iceberg v3 Beta)
+**Requirements**: Unity Catalog, DBR 16.4 LTS+ (Managed Iceberg v2), DBR 18.0+ (Managed Iceberg v3 Beta)
 
 ---
 
@@ -171,7 +171,7 @@ ANALYZE TABLE my_catalog.my_schema.events COMPUTE STATISTICS FOR ALL COLUMNS;
 
 ## Iceberg v3 (Beta)
 
-**Requires**: DBR 17.3+
+**Requires**: DBR 18.0+
 
 Iceberg v3 introduces new capabilities on top of v2:
 
@@ -258,5 +258,4 @@ TBLPROPERTIES ('format-version' = '3')
 CLUSTER BY (event_date)
 AS SELECT * FROM foreign_catalog.foreign_schema.events;
 ```
-
 
