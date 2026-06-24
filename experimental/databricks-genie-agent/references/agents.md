@@ -287,6 +287,8 @@ The verified shapes are below. Use them either by hand-constructing JSON with ca
 
 Enable `enable_format_assistance` / `enable_entity_matching` **selectively** — only on useful categorical dimensions and filters. Do **not** blanket-enable them on every column (IDs, hashes, free text, lat/long, raw measures): that adds noise and is the over-enabling the design guide warns against.
 
+**These two toggles are space-only.** A Metric View source carries `comment`/`synonyms`/`display_name`/`format` in its own YAML, but it has **no** equivalent of `enable_format_assistance` / `enable_entity_matching` — they exist only here in `column_configs`. When the source is a Metric View, you still must emit a `column_configs` entry to turn them on for each categorical dimension users name directly; otherwise the space ships with both off even though the MV looks "fully governed."
+
 **`config.sample_questions`** — user-visible suggested questions:
 
 ```json

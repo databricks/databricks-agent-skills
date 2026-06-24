@@ -149,3 +149,4 @@ Check the draft for:
 | Genie Agent with no description | Multi-agent routing fails silently | Always set a Agent description |
 | Complex `CASE` chains in saved example SQL | Increases Genie's reasoning load on similar questions | Simplify to `WHERE` filters; lean on composed measures |
 | Prompt matching / format assistance / entity matching blanket-enabled on every column | Wastes context on IDs, hashes, free text, and raw measures | Enable selectively, only on useful categorical dimensions and filters (see Design Priorities) |
+| Assuming a governed Metric View source means no `column_configs` are needed | Format assistance and entity matching have no Metric View equivalent — they live only in space `column_configs`, so the space ships with both off | Still emit `column_configs` enabling them on the categorical dimensions users name directly, even for an MV source |
