@@ -1,7 +1,7 @@
 ---
 name: databricks-data-discovery
 description: "Discover, explore, and query Databricks data via Genie. This skill MUST be invoked — instead of browsing catalogs/schemas/tables yourself — whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or sample/profile a table, answer a natural-language question about the data, or write or generate a SQL query — for analytics, dashboards, apps, or ad-hoc questions. Routes to Genie (natural-language Q&A and query generation over all your Unity Catalog data) first, then falls back to information_schema + SQL discovery."
-compatibility: Requires databricks CLI with experimental aitools (the tools genie subcommand)
+compatibility: Requires databricks CLI with the experimental genie command (databricks experimental genie ask)
 metadata:
   version: "0.0.1"
 parent: databricks-core
@@ -12,7 +12,7 @@ parent: databricks-core
 This skill **routes data work** — decide first:
 - the request is about *the data* — finding it, asking questions of it, or
   generating SQL → delegate to **Genie One**:
-  `databricks experimental aitools tools genie "..."` (see Routing below).
+  `databricks experimental genie ask "..."` (see Routing below).
 - writing files or anything else → use your own coding-agent tools.
 
 Genie One just needs an authenticated CLI profile (the parent `databricks-core`
@@ -54,50 +54,61 @@ Don't default to writing your own discovery SQL just because you can.
 
 ```bash
 # Ask a natural-language question over ALL your data
-databricks experimental aitools tools genie "How many bookings were there last week?"
+databricks experimental genie ask "How many bookings were there last week?"
+
+# Show the SQL Genie ran (text output)
+databricks experimental genie ask "Top 5 destinations by revenue" --include-sql
 
 # Machine-readable result for parsing
-databricks experimental aitools tools genie "Top 5 destinations by revenue" --output json
-# → {"conversation_id":"…","response_id":"…","status":"completed","answer":"…(includes a SQL block + Explore link)…"}
+databricks experimental genie ask "Top 5 destinations by revenue" --output json
+# → {"status":"completed","conversation_id":"…","text":"…","tool_calls":[{"name":"execute_sql","sql":"…","title":"…"}]}
 ```
 
-Genie searches across all the data you can see, writes SQL, and returns a grounded
-answer with an "Explore in Databricks" deep link — nothing to pick or set up.
+Genie searches across all the data you can see, runs SQL, and streams a grounded
+answer — rendered with the executed SQL and, where it helps, a terminal chart. It
+auto-resolves a SQL warehouse (override with `--warehouse-id`); nothing to pick or
+set up.
 
-- **Asynchronous**: the command blocks and polls until Genie finishes (`--timeout`,
-  default 5m; `--poll-interval`, default 2s); answers usually take ~5–30s. It
-  **exits non-zero** if Genie doesn't finish successfully.
-- **To get rows, not just an answer**: copy the SQL from Genie's answer into
-  `... tools query "<SQL>"` to pull the actual result rows locally.
-- **Follow-ups**: continue a conversation with `--conversation <id>` (the
-  `conversation_id` from a prior answer); omit it to start fresh.
-- **A non-answer is a message, not an error**: if Genie returns a refusal or
-  "couldn't find relevant data," don't retry — use the manual fallback below.
+- **Streams live**: the answer, the agent's steps, and any SQL/results appear as
+  they arrive. Answers usually take ~5–30s; a stalled stream (no data for ~10 min)
+  fails with a clear message, and Ctrl-C cancels cleanly.
+- **Follow-ups (multi-turn)**: continue the same conversation with
+  `--conversation <id>`. Text output prints the id as a footer ("Continue this
+  conversation with: --conversation <id>"); `--output json` returns it as
+  `conversation_id`. Omit it to start a fresh conversation.
+- **Structured output**: `--output json` gives `{status, conversation_id, text,
+  tool_calls[]}`, where `tool_calls` includes the SQL Genie executed; `--raw` dumps
+  the raw event stream.
+- **For exact/full rows**: Genie shows a preview inline; to pull the complete result
+  set locally, copy its SQL (`--include-sql` or the JSON `tool_calls`) into the
+  parent's `... aitools tools query "<SQL>"`.
+- **A non-answer is a message, not an error**: if Genie refuses or "couldn't find
+  relevant data," don't retry — use the manual fallback below.
 
 > **Naming:** "Genie One" is the current name for this cross-data chat — formerly
-> "Databricks One", and "OneChat" before that. All three are the same thing.
+> "Databricks One", then "OneChat" (the backend tool is still literally named
+> `onechat`). All the same thing.
 
 ## If Genie One isn't available — manual fallback
 
-When Genie One isn't enabled, the CLI is too old to have `tools genie`, or Genie
-can't cover the question, do the discovery yourself with the parent skill's
+When Genie One isn't enabled, the CLI is too old to have `experimental genie ask`,
+or Genie can't cover the question, do the discovery yourself with the parent skill's
 commands — see **[Manual Data Exploration](../databricks-core/manual-data-exploration.md)**
 (keyword search via `information_schema`, `discover-schema`, and `tools query`).
 Running known SQL or profiling a known table that way is perfectly fine on its own.
 
 ## Caveats
 
-- **Genie One is Beta** and is **not in the Databricks SDK**, so the `genie` command
-  reaches it as a direct JSON-RPC request; its tool surface (`genie_ask` /
-  `genie_poll_response`) may still change.
+- **Genie One is Beta** and its endpoint is **undocumented / not in the SDK**: the
+  command streams from the workspace "Genie One" (onechat) responses API, whose wire
+  shape may still change between releases.
 - **Genie/Genie One must be enabled** in the workspace and the caller needs data
   access through it; otherwise use the manual fallback.
-- **Older CLI without the command**: `tools genie` is new; an older CLI fails with
-  `Error: unknown command "genie"`. Upgrade the Databricks CLI binary (see the
-  parent `databricks-core` CLI Installation reference) — separate from
+- **Older CLI without the command**: `experimental genie ask` is new; an older CLI
+  fails with `Error: unknown command "genie"`. Upgrade the Databricks CLI binary
+  (see the parent `databricks-core` CLI Installation reference) — separate from
   `databricks aitools install`, which installs skills, not the CLI.
-- **Requires a logged-in profile** (`databricks auth login`); the command sends the
-  workspace routing header the endpoint needs.
+- **Requires a logged-in profile** (`databricks auth login`).
 
 ## Related Skills
 
