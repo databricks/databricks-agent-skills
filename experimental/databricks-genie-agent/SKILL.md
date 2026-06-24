@@ -327,7 +327,7 @@ See [agents.md §Querying Metric Views in Genie](references/agents.md#querying-m
 
 ## Related Skills
 
-- **[databricks-metric-views](../databricks-metric-views/SKILL.md)** - Build governed business metrics that Genie consumes. See [genie-agent-integration.md](../databricks-metric-views/references/genie-agent-integration.md) for metric-view design rules that affect Genie answer quality (one-fact-source rule, base view pattern for multi-fact KPIs, agent metadata, domain organization), and [query-patterns.md](../databricks-metric-views/references/query-patterns.md) for the `MEASURE()` query rules Genie must follow.
+- **[databricks-metric-views](../databricks-metric-views/SKILL.md)** - Build governed business metrics that Genie consumes. See [genie-agent-integration.md](../databricks-metric-views/references/genie-agent-integration.md) for metric-view design rules that affect Genie answer quality (one-fact-source rule — a single fact table is sourced directly with no base view; base views only for multi-fact KPIs — agent metadata, domain organization), and [query-patterns.md](../databricks-metric-views/references/query-patterns.md) for the `MEASURE()` query rules Genie must follow.
 - **[databricks-agent-bricks](../databricks-agent-bricks/SKILL.md)** - Use Genie Agents as agents inside Supervisor Agents
 - **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - Generate raw parquet data to populate tables for Genie
 - **[databricks-spark-declarative-pipelines](../databricks-spark-declarative-pipelines/SKILL.md)** - Build bronze/silver/gold tables consumed by Genie Agents

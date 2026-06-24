@@ -182,6 +182,51 @@ measures:
       - GMV
 ```
 
+## Format Specifications
+
+Add an optional `format` block to a dimension or measure to control how values display in dashboards and Genie (requires spec `version: 1.1`). See [Format specifications](https://docs.databricks.com/aws/en/business-semantics/agent-metadata#format-specifications).
+
+**Every `format` block must start with a `type` discriminator.** Omitting it fails deployment with *"Could not resolve subtype … missing type id 'type'"* (`METRIC_VIEW_INVALID_VIEW_DEFINITION`). Values are **enum tokens** (e.g. `year_month_day`), not strftime/`yyyy-MM-dd` patterns.
+
+| `type` | Type-specific keys |
+|--------|--------------------|
+| `number` | `decimal_places`, `hide_group_separator`, `abbreviation` (`none`/`compact`/`scientific`) |
+| `currency` | `currency_code` (ISO-4217, **required**), `decimal_places`, `hide_group_separator`, `abbreviation` |
+| `percentage` | `decimal_places`, `hide_group_separator` |
+| `byte` | `decimal_places`, `hide_group_separator` |
+| `date` | `date_format` (`year_month_day`/`locale_short_month`/`locale_long_month`/`locale_number_month`/`year_week`), `leading_zeros` |
+| `date_time` | `date_format`, `time_format` (`no_time`/`locale_hour_minute`/`locale_hour_minute_second`), `leading_zeros` — at least one of `date_format`/`time_format` must be non-`no_*` |
+
+`decimal_places` is itself an object: `{type: max|exact|all, places: N}` (`places` applies to `max`/`exact`).
+
+```yaml
+dimensions:
+  - name: Order Date
+    expr: order_date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+
+measures:
+  - name: Total Revenue
+    expr: SUM(total_price)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+
+  - name: Fulfillment Rate
+    expr: COUNT(1) FILTER (WHERE status = 'F') * 1.0 / COUNT(1)
+    format:
+      type: percentage
+      decimal_places:
+        type: max
+        places: 1
+```
+
 ## Joins
 
 ### Star Schema (Single Level)

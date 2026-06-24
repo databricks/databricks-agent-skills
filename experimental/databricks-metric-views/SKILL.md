@@ -92,7 +92,7 @@ ORDER BY ALL
 | YAML Syntax | [yaml-reference.md](yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
 | Creation Patterns | [create-patterns.md](create-patterns.md) | Common creation patterns: star schema, snowflake, filtered measures, window measures, ratios, materialization |
 | Querying | [query-patterns.md](query-patterns.md) | How to query metric views: `MEASURE()` basics, filtering/ordering, join-hierarchy rollups, window measures, casting, the MCP query tool, plus rules & gotchas (`CASE`+`MEASURE()` grouping, composed measures, no measures in `WHERE`/`GROUP BY`) |
-| Genie Integration | [genie-agent-integration.md](genie-agent-integration.md) | Design rules for AI-ready metric views: one-fact-source, base views, agent metadata (comments, synonyms, formats), domain organization (Genie-agent build/validation lives in the databricks-genie-agent skill) |
+| Genie Integration | [genie-agent-integration.md](genie-agent-integration.md) | Design rules for AI-ready metric views: one-fact-source (single fact → source directly, no base view), base views only for multi-fact/nested KPIs, agent metadata (comments, synonyms, formats), domain organization (Genie-agent build/validation lives in the databricks-genie-agent skill) |
 
 ## SQL Operations
 
@@ -316,12 +316,18 @@ dimensions:                     # Required: at least one
     expr: sql_expression        # Column ref or SQL transformation
     comment: "Description"      # Optional (v1.1+)
     synonyms: [alias1, alias2]  # Optional: up to 10, helps Genie match user terms
+    format:                     # Optional (v1.1+) — REQUIRES a `type` discriminator
+      type: date                #   number|currency|percentage|byte|date|date_time
+      date_format: year_month_day  # enum token, NOT "yyyy-MM-dd"
 
 measures:                       # Required: at least one
   - name: Display Name          # Queried via MEASURE(`name`)
     expr: AGG_FUNC(column)      # Must be an aggregate expression
     comment: "Description"      # Optional (v1.1+)
     synonyms: [alias1, alias2]  # Optional: up to 10, helps Genie match user terms
+    format:                     # Optional (v1.1+) — REQUIRES a `type` discriminator
+      type: currency
+      currency_code: USD        # ISO-4217, required for currency
 
 joins:                          # Optional: star/snowflake schema
   - name: dim_table

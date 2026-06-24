@@ -10,11 +10,14 @@ Best practices for designing metric views that AI agents (Genie, multi-agent sys
 
 **Each metric view must have exactly ONE fact table, view, or metric view as its `source`.** This is the most important design constraint.
 
+- **Single fact table → set it as `source` directly. Do NOT build a base view.** A base view adds no value when there is only one fact table; it just adds an extra object to maintain and risks exposing unaggregated rows to Genie. Add dimension-table joins (star/snowflake) inside the metric view's `joins` block — that does **not** require a base view.
+- A base view is needed **only** when a KPI must combine **multiple fact tables** or contains **nested logic** that cannot be expressed in the metric view directly (see Rule 2).
 - Co-locate measures in the same metric view only if they share **both** the same single source AND the same dimension tables.
-- If a KPI requires multiple fact tables, build a **base view** first (see Rule 2).
 - Use the `MEASURE()` function for [metric composability](https://docs.databricks.com/en/metric-views/data-modeling/composability) — a measure can reference other measures or dimensions in the same metric view.
 
 ### Rule 2: Multi-Fact or Nested KPIs Need a Base View
+
+Build a base view **only** when a KPI spans multiple fact tables or contains nested logic that the metric view cannot express directly. A single fact table (even one joined to dimension tables) does **not** need a base view — source it directly per Rule 1.
 
 When a KPI spans multiple fact tables or contains nested logic:
 
@@ -112,20 +115,67 @@ measures:
 
 ### Format Specifications
 
-Use [format specifications](https://docs.databricks.com/en/metric-views/data-modeling/semantic-metadata#format-specifications) to declare semantic metadata. Especially valuable for date dimensions — Genie no longer has to guess from entity matching.
+Use [format specifications](https://docs.databricks.com/aws/en/business-semantics/agent-metadata#format-specifications) to declare semantic metadata. Especially valuable for date dimensions — Genie no longer has to guess from entity matching.
+
+**Every `format:` block requires a `type:` discriminator** (`number`, `currency`, `percentage`, `byte`, `date`, or `date_time`). Omitting `type` causes a deploy error: *"Could not resolve subtype … missing type id 'type'."* Each type has its own keys (see the full schema below); the values are enum tokens (e.g. `year_month_day`), **not** strftime/`yyyy-MM-dd` patterns.
 
 ```yaml
 dimensions:
   - name: Order Date
     expr: order_date
     format:
-      date_format: "yyyy-MM-dd"
+      type: date
+      date_format: year_month_day   # enum token, NOT "yyyy-MM-dd"
 
 measures:
   - name: Revenue
     expr: SUM(amount)
     format:
-      currency: USD
+      type: currency
+      currency_code: USD            # ISO-4217 code, required for currency
+      decimal_places:
+        type: exact
+        places: 2
+```
+
+**Format type schema** (requires YAML spec `version: 1.1`):
+
+```yaml
+# Number
+format:
+  type: number
+  decimal_places: { type: max, places: 2 }   # type: max | exact | all
+  hide_group_separator: false
+  abbreviation: compact                       # none | compact | scientific
+
+# Currency
+format:
+  type: currency
+  currency_code: USD                          # ISO-4217, required
+  decimal_places: { type: exact, places: 2 }
+
+# Percentage
+format:
+  type: percentage
+  decimal_places: { type: all }
+
+# Byte
+format:
+  type: byte
+  decimal_places: { type: max, places: 2 }
+
+# Date
+format:
+  type: date
+  date_format: year_month_day                 # year_month_day | locale_short_month | locale_long_month | locale_number_month | year_week
+  leading_zeros: true
+
+# DateTime — at least one of date_format/time_format must be non-"no_*"
+format:
+  type: date_time
+  date_format: year_month_day
+  time_format: locale_hour_minute_second      # no_time | locale_hour_minute | locale_hour_minute_second
+  leading_zeros: false
 ```
 
 ## Organize by Domain, Not by Report
@@ -159,6 +209,7 @@ These are the **design-side** anti-patterns. For Genie-agent build/validation an
 
 | Anti-pattern | Why it fails | Fix |
 |--------------|--------------|-----|
+| Building a base view for a single fact table | Adds an unnecessary object to maintain and can expose unaggregated rows; provides no benefit over sourcing the fact directly | Set the fact table as `source` directly; add dimension joins in the metric view's `joins` block |
 | Multiple fact tables joined directly in the metric view's `source` | Violates one-fact-source rule | Build a base view first; metric view sources from it |
 | Metric view with no comment, dimensions with no comments | Genie has no semantic context | Comment at all three levels |
 | Mirroring report structure in metric views | Reports change; semantics shouldn't | Organize by business domain/subdomain |

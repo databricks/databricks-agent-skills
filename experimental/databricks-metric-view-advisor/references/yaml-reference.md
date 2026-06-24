@@ -41,7 +41,7 @@ These are common pitfalls that cause metric view creation to fail:
 | **Column mapping** | System maps YAML columns to `column_list` by position, not by name | Order dimensions and measures carefully in definitions |
 | **MEASURE() with spaces** | `MEASURE(Total Revenue)` causes `PARSE_SYNTAX_ERROR` | Backtick-quote: `MEASURE(\`Total Revenue\`)` |
 | **Snowflake column refs** | `nation.n_name` causes `UNRESOLVED_COLUMN` when `nation` is nested | Use full dot-chain: `customer.nation.n_name` |
-| **`format` blocks** | API requires undocumented `type` discriminator, causing parse errors | Omit `format` blocks entirely |
+| **`format` blocks missing `type`** | Every `format` block needs a `type` discriminator (`number`/`currency`/`percentage`/`byte`/`date`/`date_time`); omitting it causes *"Could not resolve subtype … missing type id 'type'"* | Add `type:` and that type's keys — see [Format Types](#format-types) below |
 | **Date subtraction** | `date1 - date2` returns `INTERVAL DAY`, not an integer — comparing to `0` or `3` causes `DATATYPE_MISMATCH` | Use `DATEDIFF(date1, date2)` which returns an integer |
 
 ## Source (expanded options)
@@ -127,7 +127,7 @@ Semantic metadata enhances Genie and AI/BI dashboard interpretation of metric vi
 | `comment` | — | Description of the dimension/measure. Powers Genie understanding. |
 | `display_name` | 255 chars | Human-readable label replacing technical names in visualizations |
 | `synonyms` | 10 items, 255 chars each | Alternative names for AI/NL tools to discover dimensions/measures |
-| `format` | — | **Do not use** — causes parse errors (see Format Types warning below) |
+| `format` | — | Optional display format (requires spec `version: 1.1`). Must include a `type` discriminator — see [Format Types](#format-types) below |
 
 ### Example
 
@@ -155,7 +155,29 @@ measures:
 
 ### Format Types
 
-> **Do NOT include `format` blocks in metric view definitions.** The API requires an undocumented `type` discriminator field that causes `METRIC_VIEW_INVALID_VIEW_DEFINITION` errors at deployment. Omit entirely — dashboards and Genie infer formatting from column types and names.
+`format` blocks are supported (spec `version: 1.1`) and control how values display in dashboards and Genie. **Every block must start with a `type` discriminator** — omitting it causes `METRIC_VIEW_INVALID_VIEW_DEFINITION` / *"Could not resolve subtype … missing type id 'type'"* at deployment. Values are enum tokens (e.g. `year_month_day`), **not** strftime/`yyyy-MM-dd` patterns.
+
+```yaml
+# Number
+format: { type: number, decimal_places: { type: max, places: 2 }, hide_group_separator: false, abbreviation: compact }   # abbreviation: none | compact | scientific
+
+# Currency — currency_code (ISO-4217) is required
+format: { type: currency, currency_code: USD, decimal_places: { type: exact, places: 2 } }
+
+# Percentage
+format: { type: percentage, decimal_places: { type: all } }
+
+# Byte
+format: { type: byte, decimal_places: { type: max, places: 2 } }
+
+# Date — date_format: year_month_day | locale_short_month | locale_long_month | locale_number_month | year_week
+format: { type: date, date_format: year_month_day, leading_zeros: true }
+
+# DateTime — at least one of date_format/time_format must be non-"no_*"
+format: { type: date_time, date_format: year_month_day, time_format: locale_hour_minute_second, leading_zeros: false }
+```
+
+`decimal_places.type` is one of `max` | `exact` | `all` (only `max`/`exact` take a `places` value).
 
 **Important:** When upgrading to spec v1.1, any single-line comments (`#`) in the YAML definition are removed when the definition is saved.
 

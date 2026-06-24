@@ -77,6 +77,7 @@ Use text instructions only for global behavior that cannot be encoded structural
 Canonical, deeper rules live in the `databricks-metric-views` skill: `genie-agent-integration.md` (designing AI-ready Metric Views — one-fact-source, base views, agent metadata) and `query-patterns.md` (the `MEASURE()` query rules — `CASE`+`MEASURE()` grouping, no measures in `WHERE`/`GROUP BY`). The points below are the in-product summary.
 
 - Treat Metric Views as governed semantic sources.
+- **A single fact table is sourced directly** by the Metric View — do **not** build an intermediate base view for it (add dimension joins in the Metric View's `joins` block instead). Base views are for KPIs that combine **multiple fact tables** or need nested logic the Metric View cannot express directly.
 - Do not attach underlying raw tables unless users also need raw-detail questions.
 - Do not duplicate Metric View formulas in snippets or examples unless the example teaches a query shape. The metric's *definition* (the formula) lives once in the Metric View and should be referenced via `MEASURE()`; an example may include a measure only to demonstrate a non-obvious query *shape* (e.g. CTE-then-join, ranking, time logic), never to re-derive the formula.
 - If the semantic model is wrong or missing a governed measure, dimension, join, or filter, document that as an upstream modeling issue instead of working around it with broad Genie instructions.
