@@ -1,3 +1,14 @@
+# Contributing
+
+These skills are maintained internally at Databricks and published to this open
+source repository, where we actively work in the open. We encourage you to get
+involved:
+
+- **Open issues.** We triage and address them here in the open source repository.
+- **Open pull requests.** Everyone is welcome to contribute. We can't merge PRs
+  directly here, since the source of truth is internal, but we will work to
+  migrate them through our internal repository.
+
 ## Skill anatomy
 
 Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/`) — ships the same set of files:

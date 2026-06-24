@@ -81,31 +81,19 @@ jobs:
           # Commit as the App (the email must be its noreply address or the commit
           # is unverified). The bump regenerates version.meta.json + the four
           # plugin.json (with the new version) + the catalogs/wiring/manifest +
-          # the plugins/databricks/ bundle; stage the full set so a release never
-          # commits a partial tree.
+          # the plugins/databricks/ bundle.
           git config user.name "Databricks SDK Release Bot"
           git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
-          git add \
-            metaplugin/version.meta.json \
-            .claude-plugin/marketplace.json \
-            .github/plugin/marketplace.json \
-            .agents/plugins/marketplace.json \
-            .cursor-plugin/marketplace.json \
-            hooks/_routing_data.json \
-            rules/databricks-routing.mdc \
-            rules/README.md \
-            hooks/hooks.json \
-            hooks/codex-hooks.json \
-            hooks/copilot-hooks.json \
-            hooks/cursor-hooks.json \
-            manifest.json \
-            plugins/databricks
-          # Guard: fail loudly if the bump changed a tracked file not staged above
-          # (a new generated artifact added without updating this list), instead of
-          # tagging while leaving it uncommitted for post-merge CI to flag as drift.
-          if ! git diff --quiet; then
-            echo "Error: bump changed tracked files not staged for the release commit:"
-            git diff --name-only
+          # Stage everything the bump produced. We rely on .gitignore (which covers
+          # __pycache__/, *.pyc, .DS_Store, and dev-only dirs) rather than a
+          # hard-coded allowlist, so any newly generated artifact is committed
+          # automatically instead of being silently dropped from the tagged release.
+          git add -A
+          # Guard: a release must produce a committable diff (at minimum the version
+          # bump). An empty index here means generation did not run -- fail rather
+          # than tag a no-op release.
+          if git diff --cached --quiet; then
+            echo "Error: nothing staged after bump + generate; generation may have failed."
             exit 1
           fi
           git commit -s -m "chore(release): $VERSION"
