@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Graphrag"
+  short_description: "Design GraphRAG and knowledge-graph augmented retrieval on Databricks."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-graphrag for design graphrag and knowledge-graph augmented retrieval on databricks."
