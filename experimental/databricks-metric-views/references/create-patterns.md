@@ -1,6 +1,6 @@
 # Metric View Patterns & Examples
 
-Common patterns for creating and querying metric views.
+Common patterns for **creating** metric views. For how to **query** them (`MEASURE()`, `GROUP BY ALL`, filtering, joins, window measures, and the rules/gotchas), see [query-patterns.md](query-patterns.md).
 
 ## Pattern 1: Simple Metrics from a Single Table
 
@@ -33,25 +33,7 @@ $$
 
 ### Query
 
-```sql
--- Revenue by product
-SELECT
-  `Product Name`,
-  MEASURE(`Total Revenue`) AS revenue,
-  MEASURE(`Units Sold`) AS units
-FROM catalog.schema.product_metrics
-GROUP BY ALL
-ORDER BY revenue DESC
-LIMIT 10
-
--- Monthly trend
-SELECT
-  DATE_TRUNC('MONTH', `Sale Date`) AS month,
-  MEASURE(`Total Revenue`) AS revenue
-FROM catalog.schema.product_metrics
-GROUP BY ALL
-ORDER BY month
-```
+See [query-patterns.md §Basics](query-patterns.md#basics) for querying this metric view (`MEASURE()` + `GROUP BY ALL`, including the "Revenue by product" and "Monthly trend" examples).
 
 ## Pattern 2: Derived Dimensions with CASE
 
@@ -154,21 +136,13 @@ $$
 
 ### Query filtered measures
 
-```sql
-SELECT
-  `Order Month`,
-  MEASURE(`Total Orders`) AS total,
-  MEASURE(`Open Orders`) AS open_orders,
-  MEASURE(`Fulfillment Rate`) AS fulfillment_rate
-FROM catalog.schema.order_status_metrics
-WHERE `Region` = 'EMEA'
-GROUP BY ALL
-ORDER BY ALL
-```
+See [query-patterns.md §Filtering and ordering](query-patterns.md#filtering-and-ordering) — filtered measures are queried like any other measure, with dimension filters in `WHERE`.
 
 ## Pattern 5: Star Schema with Joins
 
 Join a fact table to dimension tables.
+
+> **Join alias naming:** A join alias must not be a prefix of any fact-table column name. The aliases below (`customer`, `product`, `store`) assume the fact table doesn't have columns starting with those words. If your fact has `customer_id` and you reference any `customer.<col>` dim, the parser will misread `customer_id` as `customer.id` and fail. Use `dim_customer`, `dim_product`, etc. when in doubt. See [yaml-reference.md §Join Rules](yaml-reference.md#join-rules).
 
 ```sql
 CREATE OR REPLACE VIEW catalog.schema.sales_analytics
@@ -255,24 +229,7 @@ $$
 
 ### Query across hierarchy levels
 
-```sql
--- Revenue by region (rolls up across nations and customers)
-SELECT
-  `Region`,
-  MEASURE(`Total Revenue`) AS revenue
-FROM catalog.schema.geo_sales
-GROUP BY ALL
-
--- Revenue by nation within a specific region
-SELECT
-  `Nation`,
-  MEASURE(`Total Revenue`) AS revenue,
-  MEASURE(`Order Count`) AS orders
-FROM catalog.schema.geo_sales
-WHERE `Region` = 'EUROPE'
-GROUP BY ALL
-ORDER BY revenue DESC
-```
+See [query-patterns.md §Querying across join hierarchies](query-patterns.md#querying-across-join-hierarchies) for the region/nation rollup examples.
 
 ## Pattern 7: Materialized Metric View
 
@@ -318,6 +275,144 @@ AS $$
         type: unaggregated
 $$
 ```
+
+### Clustering & Partitioning Materialized Views
+
+An **unaggregated** materialized view can declare **liquid clustering** (`cluster_by`) or **partitioning** (`partition_by`) to speed up the queries that read it. Both are supported **only on `unaggregated` materializations, and only on dimensions** — they cannot be added to `aggregated` materialized views.
+
+**Cluster by specific columns** — list the dimensions to cluster on:
+
+```yaml
+materialized_views:
+  - name: full_model
+    type: unaggregated
+    cluster_by:
+      cols:
+        - Region
+        - Day
+```
+
+**Cluster by auto** — let Databricks choose clustering keys (enables automatic liquid clustering):
+
+```yaml
+  - name: full_model
+    type: unaggregated
+    cluster_by:
+      auto: true
+```
+
+**Partition by** — partition the materialized view on one or more dimensions:
+
+```yaml
+  - name: full_model
+    type: unaggregated
+    partition_by:
+      - Day
+```
+
+**Rules:**
+
+- `cluster_by` and `partition_by` are only valid on `unaggregated` materializations; they cannot be added to `aggregated` ones.
+- You can only cluster/partition by **dimensions**, not measures.
+- A materialized view can use `cluster_by` **or** `partition_by`, but **not both** — they cannot coexist.
+
+### Testing & Verifying Materialization
+
+After deploying a metric view with a `materialization` block, walk through these steps to confirm the pre-computation is live and being used.
+
+#### Step 1: Deploy with the materialization section
+
+Create or replace the metric view with the full YAML, including the `materialization` block:
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.sales_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  -- full YAML definition including the materialization section
+$$
+```
+
+#### Step 2: Verify the materialization pipeline was created
+
+Saving a metric view with `materialization` automatically creates a **Lakeflow Spark Declarative Pipeline** that manages the materialized views. Confirm it exists:
+
+```sql
+-- Confirm materialization is configured on the view
+DESCRIBE EXTENDED catalog.schema.sales_metrics
+```
+
+Or locate the backing pipeline via the SDK:
+
+```python
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+
+# Find the pipeline associated with your metric view
+for p in w.pipelines.list_pipelines():
+    if "sales_metrics" in (p.name or ""):
+        print(f"Pipeline: {p.name}, ID: {p.pipeline_id}, State: {p.state}")
+```
+
+#### Step 3: Trigger or wait for a refresh
+
+The `schedule` (e.g. `every 6 hours`) runs automatically, but you can trigger a refresh manually:
+
+```python
+w.pipelines.start_update(pipeline_id="<your-pipeline-id>")
+```
+
+#### Step 4: Query and compare performance
+
+Run representative queries before and after a refresh to compare latency. Queries whose grouping and measures match an `aggregated` materialized view should be accelerated:
+
+```sql
+-- Served by the "daily_category" aggregated MV when dims/measures match
+SELECT
+  `Category`,
+  `Day`,
+  MEASURE(`Revenue`) AS revenue,
+  MEASURE(`Transactions`) AS transactions
+FROM catalog.schema.sales_metrics
+GROUP BY ALL
+ORDER BY `Day` DESC
+LIMIT 20
+```
+
+#### Step 5: Confirm the materialized views are used
+
+Check the query plan to verify the optimizer reads pre-computed tables instead of the raw source:
+
+```sql
+EXPLAIN
+SELECT
+  `Category`,
+  `Day`,
+  MEASURE(`Revenue`) AS revenue
+FROM catalog.schema.sales_metrics
+GROUP BY ALL
+```
+
+Look for references to the materialized view names (e.g. `daily_category` or `full_model`) in the plan rather than the raw source table.
+
+#### Requirements to verify
+
+| Requirement | How to check |
+|-------------|--------------|
+| Serverless compute enabled | Workspace settings → Compute → Serverless |
+| DBR 17.2+ | SQL warehouse must be on a compatible version |
+| Pipeline created | Workflows → Pipelines (Lakeflow Declarative Pipelines) |
+| Pipeline healthy | State should be `RUNNING` or `IDLE`, not `FAILED` |
+| Schedule active | Pipeline should show a next scheduled refresh |
+
+#### Troubleshooting
+
+If materialization isn't working:
+
+1. Check the pipeline's event log for errors.
+2. Ensure you have `CREATE TABLE` permissions in the target schema.
+3. Verify serverless compute is enabled.
+4. Confirm the dimension/measure names in each `aggregated` materialized view **exactly match** the names defined in your YAML (case- and spelling-sensitive).
 
 ## Pattern 8: Using samples.tpch for Quick Demos
 
@@ -365,39 +460,11 @@ $$
 
 ### Demo queries
 
-```sql
--- Monthly revenue trend
-SELECT
-  `Order Month`,
-  MEASURE(`Total Revenue`)::BIGINT AS revenue,
-  MEASURE(`Order Count`) AS orders
-FROM catalog.schema.tpch_orders_metrics
-WHERE extract(year FROM `Order Month`) = 1995
-GROUP BY ALL
-ORDER BY ALL
-
--- Revenue by status
-SELECT
-  `Order Status`,
-  MEASURE(`Total Revenue`)::BIGINT AS revenue,
-  MEASURE(`Revenue per Customer`)::BIGINT AS rev_per_customer
-FROM catalog.schema.tpch_orders_metrics
-GROUP BY ALL
-
--- Open orders risk assessment
-SELECT
-  `Order Month`,
-  MEASURE(`Open Order Revenue`)::BIGINT AS at_risk_revenue,
-  MEASURE(`Total Revenue`)::BIGINT AS total_revenue
-FROM catalog.schema.tpch_orders_metrics
-WHERE extract(year FROM `Order Month`) >= 1995
-GROUP BY ALL
-ORDER BY ALL
-```
+See [query-patterns.md](query-patterns.md) for querying this demo metric view — §[Filtering and ordering](query-patterns.md#filtering-and-ordering) (dimension filters like `extract(year FROM ...)`) and §[Casting measure results](query-patterns.md#casting-measure-results) (the `::BIGINT` casts).
 
 ## Pattern 9: Window Measures (Experimental)
 
-Window measures enable moving averages, running totals, period-over-period changes, and semiadditive measures. Add a `window` block to any measure definition. See [Window Measures Documentation](https://docs.databricks.com/metric-views/data-modeling/window-measures).
+Window measures enable moving averages, running totals, period-over-period changes, and semiadditive measures. Add a `window` block to any measure definition. See [Window Measures Documentation](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures).
 
 ### Window Range Values
 
@@ -566,94 +633,65 @@ $$
 
 ### Query window measures
 
-Window measures are queried with the same `MEASURE()` syntax:
+Window measures are queried with the same `MEASURE()` syntax — see [query-patterns.md §Querying window measures](query-patterns.md#querying-window-measures).
 
-```sql
-SELECT
-  date,
-  MEASURE(t7d_customers) AS trailing_7d_customers,
-  MEASURE(running_total_sales) AS running_total
-FROM catalog.schema.customer_activity
-WHERE date >= DATE'2024-06-01'
-GROUP BY ALL
-ORDER BY ALL
-```
-
-## SQL Examples
+## MCP Tool Examples
 
 ### Create with joins
 
-```sql
-CREATE OR REPLACE VIEW catalog.schema.sales_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.fact_sales
-  joins:
-    - name: customer
-      source: catalog.schema.dim_customer
-      on: source.customer_id = customer.id
-    - name: product
-      source: catalog.schema.dim_product
-      on: source.product_id = product.id
-  dimensions:
-    - name: Customer Segment
-      expr: customer.segment
-    - name: Product Category
-      expr: product.category
-    - name: Sale Month
-      expr: DATE_TRUNC('MONTH', source.sale_date)
-  measures:
-    - name: Total Revenue
-      expr: SUM(source.amount)
-    - name: Order Count
-      expr: COUNT(1)
-    - name: Unique Customers
-      expr: COUNT(DISTINCT source.customer_id)
-$$;
+```python
+manage_metric_views(
+    action="create",
+    full_name="catalog.schema.sales_metrics",
+    source="catalog.schema.fact_sales",
+    or_replace=True,
+    joins=[
+        {
+            "name": "customer",
+            "source": "catalog.schema.dim_customer",
+            "on": "source.customer_id = customer.id"
+        },
+        {
+            "name": "product",
+            "source": "catalog.schema.dim_product",
+            "on": "source.product_id = product.id"
+        }
+    ],
+    dimensions=[
+        {"name": "Customer Segment", "expr": "customer.segment"},
+        {"name": "Product Category", "expr": "product.category"},
+        {"name": "Sale Month", "expr": "DATE_TRUNC('MONTH', source.sale_date)"},
+    ],
+    measures=[
+        {"name": "Total Revenue", "expr": "SUM(source.amount)"},
+        {"name": "Order Count", "expr": "COUNT(1)"},
+        {"name": "Unique Customers", "expr": "COUNT(DISTINCT source.customer_id)"},
+    ],
+)
 ```
 
 ### Alter to add a new measure
 
-```sql
--- Use CREATE OR REPLACE to update the metric view
-CREATE OR REPLACE VIEW catalog.schema.sales_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.fact_sales
-  joins:
-    - name: customer
-      source: catalog.schema.dim_customer
-      on: source.customer_id = customer.id
-  dimensions:
-    - name: Customer Segment
-      expr: customer.segment
-    - name: Sale Month
-      expr: DATE_TRUNC('MONTH', source.sale_date)
-  measures:
-    - name: Total Revenue
-      expr: SUM(source.amount)
-    - name: Order Count
-      expr: COUNT(1)
-    - name: Average Order Value
-      expr: AVG(source.amount)
-$$;
+```python
+manage_metric_views(
+    action="alter",
+    full_name="catalog.schema.sales_metrics",
+    source="catalog.schema.fact_sales",
+    joins=[
+        {"name": "customer", "source": "catalog.schema.dim_customer", "on": "source.customer_id = customer.id"},
+    ],
+    dimensions=[
+        {"name": "Customer Segment", "expr": "customer.segment"},
+        {"name": "Sale Month", "expr": "DATE_TRUNC('MONTH', source.sale_date)"},
+    ],
+    measures=[
+        {"name": "Total Revenue", "expr": "SUM(source.amount)"},
+        {"name": "Order Count", "expr": "COUNT(1)"},
+        {"name": "Average Order Value", "expr": "AVG(source.amount)"},  # New measure
+    ],
+)
 ```
 
 ### Query with filters
 
-```sql
-SELECT
-  `Customer Segment`,
-  `Sale Month`,
-  MEASURE(`Total Revenue`) AS total_revenue,
-  MEASURE(`Order Count`) AS order_count
-FROM catalog.schema.sales_metrics
-WHERE `Customer Segment` = 'Enterprise'
-GROUP BY ALL
-ORDER BY ALL
-LIMIT 50;
-```
+Querying via `manage_metric_views(action="query")` lives with the other query guidance — see [query-patterns.md §Querying via the MCP tool](query-patterns.md#querying-via-the-mcp-tool).

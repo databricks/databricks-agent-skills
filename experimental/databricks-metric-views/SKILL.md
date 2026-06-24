@@ -1,10 +1,6 @@
 ---
 name: databricks-metric-views
 description: "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools."
-compatibility: Requires databricks CLI (>= v1.0.0)
-metadata:
-  version: "0.1.0"
-parent: databricks-core
 ---
 
 # Unity Catalog Metric Views
@@ -31,11 +27,13 @@ Use this skill when:
 
 ### Inspect Source Table Schema
 
-Before authoring a metric view, inspect the source tables. Use `discover-schema` as the default — one call returns columns, types, sample rows, null counts, and row count. If you only know the schema, list tables first with `query "SHOW TABLES IN ..."`.
+Before creating a metric view, inspect the source table to understand available columns for dimensions and measures. Use the CLI `discover-schema` — one call returns columns, types, sample rows, null counts, and row count:
 
-`databricks experimental aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
+```bash
+databricks experimental aitools tools discover-schema catalog.schema.orders
+```
 
-For dimensions and measures, probe distribution beyond sampling — cardinality of candidate dimensions, min/max/percentiles for measures, top categorical values. Write aggregate SQL through `databricks experimental aitools tools query --warehouse <WH> "..."`. Both commands auto-pick the default warehouse; set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>` to override.
+> **MCP alternative (if available):** `get_table_stats_and_schema(catalog="catalog", schema="schema", table_names=["orders"], table_stat_level="SIMPLE")` — use `"DETAILED"` for cardinality, min/max, and histograms.
 
 ### Create a Metric View
 
@@ -91,10 +89,14 @@ ORDER BY ALL
 
 | Topic | File | Description |
 |-------|------|-------------|
-| YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
-| Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
+| YAML Syntax | [yaml-reference.md](yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
+| Creation Patterns | [create-patterns.md](create-patterns.md) | Common creation patterns: star schema, snowflake, filtered measures, window measures, ratios, materialization |
+| Querying | [query-patterns.md](query-patterns.md) | How to query metric views: `MEASURE()` basics, filtering/ordering, join-hierarchy rollups, window measures, casting, the MCP query tool, plus rules & gotchas (`CASE`+`MEASURE()` grouping, composed measures, no measures in `WHERE`/`GROUP BY`) |
+| Genie Integration | [genie-agent-integration.md](genie-agent-integration.md) | Design rules for AI-ready metric views: one-fact-source (single fact → source directly, no base view), base views only for multi-fact/nested KPIs, agent metadata (comments, synonyms, formats), domain organization (Genie-agent build/validation lives in the databricks-genie-agent skill) |
 
 ## SQL Operations
+
+Metric views are created and managed with plain SQL DDL — the **default** path, which works through any SQL warehouse (the `databricks` CLI, the SQL editor, or the Statement Execution API).
 
 ### Create Metric View
 
@@ -222,6 +224,85 @@ $$
 
 After verifying parity (`SELECT ... FROM <orders_metrics>` returns the same numbers as the original view), update downstream consumers and drop the original view.
 
+## MCP Tools (if available)
+
+When the Databricks **MCP server** is configured (e.g. inside an IDE wired to it), the `manage_metric_views` tool wraps the same operations into single calls:
+
+| Action | Description |
+|--------|-------------|
+| `create` | Create a metric view with dimensions and measures |
+| `alter` | Update a metric view's YAML definition |
+| `describe` | Get the full definition and metadata |
+| `query` | Query measures grouped by dimensions |
+| `drop` | Drop a metric view |
+| `grant` | Grant SELECT privileges to users/groups |
+
+### When to Fall Back to Raw SQL
+
+`manage_metric_views(action="create"|"alter")` accepts only `{name, expr}` for each dimension/measure (plus top-level `comment`). It does **not** pass through:
+
+- `synonyms` on dimensions or measures
+- `format` specifications (e.g., `date_format`, currency)
+- `window` blocks for window measures
+- Per-dimension or per-measure `comment` fields
+
+For any of these, build the full YAML and run the `CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$ ... $$` DDL above (via CLI, SQL editor, or `execute_sql`). The persisted definition will round-trip correctly (verified: `describe` returns synonyms under each column's `metadata`).
+
+### Create via MCP
+
+```python
+manage_metric_views(
+    action="create",
+    full_name="catalog.schema.orders_metrics",
+    source="catalog.schema.orders",
+    or_replace=True,
+    comment="Orders KPIs for sales analysis",
+    filter_expr="order_date > '2020-01-01'",
+    dimensions=[
+        {"name": "Order Month", "expr": "DATE_TRUNC('MONTH', order_date)", "comment": "Month of order"},
+        {"name": "Order Status", "expr": "status"},
+    ],
+    measures=[
+        {"name": "Order Count", "expr": "COUNT(1)"},
+        {"name": "Total Revenue", "expr": "SUM(total_price)", "comment": "Sum of total price"},
+    ],
+)
+```
+
+### Query via MCP
+
+```python
+manage_metric_views(
+    action="query",
+    full_name="catalog.schema.orders_metrics",
+    query_measures=["Total Revenue", "Order Count"],
+    query_dimensions=["Order Month"],
+    where="extract(year FROM `Order Month`) = 2024",
+    order_by="ALL",
+    limit=100,
+)
+```
+
+### Describe via MCP
+
+```python
+manage_metric_views(
+    action="describe",
+    full_name="catalog.schema.orders_metrics",
+)
+```
+
+### Grant Access via MCP
+
+```python
+manage_metric_views(
+    action="grant",
+    full_name="catalog.schema.orders_metrics",
+    principal="data-consumers",
+    privileges=["SELECT"],
+)
+```
+
 ## YAML Spec Quick Reference
 
 ```yaml
@@ -234,11 +315,19 @@ dimensions:                     # Required: at least one
   - name: Display Name          # Backtick-quoted in queries
     expr: sql_expression        # Column ref or SQL transformation
     comment: "Description"      # Optional (v1.1+)
+    synonyms: [alias1, alias2]  # Optional: up to 10, helps Genie match user terms
+    format:                     # Optional (v1.1+) — REQUIRES a `type` discriminator
+      type: date                #   number|currency|percentage|byte|date|date_time
+      date_format: year_month_day  # enum token, NOT "yyyy-MM-dd"
 
 measures:                       # Required: at least one
   - name: Display Name          # Queried via MEASURE(`name`)
     expr: AGG_FUNC(column)      # Must be an aggregate expression
     comment: "Description"      # Optional (v1.1+)
+    synonyms: [alias1, alias2]  # Optional: up to 10, helps Genie match user terms
+    format:                     # Optional (v1.1+) — REQUIRES a `type` discriminator
+      type: currency
+      currency_code: USD        # ISO-4217, required for currency
 
 joins:                          # Optional: star/snowflake schema
   - name: dim_table
@@ -278,6 +367,7 @@ materialization:                # Optional (experimental)
 | **SELECT * not supported** | Must explicitly list dimensions and use MEASURE() for measures |
 | **"Cannot resolve column"** | Dimension/measure names with spaces need backtick quoting |
 | **JOIN at query time fails** | Joins must be in the YAML definition, not in the SELECT query |
+| **`INVALID_EXTRACT_BASE_FIELD_TYPE` on a fact column** | Join alias collides with a fact column prefix. E.g., alias `firm` + fact column `firm_global_id` → parser reads `firm_global_id` as `firm.global_id`. Rename alias to `dim_firm` (or any non-prefix) |
 | **MEASURE() required** | All measure references must be wrapped: `MEASURE(\`name\`)` |
 | **DBR version error** | Requires Runtime 17.2+ for YAML v1.1, or 16.4+ for v0.1 |
 | **Materialization not working** | Requires serverless compute enabled; currently experimental |
@@ -291,11 +381,17 @@ Metric views work natively with:
 - **SQL Editor** - Direct SQL querying with MEASURE()
 - **Catalog Explorer UI** - Visual creation and browsing
 
+## Related Skills
+
+- **`metric-view-advisor`** (from the `fe-metric-view-advisor` plugin) — interactive workflow that ingests tables, dashboards, SQL queries, Genie Agents, or KPI spreadsheets and **generates metric view YAML for you**. Use it when you want a guided scaffold from existing assets. Use this skill (`databricks-metric-views`) when you're authoring YAML directly or need the spec/pattern reference.
+- **`databricks-genie-agent`** — create, manage, and validate Genie Agents that consume the metric views built here. See [genie-agent-integration.md](genie-agent-integration.md) for metric-view design rules and [query-patterns.md](query-patterns.md) for the `MEASURE()` query rules Genie must follow.
+- **`databricks-aibi-dashboards`** — build AI/BI dashboards on top of metric views.
+
 ## Resources
 
 - [Metric Views Documentation](https://docs.databricks.com/en/metric-views/)
 - [YAML Syntax Reference](https://docs.databricks.com/en/metric-views/data-modeling/syntax)
 - [Joins](https://docs.databricks.com/en/metric-views/data-modeling/joins)
-- [Window Measures](https://docs.databricks.com/metric-views/data-modeling/window-measures) (Experimental)
+- [Window Measures](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures) (Experimental)
 - [Materialization](https://docs.databricks.com/en/metric-views/materialization)
 - [MEASURE() Function](https://docs.databricks.com/en/sql/language-manual/functions/measure)

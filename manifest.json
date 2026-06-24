@@ -178,13 +178,24 @@
       "repo_dir": "experimental",
       "version": "0.1.0"
     },
-    "databricks-genie": {
-      "description": "Create and query Databricks Genie Spaces for natural language SQL exploration. Use when building Genie Spaces, exporting and importing Genie Spaces, migrating Genie Spaces between workspaces or environments, or asking questions via the Genie Conversation API.",
+    "databricks-genie-agent": {
+      "description": "Create and query Databricks Genie Agents (formerly known as Genie Spaces) for natural language SQL exploration. Use when building Genie Agents/Spaces, exporting and importing them, migrating them between workspaces or environments, or asking questions via the Genie Conversation API.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "create-genie-agent/SKILL.md",
+        "create-genie-agent/references/agent-design-guide.md",
+        "create-genie-agent/references/data-profiling-and-readiness.md",
+        "diagnose-genie-agent/SKILL.md",
+        "diagnose-genie-agent/references/failure-routing.md",
+        "optimize-genie-agent/SKILL.md",
+        "optimize-genie-agent/references/optimization-guide.md",
+        "optimize-genie-query/SKILL.md",
+        "optimize-genie-query/references/query-optimization-guide.md",
+        "references/agents.md",
+        "references/conversation.md"
       ],
       "repo_dir": "experimental",
       "version": "0.0.1"
@@ -280,11 +291,13 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/patterns.md",
+        "references/create-patterns.md",
+        "references/genie-agent-integration.md",
+        "references/query-patterns.md",
         "references/yaml-reference.md"
       ],
       "repo_dir": "experimental",
-      "version": "0.1.0"
+      "version": "0.0.1"
     },
     "databricks-ml-training": {
       "description": "Train ML or custom-agent models on Databricks with MLflow tracking and Unity Catalog registration. Use when asked to: train classification/regression or deep-learning models (XGBoost, scikit-learn, LightGBM, PyTorch, etc.) with Optuna tuning, register to UC and promote `@prod`/`@challenger` aliases, batch-score via `spark_udf`, build custom PyFunc models, author a custom `ResponsesAgent` with UC Function/Vector Search tools, or submit a training notebook as a serverless one-time job. NOT for: endpoint ops (databricks-model-serving), Knowledge Assistants/Supervisor Agents (databricks-agent-bricks), MLflow evaluation (databricks-mlflow-evaluation).",

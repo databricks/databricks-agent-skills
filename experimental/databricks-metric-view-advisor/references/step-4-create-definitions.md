@@ -44,7 +44,7 @@ $$
 - Reference joined table columns as `<join_name>.<column>`; use `source.<column>` when joins are present
 - **Snowflake join column references** must use the **full dot-chain path** through parent joins: `customer.nation.n_name` — NOT `nation.n_name`. Common source of `UNRESOLVED_COLUMN` errors.
 - **Backtick-quote `MEASURE()` references** when the measure name contains spaces: `` MEASURE(`Total Revenue`) `` — NOT `MEASURE(Total Revenue)`. Unquoted multi-word names cause `PARSE_SYNTAX_ERROR`.
-- **Do NOT include `format` blocks** — the API requires undocumented `type` discriminator fields that cause parse errors. Omit format entirely.
+- **`format` blocks are optional but must include a `type` discriminator** (`number`/`currency`/`percentage`/`byte`/`date`/`date_time`) — omitting `type` causes *"Could not resolve subtype … missing type id 'type'"*. Use enum tokens (e.g. `date_format: year_month_day`), not `yyyy-MM-dd` patterns. See [yaml-reference.md → Format Types](yaml-reference.md#format-types).
 - **Use `DATEDIFF()` for date comparisons, NOT subtraction** — `date1 - date2` returns `INTERVAL DAY`, not an integer.
 
 **Join strategy — prefer joins, fall back to SQL source:**

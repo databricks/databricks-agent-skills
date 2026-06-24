@@ -50,6 +50,21 @@ dimensions:
 - Can reference columns from joined tables using `join_name.column_name`
 - Cannot use aggregate functions (those belong in measures)
 
+### Dimension Synonyms (Recommended for Genie)
+
+Add up to 10 synonyms per dimension so Genie can map user terminology to the correct field.
+
+```yaml
+dimensions:
+  - name: Customer Segment
+    expr: customer.segment
+    synonyms:
+      - segment
+      - customer tier
+      - tier
+      - account type
+```
+
 ## Measures
 
 Measures define aggregated values computed at query time.
@@ -82,7 +97,7 @@ measures:
 
 ### Window Measures (Experimental)
 
-Add a `window` block to a measure for windowed, cumulative, or semiadditive aggregations. See [Window Measures Documentation](https://docs.databricks.com/metric-views/data-modeling/window-measures).
+Add a `window` block to a measure for windowed, cumulative, or semiadditive aggregations. See [Window Measures Documentation](https://docs.databricks.com/aws/en/metric-views/data-modeling/window-measures).
 
 ```yaml
 measures:
@@ -150,6 +165,68 @@ measures:
 - Window measures use `version: 0.1` (experimental feature)
 - `SELECT *` on metric views is NOT supported; must use `MEASURE()` explicitly
 
+### Measure Synonyms (Recommended for Genie)
+
+Add up to 10 synonyms per measure so Genie can map business terminology (e.g., "revenue", "GMV", "top line") to the canonical measure name.
+
+```yaml
+measures:
+  - name: Total Revenue
+    expr: SUM(amount)
+    comment: "Gross revenue across all transactions"
+    synonyms:
+      - sales
+      - gross sales
+      - top line
+      - turnover
+      - GMV
+```
+
+## Format Specifications
+
+Add an optional `format` block to a dimension or measure to control how values display in dashboards and Genie (requires spec `version: 1.1`). See [Format specifications](https://docs.databricks.com/aws/en/business-semantics/agent-metadata#format-specifications).
+
+**Every `format` block must start with a `type` discriminator.** Omitting it fails deployment with *"Could not resolve subtype … missing type id 'type'"* (`METRIC_VIEW_INVALID_VIEW_DEFINITION`). Values are **enum tokens** (e.g. `year_month_day`), not strftime/`yyyy-MM-dd` patterns.
+
+| `type` | Type-specific keys |
+|--------|--------------------|
+| `number` | `decimal_places`, `hide_group_separator`, `abbreviation` (`none`/`compact`/`scientific`) |
+| `currency` | `currency_code` (ISO-4217, **required**), `decimal_places`, `hide_group_separator`, `abbreviation` |
+| `percentage` | `decimal_places`, `hide_group_separator` |
+| `byte` | `decimal_places`, `hide_group_separator` |
+| `date` | `date_format` (`year_month_day`/`locale_short_month`/`locale_long_month`/`locale_number_month`/`year_week`), `leading_zeros` |
+| `date_time` | `date_format`, `time_format` (`no_time`/`locale_hour_minute`/`locale_hour_minute_second`), `leading_zeros` — at least one of `date_format`/`time_format` must be non-`no_*` |
+
+`decimal_places` is itself an object: `{type: max|exact|all, places: N}` (`places` applies to `max`/`exact`).
+
+```yaml
+dimensions:
+  - name: Order Date
+    expr: order_date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+
+measures:
+  - name: Total Revenue
+    expr: SUM(total_price)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+
+  - name: Fulfillment Rate
+    expr: COUNT(1) FILTER (WHERE status = 'F') * 1.0 / COUNT(1)
+    format:
+      type: percentage
+      decimal_places:
+        type: max
+        places: 1
+```
+
 ## Joins
 
 ### Star Schema (Single Level)
@@ -203,6 +280,7 @@ joins:
 - In `on`, reference the fact table as `source` and join tables by their `name`
 - Nested `joins` create snowflake schema (requires DBR 17.1+)
 - Joined tables cannot include MAP type columns
+- **Join alias must not be a prefix of any fact-table column name.** If alias = `firm` and the fact has `firm_global_id`, the parser misreads `firm_global_id` as `firm.global_id` (struct access) and fails with `INVALID_EXTRACT_BASE_FIELD_TYPE: Can't extract a value from "firm_global_id"`. Use `dim_firm` (or any alias that isn't a prefix of a fact column).
 
 ## Filter
 
@@ -248,6 +326,40 @@ materialization:
         - total_revenue
 ```
 
+### Clustering & Partitioning
+
+An `unaggregated` materialized view can declare liquid clustering (`cluster_by`) or partitioning (`partition_by`) to optimize reads. These are **not supported on `aggregated` materializations**.
+
+```yaml
+  materialized_views:
+    - name: baseline
+      type: unaggregated
+      cluster_by:                     # Liquid clustering on specific dimensions
+        cols:
+          - category
+          - region
+
+    - name: full_model
+      type: unaggregated
+      cluster_by:
+        auto: true                    # Let Databricks pick clustering keys
+
+    - name: daily_model
+      type: unaggregated
+      partition_by:                   # Partition instead of cluster
+        - order_date
+```
+
+| Field | Description |
+|-------|-------------|
+| `cluster_by.cols` | List of dimensions to liquid-cluster on |
+| `cluster_by.auto` | `true` enables automatic liquid clustering (Databricks chooses keys) |
+| `partition_by` | List of dimensions to partition the MV on |
+
+- `cluster_by` and `partition_by` are only valid on `unaggregated` materializations, not `aggregated` ones.
+- You can only cluster/partition by **dimensions**, not measures.
+- A materialized view can use `cluster_by` **or** `partition_by`, but **not both** — they cannot coexist.
+
 ### Materialization Types
 
 | Type | Description | When to Use |
@@ -271,6 +383,8 @@ w = WorkspaceClient()
 pipeline_id = "your-pipeline-id"
 w.pipelines.start_update(pipeline_id)
 ```
+
+> For an end-to-end workflow to deploy, verify the backing pipeline, trigger a refresh, and confirm the optimizer is using the materialized views, see [create-patterns.md → Testing & Verifying Materialization](create-patterns.md#testing--verifying-materialization).
 
 ## Complete Example
 
