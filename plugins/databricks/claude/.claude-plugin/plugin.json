@@ -20,6 +20,7 @@
     "pipelines",
     "dabs",
     "serverless",
+    "serverless-storage-check",
     "vector-search",
     "data-engineering"
   ],

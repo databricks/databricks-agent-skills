@@ -21,7 +21,11 @@ EXPERIMENTAL_REPO_DIR = "experimental"
 
 
 def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
-    """Yield skill directories under `parent` that contain SKILL.md."""
+    """Yield skill directories under `parent` that contain SKILL.md.
+
+    For the stable skills dir, also yields one level of nested sub-skill
+    directories (e.g. skills/databricks-serverless-migration/databricks-serverless-storage-check/).
+    """
     skills_dir = repo_root / parent
     if not skills_dir.exists():
         return
@@ -33,6 +37,15 @@ def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
         if not (item / "SKILL.md").exists():
             continue
         yield item
+        if parent == STABLE_REPO_DIR:
+            for subitem in sorted(item.iterdir()):
+                if not subitem.is_dir():
+                    continue
+                if subitem.name.startswith("."):
+                    continue
+                if not (subitem / "SKILL.md").exists():
+                    continue
+                yield subitem
 
 
 def iter_experimental_skill_dirs(repo_root: Path):
@@ -191,6 +204,11 @@ def synthesize_openai_yaml(skill_name: str, short_description: str) -> str:
     )
 
 
+def _is_sub_skill(skill_dir: Path) -> bool:
+    """Return True if skill_dir is nested inside another skill (its parent also has SKILL.md)."""
+    return (skill_dir.parent / "SKILL.md").exists()
+
+
 def ensure_codex_metadata(repo_root: Path) -> int:
     """Ensure every skill has agents/openai.yaml + shared assets.
 
@@ -221,6 +239,8 @@ def ensure_codex_metadata(repo_root: Path) -> int:
             raise ValueError(f"Missing shared asset '{asset_rel}' at repo root.")
 
     for skill_dir in iter_all_skill_dirs(repo_root):
+        if _is_sub_skill(skill_dir):
+            continue  # sub-skills inherit assets/metadata from their parent skill
         for asset_rel in SHARED_ASSETS:
             source = repo_root / asset_rel
             dest = skill_dir / asset_rel
@@ -262,6 +282,8 @@ def check_codex_metadata(repo_root: Path) -> list[str]:
         return errors
 
     for skill_dir in iter_all_skill_dirs(repo_root):
+        if _is_sub_skill(skill_dir):
+            continue  # sub-skills inherit assets/metadata from their parent skill
         for asset_rel in SHARED_ASSETS:
             source = repo_root / asset_rel
             dest = skill_dir / asset_rel

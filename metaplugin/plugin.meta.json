@@ -92,6 +92,7 @@
     "databricks-pipelines": { "keyword": "pipelines" },
     "databricks-dabs": { "keyword": "dabs" },
     "databricks-serverless-migration": { "keyword": "serverless" },
+    "databricks-serverless-storage-check": { "keyword": "serverless-storage-check" },
     "databricks-vector-search": { "keyword": "vector-search" }
   },
 

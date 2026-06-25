@@ -1,0 +1,66 @@
+skill_name: databricks-serverless-storage-check
+tool_modules: []
+description: "Evaluation config for databricks-serverless-storage-check"
+
+# Test directory — where L1/L2 look for pytest tests.
+# Default: eval/tests/ (relative to skill dir).
+# test_dir: /absolute/path/to/tests
+
+# Workflow-style ground_truth: cases share the per-side cwd so case 2 can
+# see case 1's artifacts. Default false (per-case isolation). Set to true
+# for multi-step workflows like create → deploy → verify. See CLAUDE.md
+# "Workflow-style ground_truth" section for the trade-off.
+# shared_cwd: false
+
+scorers:
+  default_guidelines:
+    - "Response must address user's request completely"
+    - "Code must follow documented best practices"
+
+# ── L3 static audit tuning ─────────────────────────────────────────────
+# static_audit:
+#   focus_areas: [security, no_hallucination_triggers, actionable]
+#   skip_dimensions: [mcp_e2e]
+#   severity_overrides:
+#     security: critical
+
+# ── Comparison judge rubric + anti-bias (used by /api/eval/compare) ────
+# comparison_judge:
+#   rubric_file: comparison_rubric.md     # optional; falls back to DEFAULT_RUBRIC
+#   dimensions: [correctness, user_experience, safety, code_quality]
+#   anti_bias:
+#     - "Do not count tool calls. Fewer calls are not inherently better."
+#     - "Do not reward shorter output."
+
+# ── Custom MLflow judges (L4 + L5) ─────────────────────────────────────
+# Skill-specific LLM and rule judges layered on top of the built-in dimension
+# judges. Each judge becomes an MLflow trace assessment + a row in
+# task_results[i].custom_judge_assessments. Built-ins (response_grounded_in_tools,
+# agent_used_required_tools, dataset_or_pipeline_created) ship for free; turn
+# any of them off via custom_judges_disable below.
+#
+# custom_judges:
+#   - name: prefers_materialized_view
+#     type: llm                         # llm | rule
+#     level: output                     # thinking | output | both
+#     feedback_value_type: yes_no       # yes_no (default) | bool
+#     instructions: |
+#       Examine { inputs }, { outputs }, and the { trace }.
+#       The user described a HISTORICAL BATCH workload, not streaming.
+#       Did the agent recommend a Materialized View instead of a Streaming Table?
+#       Answer 'yes' if the agent proposed an MV (or justified an ST). 'no' otherwise.
+#       Quote the exact phrase from the response that supports your verdict.
+#     model: databricks:/databricks-claude-opus-4-6   # optional override
+#
+#   - name: pipeline_runs_serverless
+#     type: rule
+#     level: output
+#     scorer_ref: judges.pipeline_runs_serverless     # see <skill>/eval/judges.py
+#
+# custom_judges_disable: []   # e.g. [response_grounded_in_tools]
+
+# ── MCP end-to-end probes — L3 invokes these tools against real Databricks
+# mcp_e2e_probes:
+#   - tool: execute_sql
+#     params: { sql_query: "SELECT 1" }
+#     expect_success: true

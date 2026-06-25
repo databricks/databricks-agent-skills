@@ -1,0 +1,154 @@
+# ground_truth.yaml — Test cases for `databricks-serverless-storage-check`.
+#
+# Goal: verify the skill is correctly invoked (parent reparented to
+# databricks-serverless-migration) and that the preflight scanner is run on
+# the right inputs with the right remediation guidance.
+#
+# The cases below cover the documented invocation triggers from SKILL.md:
+#   1. Permission-denied / trustedTemp error symptom
+#   2. Fan-out via dbutils.notebook.run
+#   3. DAB job YAML preflight before deploy
+#   4. Boundary case: single-notebook migration should NOT invoke this skill
+#      (that's the parent databricks-serverless-migration skill's job)
+
+version: "4"
+
+test_cases:
+  # ─────────────────────────────────────────────────────────────────────
+  # Case 1 — Classic BSI symptom: trustedTemp permission denied
+  # ─────────────────────────────────────────────────────────────────────
+  - id: storage-check_001_trusted_temp_permission_denied
+    inputs:
+      prompt: |
+        My serverless job is failing with this error and I can't figure out
+        what's going on:
+
+        INTERNAL_ERROR: [Errno 13] Permission denied:
+          '/local_disk0/spark-abc123/trustedTemp-xyz789/tmp7b2'
+
+        The parent notebook writes a parquet file to /local_disk0 and then
+        calls dbutils.notebook.run on a child notebook that reads it back.
+        Same code works fine on classic compute. What's wrong?
+    expectations:
+      expected_facts:
+        - "cross-task"
+        - "/Volumes"
+        - "local disk"
+      assertions:
+        - "Identifies the failure as a cross-task local-disk handoff antipattern, not a generic permission issue"
+        - "Recommends moving the handoff to UC Volumes (or /Workspace as fallback) rather than fixing local-disk permissions"
+        - "Explains that on serverless each task may run on a different node so /local_disk0 is per-task only"
+        - "Does NOT recommend changing chmod or filesystem ACLs as a fix (that misses the root cause)"
+      expected_patterns:
+        - '(?i)/Volumes/'
+        - '(?i)cross[- ]task|fan[- ]out|sibling'
+      trace_expectations:
+        required_tools: []
+    metadata:
+      category: error_diagnosis
+      difficulty: intermediate
+      regression_intent: "Without this skill, agent typically blames file permissions or chmod the local-disk path. With it, agent recognizes the BSI signature and routes to UC Volumes handoff."
+      generation_session_id: "legacy_v4"
+      sources:
+        - type: manual
+          reference: "skills/databricks-serverless-storage-check/SKILL.md — cross-task local-disk handoff antipattern and UC Volumes remediation"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Case 2 — Pre-deploy review of a fan-out job
+  # ─────────────────────────────────────────────────────────────────────
+  - id: storage-check_002_fanout_preflight
+    inputs:
+      prompt: |
+        I'm about to deploy a multi-task serverless job. The parent task is
+        a notebook that does feature engineering and writes a delta table to
+        /local_disk0/features/, then it kicks off 4 child notebooks in
+        parallel via dbutils.notebook.run, each reading from that same path
+        and training a different model. Can you sanity-check this before I
+        deploy?
+    expectations:
+      expected_facts:
+        - "/Volumes"
+        - "fan-out"
+        - "cross-task"
+      assertions:
+        - "Flags the parent-writes-/local_disk0 child-reads pattern as a serverless blocker that will fail under parallel execution"
+        - "Recommends moving the shared features path off /local_disk0 to /Volumes/<catalog>/<schema>/<volume>/ before deploying"
+        - "Mentions that /local_disk0/tmp is fine for INTRA-task scratch but not for cross-task sharing"
+        - "Does NOT block the user from using serverless compute entirely — only blocks the handoff pattern"
+      expected_patterns:
+        - '(?i)/Volumes/'
+        - '(?i)blocker|will fail|serverless'
+      trace_expectations:
+        required_tools: []
+    metadata:
+      category: pre_deploy_review
+      difficulty: intermediate
+      regression_intent: "Without this skill, agent likely approves the design or only complains about generic serverless config; with it, agent calls the fan-out pattern out specifically."
+      generation_session_id: "legacy_v4"
+      sources:
+        - type: manual
+          reference: "skills/databricks-serverless-storage-check/SKILL.md — fan-out pattern and pre-deploy review guidance"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Case 3 — taskValues alternative
+  # ─────────────────────────────────────────────────────────────────────
+  - id: storage-check_003_small_payload_handoff
+    inputs:
+      prompt: |
+        On my serverless multi-task job, the parent notebook computes a
+        config dict (about 2 KB of JSON: model hyperparameters and a list
+        of feature names) and writes it to /tmp/config.json so the child
+        notebook can read it. The child fails with permission denied
+        intermittently. What's the right way to pass this between tasks?
+    expectations:
+      expected_facts:
+        - "taskValues"
+        - "dbutils.jobs.taskValues"
+      assertions:
+        - "Recommends dbutils.jobs.taskValues.set / .get as the preferred fix for this small payload, not a file handoff"
+        - "Explains that the payload is well under the ~48 KB taskValues limit so no file is needed at all"
+        - "Calls out /tmp as per-task-only on serverless (not durable across tasks)"
+      expected_patterns:
+        - '(?i)taskValues|task_values'
+      trace_expectations:
+        required_tools: []
+    metadata:
+      category: remediation_choice
+      difficulty: easy
+      regression_intent: "Without this skill, agent usually suggests UC Volumes for everything. With it, agent recognizes small-payload case and recommends taskValues (no file)."
+      generation_session_id: "legacy_v4"
+      sources:
+        - type: manual
+          reference: "skills/databricks-serverless-storage-check/SKILL.md — taskValues as preferred fix for small cross-task payloads under 48 KB"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Case 4 — Boundary case: single-notebook migration should NOT call this
+  # ─────────────────────────────────────────────────────────────────────
+  - id: storage-check_004_single_notebook_boundary
+    inputs:
+      prompt: |
+        I'm migrating one notebook from classic DBR 13.3 to serverless. It
+        reads a parquet from DBFS, runs some pandas transforms with
+        intermediate files in /local_disk0/tmp/, and writes the result back
+        to DBFS. No sub-notebooks, no child tasks, just this one notebook
+        running end to end. What do I need to change?
+    expectations:
+      expected_facts:
+        - "/Volumes"
+        - "/local_disk0/tmp"
+      assertions:
+        - "Recommends replacing the DBFS read/write with UC Volumes paths (parent skill's responsibility)"
+        - "Keeps /local_disk0/tmp for the intra-task pandas scratch files — does NOT incorrectly flag this as a cross-task antipattern"
+        - "Treats this as a single-notebook migration owned by databricks-serverless-migration, not a fan-out problem"
+      expected_patterns:
+        - '(?i)/local_disk0/tmp|local_disk0/tmp'
+      trace_expectations:
+        required_tools: []
+    metadata:
+      category: boundary
+      difficulty: hard
+      regression_intent: "Tests that the storage-check skill correctly bounds its scope — it should NOT misfire on single-notebook intra-task scratch use of /local_disk0/tmp, which is the parent migration skill's correct recommendation."
+      generation_session_id: "legacy_v4"
+      sources:
+        - type: manual
+          reference: "skills/databricks-serverless-storage-check/SKILL.md — scope boundary: intra-task /local_disk0/tmp is correct, cross-task handoff is the antipattern"
