@@ -41,7 +41,7 @@ These are common pitfalls that cause metric view creation to fail:
 | **Column mapping** | System maps YAML columns to `column_list` by position, not by name | Order dimensions and measures carefully in definitions |
 | **MEASURE() with spaces** | `MEASURE(Total Revenue)` causes `PARSE_SYNTAX_ERROR` | Backtick-quote: `MEASURE(\`Total Revenue\`)` |
 | **Snowflake column refs** | `nation.n_name` causes `UNRESOLVED_COLUMN` when `nation` is nested | Use full dot-chain: `customer.nation.n_name` |
-| **`format` blocks** | API requires undocumented `type` discriminator, causing parse errors | Omit `format` blocks entirely |
+| **`format` blocks** | A `format` block without a valid `type` discriminator fails with `METRIC_VIEW_INVALID_VIEW_DEFINITION` | Set a valid `type` (`number`/`currency`/`percentage`/`date`/`date_time`); `currency` needs `currency_code`. See [Format Types](#format-types). Omit `format` entirely if unsure. |
 | **Date subtraction** | `date1 - date2` returns `INTERVAL DAY`, not an integer — comparing to `0` or `3` causes `DATATYPE_MISMATCH` | Use `DATEDIFF(date1, date2)` which returns an integer |
 
 ## Source (expanded options)
@@ -127,7 +127,7 @@ Semantic metadata enhances Genie and AI/BI dashboard interpretation of metric vi
 | `comment` | — | Description of the dimension/measure. Powers Genie understanding. |
 | `display_name` | 255 chars | Human-readable label replacing technical names in visualizations |
 | `synonyms` | 10 items, 255 chars each | Alternative names for AI/NL tools to discover dimensions/measures |
-| `format` | — | **Do not use** — causes parse errors (see Format Types warning below) |
+| `format` | — | Display formatting hint (number / currency / percentage / date). Supported in YAML 1.1 — see [Format Types](#format-types) below. |
 
 ### Example
 
@@ -155,9 +155,37 @@ measures:
 
 ### Format Types
 
-> **Do NOT include `format` blocks in metric view definitions.** The API requires an undocumented `type` discriminator field that causes `METRIC_VIEW_INVALID_VIEW_DEFINITION` errors at deployment. Omit entirely — dashboards and Genie infer formatting from column types and names.
+`format` is a **supported YAML 1.1 field** on dimensions and measures. It carries a display-formatting hint that AI/BI dashboards and Genie apply automatically. Every `format` block requires a `type` discriminator; an omitted or invalid `type` is what causes `METRIC_VIEW_INVALID_VIEW_DEFINITION` at deployment — so always set a valid `type`.
 
-**Important:** When upgrading to spec v1.1, any single-line comments (`#`) in the YAML definition are removed when the definition is saved.
+Supported types (see the [Databricks agent-metadata docs](https://docs.databricks.com/aws/en/business-semantics/agent-metadata) for the full option list):
+
+| `type` | Common options | Notes |
+|--------|----------------|-------|
+| `number` | `decimal_places`, `hide_group_separator`, `abbreviation` | Plain numeric formatting |
+| `currency` | `currency_code` (ISO 4217, e.g. `USD`) — **required** | |
+| `percentage` | `decimal_places` | Renders the value as a percentage |
+| `byte` | — | Byte-size formatting |
+| `date` | `date_format` (e.g. `year_month_day`, `locale_long_month`) | |
+| `date_time` | `date_format` | |
+
+```yaml
+measures:
+  - name: Total Revenue
+    expr: SUM(o_totalprice)
+    display_name: "Total Revenue"
+    format:
+      type: currency
+      currency_code: USD
+  - name: Fulfillment Rate
+    expr: "MEASURE(`Fulfilled Orders`) / MEASURE(`Order Count`)"
+    format:
+      type: percentage
+      decimal_places: 1
+```
+
+> **If you are unsure a given `type`/option is accepted by the deployment path you're using, omit `format`** — dashboards and Genie still infer reasonable formatting from column types and names. A malformed `format` block fails the whole definition, so prefer omitting over guessing.
+
+**Important:** When saving a v1.1 metric view, any single-line comments (`#`) in the YAML definition are removed.
 
 **Tip:** Adding `synonyms` is one of the highest-impact things you can do for Genie quality. Users ask questions using different terms — synonyms bridge that gap.
 

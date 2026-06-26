@@ -44,7 +44,7 @@ $$
 - Reference joined table columns as `<join_name>.<column>`; use `source.<column>` when joins are present
 - **Snowflake join column references** must use the **full dot-chain path** through parent joins: `customer.nation.n_name` — NOT `nation.n_name`. Common source of `UNRESOLVED_COLUMN` errors.
 - **Backtick-quote `MEASURE()` references** when the measure name contains spaces: `` MEASURE(`Total Revenue`) `` — NOT `MEASURE(Total Revenue)`. Unquoted multi-word names cause `PARSE_SYNTAX_ERROR`.
-- **Do NOT include `format` blocks** — the API requires undocumented `type` discriminator fields that cause parse errors. Omit format entirely.
+- **`format` blocks are supported (YAML 1.1)** — they carry display hints (currency, percentage, number, date) that Genie/AI-BI apply. Every block **must** set a valid `type` discriminator (`number`/`currency`/`percentage`/`date`/`date_time`; `currency` needs `currency_code`) — a missing/invalid `type` causes `METRIC_VIEW_INVALID_VIEW_DEFINITION`. See the [Format Types](yaml-reference.md#format-types) section. If unsure a `type` is accepted by your deployment path, omit `format` rather than guess.
 - **Use `DATEDIFF()` for date comparisons, NOT subtraction** — `date1 - date2` returns `INTERVAL DAY`, not an integer.
 
 **Join strategy — prefer joins, fall back to SQL source:**

@@ -94,6 +94,10 @@ ORDER BY ALL
 | YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
 | Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
 
+## Guided, multi-source build (Metric View Advisor)
+
+For the single-table create/query patterns above, use this skill directly. When the user wants to **build metric views from existing assets** — gold/fact schemas, AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets — combine multiple sources, deduplicate against views that already exist, and walk deployment end to end, use the **Metric View Advisor** in [`metric-view-advisor/SKILL.md`](metric-view-advisor/SKILL.md). It builds on this skill's baseline spec and adds the multi-source analysis, overlap detection, and an interactive build/deploy flow. Load it when the user asks to "formalize our KPIs," "build a metric/semantic layer from our tables/dashboards/queries," or otherwise wants a guided build rather than authoring one view by hand.
+
 ## SQL Operations
 
 ### Create Metric View

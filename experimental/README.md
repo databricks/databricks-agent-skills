@@ -43,7 +43,6 @@ See the root [README](../README.md) for details on the stable install path.
 
 ### 📊 Analytics & Dashboards
 - **databricks-genie** - Genie Spaces: natural-language data Q&A, space authoring, and tuning (example questions, instructions)
-- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files (**requires the stable `databricks-metric-views` skill** — it provides the baseline YAML spec/patterns this advisor builds on)
 
 ### 🔧 Data Engineering
 - **spark-python-data-source** - Python data sources for Spark (custom connectors)
@@ -67,6 +66,11 @@ and `databricks-config` were merged into the stable
 [`databricks-dabs`](../skills/databricks-dabs/),
 [`databricks-lakebase`](../skills/databricks-lakebase/), and
 [`databricks-core`](../skills/databricks-core/) skills.
+
+The experimental `databricks-metric-view-advisor` was folded into the stable
+[`databricks-metric-views`](../skills/databricks-metric-views/) skill — it now
+lives there as the [`metric-view-advisor/`](../skills/databricks-metric-views/metric-view-advisor/)
+sub-folder and ships with that skill (no separate install).
 
 ## Provenance
 
