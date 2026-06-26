@@ -7,25 +7,23 @@ from pathlib import Path
 
 from skillsgen.common import META_FILE, load_meta
 from skillsgen.discovery import check_codex_metadata, ensure_codex_metadata
-from skillsgen.manifest import generate_manifest, serialize_manifest, validate_manifest
+from skillsgen.generate import generate_all
+from skillsgen.manifest import validate_manifest
 from skillsgen.plugins import (
     check_generated_plugins,
     check_meta_skill_coverage,
     check_scoped_sources,
-    generate_plugins,
 )
-from skillsgen.bundle import check_generated_bundle, generate_bundle
+from skillsgen.bundle import check_generated_bundle
 from skillsgen.commands import check_command_templates
 from skillsgen.routing import (
     check_generated_routing,
     check_routing_coverage,
     check_routing_patterns,
-    generate_routing,
 )
 from skillsgen.hooks import (
     check_generated_hooks,
     check_no_orphan_hook_scripts,
-    generate_hooks,
 )
 from skillsgen.validators import (
     check_codex_plugin,
@@ -66,39 +64,23 @@ def main() -> None:
             print(f"Wrote {written} Codex-metadata file(s)")
 
         case "generate":
-            written = ensure_codex_metadata(repo_root)
-            print(f"Wrote {written} Codex-metadata file(s)")
-
-            manifest = generate_manifest(repo_root)
-            manifest_path = repo_root / "manifest.json"
-            manifest_path.write_text(serialize_manifest(manifest))
-            print(f"Generated {manifest_path}")
+            # The whole sequence (asset sync first, bundle last) lives in
+            # generate_all so this CLI and the release bump cannot drift.
+            result = generate_all(repo_root)
+            manifest = result["manifest"]
+            print(f"Wrote {result['assets']} Codex-metadata file(s)")
+            print(f"Generated {repo_root / 'manifest.json'}")
             print(
                 f"Found {len(manifest['skills'])} skill(s): "
                 f"{', '.join(manifest['skills'].keys())}"
             )
-
-            meta = load_meta(repo_root)
-            written_plugins = generate_plugins(repo_root, meta)
             print(
-                f"Generated {written_plugins} plugin manifest file(s) from {META_FILE}"
+                f"Generated {result['plugins']} plugin manifest file(s) from {META_FILE}"
             )
-
-            written_routing = generate_routing(repo_root, meta)
+            print(f"Generated {result['routing']} routing file(s) from {META_FILE}")
+            print(f"Generated {result['hooks']} hook-wiring file(s) from {META_FILE}")
             print(
-                f"Generated {written_routing} routing file(s) from {META_FILE}"
-            )
-
-            written_hooks = generate_hooks(repo_root, meta)
-            print(
-                f"Generated {written_hooks} hook-wiring file(s) from {META_FILE}"
-            )
-
-            # The bundle copies skills/, hooks/, commands/, rules/, assets/ and
-            # the wiring just generated, so this must run last.
-            written_bundle = generate_bundle(repo_root, meta)
-            print(
-                f"Generated {written_bundle} file(s) in the plugins/databricks/ bundle"
+                f"Generated {result['bundle']} file(s) in the plugins/databricks/ bundle"
             )
 
         case "validate":

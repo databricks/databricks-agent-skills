@@ -133,6 +133,7 @@ from skillsgen.validators import (
     _load_routing_instruction,
     check_routing_tables,
 )
+from skillsgen.generate import generate_all
 from skillsgen.cli import main
 
 
