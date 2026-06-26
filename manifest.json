@@ -435,7 +435,7 @@
       "version": "0.1.0"
     },
     "databricks-synthetic-data-gen": {
-      "description": "Generate realistic synthetic data using Spark + Faker (strongly recommended). Supports serverless execution, multiple output formats (Parquet/JSON/CSV/Delta), and scales from thousands to millions...",
+      "description": "Generate realistic synthetic data using Spark + dbldatagen (Databricks Labs Data Generator, strongly recommended). Supports serverless execution, multiple output formats (Parquet/JSON/CSV/Delta), a...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -446,7 +446,7 @@
         "scripts/generate_synthetic_data.py"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-unity-catalog": {
       "description": "Unity Catalog system tables and volumes.",

@@ -1,6 +1,6 @@
 ---
 name: databricks-synthetic-data-gen
-description: "Generate realistic synthetic data using Spark + Faker (strongly recommended). Supports serverless execution, multiple output formats (Parquet/JSON/CSV/Delta), and scales from thousands to millions of rows. For small datasets (<10K rows), can optionally generate locally and upload to volumes. Use when user mentions 'synthetic data', 'test data', 'generate data', 'demo dataset', 'Faker', or 'sample data'."
+description: "Generate realistic synthetic data using Spark + dbldatagen (Databricks Labs Data Generator, strongly recommended). Supports serverless execution, multiple output formats (Parquet/JSON/CSV/Delta), and scales from thousands to millions of rows. For small datasets (<10K rows), can optionally generate locally and upload to volumes. Use when user mentions 'synthetic data', 'test data', 'generate data', 'demo dataset', 'dbldatagen', or 'sample data'."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
@@ -11,7 +11,9 @@ parent: databricks-core
 
 # Databricks Synthetic Data Generation
 
-Generate realistic, story-driven synthetic data for Databricks using **Spark + Faker + Pandas UDFs** (strongly recommended).
+Generate realistic, story-driven synthetic data for Databricks using **Spark + [dbldatagen](https://databrickslabs.github.io/dbldatagen/public_docs/index.html)** (the Databricks Labs Data Generator — strongly recommended).
+
+> **Use the public `dbldatagen` API.** Import the top-level package (`import dbldatagen as dg`) and its public submodules (`dbldatagen.distributions`, `dbldatagen.constraints`). Everything below is built from the public API.
 
 ## Data Must Tell a Business Story
 
@@ -44,11 +46,11 @@ Synthetic data should demonstrate how Databricks helps solve real business probl
 5. **Enough data for trends** — ~100K+ rows for main tables so patterns survive aggregation
 6. **Ask for catalog/schema** — Never default, always confirm before generating
 7. **Present plan for approval** — Show tables, distributions, assumptions before writing code
-8. **Master tables first** — Generate parent tables, write to Delta, then create children with valid FKs
-9. **Use Spark + Faker + Pandas UDFs** — Scalable, parallel. Polars only if user explicitly wants local + <30K rows
+8. **Parent tables first** — Generate parent tables, write to Delta, then create children with valid FKs
+9. **Use Spark + dbldatagen** — Scalable, parallel, declarative. Build a `dg.DataGenerator` spec and `.build()` it into a Spark DataFrame. Use a `pandas_udf` only for logic dbldatagen can't express
 10. **Use Databricks Connect Serverless by default to generate data** — Update databricks-connect on python 3.12 if required (avoid using execute_code unless instructed to not use Databricks Connect)
 11. **No `.cache()` or `.persist()`** — Not supported on serverless. Write to Delta, read back for joins
-12. **No Python loops or `.collect()`** — Use Spark parallelism. No driver-side iteration, avoid Pandas↔Spark conversions
+12. **No Python loops or `.collect()`** — Use Spark parallelism and dbldatagen specs. No driver-side iteration, avoid Pandas↔Spark conversions
 
 ## Generation Planning Workflow
 
@@ -142,29 +144,57 @@ SELECT COUNT(*) FROM parquet.\`/Volumes/CATALOG/SCHEMA/raw_data/customers\`
 
 See [references/2-troubleshooting.md](references/2-troubleshooting.md) for full validation examples.
 
-## Use Databricks Connect Spark + Faker Pattern
+## Use Databricks Connect + dbldatagen Pattern
+
+A `DataGenerator` spec declares each column; `.build()` returns a Spark DataFrame. No UDFs, no driver loops — generation is fully distributed across `partitions`. Install `dbldatagen` and `faker` locally first (see Setup).
 
 ```python
 from databricks.connect import DatabricksSession
-from pyspark.sql import functions as F
-from pyspark.sql.types import StringType
-import pandas as pd
+import dbldatagen as dg
+import dbldatagen.distributions as dist
+from faker.providers import company, person  # providers we draw from
 
-# Setup serverless Spark session
+# Setup serverless Spark session (deps installed locally)
 spark = DatabricksSession.builder.serverless(True).getOrCreate()
 
-# Pandas UDF pattern - import lib INSIDE the function (libs must be installed locally)
-@F.pandas_udf(StringType())
-def fake_name(ids: pd.Series) -> pd.Series:
-    from faker import Faker  # Import inside UDF
-    fake = Faker()
-    return pd.Series([fake.name() for _ in range(len(ids))])
+CATALOG, SCHEMA = "<YOUR_CATALOG>", "<YOUR_SCHEMA>"  # always user-supplied
+N_CUSTOMERS = 10_000
 
-# Generate with spark.range, apply UDFs
-customers_df = spark.range(0, 10000, numPartitions=16).select(
-    F.concat(F.lit("CUST-"), F.lpad(F.col("id").cast("string"), 5, "0")).alias("customer_id"),
-    fake_name(F.col("id")).alias("name"),
+# One shared Faker text factory: default locale + the providers we use.
+# The factory builds the Faker instance internally (no `from faker import Faker` needed).
+FakerText = dg.FakerTextFactory(locale=["en_US"], providers=[person, company])
+
+customers = (
+    dg.DataGenerator(spark, name="customers", rows=N_CUSTOMERS, partitions=8,
+                     randomSeed=42, randomSeedMethod="hash_fieldname")
+    # surrogate key 0..N-1 (the implicit contiguous seed column) — drives FK joins
+    .withColumn("customer_sk", "long", expr="id")
+    # business key derived from the surrogate
+    .withColumn("customer_id", "string", baseColumn="customer_sk",
+                expr="concat('CUST-', lpad(cast(customer_sk as string), 5, '0'))")
+    # realistic text via the shared Faker provider factory
+    .withColumn("name", "string", text=FakerText("name"))
+    .withColumn("company", "string", text=FakerText("company"))
+    # email derived from the generated name (name as base column)
+    .withColumn("email", "string", baseColumn="name",
+                expr="concat(lower(replace(name, ' ', '.')), '@example.com')")
+    # skewed categories — NEVER uniform (weights are relative)
+    .withColumn("tier", "string", values=["Free", "Pro", "Enterprise"],
+                weights=[60, 30, 10], random=True)
+    .withColumn("region", "string", values=["North", "South", "East", "West"],
+                weights=[40, 25, 20, 15], random=True)
+    # right-skewed ARR correlated to tier: log-normal = exp() of a standard normal.
+    # The hidden helper column (_z, omit=True) is computed and reusable as a base column.
+    .withColumn("_z", "double", minValue=-1, maxValue=1, random=True,
+                distribution=dist.Normal(0.0, 1.0), omit=True)
+    .withColumn("arr", "double", baseColumn=["tier", "_z"],
+                expr="round(CASE tier WHEN 'Enterprise' THEN exp(7.5 + 0.8 * _z) "
+                     "WHEN 'Pro' THEN exp(5.5 + 0.7 * _z) ELSE exp(4.0 + 0.6 * _z) END, 2)")
+    .withColumn("created_at", "date",
+                data_range=dg.DateRange("2023-01-01 00:00:00", "2024-12-31 00:00:00", "days=1"),
+                random=True)
 )
+customers_df = customers.build()
 
 # Write to Volume as Parquet (default for raw data)
 # Path is a folder with table name: /Volumes/catalog/schema/raw_data/customers/
@@ -173,7 +203,7 @@ spark.sql(f"CREATE VOLUME IF NOT EXISTS {CATALOG}.{SCHEMA}.raw_data")
 customers_df.write.mode("overwrite").parquet(f"/Volumes/{CATALOG}/{SCHEMA}/raw_data/customers")
 ```
 
-**Partitions by scale:** `spark.range(N, numPartitions=P)`
+**Partitions by scale:** `dg.DataGenerator(..., rows=N, partitions=P)`
 - <100K rows: 8 partitions
 - 100K-500K: 16 partitions
 - 500K-1M: 32 partitions
@@ -190,32 +220,79 @@ Generated scripts must be highly performant. **Never** do these:
 
 | Anti-Pattern | Why It's Slow | Do This Instead |
 |--------------|---------------|-----------------|
-| Python loops on driver | Single-threaded, no parallelism | Use `spark.range()` + Spark operations |
+| Python loops on driver | Single-threaded, no parallelism | Declare columns in a `dg.DataGenerator` spec and `.build()` |
 | `.collect()` then iterate | Brings all data to driver memory | Keep data in Spark, use DataFrame ops |
-| Pandas → Spark → Pandas | Serialization overhead, defeats distribution | Stay in Spark, use `pandas_udf` only for UDFs |
+| Pandas → Spark → Pandas | Serialization overhead, defeats distribution | Stay in Spark; let dbldatagen generate columns |
 | Read/write temp files | Unnecessary I/O | Chain DataFrame transformations |
-| Scalar UDFs | Row-by-row processing | Use `pandas_udf` for batch processing |
+| Scalar UDFs | Row-by-row processing | Use dbldatagen `expr`/`template`/`text`; `pandas_udf` only when unavoidable |
 
-**Good pattern:** `spark.range()` → Spark transforms → `pandas_udf` for Faker → write directly
+**Good pattern:** `dg.DataGenerator(rows, partitions)` → declarative `.withColumn(...)` specs → `.build()` → write directly
 
 ## Common Patterns
 
+All snippets use the public `dbldatagen` API (`import dbldatagen as dg`, `import dbldatagen.distributions as dist`).
+
 ### Weighted Categories (never uniform)
+`weights` are relative frequencies — they don't need to sum to 100:
 ```python
-F.when(F.rand() < 0.6, "Free").when(F.rand() < 0.9, "Pro").otherwise("Enterprise")
+.withColumn("tier", "string", values=["Free", "Pro", "Enterprise"],
+            weights=[60, 30, 10], random=True)
 ```
 
-### Log-Normal Amounts (in a pandas UDF)
-Use `np.random.lognormal(mean, sigma)` — always positive, long tail:
-- Enterprise: `lognormal(7.5, 0.8)` → ~$1800 median
-- Pro: `lognormal(5.5, 0.7)` → ~$245 median
-- Free: `lognormal(4.0, 0.6)` → ~$55 median
-
-### Date Range (Last 6 Months)
+### Skewed / Long-Tailed Amounts
+Apply a continuous distribution to a numeric range — `Gamma`/`Exponential` give the always-positive long tail you'd want from log-normal:
 ```python
-END_DATE = datetime.now()
+.withColumn("order_amount", "decimal(10,2)", minValue=5, maxValue=25_000,
+            random=True, distribution=dist.Gamma(1.0, 2.0))
+```
+For a true log-normal, generate over a normal and exponentiate via `expr`:
+```python
+.withColumn("amount", "double", minValue=-1, maxValue=1, random=True,
+            distribution=dist.Normal(0.0, 1.0), omit=True)        # standard normal, hidden
+.withColumn("arr", "double", baseColumn="amount",
+            expr="round(exp(5.5 + 0.8 * amount), 2)")             # median ~$245
+```
+
+### Coherent Rows (correlated attributes via `expr` + `baseColumn`)
+Derive dependent columns from earlier ones so each row makes business sense — no UDF needed:
+```python
+.withColumn("priority", "string", values=["Critical", "High", "Medium", "Low"],
+            weights=[5, 15, 50, 30], random=True)
+.withColumn("resolution_hours", "double", baseColumn="priority",
+            expr="round(CASE priority WHEN 'Critical' THEN rand()*8 "
+                 "WHEN 'High' THEN rand()*24 WHEN 'Medium' THEN rand()*72 "
+                 "ELSE rand()*120 END, 1)")
+.withColumn("csat", "int", baseColumn="resolution_hours",
+            expr="CASE WHEN resolution_hours<4 THEN 5 WHEN resolution_hours<24 THEN 4 "
+                 "WHEN resolution_hours<72 THEN 3 ELSE 2 END")
+```
+
+### Date / Timestamp Range (Last 6 Months)
+Use `dg.DateRange(begin, end, interval)` with the `data_range` option:
+```python
+from datetime import datetime, timedelta
+END_DATE = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 START_DATE = END_DATE - timedelta(days=180)
+FMT = "%Y-%m-%d %H:%M:%S"
+
+.withColumn("order_ts", "timestamp",
+            data_range=dg.DateRange(START_DATE.strftime(FMT), END_DATE.strftime(FMT), "minutes=30"),
+            random=True)
 ```
+
+### Realistic Text (Faker provider plugin)
+Build one `FakerTextFactory` with a default locale and the faker providers you need, then reuse it:
+```python
+from faker.providers import person, company, internet
+FakerText = dg.FakerTextFactory(locale=["en_US"], providers=[person, company, internet])
+
+.withColumn("name", "string", text=FakerText("name"))  # uses the 'person' provider
+.withColumn("company", "string", text=FakerText("company"))  # uses the 'company' provider
+.withColumn("ip", "string", text=FakerText("ipv4_private"))  # uses the 'internet' provider
+```
+dbldatagen alternatives that need no library: 
+* `template=r"\w.\w@\w.com"` (templated text)
+* `text=dg.ILText(paragraphs=(1, 3), sentences=(2, 5))` (lorem-ipsum free text).
 
 ### Infrastructure (always create in script)
 ```python
@@ -224,27 +301,33 @@ spark.sql(f"CREATE VOLUME IF NOT EXISTS {CATALOG}.{SCHEMA}.raw_data")
 ```
 
 ### Referential Integrity (FK pattern)
-Write master table to Delta first, then read back for FK joins (no `.cache()` on serverless):
+Generate the FK as an integer over the parent's surrogate-key range so **every value is valid by construction**, then write the parent to Delta and read it back to attach coherent parent attributes (no `.cache()` on serverless):
 ```python
-# 1. Write master table
+# 1. Parent table: surrogate key 0..N-1, then write to Delta
 customers_df.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.customers")
 
-# 2. Read back for FK lookup
-customer_lookup = spark.table(f"{CATALOG}.{SCHEMA}.customers").select("customer_idx", "customer_id")
-
-# 3. Generate child table with valid FKs via join
-orders_df = spark.range(N_ORDERS).select(
-    (F.abs(F.hash(F.col("id"))) % N_CUSTOMERS).alias("customer_idx")
+# 2. Child table: FK drawn from the parent key range (valid by construction).
+#    A distribution skews it 80/20 (a few customers place most orders).
+orders_df = (
+    dg.DataGenerator(spark, name="orders", rows=N_ORDERS, partitions=16, randomSeed=42)
+    .withColumn("order_id", "string",
+                expr="concat('ORD-', lpad(cast(id as string), 8, '0'))", baseColumn="id")
+    .withColumn("customer_sk", "long", minValue=0, maxValue=N_CUSTOMERS - 1,
+                random=True, distribution=dist.Gamma(0.4, 1.0))
+    .build()
 )
-orders_with_fk = orders_df.join(customer_lookup, on="customer_idx")
+
+# 3. Join to the parent (read back from Delta) to pull coherent parent attributes
+customer_lookup = spark.table(f"{CATALOG}.{SCHEMA}.customers").select("customer_sk", "customer_id", "tier")
+orders_with_fk = orders_df.join(customer_lookup, on="customer_sk", how="inner")
 ```
 
 ## Setup
 
-Requires Python 3.12 and databricks-connect>=16.4. Use `uv`:
+Requires Python 3.12 and databricks-connect>=16.4. Install dependencies locally with `uv`:
 
 ```bash
-uv pip install "databricks-connect>=16.4,<17.4" faker numpy pandas holidays
+uv pip install "databricks-connect>=16.4,<17.4" dbldatagen faker
 ```
 
 ## Related Skills
@@ -256,10 +339,11 @@ uv pip install "databricks-connect>=16.4,<17.4" faker numpy pandas holidays
 
 | Issue | Solution |
 |-------|----------|
-| `ModuleNotFoundError: faker` | Install locally: `uv pip install faker`, import inside UDF |
-| Faker UDF is slow | Use `pandas_udf` for batch processing |
-| Out of memory | Increase `numPartitions` in `spark.range()` |
-| Referential integrity errors | Write master table to Delta first, read back for FK joins |
+| `ModuleNotFoundError: dbldatagen` (or `faker`) | Install locally: `uv pip install dbldatagen faker` |
+| `FakerText`/provider not found | Pass the provider to `dg.FakerTextFactory(providers=[...])` and import it from `faker.providers` |
+| All rows identical / not random | Set `random=True` on the column (default is deterministic), or set `randomSeed`/`randomSeedMethod` on the generator |
+| Out of memory | Increase `partitions` in `dg.DataGenerator(..., partitions=P)` |
+| Referential integrity errors | Draw the FK from the parent key range (`minValue=0, maxValue=N-1`); write parent to Delta first, read back to join attributes |
 | `PERSIST TABLE is not supported on serverless` | **NEVER use `.cache()` or `.persist()` with serverless** - write to Delta table first, then read back |
 | `F.window` vs `Window` confusion | Use `from pyspark.sql.window import Window` for `row_number()`, `rank()`, etc. `F.window` is for streaming only. |
 | Broadcast variables not supported | **NEVER use `spark.sparkContext.broadcast()` with serverless** |
