@@ -27,14 +27,9 @@ Create Unity Catalog metric views from your existing Databricks assets — gold/
 
 ## How tools are used
 
-All operations run through the **Databricks CLI**. The mechanics — executing SQL, discovering table schemas, fetching dashboard/Genie definitions, deploying and querying metric views — are documented in **[references/cli-operations.md](references/cli-operations.md)**. Read that file before running any command in the steps below. In short:
+All operations run through the **Databricks CLI**; the commands and fetch/parse details live in **[references/cli-operations.md](references/cli-operations.md)** (auth, profiles, and warehouse selection are covered by the **`databricks-core`** skill). Read cli-operations.md before running commands.
 
-- **Run SQL**: `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (long DDL → `aitools tools statement submit --file`, see cli-operations.md)
-- **Inspect a table**: `databricks experimental aitools tools discover-schema <catalog.schema.table> --profile <PROFILE>`
-- **Default warehouse**: `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`
-- **Fetch a dashboard**: `databricks lakeview get <dashboard_id> --profile <PROFILE>` (draft definition with datasets); **fetch a Genie space / metric-view definition**: `databricks api get ...` (see cli-operations.md)
-
-> **If the host agent has its own native tools** (e.g. a `readAssetById`-style dashboard/asset reader), it may use those instead of these commands. That's fine — but **verify the result is non-empty**. A native reader often returns the *published* dashboard serialization, which can come back empty (`datasets: []`, `pages: []`); an empty result is a fetch-method artifact, not an empty dashboard. When a native fetch returns empty or partial data, fall back to the CLI/REST commands documented in [references/cli-operations.md](references/cli-operations.md) (for dashboards: try `lakeview get`, then `lakeview get-published`, then Input 3).
+> **If the host agent has native asset readers** (a `readAssetById`-style tool), it may use them — but **verify the result is non-empty** and fall back to the CLI fetches in cli-operations.md if it isn't. A native reader often returns an empty *published* serialization (`datasets: []`); empty ≠ no data.
 
 ## How this advisor works
 

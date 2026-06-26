@@ -109,17 +109,9 @@ Present this gap analysis alongside the suggestions so the user sees both what y
 
 ---
 
-## Formatting guidelines (per Databricks best practices)
+## Formatting guidelines
 
-- **Model atomic measures first** — Define simple, foundational measures (`SUM(revenue)`, `COUNT(1)`, `COUNT(DISTINCT customer_id)`) before complex ones. Build complex measures (AOV, fulfillment rate) using **composability** — reference earlier measures via `MEASURE()`.
-- **Standardize dimension values** — Convert cryptic database codes into clear business names using CASE expressions. Never expose raw codes to users.
-- **Define scope with filters** — If a metric view should only ever include certain data, define a persistent `filter` in the YAML.
-- **Use business-friendly naming** — Metric names should be immediately recognizable to business users. Add `display_name` for visualization-friendly labels.
-- **Separate time dimensions** — Always include BOTH the **granular date** AND **truncated variants** (Month, Quarter, Year).
-- **Group related metrics** into a single metric view; don't create too many narrow views.
-- **Include ratio measures** built via composability; **include filtered measures** using `FILTER (WHERE ...)`.
-- **Think about Genie** — clear `comment`, `synonyms`, and `display_name` fields improve Genie answers.
-- **Star schema joins** — if dimension tables exist, include them. Recommend PK/FK constraints with `RELY` on underlying tables for optimal join performance.
+Apply the design best practices already documented elsewhere: the dimension/measure patterns and metadata-priority rules in [input-handlers.md](input-handlers.md#common-analysis-patterns), and the composability / semantic-metadata / join rules in [yaml-reference.md](yaml-reference.md). In short: atomic measures first then compose, humanize raw codes, include raw + truncated time dimensions, prefer fewer richer views, and fill `comment`/`display_name`/`synonyms` for Genie.
 
 ## Suggestion format
 
@@ -207,7 +199,7 @@ After displaying and saving, tell the user:
 > | 3 | **Edit the file** — modify `suggestions.yaml`, then tell me to proceed and I'll read the updated file |
 > | 4 | **Provide a different file** — give me a path to your own suggestions YAML and I'll use that instead |"
 
-**STOP — wait for the user to respond before proceeding.** Do NOT generate YAML definitions until the user confirms or provides an updated file.
+**Checkpoint (review-first):** wait for the user to confirm or provide an updated file before generating definitions. In auto-create mode, proceed (still resolving any 40–69% overlap by asking).
 
 ## Handling the user's response
 
