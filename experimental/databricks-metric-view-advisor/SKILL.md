@@ -23,7 +23,7 @@ Create Unity Catalog metric views from your existing Databricks assets — gold/
 **FIRST**: Read the parent **`databricks-metric-views`** skill for the baseline YAML spec and patterns. This advisor builds on that foundation and only documents the *additional* material it needs — the interactive multi-source workflow, input-source handlers, overlap detection, and the advisor-specific YAML/pattern extras (gotchas, composability, semantic metadata, LOD, the SQL-source fallback).
 
 **Prerequisites:**
-1. **The parent `databricks-metric-views` skill** must be available and loaded (see the REQUIRED note above) — this is mandatory, not optional.
+1. **The parent `databricks-metric-views` skill** must be available and loaded — this is mandatory, not optional. It installs by default with `databricks aitools install` (no `--experimental` flag) or explicitly via `databricks aitools install databricks-metric-views`. Installing this advisor on its own (`databricks aitools install databricks-metric-view-advisor --experimental`) does **not** pull the parent in — install it separately, or the advisor cannot produce correct definitions.
 2. A working **Databricks CLI (>= v1.0.0)** authenticated to a workspace profile. All CLI/SQL commands this skill needs are documented in **[references/cli-operations.md](references/cli-operations.md)** — read that file before running any command in the steps below.
 
 ## How tools are used
