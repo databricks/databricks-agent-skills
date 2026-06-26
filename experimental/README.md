@@ -6,7 +6,10 @@
 > `databricks/databricks-agent-skills` is the canonical home for these skills
 > going forward, and updates land here directly rather than via re-sync.
 >
-> They are still **not officially supported** as part of `databricks-agent-skills`:
+> Most of that snapshot has since been **promoted to the stable
+> [`../skills/`](../skills/) tree** (see [Promoted to stable](#promoted-to-stable)
+> below). The few skills that remain here are still **not officially supported**
+> as part of `databricks-agent-skills`:
 >
 > - They do not follow the same review / quality bar as the skills in
 >   [`../skills/`](../skills/).
@@ -18,7 +21,7 @@
 
 ---
 
-# Databricks Skills for Claude Code
+# Databricks Skills for Claude Code (experimental)
 
 Skills that teach Claude Code how to work effectively with Databricks - providing patterns, best practices, and code examples that work with Databricks MCP tools.
 
@@ -31,47 +34,39 @@ These experimental skills are **not** installed by default. To install them via 
 databricks aitools install --experimental
 
 # Install a single experimental skill by name
-databricks aitools install databricks-iceberg --experimental
+databricks aitools install databricks-genie --experimental
 ```
 
 See the root [README](../README.md) for details on the stable install path.
 
 ## Available Skills
 
-### 🤖 AI & Agents
-- **databricks-ai-functions** - Built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_query, ai_forecast, ai_parse_document, and more) with SQL and PySpark patterns, function selection guidance, document processing pipelines, and custom RAG (parse → chunk → index → query)
-- **databricks-agent-bricks** - Knowledge Assistants, Genie Spaces, Supervisor Agents
-- **databricks-mlflow-evaluation** - End-to-end agent evaluation workflow
-- **databricks-unstructured-pdf-generation** - Generate synthetic PDFs for RAG
-
 ### 📊 Analytics & Dashboards
-- **databricks-aibi-dashboards** - Databricks AI/BI dashboards (with SQL validation workflow)
-- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files (**requires the `databricks-metric-views` skill** — it provides the baseline YAML spec/patterns this advisor builds on)
-- **databricks-metric-views** - Metric Views for governed metrics
-- **databricks-unity-catalog** - System tables for lineage, audit, billing
+- **databricks-genie** - Genie Spaces: natural-language data Q&A, space authoring, and tuning (example questions, instructions)
+- **databricks-metric-view-advisor** - Guided, multi-source workflow to create Unity Catalog metric views from schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files (**requires the stable `databricks-metric-views` skill** — it provides the baseline YAML spec/patterns this advisor builds on)
 
 ### 🔧 Data Engineering
-- **databricks-dbsql** - Databricks SQL warehouse patterns
-- **databricks-iceberg** - Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, Iceberg Clients Interoperability
-- **databricks-spark-structured-streaming** - Spark Structured Streaming patterns
-- **databricks-synthetic-data-gen** - Realistic test data with Faker
-- **databricks-zerobus-ingest** - Zerobus ingest patterns
-- **spark-python-data-source** - Python data sources for Spark
+- **spark-python-data-source** - Python data sources for Spark (custom connectors)
 
-### 🚀 Development & Deployment
-- **databricks-apps-python** - Databricks apps. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required
-- **databricks-python-sdk** - Python SDK, Connect, CLI, REST API
-- **databricks-execution-compute** - Execute on Databricks compute
+## Promoted to stable
 
-> **Use the stable skill instead** for:
-> - **DABs / bundles** — use stable [`databricks-dabs`](../skills/databricks-dabs/)
-> - **Lakebase Postgres** (projects, branching, synced tables, autoscaling) — use stable [`databricks-lakebase`](../skills/databricks-lakebase/)
-> - **CLI auth / profiles / workspace config** — use stable [`databricks-core`](../skills/databricks-core/)
->
-> Previously experimental copies of these (`databricks-bundles`, `databricks-lakebase-autoscale`, `databricks-config`) were already merged with the stable skills.
+Most of the original ai-dev-kit snapshot now lives in the stable
+[`../skills/`](../skills/) tree and installs by default (no `--experimental`
+flag). See the root [README](../README.md#available-skills) for the full list.
+Promoted skills include `databricks-ai-functions`, `databricks-agent-bricks`,
+`databricks-aibi-dashboards`, `databricks-apps-python`, `databricks-dbsql`,
+`databricks-docs`, `databricks-execution-compute`, `databricks-iceberg`,
+`databricks-lakeflow-connect`, `databricks-metric-views`, `databricks-ml-training`,
+`databricks-mlflow-evaluation`, `databricks-python-sdk`,
+`databricks-spark-structured-streaming`, `databricks-synthetic-data-gen`,
+`databricks-unity-catalog`, `databricks-unstructured-pdf-generation`, and
+`databricks-zerobus-ingest`.
 
-### 📚 Reference
-- **databricks-docs** - Documentation index via llms.txt
+Earlier experimental copies of `databricks-bundles`, `databricks-lakebase-autoscale`,
+and `databricks-config` were merged into the stable
+[`databricks-dabs`](../skills/databricks-dabs/),
+[`databricks-lakebase`](../skills/databricks-lakebase/), and
+[`databricks-core`](../skills/databricks-core/) skills.
 
 ## Provenance
 

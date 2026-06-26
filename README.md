@@ -106,6 +106,24 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-pipelines** — Lakeflow Spark Declarative Pipelines (formerly DLT) for batch and streaming.
 - **databricks-serverless-migration** — Migrate classic-compute workloads to serverless compute.
 - **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
+- **databricks-agent-bricks** — Agent Bricks: Knowledge Assistants, Genie Spaces, Multi-Agent Supervisor.
+- **databricks-ai-functions** — Built-in AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document, ai_forecast) in SQL and PySpark.
+- **databricks-aibi-dashboards** — AI/BI dashboards with a SQL-validation workflow.
+- **databricks-apps-python** — Python data apps (Streamlit, Dash, Gradio, Flask, FastAPI, Reflex); prefers AppKit for new apps.
+- **databricks-dbsql** — Databricks SQL warehouse patterns.
+- **databricks-docs** — Databricks documentation lookup via llms.txt.
+- **databricks-execution-compute** — Execute code on Databricks compute.
+- **databricks-iceberg** — Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, client interoperability.
+- **databricks-lakeflow-connect** — Lakeflow Connect managed ingestion connectors.
+- **databricks-metric-views** — Unity Catalog Metric Views for governed metrics.
+- **databricks-ml-training** — ML model training on Databricks.
+- **databricks-mlflow-evaluation** — End-to-end agent / GenAI evaluation with MLflow.
+- **databricks-python-sdk** — Python SDK, Databricks Connect, CLI, REST API.
+- **databricks-spark-structured-streaming** — Spark Structured Streaming patterns.
+- **databricks-synthetic-data-gen** — Realistic synthetic / test data with Faker.
+- **databricks-unity-catalog** — Unity Catalog system tables for lineage, audit, and billing.
+- **databricks-unstructured-pdf-generation** — Generate synthetic PDFs for RAG.
+- **databricks-zerobus-ingest** — Zerobus streaming ingest patterns.
 
 ## Experimental Skills
 
@@ -121,7 +139,7 @@ originally imported from
 - They are **not installed by default** by `databricks aitools install`.
   Pass `--experimental` to install all of them, or install a specific one
   by name (with the `--experimental` flag — e.g. `databricks aitools install
-  databricks-iceberg --experimental`).
+  databricks-genie --experimental`).
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 

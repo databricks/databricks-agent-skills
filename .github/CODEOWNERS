@@ -4,6 +4,7 @@
 /skills/databricks-apps/ @databricks/eng-apps-devex
 /skills/databricks-lakebase/ @databricks/eng-apps-devex
 /skills/databricks-model-serving/ @databricks/eng-apps-devex
+/skills/databricks-app-design/ @databricks/eng-apps-devex
 /skills/databricks-jobs/ @lennartkats-db @camielstee-db
 /skills/databricks-pipelines/ @lennartkats-db @camielstee-db
 
