@@ -174,85 +174,36 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 
 **Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
 
-## What's Next
+## Using Lakebase as an App Resource
 
-### Build a Databricks App
+For the **app-side flows** — scaffolding an app wired to a resource, attaching to an existing app via `apps create-update`, and the deployed-app service-principal ownership / deploy-first model — use the **`databricks-app-resources`** skill. This section holds only the Lakebase-specific details those flows pull.
 
-After creating a project, scaffold a connected Databricks App:
+**Scaffold keys** (`databricks apps init`): `--features lakebase --set "lakebase.postgres.branch=<BRANCH_NAME>" --set "lakebase.postgres.database=<DATABASE_NAME>"`. Get the names from `list-branches` / `list-databases`.
 
-```bash
-# 1. Get branch name
-databricks postgres list-branches projects/<PROJECT_ID> --profile <PROFILE>
-
-# 2. Get database name
-databricks postgres list-databases projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
-
-# 3. Scaffold with lakebase feature
-databricks apps init --name <APP_NAME> --features lakebase \
-  --set "lakebase.postgres.branch=<BRANCH_NAME>" \
-  --set "lakebase.postgres.database=<DATABASE_NAME>" \
-  --run none --profile <PROFILE>
-```
-
-For the full app workflow, use the **`databricks-apps`** skill.
-
-### Attach Lakebase to an existing app
-
-`apps init --features lakebase` (above) wires the database at scaffold time. To
-attach a project to an **existing** app, update its resources.
-
-**Use the `postgres` resource key for an Autoscaling project** — its fields are
-`branch` + `database` (full resource paths from the table above). The legacy
-`database` key (`instance_name` + `database_name`) is for **Provisioned**
-instances only; using it for an Autoscaling project fails with
-`Database instance <name> does not exist`. Get the exact paths from
-`list-branches` / `list-databases` (the DB name is often hyphenated, e.g.
-`databricks-postgres`).
-
-Update the app's resources with **`databricks apps create-update`** — the method to use for any app (the older `databricks apps update` is legacy and can't change resources for an app in a space). `update_mask=resources` replaces the whole `resources` array, so read the app's current resources and **merge** the new one in (or you'll detach the rest). Pass everything in `--json`; only `APP_NAME` is positional:
-
-```bash
-databricks apps create-update <APP_NAME> --json @update.json --profile <PROFILE>   # waits for completion; --no-wait to return early
-```
+**Resource key** (attaching / `app.yaml`): use the **`postgres`** key for an Autoscaling project — fields `branch` + `database` (full resource paths). The legacy `database` key (`instance_name` + `database_name`) is **Provisioned-only**; using it for an Autoscaling project fails with `Database instance <name> does not exist` (DB name is often hyphenated, e.g. `databricks-postgres`). The `resources[]` entry:
 
 ```json
 {
-  "update_mask": "resources",
-  "app": {
-    "resources": [
-      {
-        "name": "postgres",
-        "postgres": {
-          "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>",
-          "database": "projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID>",
-          "permission": "CAN_CONNECT_AND_CREATE"
-        }
-      }
-    ]
+  "name": "postgres",
+  "postgres": {
+    "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>",
+    "database": "projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID>",
+    "permission": "CAN_CONNECT_AND_CREATE"
   }
 }
 ```
 
-**Confirm the branch/database with the user — don't default to `production` silently.** The app's service principal must be able to create and **own** the schema(s) it uses there, so avoid a branch/database where those schema names are already owned by a user (the SP will hit `permission denied … 42501`) — a fresh/dedicated branch, or a new app-owned schema, is cleanest. See **Schema Permissions for Deployed Apps** below for the full ownership model.
+Confirm the branch/database with the user — don't default to `production` silently.
 
-### Schema Permissions for Deployed Apps
+**Suggest a dev branch off `production`, then ask one focused question — not a plan.** Recommend that iteration run on a copy-on-write **branch off `production`** rather than on `production` directly, give the one-line reason (`production` is what the deployed app reads and writes, so a branch keeps your dev changes off its live data while deploy still targets `production`), and ask a single question: go the recommended route, or point somewhere else? Wait for the go-ahead — never create the branch silently. Keep it to the isolation choice only: don't recite the mechanics below, walk through a multi-step plan, or fold in an unrelated build plan.
 
-The app's Service Principal has `CAN_CONNECT_AND_CREATE` -- it can create new objects but **cannot access existing schemas**. The SP must create the schema to become its owner.
+**On go-ahead, do these in order — silently; they're mechanics, not steps to narrate:** attach the postgres resource to the app on `production` (this provisions the app's **service-principal Postgres role** there) → `create-branch` off `production` with a TTL and a session-unique name (copy-on-write, so it inherits the SP role — *only because the attach ran first*) → point your dev iteration at the branch instead of `production`. Forking before attaching leaves the branch with no SP role and the app fails with `28P01 password authentication failed`; **never hand-create SP roles or `GRANT` privileges to patch that** — needing to is the signal the order was wrong, so redo it attach-first.
 
-**ALWAYS deploy the app before running it locally.** This is the #1 source of Lakebase permission errors.
+**Schema ownership:** the app's SP has `CAN_CONNECT_AND_CREATE` — it can create new objects but **cannot use a schema owned by someone else**, so it must create (and thus own) its schema. Deploy first so the SP owns it (for local dev as yourself, assign `databricks_superuser` in the UI). If a schema is already user-owned (you ran locally first), the SP hits `permission denied … 42501`; recreate it under the SP (**ask first — destructive**):
+- **Drop and redeploy:** `databricks psql --project <PROJECT_ID> -- -c "DROP SCHEMA IF EXISTS <SCHEMA_NAME> CASCADE;"`, then `databricks apps deploy` — the SP recreates the schema on startup.
+- **Export first** if you need the data: `pg_dump` (connection details from `get-endpoint`; see **Other Workflows**) or copy to a temp schema via `databricks psql`, then drop + redeploy + restore.
 
-**Correct workflow:**
-1. **Deploy first**: `databricks apps deploy <APP_NAME> --profile <PROFILE>`
-2. **Grant local access** *(if needed)*: assign `databricks_superuser` via UI (project creators already have access)
-3. **Develop locally**: your credentials get DML access to SP-owned schemas
-
-**If you already ran locally first** and hit `permission denied`: the schema is owned by your credentials, not the SP. **Do NOT drop the schema without asking the user** -- dropping it deletes all data.
-
-Ask the user to choose:
-- **(A) Drop and redeploy:** `databricks psql --project <PROJECT_ID> -- -c "DROP SCHEMA IF EXISTS <SCHEMA_NAME> CASCADE;"`, then `databricks apps deploy` from the app directory. The SP recreates the schema on startup.
-- **(B) Export first, then drop and redeploy:** export via `pg_dump` (use connection details from `databricks postgres get-endpoint`; see **Other Workflows** below for HOST and TOKEN) or copy tables to a temp schema using `databricks psql --project <PROJECT_ID>`, then do option A. After the SP recreates the schema on redeploy, restore with `pg_restore` or re-INSERT from the temp schema.
-
-### Other Workflows
+## Other Workflows
 
 ```bash
 # Connect a Postgres client -- get connection string
