@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks ML Training"
+  short_description: "Train and register ML models on Databricks with MLflow"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-ml-training for training and registering ML models on Databricks."

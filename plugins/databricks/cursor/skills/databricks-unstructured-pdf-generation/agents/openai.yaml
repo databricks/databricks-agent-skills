@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Unstructured PDF Generation"
+  short_description: "Generate PDF documents from HTML and upload to Unity Catalog volumes. Use for creating test PDFs, demo documents, reports, or evaluation datasets."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-unstructured-pdf-generation for generate pdf documents from html and upload to unity catalog volumes. use for creating test pdfs, demo documents, reports, or evaluation datasets."

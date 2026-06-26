@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Python Sdk"
+  short_description: "Databricks development guidance including Python SDK, Databricks Connect, CLI, and REST API."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-python-sdk for databricks development guidance including python sdk, databricks connect, cli, and rest api."

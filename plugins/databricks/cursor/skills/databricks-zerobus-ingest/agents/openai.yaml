@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Zerobus Ingest"
+  short_description: "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-zerobus-ingest for build zerobus ingest clients for near real-time data ingestion into databricks delta tables via grpc."

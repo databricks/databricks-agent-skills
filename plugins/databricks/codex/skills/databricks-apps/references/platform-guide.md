@@ -114,13 +114,19 @@ databricks apps deploy -t <TARGET> --profile <PROFILE>
 
 > AppKit-scaffolded apps set `lifecycle.started: true` in `databricks.yml`, so even a bare `bundle deploy` starts them.
 
-### ⚠️ Destructive Updates Warning
+### Updating an app's resources/config: use `apps create-update`
 
-`databricks apps update` (and `bundle run`) performs a **full replacement**, not a merge:
-- Adding a new resource can silently **wipe** existing `user_api_scopes`
-- OBO permissions may be stripped on every deployment
+Always use `databricks apps create-update` to change an app's resources or config — for **every** app. The older `databricks apps update` is legacy and should not be used: it can't change resources for an app in a space, and `create-update` supersedes it. Pass everything in `--json` (only `APP_NAME` is positional) — the body is `{"update_mask": "...", "app": {...}}`, **not** `update_mask` as a separate arg:
 
-**Workaround:** After each deployment, verify OBO scopes are intact.
+```bash
+databricks apps create-update <APP_NAME> --json @update.json   # waits for completion; --no-wait to return early
+```
+
+⚠️ **`update_mask` scopes the change to the fields you list, and each listed field is replaced wholesale (not item-merged).** With `update_mask=resources` the entire `resources` array is replaced, so read the app's current resources and **merge** your new one in before submitting, or you'll detach the rest. Fields you don't list in the mask (e.g. `user_api_scopes`) are left untouched.
+
+For attaching a **Lakebase** database resource specifically — the `postgres` (Autoscaling
+project) vs legacy `database` (provisioned instance) resource key, and the exact
+`branch`/`database` JSON shape — see the **`databricks-lakebase`** skill.
 
 ## Runtime Environment
 

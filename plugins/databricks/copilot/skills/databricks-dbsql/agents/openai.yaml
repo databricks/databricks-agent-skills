@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Dbsql"
+  short_description: "Databricks SQL (DBSQL) advanced features and SQL warehouse capabilities. This skill MUST be invoked when the user mentions: \"DBSQL\", \"Databricks SQL\", \"SQL warehouse\", \"SQL scripting\", \"stored proc..."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-dbsql for databricks sql (dbsql) advanced features and sql warehouse capabilities. this skill must be invoked when the user mentions: \"dbsql\", \"databricks sql\", \"sql warehouse\", \"sql scripting\", \"stored proc."

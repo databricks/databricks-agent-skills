@@ -17,6 +17,24 @@ that matches the request:
 - Vector Search / RAG -> databricks-vector-search
 - Classic-to-serverless migration -> databricks-serverless-migration
 - Genie / natural-language data Q&A -> databricks-core (Genie CLI support is experimental)
+- Agent Bricks / Knowledge Assistants / Genie Spaces / Multi-Agent Supervisor -> databricks-agent-bricks
+- AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document) -> databricks-ai-functions
+- AI/BI dashboards -> databricks-aibi-dashboards
+- Python data apps (Streamlit, Dash, Gradio, Flask, FastAPI) -> databricks-apps-python
+- Databricks SQL warehouses -> databricks-dbsql
+- Databricks documentation lookup (llms.txt) -> databricks-docs
+- Executing code on Databricks compute -> databricks-execution-compute
+- Apache Iceberg tables / UniForm / Iceberg REST Catalog -> databricks-iceberg
+- Lakeflow Connect managed ingestion connectors -> databricks-lakeflow-connect
+- Metric Views / governed metrics -> databricks-metric-views
+- ML model training -> databricks-ml-training
+- MLflow agent / GenAI evaluation -> databricks-mlflow-evaluation
+- Python SDK / Databricks Connect / REST API -> databricks-python-sdk
+- Spark Structured Streaming -> databricks-spark-structured-streaming
+- Synthetic / test data generation (Faker) -> databricks-synthetic-data-gen
+- Unity Catalog system tables (lineage, audit, billing) -> databricks-unity-catalog
+- Synthetic PDF generation for RAG -> databricks-unstructured-pdf-generation
+- Zerobus streaming ingest -> databricks-zerobus-ingest
 
 Then follow the skill's guidance (it drives the `databricks` CLI). If no product
 skill fits, databricks-core alone is enough.

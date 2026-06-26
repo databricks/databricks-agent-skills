@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Agent Bricks"
+  short_description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS)."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-agent-bricks for create agent bricks: knowledge assistants (ka) for document q&a and supervisor agents for multi-agent orchestration (mas)."
