@@ -15,7 +15,7 @@
       "version": "0.1.0"
     },
     "databricks-ai-functions": {
-      "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 chunk \u2192 index \u2192 query).",
+      "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse \u2192 prep_search \u2192 index \u2192 query).",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -23,11 +23,10 @@
         "assets/databricks.svg",
         "references/1-task-functions.md",
         "references/2-ai-query.md",
-        "references/3-ai-forecast.md",
-        "references/4-document-processing-pipeline.md"
+        "references/3-ai-forecast.md"
       ],
       "repo_dir": "experimental",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-aibi-dashboards": {
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly.",
