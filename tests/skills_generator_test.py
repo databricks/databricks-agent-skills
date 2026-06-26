@@ -344,5 +344,74 @@ class ScopedSourcesTest(unittest.TestCase):
         self.assertTrue(skills.check_scoped_sources(bad))
 
 
+class GenerateAllTest(unittest.TestCase):
+    """The one generate sequence shared by the CLI and the release bump.
+
+    The release bump (bump_version.py) and `skills.py generate` once held two
+    hand-maintained copies of the step list; the release copy dropped the
+    per-skill asset sync, so a release regenerated everything except the bundled
+    icons and then failed its own validate on "Stale 'assets/databricks.png'".
+    Both now call generate_all, and these tests pin that it (a) re-syncs stale
+    assets and (b) leaves a self-consistent tree.
+    """
+
+    # Source dirs generate_all reads from. rules/ is intentionally omitted: it is
+    # produced by generate_routing (rules/databricks-routing.mdc + README), so it
+    # need not -- and in a source-only checkout cannot -- be seeded. Keeping it out
+    # lets this test run on the bare mirror too, not just the published tree.
+    _SRC_DIRS = ("skills", "hooks", "commands", "assets", "metaplugin")
+
+    def setUp(self):
+        self.meta = skills.load_meta(_REPO)
+
+    def _seed(self, root: Path) -> Path:
+        for d in self._SRC_DIRS:
+            shutil.copytree(_REPO / d, root / d)
+        return root
+
+    def _meta_at(self, version: str) -> dict:
+        # The committed-version source (version.meta.json) is excluded from the
+        # source-only mirror, so build a version-matched meta explicitly rather
+        # than relying on load_meta to resolve one.
+        meta = dict(self.meta)
+        meta["version"] = version
+        return meta
+
+    def test_generate_all_roundtrips_clean(self):
+        # A full generate from source must satisfy EVERY drift check, so a
+        # regression that drops or mis-orders any sub-step is caught here. The
+        # bundle check alone is not enough: it validates the bundle against the
+        # root wiring it copied, not the root wiring against meta, and it never
+        # sees the root marketplace catalogs or manifest.json (neither ships in
+        # the bundle). So assert each generated surface independently.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            skills.generate_all(root, version_override="9.9.9")
+            meta = self._meta_at("9.9.9")
+            self.assertEqual(skills.check_codex_metadata(root), [])
+            self.assertEqual(skills.check_generated_plugins(root, meta), [])
+            self.assertEqual(skills.check_generated_routing(root, meta), [])
+            self.assertEqual(skills.check_generated_hooks(root, meta), [])
+            self.assertTrue(skills.validate_manifest(root))
+            self.assertEqual(skills.check_generated_bundle(root, meta), [])
+
+    def test_generate_all_resyncs_stale_skill_asset(self):
+        # The exact regression: a stale per-skill icon must be re-synced by the
+        # generate sequence, not survive it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            stale = root / "skills/databricks-core/assets/databricks.png"
+            stale.write_bytes(b"STALE")
+            self.assertTrue(
+                any(
+                    "Stale 'assets/databricks.png'" in e and "databricks-core" in e
+                    for e in skills.check_codex_metadata(root)
+                ),
+                "expected the corrupted icon to be flagged before generate_all",
+            )
+            skills.generate_all(root, version_override="9.9.9")
+            self.assertEqual(skills.check_codex_metadata(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()

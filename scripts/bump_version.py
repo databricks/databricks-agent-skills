@@ -6,11 +6,12 @@ The release version lives in `version.meta.json` (NOT plugin.meta.json):
     { "current_version": "0.2.6", "next_version": "0.2.7" }
 
 This script (run by .github/workflows/release.yml on manual dispatch) takes
-`next_version` as the version to release, regenerates every target's
-`plugin.json` + each `marketplace.json` catalog, `manifest.json`, the
-routing/hook wiring, and the `plugins/databricks/` bundle stamped with it, then
-advances `version.meta.json` so `current_version` becomes the just-released
-version and `next_version` is bumped to the next patch. To cut a minor/major
+`next_version` as the version to release, syncs each skill's shared icons +
+`agents/openai.yaml`, regenerates every target's `plugin.json` + each
+`marketplace.json` catalog, `manifest.json`, the routing/hook wiring, and the
+`plugins/databricks/` bundle stamped with it, then advances `version.meta.json`
+so `current_version` becomes the just-released version and `next_version` is
+bumped to the next patch. To cut a minor/major
 instead, set `next_version` before dispatching; the next patch is computed from
 whatever you set.
 
@@ -54,29 +55,21 @@ def main() -> None:
     if not SEMVER_RE.match(release):
         raise SystemExit(f"ERROR: next_version must be X.Y.Z, got {release!r}")
 
-    # Regenerate everything stamped with the release version. load_meta resolves
-    # the current (pre-release) version; override meta["version"] with
-    # next_version so this build carries the version we are about to tag.
-    meta = skills.load_meta(repo_root)
-    meta["version"] = release
-
-    written = skills.generate_plugins(repo_root, meta)
-    print(f"regenerated {written} plugin manifest file(s) at {release}")
-
-    written_routing = skills.generate_routing(repo_root, meta)
-    print(f"regenerated {written_routing} routing file(s)")
-
-    written_hooks = skills.generate_hooks(repo_root, meta)
-    print(f"regenerated {written_hooks} hook-wiring file(s)")
-
-    manifest = skills.generate_manifest(repo_root)
-    (repo_root / "manifest.json").write_text(skills.serialize_manifest(manifest))
+    # Regenerate every artifact from source via the one shared sequence -- the
+    # `skills.py generate` CLI runs the identical call. version_override stamps
+    # next_version into the generated plugin.json (instead of the current version
+    # load_meta would resolve), so this build carries the version we are about to
+    # tag. Routing this through generate_all (not an inlined copy of the step
+    # list) is what keeps the per-skill asset sync from being dropped here: a
+    # release that regenerates everything except the icons would fail its own
+    # validate step on "Stale 'assets/databricks.png'".
+    result = skills.generate_all(repo_root, version_override=release)
+    print(f"synced {result['assets']} skill asset / Codex-metadata file(s)")
+    print(f"regenerated {result['plugins']} plugin manifest file(s) at {release}")
+    print(f"regenerated {result['routing']} routing file(s)")
+    print(f"regenerated {result['hooks']} hook-wiring file(s)")
     print("regenerated manifest.json")
-
-    # Last: the bundle copies skills/, hooks/, commands/, rules/, assets/ and the
-    # wiring regenerated above, plus the four plugin.json with the release version.
-    written_bundle = skills.generate_bundle(repo_root, meta)
-    print(f"regenerated {written_bundle} file(s) in the plugins/databricks/ bundle")
+    print(f"regenerated {result['bundle']} file(s) in the plugins/databricks/ bundle")
 
     # Advance the version state: the released version becomes current, and
     # next_version is bumped to the next patch. Done last so a failure before
