@@ -218,7 +218,7 @@ $$
 
 ## Pattern 4: Snowflake Schema (Nested Joins)
 
-Multi-level dimension hierarchies. Requires DBR 17.1+.
+Multi-level dimension hierarchies (see the parent `databricks-metric-views` skill for the DBR requirement on nested joins).
 
 **CRITICAL**: Reference nested join columns using the **full dot-chain path** through parent joins. For example, `nation` is nested under `customer`, so use `customer.nation.n_name` — NOT `nation.n_name`. Using just the join name causes `UNRESOLVED_COLUMN` errors.
 
@@ -276,7 +276,7 @@ WITH METRICS
 LANGUAGE YAML
 AS $$
   version: 0.1
-  comment: "Time-series metrics with running totals, trailing windows, and period comparisons. Window measures require version 0.1."
+  comment: "Time-series metrics with running totals, trailing windows, and period comparisons."
   source: catalog.schema.orders
 
   dimensions:

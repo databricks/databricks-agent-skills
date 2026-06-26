@@ -214,22 +214,19 @@ Then share the next-step suggestions below.
 7. **Inspect with metadata**: `DESCRIBE TABLE EXTENDED <metric_view> AS JSON` for the full definition
 8. **Set PK/FK constraints with RELY** on underlying tables for optimal join performance
 
-## Important Notes
+## Important Notes (advisor heuristics)
 
-- **DBR 17.2+ required** for YAML v1.1 metric views
-- **SELECT * is NOT supported** — must explicitly list dimensions and use MEASURE()
-- **Querying requires BOTH `MEASURE()` AND `GROUP BY`** — using only one causes an error (see Step 7)
-- **MEASURE() cannot use OVER clause** — no window function usage on measures
-- **Window measures** (running totals, period-over-period) require `version: 0.1` — only suggest these if the user specifically asks
-- **Joins must be many-to-one** — in many-to-many cases, only the first match is used
-- **Joins are LEFT OUTER JOIN** — dimension rows without fact matches are excluded; fact rows without dimension matches get NULLs
-- **Source can be a SQL query** — e.g., `(SELECT * FROM table WHERE active = true)` — but joins are NOT supported with SQL query sources
-- Always add `comment` and `synonyms` fields — they power Genie's natural language understanding
-- Prefer fewer, richer metric views over many narrow ones
+> **The baseline spec lives in the parent `databricks-metric-views` skill** (`../SKILL.md`, `../references/yaml-reference.md`) — YAML versions and DBR requirements, query rules (`MEASURE()` + `GROUP BY`, no `SELECT *`, `MEASURE()` without `OVER`), join structure/cardinality/semantics, window-measure requirements, and materialization. **Follow the spec there.** This advisor deliberately does **not** restate the spec, so the two can't drift apart; the notes below are advisor-specific guidance only.
+
+- Always add `comment`, `display_name`, and `synonyms` to dimensions and measures — they power Genie's natural-language understanding (the advisor's core value-add).
+- Prefer fewer, richer metric views over many narrow ones.
+- **Window measures** (running totals, period-over-period, YTD): only *suggest* them when the user specifically asks — see the parent skill for their `version`/DBR requirements.
+- **SQL-query source fallback**: prefer declarative joins; fall back to a SQL-query `source` only when the joins can't be expressed declaratively (joins aren't supported on a SQL-query source). See [references/patterns.md](references/patterns.md).
 
 ## Limitations
 
+These are advisor-relevant facts not covered by the parent's spec sections (for spec-level limits, see the parent skill):
+
 - **No Delta Sharing** — metric views cannot be shared via Delta Sharing
 - **No data profiling** — data profiling is not supported on metric views
-- **ALTER VIEW removes UC comments** — unless `comment` fields are explicitly in the YAML
-- **Materialization is experimental** — only `relaxed` mode supported; requires serverless compute
+- **`ALTER VIEW` removes UC comments** — unless `comment` fields are explicitly in the YAML

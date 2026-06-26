@@ -34,7 +34,7 @@ $$
 ```
 
 **YAML rules to follow** (critical subset — the parent `databricks-metric-views` skill holds the full spec, and [references/yaml-reference.md](yaml-reference.md) holds the advisor additions including the gotchas table):
-- `version: 1.1` (requires DBR 17.2+)
+- `version: 1.1` (the advisor's templates use 1.1 — see the parent skill for the `version`/DBR requirements)
 - Every dimension and measure needs a `name` and `expr`
 - Add `comment`, `display_name`, and `synonyms` to all dimensions and measures for Genie discoverability
 - **Use composability** — define atomic measures first (SUM, COUNT, AVG), then build complex measures referencing them via `MEASURE()`

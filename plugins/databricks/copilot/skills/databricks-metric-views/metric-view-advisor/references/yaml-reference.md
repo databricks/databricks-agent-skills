@@ -108,12 +108,10 @@ These supplement the parent spec's *Measure Rules* — apply both sets:
 
 ## Additional Join Rules
 
-These supplement the parent spec's *Join Rules* — apply both sets:
+These supplement the parent spec's *Join Rules* — **join cardinality and join semantics live in the parent `databricks-metric-views` skill's *Join Rules*; follow them there.** This advisor only adds the gotchas below:
 
 - In `on` clauses, the reference defaults to the join table if no prefix is provided.
 - **CRITICAL — Snowflake column referencing**: Use the **full dot-chain path** through parent joins to access nested join columns. For example, `customer.nation.n_name` references `n_name` from the `nation` table nested under `customer`. Using just `nation.n_name` will cause `UNRESOLVED_COLUMN` errors. Similarly, `customer.nation.region.r_name` for a region nested two levels deep.
-- Joins must follow a **many-to-one** relationship; in many-to-many cases, the first matching row is selected.
-- All joins are **LEFT OUTER JOIN** semantics.
 - The optimizer automatically joins only necessary dimension tables based on selected dimensions and measures.
 
 ## Semantic Metadata (v1.1+)
@@ -231,7 +229,7 @@ measures:
 
 Aggregate at a coarser grain than the query by using window measures with `range: all`. This is filter-aware and adapts to query-time dimensions.
 
-> **Requires `version: 0.1`.** This pattern uses window measures, which are only supported under `version: 0.1` (see the parent skill's Window Measures section and `patterns.md`). Definitions elsewhere in this file use `version: 1.1` — do not combine a coarser-LOD window measure with `version: 1.1`, or the metric view will fail validation.
+> **This pattern uses window measures — see the parent `databricks-metric-views` skill's *Window Measures* section for their `version`/DBR requirements** (this advisor doesn't restate the version gating, to avoid drift). Make sure the coarser-LOD window measure and the rest of the definition use a single, consistent `version` that supports window measures.
 
 ```yaml
 dimensions:
