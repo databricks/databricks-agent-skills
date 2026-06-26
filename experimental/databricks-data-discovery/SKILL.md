@@ -62,6 +62,10 @@ databricks experimental genie ask "Top 5 destinations by revenue" --include-sql
 # Machine-readable result for parsing
 databricks experimental genie ask "Top 5 destinations by revenue" --output json
 # → {"status":"completed","conversation_id":"…","text":"…","tool_calls":[{"name":"execute_sql","sql":"…","title":"…"}]}
+
+# Multi-turn: reuse a session label (any string you pick) to keep context across calls
+databricks experimental genie ask -s trips "How many bookings were there last week?"
+databricks experimental genie ask -s trips "Break that down by destination"
 ```
 
 Genie searches across all the data you can see, runs SQL, and streams a grounded
@@ -72,10 +76,12 @@ set up.
 - **Streams live**: the answer, the agent's steps, and any SQL/results appear as
   they arrive. Answers usually take ~5–30s; a stalled stream (no data for ~10 min)
   fails with a clear message, and Ctrl-C cancels cleanly.
-- **Follow-ups (multi-turn)**: continue the same conversation with
-  `--conversation <id>`. Text output prints the id as a footer ("Continue this
-  conversation with: --conversation <id>"); `--output json` returns it as
-  `conversation_id`. Omit it to start a fresh conversation.
+- **Follow-ups (multi-turn)**: pass `-s <label>` (alias `--session`) with a
+  session label *you* choose — any string. Reusing the same label continues that
+  conversation, so a follow-up keeps context ("break that down…", "now by
+  region"); a fresh label starts over. The label is mapped to the server
+  conversation locally, and an expired one transparently starts a new
+  conversation. No id to copy around.
 - **Structured output**: `--output json` gives `{status, conversation_id, text,
   tool_calls[]}`, where `tool_calls` includes the SQL Genie executed; `--raw` dumps
   the raw event stream.
