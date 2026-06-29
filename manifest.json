@@ -138,7 +138,7 @@
       "version": "0.0.1"
     },
     "databricks-data-discovery": {
-      "description": "Discover, explore, and query Databricks data via Genie. This skill MUST be invoked \u2014 instead of browsing catalogs/schemas/tables yourself \u2014 whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or sample/profile a table, answer a natural-language question about the data, or write or generate a SQL query \u2014 for analytics, dashboards, apps, or ad-hoc questions. Routes to Genie (natural-language Q&A and query generation over all your Unity Catalog data) first, then falls back to information_schema + SQL discovery.",
+      "description": "Discover, explore, and query Databricks data via Genie \u2014 the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or profile a table, answer a natural-language question about the data, or write a SQL query.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
