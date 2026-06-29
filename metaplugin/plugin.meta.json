@@ -84,6 +84,7 @@
   "//skills": "Per-skill plugin metadata. Insertion order defines the keyword order in plugin.json: keywords = keywords_lead + [each skill's keyword] + keywords_tail. Repo-owned (does NOT live in SKILL.md frontmatter, which syncs from the internal source). Prompt-routing config lives in the separate routing block below.",
   "skills": {
     "databricks-core": { "keyword": "cli" },
+    "databricks-ai-runtime": { "keyword": "ai-runtime" },
     "databricks-apps": { "keyword": "apps" },
     "databricks-app-design": { "keyword": "app-design" },
     "databricks-lakebase": { "keyword": "lakebase" },
@@ -166,6 +167,7 @@
       { "label": "Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT)", "skill": "databricks-pipelines" },
       { "label": "Apps / AppKit", "skill": "databricks-apps" },
       { "label": "Asset Bundles / DABs / databricks.yml", "skill": "databricks-dabs" },
+      { "label": "AI Runtime / custom Docker images / air CLI workloads", "skill": "databricks-ai-runtime" },
       { "label": "Model Serving / endpoints", "skill": "databricks-model-serving" },
       { "label": "Lakebase / Postgres", "skill": "databricks-lakebase" },
       { "label": "Vector Search / RAG", "skill": "databricks-vector-search" },
