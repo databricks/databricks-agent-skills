@@ -1,11 +1,3 @@
----
-name: databricks-ai-runtime
-description: "Build custom Docker images for Databricks AI Runtime (`air`) CLI workloads. Use when the user needs to bring their own Docker container image to an `air` workload: writing Dockerfiles using Databricks base images or from scratch, navigating CUDA/NCCL/EFA compatibility, handling flash-attn CXX11 ABI pitfalls, and registering images with `air register image`."
-compatibility: Requires databricks-air CLI
-metadata:
-  version: "0.1.0"
----
-
 # Custom Docker images for Databricks AI Runtime
 
 Build a custom Docker image when your training workload needs a CUDA
