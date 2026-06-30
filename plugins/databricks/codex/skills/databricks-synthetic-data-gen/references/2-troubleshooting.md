@@ -4,23 +4,24 @@ Common issues and solutions for synthetic data generation.
 
 ## Environment Issues
 
-### ModuleNotFoundError: faker (or other library)
+### ModuleNotFoundError: dbldatagen (or faker)
 
-**Problem:** Dependencies not available in execution environment.
+**Problem:** Dependencies not available in execution environment. `dbldatagen` is required, and
+`faker` too if you use `FakerTextFactory`/`fakerText`.
 
 **Solutions by execution mode:**
 
 | Mode | Solution |
 |------|----------|
-| **DB Connect with Serverless** | Install libs locally (`uv pip install faker`), use `DatabricksSession.builder.serverless(True)` |
-| **Databricks Runtime** | Use Databricks CLI to install `faker holidays` |
-| **Classic cluster** | Use Databricks CLI to install libraries. `databricks libraries install --json '{"cluster_id": "<cluster_id>", "libraries": [{"pypi": {"package": "faker"}}, {"pypi": {"package": "holidays"}}]}'` |
+| **DB Connect with Serverless** | Install libs locally (`uv pip install dbldatagen faker`), use `DatabricksSession.builder.serverless(True)` |
+| **Databricks Runtime** | `%pip install dbldatagen faker` at the top of the notebook |
+| **Classic cluster** | Use Databricks CLI to install libraries. `databricks libraries install --json '{"cluster_id": "<cluster_id>", "libraries": [{"pypi": {"package": "dbldatagen"}}, {"pypi": {"package": "faker"}}]}'` |
 
 ```python
 # For DB Connect with serverless
 from databricks.connect import DatabricksSession
 
-# Install dependencies locally first: uv pip install faker pandas numpy holidays
+# Install dependencies locally first: uv pip install dbldatagen faker
 spark = DatabricksSession.builder.serverless(True).getOrCreate()
 ```
 
@@ -50,21 +51,21 @@ AnalysisException: [NOT_SUPPORTED_WITH_SERVERLESS] PERSIST TABLE is not supporte
 
 **Why this happens:** Serverless compute does not support caching DataFrames in memory. This is a fundamental limitation of the serverless architecture.
 
-**Solution:** Write master tables to Delta first, then read them back for FK joins:
+**Solution:** Write parent tables to Delta first, then read them back for FK joins:
 
 ```python
 # BAD - will fail on serverless
-customers_df = spark.range(0, N_CUSTOMERS)...
+customers_df = dg.DataGenerator(spark, name="customers", rows=N_CUSTOMERS, partitions=8).build()
 customers_df.cache()  # ❌ FAILS: "PERSIST TABLE is not supported on serverless compute"
 
 # GOOD - write to Delta, then read back
-customers_df = spark.range(0, N_CUSTOMERS)...
+customers_df = dg.DataGenerator(spark, name="customers", rows=N_CUSTOMERS, partitions=8).build()
 customers_df.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.customers")
 customer_lookup = spark.table(f"{CATALOG}.{SCHEMA}.customers")  # ✓ Read from Delta
 ```
 
 **Best practice for referential integrity:**
-1. Generate master table (e.g., customers)
+1. Generate parent table (e.g., customers)
 2. Write to Delta table
 3. Read back for FK lookup joins
 4. Generate child tables (e.g., orders, tickets) with valid FKs
@@ -114,7 +115,7 @@ spark = DatabricksSession.builder.serverless(True).getOrCreate()
     "environment_key": "datagen_env",
     "spec": {
       "client": "4",  # Required!
-      "dependencies": ["faker", "numpy", "pandas"]
+      "dependencies": ["dbldatagen", "faker"]
     }
   }]
 }
@@ -153,34 +154,37 @@ contacts_df = contacts_df.withColumn(
 
 ---
 
-### Faker UDF is slow
+### Generation is slow
 
-**Problem:** Single-row UDFs don't parallelize well.
+**Problem:** Row-by-row Python UDFs (or driver loops) don't parallelize well.
 
-**Solution:** Use `pandas_udf` for batch processing:
+**Solution:** Let dbldatagen generate columns declaratively — it builds the whole DataFrame in
+parallel across `partitions`. Prefer `expr`, `template`, `values`/`weights`, and `distribution`
+over UDFs. For names/addresses use the Faker plugin (`FakerTextFactory`) instead of hand-rolled UDFs:
 
 ```python
-# SLOW - scalar UDF
-@F.udf(returnType=StringType())
-def slow_fake_name():
-    return Faker().name()
+import dbldatagen as dg
+from faker.providers import person
 
-# FAST - pandas UDF (batch processing)
-@F.pandas_udf(StringType())
-def fast_fake_name(ids: pd.Series) -> pd.Series:
-    fake = Faker()
-    return pd.Series([fake.name() for _ in range(len(ids))])
+FakerText = dg.FakerTextFactory(locale=["en_US"], providers=[person])
+
+spec = (
+    dg.DataGenerator(spark, name="people", rows=1_000_000, partitions=64, randomSeed=42)
+    .withColumn("name", "string", text=FakerText("name"))   # batched by dbldatagen
+    .withColumn("status", "string", values=["active", "churned"], weights=[85, 15], random=True)
+)
+df = spec.build()
 ```
 
 ### Out of memory with large data
 
 **Problem:** Not enough partitions for data size.
 
-**Solution:** Increase partitions:
+**Solution:** Increase `partitions` on the generator:
 
 ```python
 # For large datasets (1M+ rows)
-customers_df = spark.range(0, N_CUSTOMERS, numPartitions=64)  # Increase from default
+spec = dg.DataGenerator(spark, name="big", rows=N_CUSTOMERS, partitions=64, randomSeed=42)
 ```
 
 | Data Size | Recommended Partitions |
@@ -205,21 +209,28 @@ customers_df = spark.range(0, N_CUSTOMERS, numPartitions=64)  # Increase from de
 
 **Problem:** Foreign keys reference non-existent parent records.
 
-**Solution:** Write master table to Delta first, then read back for FK joins:
+**Solution:** Sample the FK from the parent's surrogate-key range, write the parent
+to Delta, then read it back for joins:
 
 ```python
-# 1. Generate and WRITE master table (do NOT use cache with serverless!)
-customers_df = spark.range(0, N_CUSTOMERS)...
+# 1. Generate and WRITE parent table (do NOT use cache with serverless!)
+customers_df = (
+    dg.DataGenerator(spark, name="customers", rows=N_CUSTOMERS, partitions=8, randomSeed=42)
+    .withColumn("customer_sk", "long", expr="id")   # References the built-in sequential 'id' column
+    .withColumn("tier", "string", values=["Free", "Pro", "Enterprise"], weights=[60, 30, 10], random=True)
+    .build()
+)
 customers_df.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.customers")
 
 # 2. Read back for FK lookups
-customer_lookup = spark.table(f"{CATALOG}.{SCHEMA}.customers").select("customer_id", "tier")
+customer_lookup = spark.table(f"{CATALOG}.{SCHEMA}.customers").select("customer_sk", "tier")
 
-# 3. Generate child table with valid FKs
-orders_df = spark.range(0, N_ORDERS).join(
-    customer_lookup,
-    on=<mapping_condition>,
-    how="left"
+# 3. Generate child table with FK in the valid parent key range
+orders_df = (
+    dg.DataGenerator(spark, name="orders", rows=N_ORDERS, partitions=16, randomSeed=42)
+    .withColumn("customer_sk", "long", minValue=0, maxValue=N_CUSTOMERS - 1, random=True)
+    .build()
+    .join(customer_lookup, on="customer_sk", how="inner")
 )
 ```
 
@@ -233,52 +244,52 @@ orders_df = spark.range(0, N_ORDERS).join(
 
 **Problem:** All customers have similar order counts, amounts are evenly distributed.
 
-**Solution:** Use non-linear distributions:
+**Solution:** Apply a `distribution=` to the column instead of leaving it uniform:
 
 ```python
-# BAD - uniform
-amounts = np.random.uniform(10, 1000, N)
+import dbldatagen.distributions as dist
 
-# GOOD - log-normal (realistic)
-amounts = np.random.lognormal(mean=5, sigma=0.8, N)
+# BAD - uniform (no distribution)
+.withColumn("amount", "double", minValue=10, maxValue=1000, random=True)
+
+# GOOD - skewed, realistic
+.withColumn("amount", "double", minValue=10, maxValue=1000, random=True,
+            distribution=dist.Gamma(1.0, 2.0))
 ```
 
 ### Missing time-based patterns
 
 **Problem:** Data doesn't reflect weekday/weekend or seasonal patterns.
 
-**Solution:** Add multipliers:
+**Solution:** Weight time buckets so volume clusters realistically, then derive the timestamp:
 
 ```python
-import holidays
-
-US_HOLIDAYS = holidays.US(years=[2024, 2025])
-
-def get_multiplier(date):
-    mult = 1.0
-    if date.weekday() >= 5:  # Weekend
-        mult *= 0.6
-    if date in US_HOLIDAYS:
-        mult *= 0.3
-    return mult
+# Cluster events into business hours
+.withColumn("hour", "int", values=list(range(24)),
+            weights=[1,1,1,1,1,1,2,4,8,10,10,9,8,9,10,9,7,5,3,2,2,1,1,1],
+            random=True, omit=True)
+.withColumn("event_ts", "timestamp", baseColumn="hour",
+            expr="date'2025-06-01' + make_interval(0,0,0,0,hour,0,0)")
 ```
+
+For weekend/holiday dips, weight a day-of-week or day bucket the same way, or post-filter the built
+DataFrame with a Spark `expr` (e.g. `dayofweek(event_ts) IN (1,7)`).
 
 ### Incoherent row attributes
 
 **Problem:** Enterprise customer has low-value orders, critical ticket has slow resolution.
 
-**Solution:** Correlate attributes:
+**Solution:** Correlate attributes with `baseColumn` + `expr` so each derives from the previous:
 
 ```python
 # Priority based on tier
-if tier == 'Enterprise':
-    priority = np.random.choice(['Critical', 'High'], p=[0.4, 0.6])
-else:
-    priority = np.random.choice(['Medium', 'Low'], p=[0.6, 0.4])
-
-# Resolution based on priority
-resolution_scale = {'Critical': 4, 'High': 12, 'Medium': 36, 'Low': 72}
-resolution_hours = np.random.exponential(scale=resolution_scale[priority])
+.withColumn("priority", "string", baseColumn="tier",
+            expr="CASE WHEN tier='Enterprise' THEN (CASE WHEN rand()<0.4 THEN 'Critical' ELSE 'High' END) "
+                 "ELSE (CASE WHEN rand()<0.6 THEN 'Medium' ELSE 'Low' END) END")
+# Resolution scaled by priority
+.withColumn("resolution_hours", "double", baseColumn="priority",
+            expr="round(CASE priority WHEN 'Critical' THEN rand()*4 WHEN 'High' THEN rand()*12 "
+                 "WHEN 'Medium' THEN rand()*36 ELSE rand()*72 END, 1)")
 ```
 
 ---
