@@ -1,7 +1,0 @@
-interface:
-  display_name: "Databricks Ai Runtime"
-  short_description: "Build custom Docker images for Databricks AI Runtime (`air`) CLI workloads."
-  icon_small: "./assets/databricks.svg"
-  icon_large: "./assets/databricks.png"
-  brand_color: "#FF3621"
-  default_prompt: "Use $databricks-ai-runtime for build custom docker images for databricks ai runtime (`air`) cli workloads."

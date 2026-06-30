@@ -12,7 +12,6 @@ that matches the request:
 - Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> databricks-pipelines
 - Apps / AppKit -> databricks-apps
 - Asset Bundles / DABs / databricks.yml -> databricks-dabs
-- AI Runtime / custom Docker images / air CLI workloads -> databricks-ai-runtime
 - Model Serving / endpoints -> databricks-model-serving
 - Lakebase / Postgres -> databricks-lakebase
 - Vector Search / RAG -> databricks-vector-search

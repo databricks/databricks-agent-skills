@@ -30,14 +30,15 @@
       "version": "0.1.0"
     },
     "databricks-ai-runtime": {
-      "description": "Build custom Docker images for Databricks AI Runtime (`air`) CLI workloads.",
+      "description": "Databricks AI Runtime (`air`) CLI \u2014 the command-line tool for submitting and managing GPU training workloads on Databricks serverless compute. Use for: running `air` workloads, custom Docker image setup, environment configuration, and troubleshooting `air` jobs.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
-        "assets/databricks.svg"
+        "assets/databricks.svg",
+        "docker-images.md"
       ],
-      "repo_dir": "skills",
+      "repo_dir": "experimental",
       "version": "0.1.0"
     },
     "databricks-aibi-dashboards": {
