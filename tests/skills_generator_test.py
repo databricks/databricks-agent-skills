@@ -172,6 +172,106 @@ class MetaSkillCoverageTest(unittest.TestCase):
             self.assertTrue(any("keyword" in e for e in errors), errors)
 
 
+class ManifestFileReferenceTest(unittest.TestCase):
+    def _make_skill(
+        self,
+        root: Path,
+        name: str,
+        repo_dir: str = "skills",
+        files: tuple[str, ...] = (),
+    ) -> None:
+        skill_dir = root / repo_dir / name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(f"---\nname: {name}\n---\n")
+        for file_rel in files:
+            target = skill_dir / file_rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(f"{file_rel}\n")
+
+    def _write_manifest(self, root: Path, manifest_skills: dict) -> None:
+        manifest = {"version": "2", "skills": manifest_skills}
+        (root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+
+    def test_absent_manifest_is_ok_for_source_only_mirror(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(skills.check_manifest_file_references(Path(d)), [])
+
+    def test_existing_skill_files_are_clean(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-core", files=("references/setup.md",))
+            self._write_manifest(
+                root,
+                {
+                    "databricks-core": {
+                        "repo_dir": "skills",
+                        "files": ["SKILL.md", "references/setup.md"],
+                    }
+                },
+            )
+            self.assertEqual(skills.check_manifest_file_references(root), [])
+
+    def test_missing_skill_directory_is_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_manifest(
+                root,
+                {
+                    "databricks-ai-runtime": {
+                        "repo_dir": "skills",
+                        "files": ["SKILL.md"],
+                    }
+                },
+            )
+            errors = skills.check_manifest_file_references(root)
+            self.assertTrue(
+                any(
+                    "databricks-ai-runtime" in e
+                    and "skills/databricks-ai-runtime" in e
+                    for e in errors
+                ),
+                errors,
+            )
+
+    def test_missing_skill_file_is_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-core")
+            self._write_manifest(
+                root,
+                {
+                    "databricks-core": {
+                        "repo_dir": "skills",
+                        "files": ["SKILL.md", "references/missing.md"],
+                    }
+                },
+            )
+            errors = skills.check_manifest_file_references(root)
+            self.assertTrue(
+                any(
+                    "references/missing.md" in e and "does not exist" in e
+                    for e in errors
+                ),
+                errors,
+            )
+
+    def test_unsafe_manifest_file_path_is_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-core")
+            self._write_manifest(
+                root,
+                {
+                    "databricks-core": {
+                        "repo_dir": "skills",
+                        "files": ["SKILL.md", "../outside.md"],
+                    }
+                },
+            )
+            errors = skills.check_manifest_file_references(root)
+            self.assertTrue(any("unsafe file path" in e for e in errors), errors)
+
+
 class SkillFrontmatterTest(unittest.TestCase):
     def _make_skill(self, root: Path, name: str, description: str) -> None:
         skill_dir = root / "skills" / name
@@ -393,6 +493,7 @@ class GenerateAllTest(unittest.TestCase):
             self.assertEqual(skills.check_generated_routing(root, meta), [])
             self.assertEqual(skills.check_generated_hooks(root, meta), [])
             self.assertTrue(skills.validate_manifest(root))
+            self.assertEqual(skills.check_manifest_file_references(root), [])
             self.assertEqual(skills.check_generated_bundle(root, meta), [])
 
     def test_generate_all_resyncs_stale_skill_asset(self):

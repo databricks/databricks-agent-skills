@@ -50,6 +50,7 @@ from skillsgen.manifest import (
     _build_stable_entry,
     _build_experimental_entry,
     serialize_manifest,
+    check_manifest_file_references,
     validate_manifest,
 )
 from skillsgen.plugins import (

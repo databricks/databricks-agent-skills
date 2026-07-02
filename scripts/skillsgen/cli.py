@@ -8,7 +8,7 @@ from pathlib import Path
 from skillsgen.common import META_FILE, load_meta
 from skillsgen.discovery import check_codex_metadata, ensure_codex_metadata
 from skillsgen.generate import generate_all
-from skillsgen.manifest import validate_manifest
+from skillsgen.manifest import check_manifest_file_references, validate_manifest
 from skillsgen.plugins import (
     check_generated_plugins,
     check_meta_skill_coverage,
@@ -47,11 +47,13 @@ def main() -> None:
         "mode",
         nargs="?",
         default="generate",
-        choices=["sync", "generate", "validate"],
+        choices=["sync", "generate", "validate", "validate-committed-manifest"],
         help=(
             "sync: ensure every skill has assets + agents/openai.yaml. "
             "generate: sync + (re)build manifest.json (default). "
-            "validate: check assets, metadata, and manifest are up to date."
+            "validate: check assets, metadata, and manifest are up to date. "
+            "validate-committed-manifest: before regenerating, check that any "
+            "committed manifest.json points only at files present in the repo."
         ),
     )
 
@@ -82,6 +84,23 @@ def main() -> None:
             print(
                 f"Generated {result['bundle']} file(s) in the plugins/databricks/ bundle"
             )
+
+        case "validate-committed-manifest":
+            errors = check_manifest_file_references(repo_root)
+            if errors:
+                print(
+                    "ERROR: committed manifest.json points at missing or invalid "
+                    "skill files:",
+                    file=sys.stderr,
+                )
+                for err in errors:
+                    print(f"  - {err}", file=sys.stderr)
+                sys.exit(1)
+
+            if (repo_root / "manifest.json").exists():
+                print("Committed manifest.json references existing skill files.")
+            else:
+                print("No committed manifest.json found; skipped file-reference check.")
 
         case "validate":
             ok = True
