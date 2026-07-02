@@ -355,58 +355,89 @@ for grant in grants.privilege_assignments:
 
 ### Debug Checklist
 
-1. **Verify volume exists:**
-   ```sql
-   SELECT * FROM system.information_schema.volumes
-   WHERE volume_name = 'my_volume';
-   ```
+**1. Verify the volume exists:**
 
-2. **Check permissions:**
-   ```python
-   grants = w.grants.get(
-       securable_type=SecurableType.VOLUME,
-       full_name="catalog.schema.volume"
-   )
-   ```
+```sql
+SELECT * FROM system.information_schema.volumes
+WHERE volume_name = 'my_volume';
+```
 
-3. **Verify path format:**
-   - Must start with `/Volumes/`
-   - Three-level namespace: `catalog/schema/volume`
-   - No double slashes (`//`)
+**2. Check permissions:**
 
-4. **Check file exists:**
-   ```python
-   try:
-       w.files.get_metadata("/Volumes/catalog/schema/volume/file.csv")
-   except Exception as e:
-       print(f"File not found: {e}")
-   ```
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.catalog import SecurableType
+
+w = WorkspaceClient()
+
+grants = w.grants.get(
+    securable_type=SecurableType.VOLUME,
+    full_name="catalog.schema.volume",
+)
+```
+
+**3. Verify the path format:**
+
+- Must start with `/Volumes/`
+- Three-level namespace: `catalog/schema/volume`
+- No double slashes (`//`)
+
+**4. Check the file exists:**
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+try:
+    w.files.get_metadata("/Volumes/catalog/schema/volume/file.csv")
+except Exception as e:
+    print(f"File not found: {e}")
+```
 
 ### External Volume Issues
 
-1. **Storage credential required** - External volumes need a storage credential
-   ```python
-   # Create storage credential first
-   w.storage_credentials.create(
-       name="my_s3_cred",
-       aws_iam_role={"role_arn": "arn:aws:iam::..."}
-   )
-   
-   # Create external location
-   w.external_locations.create(
-       name="my_s3_location",
-       url="s3://my-bucket/path",
-       credential_name="my_s3_cred"
-   )
-   
-   # Then create external volume
-   w.volumes.create(
-       ...
-       volume_type=VolumeType.EXTERNAL,
-       storage_location="s3://my-bucket/path/volume"
-   )
-   ```
+External volumes need a **storage credential** and an **external location** before
+the volume itself can be created. Create them in order — credential first, then the
+external location backed by that credential, then the external volume on that location.
+See [2-external-locations.md](2-external-locations.md) for the full storage
+credential / external location reference.
 
-2. **Network access** - Ensure workspace can reach cloud storage
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.catalog import AwsIamRoleRequest, VolumeType
 
-3. **IAM permissions** - Verify IAM role has bucket access
+w = WorkspaceClient()
+
+# 1. Create the storage credential
+w.storage_credentials.create(
+    name="my_s3_cred",
+    aws_iam_role=AwsIamRoleRequest(role_arn="arn:aws:iam::123456789012:role/my-uc-role"),
+)
+
+# 2. Create the external location backed by that credential
+w.external_locations.create(
+    name="my_s3_location",
+    url="s3://my-bucket/path",
+    credential_name="my_s3_cred",
+)
+
+# 3. Create the external volume on that location
+w.volumes.create(
+    catalog_name="main",
+    schema_name="default",
+    name="my_external_volume",
+    volume_type=VolumeType.EXTERNAL,
+    storage_location="s3://my-bucket/path/volume",
+)
+```
+
+Other common external-volume problems:
+
+- **Network access** — ensure the workspace can reach the cloud storage backend.
+- **IAM permissions** — verify the IAM role / managed identity / service account has bucket access.
+
+> **Permissions cross-reference:** the `READ VOLUME` / `WRITE VOLUME` / `CREATE VOLUME`
+> grants shown above are part of the wider Unity Catalog privilege model — see
+> [1-access-control.md](1-access-control.md) for the full securable hierarchy,
+> privilege list, and ownership rules.

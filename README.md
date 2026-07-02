@@ -241,7 +241,14 @@ This approach:
 
 ### Manifest Management
 
-`manifest.json` is **generated** by `scripts/skills.py` from the skill directories and frontmatter. Do not edit it by hand. CI rejects manual changes via two checks: content drift (parsed dict doesn't match what `generate` would produce) and canonical form (on-disk bytes don't match `json.dumps(..., indent=2, sort_keys=True)`).
+`manifest.json` is **generated** by `scripts/skills.py` from the skill
+directories and frontmatter. Do not edit it by hand. CI rejects manual changes
+via two checks: content drift (parsed dict doesn't match what `generate` would
+produce) and canonical form (on-disk bytes don't match
+`json.dumps(..., indent=2, sort_keys=True)`). CI also checks the committed
+manifest's file references before dry-run regeneration, because the CLI reads
+that committed file from `main`; a stale entry for a moved or deleted skill
+would otherwise make installs fetch missing files.
 
 Sync assets and regenerate the manifest after adding or updating skills:
 
@@ -253,6 +260,12 @@ Validate that assets and manifest are up to date (used by CI):
 
 ```bash
 python3 scripts/skills.py validate
+```
+
+To check only that a committed manifest points at files that exist in the repo:
+
+```bash
+python3 scripts/skills.py validate-committed-manifest
 ```
 
 The manifest is consumed by the CLI to discover available skills.

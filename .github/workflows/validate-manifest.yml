@@ -35,6 +35,13 @@ jobs:
         with:
           python-version: '3.11'
 
+      # The Databricks CLI's files-channel installer reads the committed
+      # manifest.json from main before fetching each listed file. Check this
+      # before the dry-run regeneration below, otherwise CI can mask a stale
+      # manifest entry that would 404 for `databricks aitools install`.
+      - name: Validate committed CLI manifest references
+        run: python3 scripts/skills.py validate-committed-manifest
+
       # This repo is published as a source-only mirror from an internal source of
       # truth. Generated artifacts (the plugins/ bundle, manifest.json, the
       # marketplace catalogs, the rendered hook/routing files) are regenerated and

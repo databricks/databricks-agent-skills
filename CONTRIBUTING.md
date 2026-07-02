@@ -60,6 +60,8 @@ python3 scripts/skills.py validate
 
 - Every skill has `agents/openai.yaml`.
 - Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
+- Any committed `manifest.json` points only at skill directories and files that
+  exist in the repo, so CLI installs from `main` cannot 404 on stale entries.
 - `manifest.json` matches what `scripts/skills.py generate` would produce (stable skills' `repo_dir` stays `skills`; the CLI files-channel fetches the root `skills/`).
 - Every stable skill has a `plugin.meta.json` "skills" entry (and vice versa).
 - Every target's `plugin.json` + each root `marketplace.json` catalog is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the four targets).
