@@ -106,14 +106,17 @@ spark = DatabricksSession.builder.serverless(True).getOrCreate()
 
 **Problem:** Missing `client` in job environment spec.
 
-**Solution:** Add `"client": "4"` to the spec:
+**Solution:** Add `"client"` to the spec:
 
 ```python
 {
   "environments": [{
     "environment_key": "datagen_env",
     "spec": {
-      "client": "4",  # Required!
+      # "client" selects the serverless environment version for the job's
+      # compute. "4" is a recent version; use the latest your workspace
+      # supports (see the Serverless environment version docs). Required.
+      "client": "4",
       "dependencies": ["faker", "numpy", "pandas"]
     }
   }]
@@ -240,7 +243,7 @@ orders_df = spark.range(0, N_ORDERS).join(
 amounts = np.random.uniform(10, 1000, N)
 
 # GOOD - log-normal (realistic)
-amounts = np.random.lognormal(mean=5, sigma=0.8, N)
+amounts = np.random.lognormal(mean=5, sigma=0.8, size=N)
 ```
 
 ### Missing time-based patterns

@@ -9,6 +9,13 @@ name: Release
 on:
   workflow_dispatch: {}
 
+# Serialize writes to main against self-heal-manifest.yml (same group), so a
+# release commit and a self-heal commit can never push concurrently and race the
+# branch ruleset. Queued, not cancelled: a release must always complete.
+concurrency:
+  group: skills-main-write
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on:

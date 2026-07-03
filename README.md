@@ -241,7 +241,21 @@ This approach:
 
 ### Manifest Management
 
-`manifest.json` is **generated** by `scripts/skills.py` from the skill directories and frontmatter. Do not edit it by hand. CI rejects manual changes via two checks: content drift (parsed dict doesn't match what `generate` would produce) and canonical form (on-disk bytes don't match `json.dumps(..., indent=2, sort_keys=True)`).
+`manifest.json` is **generated** by `scripts/skills.py` from the skill
+directories and frontmatter. Do not edit it by hand. CI rejects manual changes
+via two checks: content drift (parsed dict doesn't match what `generate` would
+produce) and canonical form (on-disk bytes don't match
+`json.dumps(..., indent=2, sort_keys=True)`).
+
+Because the CLI reads `manifest.json` and plugin installs read the generated
+catalogs and provider bundle live from `main`, `main` must stay a consistent
+index of its own source between releases. `.github/workflows/self-heal-manifest.yml`
+enforces this: on every push to `main` that touches generation inputs it re-runs
+`scripts/skills.py generate` and commits the refreshed `manifest.json`, plugin
+catalogs, hook/routing files, and provider bundle back to `main`, so a skill
+added, deleted, or reshaped in one PR can't leave installs fetching missing
+files. The per-PR committed-manifest check is therefore advisory (it surfaces
+staleness without blocking PRs that merely inherited it from `main`).
 
 Sync assets and regenerate the manifest after adding or updating skills:
 
@@ -253,6 +267,12 @@ Validate that assets and manifest are up to date (used by CI):
 
 ```bash
 python3 scripts/skills.py validate
+```
+
+To check only that a committed manifest points at files that exist in the repo:
+
+```bash
+python3 scripts/skills.py validate-committed-manifest
 ```
 
 The manifest is consumed by the CLI to discover available skills.

@@ -10,7 +10,7 @@ metadata:
 
 Build clients that ingest data directly into Databricks Delta tables via the Zerobus gRPC API.
 
-**Status:** GA (Generally Available since February 2026; billed under Lakeflow Jobs Serverless SKU)
+**Status:** Generally Available. Charges are billed against the Jobs Serverless SKU. Check the [Zerobus overview](https://docs.databricks.com/ingestion/zerobus-overview) for the current status of specific features (some, such as Streaming-table targets and Arrow Flight, may be in Beta).
 
 **Documentation:**
 - [Zerobus Overview](https://docs.databricks.com/ingestion/zerobus-overview)
@@ -46,30 +46,18 @@ If not specified, default to python.
 
 ## Common Libraries
 
-These libraries are essential for ZeroBus data ingestion:
+These libraries are essential for Zerobus data ingestion and are typically NOT pre-installed on Databricks:
 
-- **databricks-sdk>=0.85.0**: Databricks workspace client for authentication and metadata
-- **databricks-zerobus-ingest-sdk>=1.0.0**: ZeroBus SDK for high-performance streaming ingestion
-- **grpcio-tools**
-These are typically NOT pre-installed on Databricks. Install them using `execute_code` tool:
-- `code`: "%pip install databricks-sdk>=VERSION databricks-zerobus-ingest-sdk>=VERSION"
+- **databricks-zerobus-ingest-sdk**: Zerobus SDK for high-performance streaming ingestion
+- **databricks-sdk**: Databricks workspace client for authentication and metadata
+- **grpcio-tools**: only needed to compile a `.proto` for Protobuf serialization
 
-Save the returned `cluster_id` and `context_id` for subsequent calls.
+Install them through the **job/cluster library configuration** (see [Installing Libraries](#installing-libraries) below) rather than pip-installing at runtime — the SDK cannot pip-install on serverless compute.
 
-Smart Installation Approach
+### grpcio-tools and protobuf compatibility
 
-# Check protobuf version first, then install compatible 
-grpcio-tools
-import google.protobuf
-runtime_version = google.protobuf.__version__
-print(f"Runtime protobuf version: {runtime_version}")
+`grpcio-tools` must match the runtime's `protobuf` version. If proto compilation fails with a version error, pin a compatible build (for older `protobuf` 5.26/5.29 runtimes, `grpcio-tools==1.62.0` works); otherwise use the latest release.
 
-if runtime_version.startswith("5.26") or
-runtime_version.startswith("5.29"):
-    %pip install grpcio-tools==1.62.0
-else:
-    %pip install grpcio-tools  # Use latest for newer protobuf 
-versions
 ---
 
 ## Prerequisites
@@ -88,7 +76,6 @@ See [references/1-setup-and-authentication.md](references/1-setup-and-authentica
 ## Minimal Python Example (JSON)
 
 ```python
-import json
 from zerobus.sdk.sync import ZerobusSdk
 from zerobus.sdk.shared import RecordType, StreamConfigurationOptions, TableProperties
 
@@ -98,9 +85,10 @@ table_props = TableProperties(table_name)
 
 stream = sdk.create_stream(client_id, client_secret, table_props, options)
 try:
+    # Pass a dict for JSON streams; the SDK serializes it.
     record = {"device_name": "sensor-1", "temp": 22, "humidity": 55}
-    stream.ingest_record(json.dumps(record))
-    stream.flush()
+    offset = stream.ingest_record_offset(record)
+    stream.wait_for_offset(offset)  # Block until durably written
 finally:
     stream.close()
 ```
@@ -123,8 +111,8 @@ You must always follow all the steps in the Workflow
 
 ## Workflow
 0. **Display the plan of your execution**
-1. **Determine the type of client**
-2. **Get schema** Always use references/4-protobuf-schema.md
+1. **Determine the type of client** and serialization (JSON for prototypes/simple schemas; Protobuf for production/type safety)
+2. **Get schema**: for Protobuf, generate the `.proto` per [references/4-protobuf-schema.md](references/4-protobuf-schema.md); for JSON, ensure record keys match the target table columns
 3. **Write Python code to a local file** following the instructions in the relevant guide (e.g., `scripts/zerobus_ingest.py`)
 4. **Upload to workspace**: `databricks workspace import-dir ./scripts /Workspace/Users/<user>/scripts`
 5. **Execute on Databricks** using a job or notebook
@@ -133,7 +121,7 @@ You must always follow all the steps in the Workflow
 ---
 
 ## Important
-- Never install local packages
+- Install the SDK through the job/cluster library configuration, not by pip-installing at runtime in a notebook.
 - **Serverless limitation**: The Zerobus SDK cannot pip-install on serverless compute. Use classic compute clusters, or use the [Zerobus REST API](https://docs.databricks.com/ingestion/zerobus-rest-api) (Beta) for notebook-based ingestion without the SDK.
 - **Explicit table grants**: Service principals need explicit `MODIFY` and `SELECT` grants on the target table. Schema-level inherited permissions may not be sufficient for the `authorization_details` OAuth flow.
 
@@ -142,8 +130,11 @@ You must always follow all the steps in the Workflow
 ### Execution Workflow
 
 **Step 1: Upload code to workspace**
+
+Get your workspace username for the `<user>` path segment, then upload:
 ```bash
-databricks workspace import-dir ./scripts /Workspace/Users/<user>/scripts
+USER=$(databricks current-user me --output json | jq -r .userName)
+databricks workspace import-dir ./scripts "/Workspace/Users/$USER/scripts"
 ```
 
 **Step 2: Create and run a job**
@@ -176,7 +167,7 @@ databricks jobs run-now JOB_ID
 
 ### Installing Libraries
 
-Databricks provides Spark, pandas, numpy, and common data libraries by default. **Only install a library if you get an import error.**
+Databricks provides Spark, pandas, numpy, and common data libraries by default, but the Zerobus SDK is **never pre-installed** — always add `databricks-zerobus-ingest-sdk` to the job/cluster library config. Only add other libraries if you hit an import error.
 
 Add to the job configuration:
 ```json
@@ -187,10 +178,15 @@ Add to the job configuration:
 
 Or use init scripts in the cluster configuration.
 
-## 🚨 Critical Learning: Timestamp Format Fix
+## Timestamp Format
 
-**BREAKTHROUGH**: ZeroBus requires **timestamp fields as Unix integer timestamps**, NOT string timestamps.
-The timestamp generation must use microseconds for Databricks.
+A Delta `TIMESTAMP` column maps to a Protobuf `int64` of **epoch microseconds** (see the type mappings in [references/4-protobuf-schema.md](references/4-protobuf-schema.md)) — supply an integer, not a string:
+
+```python
+from datetime import datetime, timezone
+
+event_time = int(datetime.now(timezone.utc).timestamp() * 1_000_000)  # epoch microseconds
+```
 
 ---
 
@@ -199,7 +195,7 @@ The timestamp generation must use microseconds for Databricks.
 - **gRPC + Protobuf**: Zerobus uses gRPC as its transport protocol. Any application that can communicate via gRPC and construct Protobuf messages can produce to Zerobus.
 - **JSON or Protobuf serialization**: JSON for quick starts; Protobuf for type safety, forward compatibility, and performance.
 - **At-least-once delivery**: The connector provides at-least-once guarantees. Design consumers to handle duplicates.
-- **Durability ACKs**: Each ingested record returns a `RecordAcknowledgment`. Use `flush()` to ensure all buffered records are durably written, or use `wait_for_offset(offset)` for offset-based tracking.
+- **Durability ACKs**: Ingestion is acknowledged when records are durably written. Use `ingest_record_offset()` + `wait_for_offset(offset)` for offset-based tracking, an `AckCallback` for asynchronous confirmation, or `flush()` to ensure all buffered records are durably written.
 - **No table management**: Zerobus does not create or alter tables. You must pre-create your target table and manage schema evolution yourself.
 - **Single-AZ durability**: The service runs in a single availability zone. Plan for potential zone outages.
 

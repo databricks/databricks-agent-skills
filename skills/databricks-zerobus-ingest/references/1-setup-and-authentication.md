@@ -114,7 +114,7 @@ implementation 'com.databricks:zerobus-ingest-sdk:0.1.0'
 ### Go (1.21+)
 
 ```bash
-go get github.com/databricks/zerobus-sdk-go
+go get github.com/databricks/zerobus-sdk/go
 ```
 
 ### TypeScript / Node.js (16+)

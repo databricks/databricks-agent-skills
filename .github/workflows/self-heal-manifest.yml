@@ -1,0 +1,192 @@
+name: Self-heal manifest
+
+# Keeps main's generated artifacts (manifest.json + the plugins/databricks/
+# bundle) a consistent index of main's own source, between releases.
+#
+# Why this exists: `databricks aitools install` reads manifest.json (and each
+# listed file) LIVE from main HEAD -- see latestSkillsRef = "main" in the CLI
+# installer. Plugin installs likewise read the generated marketplace catalogs and
+# provider bundles from main. But those artifacts are otherwise regenerated only
+# at release (release.yml). So the moment a PR adds, deletes, or reshapes a skill
+# on main, main's committed outputs are stale until the next release: they can
+# point installs at files that 404 (deleted skill) or omit a new one. This
+# workflow closes that window -- on every push to main that touches generation
+# inputs, it regenerates from source and commits the result back to main, so HEAD
+# always describes itself.
+#
+# The per-PR guard (validate-manifest.yml's validate-committed-manifest) is
+# advisory precisely because this workflow is the enforcement: a brief staleness
+# on main is self-corrected here rather than hard-blocking every later PR.
+on:
+  push:
+    branches:
+      - main
+    # Generation inputs. This filter is an efficiency optimization, NOT the loop
+    # guard: `generate` also writes into skills/**, experimental/** (icons +
+    # agents/openai.yaml via ensure_codex_metadata) and hooks/** (the rendered
+    # wiring + _routing_data.json), which ARE listed here, so the bot's own regen
+    # commit can re-match these paths. The loop is broken by the head-commit
+    # author `if:` guard (skips bot commits outright) backed by the diff fixpoint
+    # (an idempotent re-generate produces no diff -> no push); the path filter
+    # just avoids waking the workflow for changes that can't affect output at all.
+    paths:
+      - 'skills/**'
+      - 'experimental/**'
+      - 'assets/**'
+      - 'metaplugin/plugin.meta.json'
+      - 'scripts/**'
+      - 'hooks/**'
+      - 'commands/**'
+      - '.cursor-plugin/NOTES.md'
+  # Manual dispatch reconciles main on demand -- notably the first run after this
+  # workflow lands (its own introduction touches neither source nor generated
+  # paths, so nothing auto-fires) to drop any already-stale manifest entry.
+  workflow_dispatch: {}
+
+# Serialize every write to main against the release workflow (same group), so a
+# self-heal commit and a release commit can never push concurrently and race the
+# branch ruleset. Queued, not cancelled: each run must complete its push.
+concurrency:
+  group: skills-main-write
+  cancel-in-progress: false
+
+jobs:
+  self-heal:
+    # Skip the run triggered by our own regen commit. Generation is idempotent,
+    # so a second pass would produce no diff and exit anyway (the fixpoint guard
+    # below), but short-circuiting here avoids the wasted run entirely.
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.author.email != 'DECO-SDK-Tagging[bot]@users.noreply.github.com'
+    runs-on:
+      group: databricks-protected-runner-group
+      labels: linux-ubuntu-latest
+    # release-is holds the DECO-SDK-Tagging GitHub App credentials (same as
+    # release.yml). main's rulesets reject a direct bot push; the App is on the
+    # bypass list, so it can push the regen commit straight to main.
+    environment: "release-is"
+    permissions:
+      contents: write
+    steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.DECO_SDK_TAGGING_APP_ID }}
+          private-key: ${{ secrets.DECO_SDK_TAGGING_PRIVATE_KEY }}
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+          # Persist the App token so the push below carries its credentials.
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+
+      # Regenerate every artifact from main's current source. This stamps
+      # current_version (the last RELEASED version, via load_meta) -- never
+      # next_version -- so a self-heal commit changes generated CONTENT to match
+      # source but never touches the release version. Only release.yml bumps it.
+      - name: Regenerate artifacts from source
+        run: python3 scripts/skills.py generate
+
+      # Abort before committing if the freshly generated tree is inconsistent,
+      # so a self-heal never pushes a broken manifest/bundle to main.
+      - name: Validate generated artifacts
+        run: python3 scripts/skills.py validate
+
+      - name: Commit and push if anything changed
+        run: |
+          # Commit as the App (email must be its noreply address or the commit is
+          # unverified), matching release.yml. The push uses the App token the
+          # checkout persisted in the remote, so no GH_TOKEN env is needed here.
+          git config user.name "Databricks SDK Release Bot"
+          git config user.email "DECO-SDK-Tagging[bot]@users.noreply.github.com"
+
+          stage_generated_artifacts() {
+            # Stage only artifacts owned by scripts/skills.py generate. This job
+            # runs on a fresh checkout, but the explicit allowlist keeps future
+            # transient files from riding along in an automated push to main.
+            local -a generated_paths=()
+
+            add_if_present() {
+              for path in "$@"; do
+                if [ -e "$path" ]; then
+                  generated_paths+=("$path")
+                fi
+              done
+            }
+
+            add_if_present \
+              manifest.json \
+              .claude-plugin/marketplace.json \
+              .claude-plugin/README.md \
+              .github/plugin/marketplace.json \
+              .github/plugin/README.md \
+              .agents/plugins/marketplace.json \
+              .agents/plugins/README.md \
+              .cursor-plugin/marketplace.json \
+              .cursor-plugin/README.md \
+              hooks/_routing_data.json \
+              hooks/hooks.json \
+              hooks/codex-hooks.json \
+              hooks/copilot-hooks.json \
+              hooks/cursor-hooks.json \
+              rules/databricks-routing.mdc \
+              rules/README.md \
+              plugins/databricks
+
+            shopt -s nullglob
+            generated_paths+=(
+              skills/*/assets/databricks.svg
+              skills/*/assets/databricks.png
+              skills/*/agents/openai.yaml
+              experimental/*/assets/databricks.svg
+              experimental/*/assets/databricks.png
+              experimental/*/agents/openai.yaml
+            )
+
+            if [ "${#generated_paths[@]}" -gt 0 ]; then
+              git add -- "${generated_paths[@]}"
+            fi
+          }
+
+          commit_if_needed() {
+            stage_generated_artifacts
+            # Fixpoint guard: main was already a consistent index of its source,
+            # so generation produced no diff. Nothing to heal -- exit cleanly.
+            # This is also the backstop that bounds any re-trigger to a single
+            # no-op run.
+            if git diff --cached --quiet; then
+              echo "manifest.json + bundle already consistent with source; nothing to heal."
+              return 1
+            fi
+            git commit -s -m "chore: self-heal manifest.json + bundle from source"
+          }
+
+          commit_if_needed || exit 0
+
+          # Ordinary merges to main are not in the skills-main-write concurrency
+          # group. If one lands between checkout and push, rebuild from the
+          # freshly fetched main and retry instead of leaving main stale until a
+          # later push.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed self-heal commit to main."
+              exit 0
+            fi
+            if [ "$attempt" = "3" ]; then
+              break
+            fi
+
+            echo "Push failed, refreshing origin/main and retrying self-heal ($attempt/3)."
+            git fetch origin main
+            git reset --hard FETCH_HEAD
+            python3 scripts/skills.py generate
+            python3 scripts/skills.py validate
+            commit_if_needed || exit 0
+          done
+
+          echo "Failed to push self-heal commit to main after retries."
+          exit 1

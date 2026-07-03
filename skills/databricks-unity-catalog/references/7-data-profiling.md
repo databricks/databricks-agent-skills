@@ -67,6 +67,11 @@ DROP QUALITY MONITOR catalog.schema.my_table;
 
 ### Execute via CLI
 
+> **`databricks experimental aitools tools query` is experimental** and may be absent in
+> your CLI version. The stable path is to run the `CREATE … QUALITY MONITOR` SQL on a **SQL
+> warehouse** (or via `w.statement_execution.execute_statement`), or use the `w.data_quality`
+> SDK below. Use the experimental CLI only for quick ad-hoc checks.
+
 ```bash
 databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
 CREATE OR REPLACE QUALITY MONITOR catalog.schema.my_table
@@ -81,6 +86,12 @@ OPTIONS (OUTPUT_SCHEMA 'catalog.schema')
 **Doc:** https://databricks-sdk-py.readthedocs.io/en/stable/workspace/dataquality/data_quality.html
 
 The new SDK provides full control over all profile types via `w.data_quality`.
+
+> **New vs legacy API.** `w.data_quality` is the **current** accessor and requires a recent
+> `databricks-sdk` (≥ v0.40). Older code/snippets use the **legacy** `w.lakehouse_monitors`
+> accessor with a different method surface (`create_monitor` signature differs). If
+> `w.data_quality` is missing, upgrade the SDK (`pip install -U databricks-sdk`) rather than
+> mixing the two — see the note at the end of this file for the mapping.
 
 ### Create Snapshot Monitor
 
