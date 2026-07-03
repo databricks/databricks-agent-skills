@@ -186,7 +186,7 @@
       { "label": "Python SDK / Databricks Connect / REST API", "skill": "databricks-python-sdk" },
       { "label": "Spark Structured Streaming", "skill": "databricks-spark-structured-streaming" },
       { "label": "Synthetic / test data generation (Faker)", "skill": "databricks-synthetic-data-gen" },
-      { "label": "Unity Catalog system tables (lineage, audit, billing)", "skill": "databricks-unity-catalog" },
+      { "label": "Unity Catalog governance, access control & system tables", "skill": "databricks-unity-catalog" },
       { "label": "Synthetic PDF generation for RAG", "skill": "databricks-unstructured-pdf-generation" },
       { "label": "Zerobus streaming ingest", "skill": "databricks-zerobus-ingest" }
     ],

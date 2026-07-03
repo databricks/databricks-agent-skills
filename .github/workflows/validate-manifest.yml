@@ -35,6 +35,40 @@ jobs:
         with:
           python-version: '3.11'
 
+      # The Databricks CLI's files-channel installer reads the committed
+      # manifest.json from main before fetching each listed file. This surfaces a
+      # stale manifest entry (a 404 for `databricks aitools install`) before the
+      # dry-run regeneration below can mask it.
+      #
+      # If a PR edits manifest.json directly, keep this as a hard gate: the PR is
+      # changing the live-install index itself, not merely inheriting main's
+      # current generated output.
+      - name: Validate changed committed CLI manifest references
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+          if git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD -- manifest.json | grep -q .; then
+            python3 scripts/skills.py validate-committed-manifest
+          else
+            echo "manifest.json was not changed by this PR; running advisory visibility check next."
+          fi
+
+      # The same check is advisory for PR source changes: manifest.json is
+      # regenerated only at release and then self-healed on main, so source-only
+      # PRs can legitimately inherit a stale committed manifest from main.
+      #
+      # Advisory (continue-on-error), NOT a hard gate: manifest.json is
+      # regenerated only at release, so between releases main's committed manifest
+      # is legitimately stale for any added/deleted/reshaped skill. That staleness
+      # is inherited by every branch cut from main, so hard-failing here blocks
+      # innocent PRs for a problem they did not introduce. self-heal-manifest.yml
+      # is the enforcement: it regenerates and commits manifest.json back to main
+      # on every source push, so the window self-corrects. This step keeps the
+      # signal visible on the PR without gating it.
+      - name: Validate committed CLI manifest references (advisory)
+        continue-on-error: true
+        run: python3 scripts/skills.py validate-committed-manifest
+
       # This repo is published as a source-only mirror from an internal source of
       # truth. Generated artifacts (the plugins/ bundle, manifest.json, the
       # marketplace catalogs, the rendered hook/routing files) are regenerated and
