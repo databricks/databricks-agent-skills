@@ -26,9 +26,9 @@ from zerobus.sdk.shared import (
 
 ---
 
-<!-- ## JSON Ingestion (Quick Start)
+## JSON Ingestion (Quick Start)
 
-JSON is the simplest path. Pass Python dicts whose keys match the target table column names.
+JSON is the simplest path — best for prototypes and trivial schemas. Pass Python dicts whose keys match the target table column names; the SDK serializes them to JSON. For production workloads, prefer Protobuf (see below).
 
 ```python
 import os
@@ -55,13 +55,12 @@ try:
         stream.wait_for_offset(offset)  # Block until durably written
 finally:
     stream.close()
-``` -->
+```
 
 ---
 
 ## Protobuf Ingestion
 
-You must always use Protobuf
 For type-safe production workloads, use Protobuf. First generate and compile your `.proto` (see [4-protobuf-schema.md](4-protobuf-schema.md)), then:
 
 ```python
@@ -355,4 +354,5 @@ stream.wait_for_offset(offset)
 | `ingest_records_nowait(records)` | None | No | Max batch throughput |
 | `wait_for_offset(offset)` | None | Yes (until ACK) | Durability confirmation |
 | `flush()` | None | Yes (until sent) | Ensure all buffered records are sent |
-| `ingest_record(record)` | RecordAcknowledgment | No | Primary method in SDK v1.1.0+; pass `json.dumps(record)` for JSON |
+
+> **Note:** `ingest_record(record)` is **deprecated** (since SDK v0.3.0). Use `ingest_record_offset()` (with durability tracking) or `ingest_record_nowait()` (fire-and-forget) instead. For JSON streams, pass a Python `dict` and the SDK serializes it (or pass a pre-serialized JSON string to control serialization yourself).

@@ -347,7 +347,7 @@ for stream in spark.streams.active:
 
 ```python
 # 1. Use watermarks (automatic cleanup)
-.withWatermark("event_time", "10 minutes")  # State expires after watermark
+df.withWatermark("event_time", "10 minutes")  # State expires after watermark
 
 # 2. Reduce key cardinality
 # Bad: user_id (millions of distinct values)
@@ -372,10 +372,10 @@ Balance between latency and completeness:
 # If 99th percentile delay is 5 minutes → use 10-15 minute watermark
 
 # High tolerance (more matches, larger state)
-.withWatermark("event_time", "2 hours")
+df.withWatermark("event_time", "2 hours")
 
 # Low tolerance (faster results, smaller state)
-.withWatermark("event_time", "10 minutes")
+df.withWatermark("event_time", "10 minutes")
 ```
 
 ### Multiple Watermarks
@@ -520,7 +520,7 @@ Always use event time for stream-stream joins:
 
 ```python
 # ✅ CORRECT: Event time (deterministic)
-.withWatermark("event_time", "10 minutes")
+df.withWatermark("event_time", "10 minutes")
 
 # ❌ WRONG: Processing time (non-deterministic)
 # Processing time varies based on system load

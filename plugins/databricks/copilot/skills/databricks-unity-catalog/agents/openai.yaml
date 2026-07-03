@@ -1,7 +1,7 @@
 interface:
   display_name: "Databricks Unity Catalog"
-  short_description: "Unity Catalog system tables and volumes."
+  short_description: "Unity Catalog governance, access control, and observability."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
-  default_prompt: "Use $databricks-unity-catalog for unity catalog system tables and volumes."
+  default_prompt: "Use $databricks-unity-catalog to grant or revoke access, manage the UC privilege model and ownership, set up row/column security, create external locations and storage credentials, and query system tables (audit, lineage, billing) and volume files."

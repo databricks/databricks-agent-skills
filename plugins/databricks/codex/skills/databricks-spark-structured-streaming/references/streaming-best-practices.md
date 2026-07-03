@@ -108,9 +108,10 @@ stream.writeStream \
 ```python
 # Target: 100-200MB per partition in memory
 
-# Tune with:
-.option("maxFilesPerTrigger", "100")
-.option("maxBytesPerTrigger", "100MB")
+# Tune with (on the readStream builder):
+reader = spark.readStream.format("cloudFiles").option("cloudFiles.format", "json")
+reader.option("maxFilesPerTrigger", "100").load("/path/to/data")
+reader.option("maxBytesPerTrigger", "100MB").load("/path/to/data")
 
 # Monitor in Spark UI → Stages → Partition size
 ```

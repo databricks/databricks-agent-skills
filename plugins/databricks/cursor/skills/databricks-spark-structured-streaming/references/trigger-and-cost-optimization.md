@@ -14,8 +14,8 @@ Select and tune triggers to balance latency requirements with cost. Optimize str
 df.writeStream \
     .format("delta") \
     .option("checkpointLocation", "/checkpoints/stream") \
-    .trigger(availableNow=True) \  # Process all, then stop
-    .start("/delta/target")
+    .trigger(availableNow=True) \
+    .start("/delta/target")  # Process all, then stop
 
 # Schedule via Databricks Jobs: Every 15 minutes
 # Cost: ~$20/day for 100 tables on 8-core cluster
@@ -28,11 +28,14 @@ df.writeStream \
 Process at fixed intervals:
 
 ```python
+# Trigger clause used in a writeStream chain:
+writer = df.writeStream.format("delta").option("checkpointLocation", "/checkpoints/stream")
+
 # Process every 30 seconds
-.trigger(processingTime="30 seconds")
+writer.trigger(processingTime="30 seconds").start("/delta/target")
 
 # Process every 5 minutes
-.trigger(processingTime="5 minutes")
+writer.trigger(processingTime="5 minutes").start("/delta/target")
 
 # Latency: Trigger interval + processing time
 # Cost: Continuous cluster running
@@ -44,7 +47,11 @@ Process all available data, then stop:
 
 ```python
 # Process all available data, then stop
-.trigger(availableNow=True)
+df.writeStream \
+    .format("delta") \
+    .option("checkpointLocation", "/checkpoints/stream") \
+    .trigger(availableNow=True) \
+    .start("/delta/target")
 
 # Schedule via Databricks Jobs:
 # - Every 15 minutes: Near real-time
@@ -88,7 +95,7 @@ Sub-second latency with Photon:
 business_sla_minutes = 60  # 1 hour SLA
 trigger_interval_minutes = business_sla_minutes / 3  # 20 minutes
 
-.trigger(processingTime=f"{trigger_interval_minutes} minutes")
+writer.trigger(processingTime=f"{trigger_interval_minutes} minutes").start()
 
 # Why /3?
 # - Processing time buffer
@@ -102,12 +109,12 @@ trigger_interval_minutes = business_sla_minutes / 3  # 20 minutes
 # Example 1: 1 hour SLA
 sla = 60  # minutes
 trigger = sla / 3  # 20 minutes
-.trigger(processingTime="20 minutes")
+writer.trigger(processingTime="20 minutes").start()
 
 # Example 2: 15 minute SLA
 sla = 15  # minutes
 trigger = sla / 3  # 5 minutes
-.trigger(processingTime="5 minutes")
+writer.trigger(processingTime="5 minutes").start()
 
 # Example 3: Real-time requirement
 .trigger(realTime=True)  # < 800ms
@@ -121,13 +128,13 @@ Balance latency and cost:
 
 ```python
 # Shorter interval = higher cost
-.trigger(processingTime="5 seconds")   # Expensive - continuous processing
+writer.trigger(processingTime="5 seconds").start()   # Expensive - continuous processing
 
 # Longer interval = lower cost
-.trigger(processingTime="5 minutes")   # Cheaper - less frequent processing
+writer.trigger(processingTime="5 minutes").start()   # Cheaper - less frequent processing
 
 # Use availableNow for batch-style (cheapest)
-.trigger(availableNow=True)            # Process backlog, then stop
+writer.trigger(availableNow=True).start()            # Process backlog, then stop
 
 # Rule of thumb: SLA / 3
 # Example: 1 hour SLA → 20 minute trigger
@@ -145,13 +152,13 @@ Choose execution pattern based on SLA:
 
 ```python
 # Continuous (expensive)
-.trigger(processingTime="30 seconds")
+writer.trigger(processingTime="30 seconds").start()
 
 # Scheduled (cost-effective)
-.trigger(availableNow=True)  # Schedule via Jobs: Every 15 minutes
+writer.trigger(availableNow=True).start()  # Schedule via Jobs: Every 15 minutes
 
 # Batch-style (cheapest)
-.trigger(availableNow=True)  # Schedule via Jobs: Every 4 hours
+writer.trigger(availableNow=True).start()  # Schedule via Jobs: Every 4 hours
 ```
 
 ### Strategy 3: Cluster Right-Sizing
@@ -237,8 +244,8 @@ df.writeStream \
 
 # After: Scheduled (cost-effective)
 df.writeStream \
-    .trigger(availableNow=True) \  # Process all, then stop
-    .start()
+    .trigger(availableNow=True) \
+    .start()  # Process all, then stop
 
 # Schedule via Databricks Jobs:
 # - Every 15 minutes: Near real-time
@@ -400,7 +407,7 @@ job_tags = {
 
 ```python
 # High cost, low latency
-.trigger(processingTime="30 seconds")
+writer.trigger(processingTime="30 seconds").start()
 
 # Cost: Continuous cluster running
 # Latency: 30 seconds + processing time
@@ -411,7 +418,7 @@ job_tags = {
 
 ```python
 # Lower cost, higher latency
-.trigger(availableNow=True)  # Schedule: Every 15 minutes
+writer.trigger(availableNow=True).start()  # Schedule: Every 15 minutes
 
 # Cost: Cluster runs only during processing
 # Latency: Schedule interval + processing time
@@ -467,7 +474,7 @@ def calculate_trigger_interval(sla_minutes):
     return max(30, sla_minutes / 3)  # Minimum 30 seconds
 
 trigger_interval = calculate_trigger_interval(business_sla_minutes)
-.trigger(processingTime=f"{trigger_interval} seconds")
+writer.trigger(processingTime=f"{trigger_interval} seconds").start()
 ```
 
 ### Cluster Configuration

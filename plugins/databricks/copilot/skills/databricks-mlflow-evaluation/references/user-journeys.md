@@ -115,12 +115,13 @@ Before implementing evaluation, confirm:
    ```
 
 3. **Compare metrics**
-   ```python
-   from evaluation.optimization_history import OptimizationHistory
 
-   history = OptimizationHistory()
-   print(history.compare_iterations(-2, -1))  # Compare last two
-   ```
+```python
+from evaluation.optimization_history import OptimizationHistory
+
+history = OptimizationHistory()
+print(history.compare_iterations(-2, -1))  # Compare last two
+```
 
 4. **Identify regression source**
    - If `classifier_accuracy` dropped → Check ClassifierSignature changes
@@ -281,12 +282,13 @@ Before implementing evaluation, confirm:
    | follows_instructions | 80%+ |
 
 7. **Document successful optimizations**
-   ```python
-   from evaluation.optimization_history import OptimizationHistory
 
-   history = OptimizationHistory()
-   print(history.summary())
-   ```
+```python
+from evaluation.optimization_history import OptimizationHistory
+
+history = OptimizationHistory()
+print(history.summary())
+```
 
 ### Commands Used
 - `python run_quick_eval.py` - Run evaluation
@@ -345,13 +347,14 @@ Before implementing evaluation, confirm:
    **CRITICAL**: `ALL_PRIVILEGES` is not sufficient — explicit MODIFY + SELECT required.
 
 3. **Set trace destination in your app**
-   ```python
-   mlflow.tracing.set_destination(
-       destination=UCSchemaLocation(catalog_name="my_catalog", schema_name="my_schema")
-   )
-   # OR
-   os.environ["MLFLOW_TRACING_DESTINATION"] = "my_catalog.my_schema"
-   ```
+
+```python
+mlflow.tracing.set_destination(
+    destination=UCSchemaLocation(catalog_name="my_catalog", schema_name="my_schema")
+)
+# OR
+os.environ["MLFLOW_TRACING_DESTINATION"] = "my_catalog.my_schema"
+```
 
 4. **Instrument your application**
 

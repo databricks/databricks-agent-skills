@@ -13,6 +13,16 @@ Comprehensive guide to Kafka streaming with Spark Structured Streaming: ingestio
 
 ```python
 from pyspark.sql.functions import col, from_json
+from pyspark.sql.types import StructType, StructField, StringType, TimestampType
+
+# Schema for the JSON payload carried in the Kafka value column.
+# Reused across the patterns below as `event_schema`.
+event_schema = StructType([
+    StructField("event_id", StringType()),
+    StructField("user_id", StringType()),
+    StructField("event_type", StringType()),
+    StructField("timestamp", TimestampType()),
+])
 
 # Read from Kafka
 df = (spark
@@ -129,8 +139,8 @@ df_bronze.writeStream \
     .format("delta") \
     .outputMode("append") \
     .option("checkpointLocation", "/Volumes/catalog/checkpoints/bronze_events") \
-    .trigger(availableNow=True) \  # Process all available, then stop
-    .start("/delta/bronze_events")
+    .trigger(availableNow=True) \
+    .start("/delta/bronze_events")  # Process all available, then stop
 
 # In Databricks Jobs:
 # - Schedule: Every 4 hours
@@ -243,6 +253,14 @@ Validate schema and route invalid records:
 
 ```python
 from pyspark.sql.functions import from_json, col, lit, to_json, struct, current_timestamp
+from pyspark.sql.types import StructType, StructField, StringType
+
+# Strict schema used to validate the payload; from_json returns null for records
+# that don't conform, which lets us split valid vs invalid below.
+validated_schema = StructType([
+    StructField("event_id", StringType(), nullable=False),
+    StructField("event_type", StringType(), nullable=False),
+])
 
 def validate_and_route(batch_df, batch_id):
     """Validate schema, route bad records to DLQ"""
@@ -327,20 +345,42 @@ source_df.writeStream \
 
 ### Security (SASL/SSL)
 
+**Recommended: Unity Catalog service credentials (DBR 16.1+).** Databricks
+recommends authenticating to Kafka with a Unity Catalog service credential —
+no credentials or JAAS strings in code at all:
+
 ```python
-# Using Databricks secrets
+kafka_options = {
+    "kafka.bootstrap.servers": brokers,
+    "subscribe": source_topic,
+    "databricks.serviceCredential": "<service-credential-name>",
+}
+
+df = spark.readStream.format("kafka").options(**kafka_options).load()
+```
+
+When using a service credential, do NOT set `kafka.sasl.mechanism`,
+`kafka.sasl.jaas.config`, or `kafka.security.protocol` — Databricks
+configures these for you.
+
+**SASL/PLAIN** — store credentials in Databricks secrets rather than including
+them directly in your code. Note the `kafkashaded.` class-name prefix:
+Databricks bundles shaded Kafka client libraries, and unshaded class names in
+`kafka.sasl.jaas.config` fail with `RESTRICTED_STREAMING_OPTION_PERMISSION_ENFORCED`.
+
+```python
+# Source credentials from Databricks secrets, never hardcode them.
 kafka_username = dbutils.secrets.get("kafka-scope", "username")
 kafka_password = dbutils.secrets.get("kafka-scope", "password")
 
-# SASL/PLAIN Authentication
 df.writeStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", brokers) \
     .option("topic", target_topic) \
     .option("kafka.security.protocol", "SASL_SSL") \
     .option("kafka.sasl.mechanism", "PLAIN") \
-    .option("kafka.sasl.jaas.config", 
-            f'org.apache.kafka.common.security.plain.PlainLoginModule required username="{kafka_username}" password="{kafka_password}";') \
+    .option("kafka.sasl.jaas.config",
+            f'kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule required username="{kafka_username}" password="{kafka_password}";') \
     .option("checkpointLocation", checkpoint_path) \
     .start()
 ```

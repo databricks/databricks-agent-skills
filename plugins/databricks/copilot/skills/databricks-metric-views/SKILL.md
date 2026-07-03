@@ -23,7 +23,7 @@ Use this skill when:
 
 ## Prerequisites
 
-- **Databricks Runtime 17.2+** (for YAML version 1.1)
+- **Databricks Runtime 17.2+** (for YAML version 1.1); **17.3+** for semantic metadata (`synonyms` / `display_name` / `format`)
 - SQL warehouse with `CAN USE` permissions
 - `SELECT` on source tables, `CREATE TABLE` + `USE SCHEMA` in the target schema
 
@@ -93,6 +93,11 @@ ORDER BY ALL
 |-------|------|-------------|
 | YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
 | Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
+| Multi-source build (Advisor) | [references/metric-view-advisor.md](references/metric-view-advisor.md) | Guided workflow to build metric views from gold schemas, dashboards, SQL queries, Genie spaces, or KPI files — analysis, overlap detection, deploy |
+
+## Guided, multi-source build (Metric View Advisor)
+
+For the single-table create/query patterns above, use this skill directly. When the user wants to **build metric views from existing assets** — gold/fact schemas, AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets — combine multiple sources, deduplicate against views that already exist, and walk deployment end to end, use the **Metric View Advisor** in [`references/metric-view-advisor.md`](references/metric-view-advisor.md). It builds on this skill's baseline spec and adds the multi-source analysis, overlap detection, and an interactive build/deploy flow. Load it when the user asks to "formalize our KPIs," "build a metric/semantic layer from our tables/dashboards/queries," or otherwise wants a guided build rather than authoring one view by hand.
 
 ## SQL Operations
 
@@ -225,7 +230,7 @@ After verifying parity (`SELECT ... FROM <orders_metrics>` returns the same numb
 ## YAML Spec Quick Reference
 
 ```yaml
-version: 1.1                    # Required: "1.1" for DBR 17.2+
+version: 1.1                    # Required: "1.1" for DBR 17.2+ (semantic metadata needs 17.3+)
 source: catalog.schema.table    # Required: source table/view
 comment: "Description"          # Optional: metric view description
 filter: column > value          # Optional: global WHERE filter
@@ -279,7 +284,7 @@ materialization:                # Optional (experimental)
 | **"Cannot resolve column"** | Dimension/measure names with spaces need backtick quoting |
 | **JOIN at query time fails** | Joins must be in the YAML definition, not in the SELECT query |
 | **MEASURE() required** | All measure references must be wrapped: `MEASURE(\`name\`)` |
-| **DBR version error** | Requires Runtime 17.2+ for YAML v1.1, or 16.4+ for v0.1 |
+| **DBR version error** | Requires Runtime 17.2+ for YAML v1.1, or 16.4+ for v0.1. Semantic metadata (`synonyms`/`display_name`/`format`) needs 17.3+ |
 | **Materialization not working** | Requires serverless compute enabled; currently experimental |
 
 ## Integrations

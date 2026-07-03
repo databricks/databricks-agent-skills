@@ -53,6 +53,38 @@ GROUP BY ALL
 ORDER BY month
 ```
 
+### Genie-friendly variant (recommended for AI/BI)
+
+Add `comment` / `display_name` / `synonyms` on every dimension and measure **that
+business/NL users will reference** so Genie and AI/BI dashboards can discover and
+label them (`synonyms`/`display_name`/`format` require DBR 17.3+). Same view as
+above, made Genie-rich:
+
+```sql
+CREATE OR REPLACE VIEW catalog.schema.product_metrics
+WITH METRICS
+LANGUAGE YAML
+AS $$
+  version: 1.1
+  source: catalog.schema.sales
+  comment: "Product sales metrics"
+  dimensions:
+    - name: Product Name
+      expr: product_name
+      comment: "Name of the product"
+      display_name: "Product Name"
+      synonyms: ['product', 'item name']
+  measures:
+    - name: Total Revenue
+      expr: SUM(price * quantity)
+      comment: "Total revenue from sales"
+      display_name: "Total Revenue"
+      synonyms: ['total sales', 'gross revenue']
+$$
+```
+
+Apply this metadata-rich shape to any pattern below. See [`metric-view-advisor.md`](metric-view-advisor.md) → *Semantic metadata* for field limits and tips.
+
 ## Pattern 2: Derived Dimensions with CASE
 
 Transform raw values into business-friendly categories.
@@ -239,9 +271,9 @@ AS $$
     - name: Customer Name
       expr: customer.name
     - name: Nation
-      expr: nation.name
+      expr: customer.nation.name          # full dot-chain through parent joins
     - name: Region
-      expr: region.name
+      expr: customer.nation.region.name   # nested two levels deep
     - name: Order Year
       expr: EXTRACT(YEAR FROM source.order_date)
 

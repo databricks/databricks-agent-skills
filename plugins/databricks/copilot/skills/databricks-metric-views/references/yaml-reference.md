@@ -203,6 +203,8 @@ joins:
 - In `on`, reference the fact table as `source` and join tables by their `name`
 - Nested `joins` create snowflake schema (requires DBR 17.1+)
 - Joined tables cannot include MAP type columns
+- Joins must be **many-to-one** — in a many-to-many case only the **first matching row** is used, which can silently skew aggregates
+- Joins use **LEFT OUTER** semantics — all fact (`source`) rows are kept; unmatched dimension columns are `NULL`, and dimension rows with no fact match are excluded (this differs from an INNER join and changes result sets)
 
 ## Filter
 
@@ -303,8 +305,8 @@ AS $$
     - name: Customer Name
       expr: customer.name
     - name: Region
-      expr: region.name
-      comment: "Geographic region"
+      expr: customer.region.name
+      comment: "Geographic region (dot-chained through the customer join)"
     - name: Product Category
       expr: product.category
 

@@ -47,6 +47,15 @@ w.system_schemas.enable(
 ```
 
 **CLI:**
+
+> **Version note:** `databricks system-schemas` requires Databricks CLI **≥ v0.205** (the
+> unified Go CLI). On older `databricks-cli` (Python) installs the subcommand is absent —
+> run `databricks --version` to check, then use the Python SDK (`w.system_schemas`) shown
+> above as a version-stable fallback.
+
+> Get your metastore ID with `w.metastores.current().metastore_id` (SDK) or from the Catalog
+> UI → metastore details, then substitute it for `your-metastore-id` below.
+
 ```bash
 # List system schemas (METASTORE_ID is positional)
 databricks system-schemas list your-metastore-id
@@ -103,6 +112,12 @@ FROM system.access.audit
 WHERE event_date >= current_date() - 30
   AND action_name IN ('updatePermissions', 'grantPermission', 'revokePermission')
 ORDER BY event_time DESC;
+
+-- NOTE: request_params is a MAP whose keys — and the exact action_name values — vary by
+-- event type and Databricks version. Keys such as securable_full_name / securable_type and
+-- action_names like grantPermission / revokePermission are illustrative; confirm the real
+-- keys/values for your events by selecting the raw request_params first (see the
+-- [UNRESOLVED_COLUMN] troubleshooting entry later in this file).
 
 -- Failed access attempts (security monitoring)
 SELECT
@@ -843,6 +858,13 @@ for rel in lineage:
 ```
 
 **CLI:**
+
+> **Version / availability note:** `databricks external-lineage` is a newer subcommand
+> (Databricks CLI **≥ v0.240**) and external lineage itself is gated by workspace
+> availability. If the subcommand is missing (`databricks --version` to check) or returns
+> a feature error, use the Python SDK (`w.external_lineage`) shown above. The
+> `read_files`/system-table lineage queries elsewhere in this file do **not** require it.
+
 ```bash
 # Create external lineage
 databricks external-lineage create-external-lineage-relationship --json '{
@@ -922,3 +944,99 @@ GRANT SELECT ON SCHEMA system.query TO `platform_team`;
 4. **Retain audit logs** for compliance (typically 1-7 years)
 5. **Monitor failed access** for security threats
 6. **Automate alerts** for sensitive operations
+
+---
+
+## Troubleshooting / Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `TABLE_OR_VIEW_NOT_FOUND` / `[SCHEMA_NOT_FOUND]` on `system.<schema>.*` | The system schema is not enabled on the metastore | Detect with the query below, then enable it (admin only) |
+| Query runs but returns **0 rows** with a date predicate | Querying **beyond the retention window** (data has aged out) | Widen/shift the date filter; confirm the table's retention (see table below) |
+| `PERMISSION_DENIED` / `User does not have ... privileges on ...` for `system.*` | Missing `USE CATALOG` / `USE SCHEMA` / `SELECT` on the `system` schema | Ask a metastore admin to `GRANT` the privileges below |
+| `[UNRESOLVED_COLUMN]` referencing e.g. `request_params.full_name_arg` | Column shape varies by `action_name`; the field is null/absent for that event | Select the whole `request_params` MAP first to inspect available keys |
+
+### (a) System schema is not enabled
+
+Querying a system schema that has not been enabled raises a *not found* error rather than a
+permission error. **Detect** which schemas exist and their state, then **enable** the one
+you need (requires metastore-admin / account-admin):
+
+```sql
+-- Detect: which system schemas exist?
+SELECT schema_name
+FROM system.information_schema.schemata
+WHERE catalog_name = 'system'
+ORDER BY schema_name;
+```
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+metastore_id = w.metastores.current().metastore_id
+
+# Detect state (AVAILABLE / ENABLE_COMPLETED / UNAVAILABLE ...)
+for s in w.system_schemas.list(metastore_id=metastore_id):
+    print(s.schema, s.state)
+
+# Enable a schema that is available but not yet enabled
+w.system_schemas.enable(metastore_id=metastore_id, schema_name="access")
+```
+
+> Some schemas (e.g. `access`, `billing`) are enabled by default on newer metastores; others
+> (e.g. `lakeflow`, `query`) may need explicit enablement. A schema stuck in `UNAVAILABLE`
+> is not offered in your region/tier yet — there is nothing to enable.
+
+### (b) Querying beyond the retention period
+
+System tables only retain a bounded history (see the table below). A query that filters to a
+window **older than the retention period** is **not an error** — it simply returns **0 rows**.
+This is the most common "my query returns nothing" cause. To distinguish "no data in window"
+from "no data at all", probe the available range:
+
+```sql
+-- What is the actual min/max date available right now?
+SELECT min(event_date) AS earliest, max(event_date) AS latest, count(*) AS rows
+FROM system.access.audit;
+```
+
+If `earliest` is more recent than your filter's lower bound, you have hit the retention edge —
+shorten the lookback. Most system tables default to **365 days** of history, but exact
+retention **varies by table, tier, and region and can change** — confirm the current value in
+the [system tables reference](https://docs.databricks.com/aws/en/admin/system-tables/) rather
+than hardcoding a longer lookback:
+
+| System Table | Retention (default — verify in docs) |
+|--------------|--------------------------------------|
+| `system.access.audit` | 365 days |
+| `system.access.table_lineage` / `column_lineage` | 365 days |
+| `system.billing.usage` | 365 days |
+| `system.query.history` | 365 days |
+| `system.compute.warehouse_events` | 365 days |
+
+### (c) Insufficient privileges on `system.*`
+
+System tables hold sensitive operational metadata, so access is **not** granted by default.
+A non-admin querying `system.*` without grants sees:
+
+```
+PERMISSION_DENIED: User does not have USE SCHEMA on Schema 'system.access'
+```
+
+A metastore admin grants the minimum needed (catalog → schema → select):
+
+```sql
+GRANT USE CATALOG ON CATALOG system TO `monitoring_team`;
+GRANT USE SCHEMA  ON SCHEMA  system.access  TO `monitoring_team`;
+GRANT SELECT      ON SCHEMA  system.access  TO `monitoring_team`;
+```
+
+Verify the grants landed:
+
+```sql
+SHOW GRANTS `monitoring_team` ON SCHEMA system.access;
+```
+
+> See [1-access-control.md](1-access-control.md) for the full privilege model and how
+> `USE CATALOG` / `USE SCHEMA` / `SELECT` compose.

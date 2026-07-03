@@ -70,6 +70,14 @@ Each ForEachBatch call represents one epoch. All writes within the batch:
 - Share the same batch_id
 - Are idempotent if using txnVersion
 
+**Partial-failure semantics.** `foreachBatch` writes are **not** atomic across sinks:
+if a batch writes to sink 1 successfully and then fails before sink 2, Spark retries
+the **entire** batch (same `batch_id`). The re-run re-attempts every sink, including
+the one that already succeeded. This is safe only if each write is idempotent — always
+set `txnVersion=batch_id` with a per-sink `txnAppId` so the already-committed write is
+deduplicated on retry instead of double-appended. Order writes so the most critical /
+hardest-to-dedupe sink is last where possible.
+
 ## Common Patterns
 
 ### Pattern 1: Bronze-Silver-Gold Medallion Architecture
@@ -389,11 +397,12 @@ def parallel_write(batch_df, batch_id):
 Always use txnVersion with batch_id:
 
 ```python
-.write
+(batch_df.write
     .format("delta")
     .option("txnVersion", batch_id)
     .option("txnAppId", "unique_app_id_per_table")
     .mode("append")
+    .saveAsTable("target_table"))
 ```
 
 ### Keep Batch Processing Fast

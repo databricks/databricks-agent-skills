@@ -32,7 +32,7 @@ that matches the request:
 - Python SDK / Databricks Connect / REST API -> databricks-python-sdk
 - Spark Structured Streaming -> databricks-spark-structured-streaming
 - Synthetic / test data generation (Faker) -> databricks-synthetic-data-gen
-- Unity Catalog system tables (lineage, audit, billing) -> databricks-unity-catalog
+- Unity Catalog governance, access control & system tables -> databricks-unity-catalog
 - Synthetic PDF generation for RAG -> databricks-unstructured-pdf-generation
 - Zerobus streaming ingest -> databricks-zerobus-ingest
 

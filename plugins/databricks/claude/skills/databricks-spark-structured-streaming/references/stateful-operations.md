@@ -67,7 +67,7 @@ df = (spark.readStream
 # - State size = ~10M keys × key_size
 
 # Reduce watermark to reduce state size
-.withWatermark("event_time", "5 minutes")  # Smaller state
+df.withWatermark("event_time", "5 minutes")  # Smaller state
 
 # State automatically expires after watermark duration
 # No manual cleanup needed
@@ -244,7 +244,7 @@ Watermarks automatically clean up expired state:
 
 ```python
 # State expires after watermark duration
-.withWatermark("event_time", "10 minutes")
+df.withWatermark("event_time", "10 minutes")
 
 # State size = f(watermark duration, key cardinality)
 # 10 min watermark × 1M events/min = manageable
@@ -255,11 +255,11 @@ Watermarks automatically clean up expired state:
 
 ```python
 # Bad: High cardinality keys
-.dropDuplicates(["user_id"])  # Millions of distinct values
+df.dropDuplicates(["user_id"])  # Millions of distinct values
 
 # Good: Lower cardinality or expiring keys
-.dropDuplicates(["session_id"])  # Sessions expire naturally
-.dropDuplicates(["event_id", "date"])  # Partition by date reduces cardinality
+df.dropDuplicates(["session_id"])  # Sessions expire naturally
+df.dropDuplicates(["event_id", "date"])  # Partition by date reduces cardinality
 ```
 
 ## Monitoring
@@ -333,7 +333,7 @@ dbutils.fs.rm("/checkpoints/stream/state", recurse=True)
 
 # Scenario 2: State store too large
 # Solution: Reduce watermark duration
-.withWatermark("event_time", "5 minutes")  # Reduced from 10 minutes
+df.withWatermark("event_time", "5 minutes")  # Reduced from 10 minutes
 
 # Scenario 3: State partition imbalance
 # Solution: Ensure keys are evenly distributed
@@ -362,7 +362,7 @@ stream1.withWatermark("ts", "10 min").join(stream2.withWatermark("ts", "10 min")
 # Example: p95 latency = 5 minutes → watermark = 10-15 minutes
 
 # Start conservative, adjust based on monitoring
-.withWatermark("event_time", "10 minutes")  # Start here
+df.withWatermark("event_time", "10 minutes")  # Start here
 # Monitor late data rate
 # Increase if too many late events
 # Decrease if state too large

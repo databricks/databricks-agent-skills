@@ -235,11 +235,13 @@ latest_offset_file = sorted(dbutils.fs.ls("/checkpoints/stream/offsets"))[-1].pa
 offset_data = json.loads(dbutils.fs.head(latest_offset_file))
 batch_id = latest_offset_file.split("/")[-1]
 
-# Check if commit exists
+# Check if commit exists. dbutils.fs has no exists() method, so probe with ls()
+# and treat the FileNotFoundException it raises as "not committed".
 commit_file = f"/checkpoints/stream/commits/{batch_id}"
-if dbutils.fs.exists(commit_file):
+try:
+    dbutils.fs.ls(commit_file)
     print(f"Batch {batch_id}: Committed")
-else:
+except Exception:
     print(f"Batch {batch_id}: Not committed (will reprocess)")
 ```
 

@@ -1,10 +1,19 @@
-# Data Exploration
+# Manual Data Exploration
 
-Tools for discovering table schemas and executing SQL queries in Databricks.
+Discover table schemas and run SQL **directly via the CLI**. These commands are
+first-class — running an ad-hoc query or profiling a known table with them needs
+nothing else.
+
+This is also the **manual fallback** for discovery when the Genie One skill
+(`databricks-data-discovery`) or a Genie MCP tool isn't available. When Genie One
+*is* available, prefer it for natural-language data questions, locating data you
+can't pin down, and query generation — it has governed access to the org's semantic
+context that this manual path doesn't.
 
 ## Finding Tables by Keyword
 
-**⚠️ START HERE if you don't know which catalog/schema contains your data.**
+**⚠️ START HERE if you don't know which catalog/schema contains your data** (and
+Genie One isn't available — otherwise just ask Genie to find it).
 
 Use `information_schema` to search for tables by keyword — do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`. Manual enumeration wastes 10+ steps.
 

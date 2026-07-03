@@ -14,14 +14,16 @@ Comprehensive guide to Delta MERGE operations: performance optimization, paralle
 ```python
 from delta.tables import DeltaTable
 
-# Enable modern Delta features
+# Enable modern Delta features.
+# Liquid Clustering is enabled via CLUSTER BY (not a TBLPROPERTY);
+# Deletion Vectors and Row-Level Concurrency are table properties.
 spark.sql("""
     ALTER TABLE target_table SET TBLPROPERTIES (
         'delta.enableDeletionVectors' = true,
-        'delta.enableRowLevelConcurrency' = true,
-        'delta.liquid.clustering' = true
+        'delta.enableRowLevelConcurrency' = true
     )
 """)
+spark.sql("ALTER TABLE target_table CLUSTER BY (id)")
 
 # MERGE in ForEachBatch
 def upsert_batch(batch_df, batch_id):
@@ -94,12 +96,14 @@ stream.writeStream \
 Enable modern Delta features for optimal merge performance:
 
 ```sql
--- Enable for target table
+-- Enable for target table.
+-- Deletion Vectors and Row-Level Concurrency are table properties;
+-- Liquid Clustering is enabled with CLUSTER BY, not a TBLPROPERTY.
 ALTER TABLE target_table SET TBLPROPERTIES (
     'delta.enableDeletionVectors' = true,
-    'delta.enableRowLevelConcurrency' = true,
-    'delta.liquid.clustering' = true
+    'delta.enableRowLevelConcurrency' = true
 );
+ALTER TABLE target_table CLUSTER BY (id);
 ```
 
 **Benefits:**
@@ -159,7 +163,9 @@ def parallel_merge(batch_df, batch_id):
         ("silver.products", "product_id")
     ]
     
-    # Optimal thread count: min(number_of_tables, cluster_cores / 2)
+    # Optimal thread count: min(number_of_tables, cluster_cores / 2).
+    # defaultParallelism is total worker cores on a running cluster.
+    total_cores = spark.sparkContext.defaultParallelism
     max_workers = min(len(tables), max(2, total_cores // 2))
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -266,11 +272,11 @@ TBLPROPERTIES (
     'delta.enableRowLevelConcurrency' = true
 );
 
--- Or alter existing table
+-- Or alter an existing table: set the properties, then enable
+-- Liquid Clustering with CLUSTER BY (there is no delta.liquid.clustering property).
 ALTER TABLE target_table SET TBLPROPERTIES (
     'delta.enableDeletionVectors' = true,
-    'delta.enableRowLevelConcurrency' = true,
-    'delta.liquid.clustering' = true
+    'delta.enableRowLevelConcurrency' = true
 );
 ALTER TABLE target_table CLUSTER BY (id);
 ```
@@ -301,6 +307,7 @@ ALTER TABLE target_table SET TBLPROPERTIES (
 # Example: 4 tables, 8 cores → 4 workers
 # Example: 2 tables, 4 cores → 2 workers
 
+total_cores = spark.sparkContext.defaultParallelism  # total worker cores
 max_workers = min(len(tables), max(2, total_cores // 2))
 ```
 

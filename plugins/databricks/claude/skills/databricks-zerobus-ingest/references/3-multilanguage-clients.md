@@ -82,7 +82,7 @@ protoc --java_out=src/main/java record.proto
 ### Installation
 
 ```bash
-go get github.com/databricks/zerobus-sdk-go
+go get github.com/databricks/zerobus-sdk/go
 ```
 
 ### JSON Flow
@@ -95,7 +95,7 @@ import (
     "log"
     "os"
 
-    zerobus "github.com/databricks/zerobus-go-sdk/sdk"
+    zerobus "github.com/databricks/zerobus-sdk/go"
 )
 
 func main() {
@@ -310,7 +310,7 @@ stream.wait_for_offset(offset).await?;
 | Feature | Python | Java | Go | TypeScript | Rust |
 |---------|--------|------|----|------------|------|
 | Min version | 3.9+ | 8+ | 1.21+ | Node 16+ | 1.70+ |
-| Package | `databricks-zerobus-ingest-sdk` | `com.databricks:zerobus-ingest-sdk` | `github.com/databricks/zerobus-sdk-go` | `@databricks/zerobus-ingest-sdk` | `databricks-zerobus-ingest-sdk` |
+| Package | `databricks-zerobus-ingest-sdk` | `com.databricks:zerobus-ingest-sdk` | `github.com/databricks/zerobus-sdk/go` | `@databricks/zerobus-ingest-sdk` | `databricks-zerobus-ingest-sdk` |
 | Default serialization | JSON | Protobuf | JSON | JSON | JSON |
 | Async API | Yes (separate module) | CompletableFuture | Goroutines | Native async/await | Tokio async/await |
 | ACK pattern | `wait_for_offset(offset)` or `AckCallback` | `waitForOffset(offset)` | `WaitForOffset(offset)` | `await waitForOffset(offset)` | `wait_for_offset(offset).await?` |
