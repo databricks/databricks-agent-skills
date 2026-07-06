@@ -17,7 +17,7 @@ Before deeper profiling, check feasibility. Flag missing measures, dimensions, t
 
 - **Hard limit:** 30 tables/views/Metric Views per Genie Agent.
 - **Practical guidance:** keep Agents focused — the tighter the domain, the better Genie performs. Aim well under the limit; 5 or fewer objects is a good starting target.
-- Organize Agents by **business domain/subdomain**, not by report. A domain (e.g. "Marketing") maps to a Agent; if a domain is broad, split by subdomain (e.g. "Online Marketing").
+- Organize Agents by **business domain/subdomain**, not by report. A domain (e.g. "Marketing") maps to an Agent; if a domain is broad, split by subdomain (e.g. "Online Marketing").
 - If a domain approaches 30 items, split it into multiple Agents by subdomain.
 - Assign domain/subdomain tags to both Genie Agents and their underlying tables/Metric Views for discoverability and observability.
 - Optional: mirror the hierarchy in Unity Catalog — one schema per domain or subdomain.
@@ -38,7 +38,7 @@ Prefer structured context over broad instructions. Add surfaces in this order �
 6. Format assistance and entity matching for eligible categorical strings.
 7. Join specs for raw tables exposed together.
 
-Surfaces 4-6 plus hidden fields are all applied **per column** through `data_sources.tables[].column_configs[]` (`description`, `synonyms`, `enable_format_assistance`, `enable_entity_matching`, `exclude`). This array is optional, so a Agent created without it ships with none of these — build it explicitly during creation, adding one entry per column that needs tuning. Enable format assistance and entity matching **selectively** (useful categorical dimensions/filters only — never blanket-enable on IDs, hashes, free text, lat/long, or raw measures). See the verified schema in `../../references/agents.md` → Exact Field Schemas.
+Surfaces 4-6 plus hidden fields are all applied **per column** through `data_sources.tables[].column_configs[]` (`description`, `synonyms`, `enable_format_assistance`, `enable_entity_matching`, `exclude`). This array is optional, so an Agent created without it ships with none of these — build it explicitly during creation, adding one entry per column that needs tuning. Enable format assistance and entity matching **selectively** (useful categorical dimensions/filters only — never blanket-enable on IDs, hashes, free text, lat/long, or raw measures). See the verified schema in `../../references/agents.md` → Exact Field Schemas.
 8. SQL snippets for reusable filters, expressions, and measures not already governed by Metric Views.
 9. Example SQL for complex question patterns.
 10. SQL functions for trusted registered logic.
@@ -101,6 +101,23 @@ For each KPI / question:
 
 Saved example queries are reused and imitated by Genie — keep them simple (prefer `WHERE` over `CASE`; avoid unnecessary subqueries/window functions) so each adds less reasoning load. Rerun all benchmarks after **every** change; a previously passing benchmark that now fails almost always means the latest addition confused Genie. For eval-driven tuning after creation, hand off to `../../optimize-genie-agent/SKILL.md`.
 
+## Qualify Columns In SQL
+
+**Always prefix every column reference with its source name** in SQL snippets (SQL expressions) and example SQL — never emit a bare backtick-quoted column. Use the table/Metric View identifier's last segment (its implicit alias) or an explicit table alias:
+
+```sql
+-- ✅ qualified
+global_sales_assets_metrics.`Trade Date` = LAST_DAY(global_sales_assets_metrics.`Trade Date`)
+MEASURE(global_sales_assets_metrics.`Gross Sales (ex Cash Management)`) / <Avg AUM>
+global_sales_assets_metrics.`Trade Date` > (SELECT MAX(global_sales_assets_metrics.`Trade Date`) FROM main.gcg.global_sales_assets_metrics)  -- prefix inside subqueries too
+
+-- ❌ bare (raises the error)
+`Trade Date` = LAST_DAY(`Trade Date`)
+MEASURE(`Gross Sales (ex Cash Management)`)
+```
+
+Unqualified columns in these surfaces raise **`Table name or alias is required for column`** when Genie composes a snippet/expression into a larger statement. Qualifying is always safe — it works for a single-table or single-Metric-View Agent and is **required** once multiple tables are joined. Prefix columns inside subqueries too; the table's implicit alias is the final segment of its qualified name. Do **not** prefix non-column tokens — string literals, `<placeholder>` markers, `:param_name` parameters, and conceptual CTE-result names (e.g. `Current Period / Prior Period`) stay as-is.
+
 ## Examples And Benchmarks
 
 There is no fixed minimum count for SQL snippets, example SQL, or benchmarks — size each by **coverage**, not a quota. Manufacturing filler to hit a number competes with governed surfaces and violates the priority order above.
@@ -108,6 +125,7 @@ There is no fixed minimum count for SQL snippets, example SQL, or benchmarks —
 - **SQL snippets (#8):** add only for reusable filters/expressions/measures the Metric View does not already govern. When the source is a well-modeled Metric View, **zero is often correct** — do not re-derive governed formulas as snippets.
 - **Example SQL (#9):** cover the distinct *query shapes* the Agent's questions require — e.g. simple aggregate, group-by-dimension, time filter/window, ratio/`MEASURE()` composition, ranking, and CTE-then-join — rather than a target count. One good example per shape beats many near-duplicates.
 - **Benchmarks:** add ground truth per the intended execution mode (checked SQL for Chat, evaluation notes for Agent). No minimum applies at creation; if the Agent is intended for later eval-driven tuning, aim toward the **≥30 valid-item** bar in `optimize-genie-agent` (e.g. 2-4 phrasings per core question) so a benchmark-repair pass is not needed first.
+- Qualify every column with its source name (see [Qualify Columns In SQL](#qualify-columns-in-sql)) in snippets and example SQL — bare columns raise `Table name or alias is required for column`.
 - Validate every example SQL, benchmark SQL, snippet, and join with read-only execution or `EXPLAIN` when possible.
 - Use real profiled values for parameter defaults, benchmark literals, and sample question wording.
 - Parameterized examples may use `:param_name`, but every parameter needs a description, type hint, and real default value.
@@ -146,7 +164,8 @@ Check the draft for:
 |--------------|--------------|-----|
 | Both the base view AND the Metric View in the same Agent | Genie sees unaggregated rows and must re-derive aggregation logic | Remove the base view from the Agent once a Metric View exists on top of it |
 | Adding 10 measures at once before testing | Can't isolate which one broke Genie's reasoning | Add and validate one at a time |
-| Genie Agent with no description | Multi-agent routing fails silently | Always set a Agent description |
+| Genie Agent with no description | Multi-agent routing fails silently | Always set an Agent description |
 | Complex `CASE` chains in saved example SQL | Increases Genie's reasoning load on similar questions | Simplify to `WHERE` filters; lean on composed measures |
+| Bare (unqualified) columns in SQL snippets or example SQL | Raises `Table name or alias is required for column` when Genie composes the snippet | Prefix every column with the table/Metric View name or alias (see [Qualify Columns In SQL](#qualify-columns-in-sql)) |
 | Prompt matching / format assistance / entity matching blanket-enabled on every column | Wastes context on IDs, hashes, free text, and raw measures | Enable selectively, only on useful categorical dimensions and filters (see Design Priorities) |
 | Assuming a governed Metric View source means no `column_configs` are needed | Format assistance and entity matching have no Metric View equivalent — they live only in space `column_configs`, so the space ships with both off | Still emit `column_configs` enabling them on the categorical dimensions users name directly, even for an MV source |

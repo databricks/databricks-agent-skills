@@ -119,7 +119,7 @@ Before applying pruning, state the retained denominator, removed or excluded que
 
 ## Repair Decision Stack
 
-Before applying a Agent/config edit, answer:
+Before applying an Agent/config edit, answer:
 
 1. Is this a valid tuning failure?
    - Exclude invalid expected SQL, unclear evaluation notes, stale benchmark questions, permissions, warehouse/API failures, and incomplete eval output.

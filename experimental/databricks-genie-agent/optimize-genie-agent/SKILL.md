@@ -30,7 +30,7 @@ This skill runs in either of two contexts. **The iterative tuning workflow below
 - Prefer structured Genie context over broad text instructions.
 - Get explicit user approval before applying Agent edits, changing benchmark definitions, launching native benchmark evaluations, or writing Unity Catalog optimization history.
 - Benchmark repair or pruning changes only benchmark definitions, never source data or Genie tuning surfaces.
-- Before applying a Agent/config edit, classify failed and needs-review benchmark questions using the repair decision stack in `references/optimization-guide.md`.
+- Before applying an Agent/config edit, classify failed and needs-review benchmark questions using the repair decision stack in `references/optimization-guide.md`.
 - Every tuning pass must name the target failure cluster, selected repair lever, Agent/config surface, expected fixes, related previous-good regression questions, and evaluation gate.
 - If durable multi-pass history is needed, write only to user-approved Unity Catalog optimization-history tables. Persistence is optional and must never modify source data or source schemas.
 
@@ -129,7 +129,7 @@ Per-step mapping for context (b). Inside Databricks you use native benchmark exe
 | Wait for / fetch run status | eval UI | `databricks genie genie-get-eval-run SPACE_ID EVAL_RUN_ID` — poll until complete (eval is asynchronous; do not compare until done) |
 | List prior runs (baseline) | eval history | `databricks genie genie-list-eval-runs SPACE_ID` |
 | Per-question results (Step 15 compare) | per-question scoring grid | `databricks genie genie-list-eval-results SPACE_ID EVAL_RUN_ID`, then `genie-get-eval-result-details SPACE_ID EVAL_RUN_ID RESULT_ID` |
-| Apply a Agent edit (Step 12) | native editor | `databricks genie update-space` with the edited config (see parent [databricks-genie SKILL.md](../SKILL.md)) — present for approval first |
+| Apply an Agent edit (Step 12) | native editor | `databricks genie update-space` with the edited config (see parent [databricks-genie-agent SKILL.md](../SKILL.md)) — present for approval first |
 | UC optimization-history persistence (Steps 6, 11, 16) | notebook/SQL | `databricks experimental aitools tools query` to create/append the approved history tables in `references/optimization-guide.md` |
 
 **Staged evaluation gates via scoping.** Use `benchmark_question_ids` to keep the gates cheap and the regression signal clean:

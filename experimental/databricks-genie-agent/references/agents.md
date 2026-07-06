@@ -482,7 +482,7 @@ manage_genie(
 
 > **Databricks-internal note:** If you have access to the internal `fe-internal-tools` plugin, its `GenieSpaceBuilder` (in `resources/genie_space_builder.py` of the `genie-rooms` skill) provides chainable helpers (`set_instructions`, `add_example_sql`, `add_benchmark`, `add_metric_view`, etc.) that wrap the same shape construction. External users should use the self-contained helper above.
 
-### Exporting a Agent
+### Exporting an Agent
 
 Use `manage_genie(action="export")` to export the full configuration (requires CAN EDIT permission):
 
@@ -505,7 +505,7 @@ details = manage_genie(action="get", space_id="01abc123...", include_serialized_
 serialized = details["serialized_space"]
 ```
 
-### Cloning a Agent (Same Workspace)
+### Cloning an Agent (Same Workspace)
 
 ```python
 # Step 1: Export the source space
