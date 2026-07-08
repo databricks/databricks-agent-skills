@@ -1,8 +1,8 @@
 # Deploying Databricks Apps
 
-Three deployment options: Databricks CLI (simplest), Asset Bundles (multi-environment), or CLI commands (programmatic).
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/deploy · https://docs.databricks.com/dev-tools/bundles/apps (Asset Bundles form)
 
-**Cookbook deployment guide**: https://apps-cookbook.dev/docs/deploy
+Three deployment options: Databricks CLI (simplest), Asset Bundles (multi-environment), or CLI commands (programmatic).
 
 ---
 
