@@ -391,7 +391,7 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true);
 
 ### Step 2 — Create a Vector Search Index and Query It
 
-Use the **[databricks-vector-search](../databricks-vector-search/SKILL.md)** skill to create a Delta Sync index on the chunked table and query it. Ensure CDF is enabled first (Step 1b above).
+Use the **[databricks-vector-search](../../databricks-vector-search/SKILL.md)** skill to create a Delta Sync index on the chunked table and query it. Ensure CDF is enabled first (Step 1b above).
 
 ### RAG-Specific Issues
 

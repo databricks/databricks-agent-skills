@@ -2,7 +2,7 @@
 
 **Docs:** https://docs.databricks.com/sql/language-manual/functions/ai_query
 
-> Use `ai_query` only when no task-specific function fits. See the function selection table in [SKILL.md](SKILL.md).
+> Use `ai_query` only when no task-specific function fits. See the function selection table in [SKILL.md](../SKILL.md).
 
 ## When to Use `ai_query`
 

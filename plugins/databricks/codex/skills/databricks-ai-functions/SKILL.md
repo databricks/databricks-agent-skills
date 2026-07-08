@@ -196,7 +196,7 @@ FROM ai_forecast(
 | `ai_parse_document` not found | Requires DBR **17.1+**. Check cluster runtime. |
 | `ai_forecast` fails | Requires **Pro or Serverless** SQL warehouse — not available on Classic or Starter. |
 | All functions return NULL | Input column is NULL. Filter with `WHERE col IS NOT NULL` before calling. |
-| `ai_translate` fails for a language | Supported: English, German, French, Italian, Portuguese, Hindi, Spanish, Thai. Use `ai_query` with a multilingual model for others. |
+| `ai_translate` fails for a language | Supported (8): English (`en`), French (`fr`), German (`de`), Hindi (`hi`), Italian (`it`), Portuguese (`pt`), Spanish (`es`), Thai (`th`) — `to_lang` takes the code or the full name (see [references/1-task-functions.md](references/1-task-functions.md)). Use `ai_query` with a multilingual model for others. |
 | `ai_classify` returns unexpected labels | Use clear, mutually exclusive label names. Fewer labels (2–5) produces more reliable results. |
 | `ai_query` raises on some rows in a batch job | Add `failOnError => false` — returns a STRUCT with `.response` and `.errorMessage` instead of raising. |
 | Batch job runs slowly | Use DBR **15.4 ML LTS** cluster (not serverless or interactive) for optimized batch inference throughput. |

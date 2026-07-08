@@ -1,5 +1,7 @@
 # CLI Commands for App Lifecycle
 
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps · Run `databricks apps -h` and `databricks apps <subcommand> -h` for the current flag surface (the source of truth if this file drifts).
+
 Use the Databricks CLI to create, deploy, and manage Databricks Apps.
 
 ---

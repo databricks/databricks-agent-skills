@@ -147,4 +147,3 @@ When adding user authorization, select only the scopes your app needs:
 - Grant service principal minimum required permissions on resources
 - Use `CAN MANAGE` only for trusted developers; `CAN USE` for app users
 - Enforce peer review for app code before production deployment
-- Cookbook auth examples: [Streamlit](https://apps-cookbook.dev/docs/streamlit/authentication/users_get_current) · [Dash](https://apps-cookbook.dev/docs/dash/authentication/users_get_current) · [Reflex](https://apps-cookbook.dev/docs/reflex/authentication/users_get_current)

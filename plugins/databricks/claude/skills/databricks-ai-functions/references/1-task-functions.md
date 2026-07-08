@@ -36,6 +36,7 @@ df.withColumn("sentiment", expr("ai_analyze_sentiment(review_text)")).display()
 - `options`: optional MAP\<STRING, STRING\>:
   - `instructions`: task context to improve accuracy (max 20,000 chars)
   - `multilabel`: `"true"` to return multiple matching labels (default `"false"`)
+  - `version`: `"2.0"` (recommended) or `"1.0"` (legacy); defaults based on input types. v2 supports 2–500 labels, v1 only 2–20.
 
 Returns VARIANT. Returns `NULL` if content is `NULL`.
 
@@ -283,9 +284,9 @@ df.withColumn("summary", expr("ai_summarize(article_body, 30)")).display()
 
 **Syntax:** `ai_translate(content, to_lang)`
 - `content`: STRING — source text
-- `to_lang`: STRING — target language code
+- `to_lang`: STRING — target language. Accepts an IETF BCP 47 / ISO 639-1 code (`'es'`), the full language name (`'Spanish'`), or a descriptive phrase — the examples below use codes.
 
-**Supported languages:** `en`, `de`, `fr`, `it`, `pt`, `hi`, `es`, `th`
+**Supported languages (8):** English (`en`), French (`fr`), German (`de`), Hindi (`hi`), Italian (`it`), Portuguese (`pt`), Spanish (`es`), Thai (`th`).
 
 For unsupported languages, use `ai_query` with a multilingual model endpoint.
 

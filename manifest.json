@@ -99,7 +99,7 @@
       "version": "0.1.2"
     },
     "databricks-apps-python": {
-      "description": "Builds Databricks applications. Prefers AppKit (TypeScript + React SDK) for new apps; falls back to Python frameworks (Dash, Streamlit, Gradio, Flask, FastAPI, Reflex) when Python is required. Hand...",
+      "description": "Python backend for Databricks Apps \u2014 FastAPI (default), Flask, Dash, Streamlit, Gradio, Reflex. **Default for a new Databricks App is `databricks-apps` (AppKit \u2014 Node/TypeScript/React) \u2014 reach for...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
