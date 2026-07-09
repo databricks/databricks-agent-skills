@@ -234,23 +234,6 @@ job = w.jobs.create(
 | GCS | `gs://bucket/path/` | `gs://my-bucket/uploads/` |
 | Unity Catalog Volume | `/Volumes/catalog/schema/volume/path/` | `/Volumes/main/data/uploads/` |
 
-### Access File Information in Notebook
-
-```python
-# The trigger provides file information via task context
-import json
-
-# Get trigger info from job context
-trigger_info = dbutils.jobs.taskValues.get(
-    taskKey="__trigger_info__",
-    key="file_arrival",
-    debugValue={}
-)
-
-# Contains: url, files (list of new files)
-print(f"New files: {trigger_info.get('files', [])}")
-```
-
 ---
 
 ## Table Update Trigger
