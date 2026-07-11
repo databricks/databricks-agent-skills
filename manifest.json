@@ -169,6 +169,7 @@
         "assets/databricks.svg",
         "references/ai-functions.md",
         "references/best-practices.md",
+        "references/dimensional-modeling.md",
         "references/geospatial-collations.md",
         "references/materialized-views-pipes.md",
         "references/sql-scripting.md"
