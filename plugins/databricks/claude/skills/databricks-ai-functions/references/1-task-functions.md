@@ -93,7 +93,7 @@ df.withColumn(
     }
     ```
   - Supported types: `string`, `integer`, `number`, `boolean`, `enum`
-  - Max 128 fields, 7 nesting levels, 500 enum values
+  - Max 256 fields, 12 nesting levels, 500 enum values
 - `options`: optional MAP\<STRING, STRING\>:
   - `instructions`: task context to improve extraction quality (max 20,000 chars)
 

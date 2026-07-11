@@ -291,13 +291,15 @@
       "version": "0.1.0"
     },
     "databricks-ml-training": {
-      "description": "Train ML or custom-agent models on Databricks with MLflow tracking and Unity Catalog registration.",
+      "description": "Train ML models on Databricks. Use for: classification/regression/deep-learning (XGBoost, scikit-learn, LightGBM, PyTorch) with Optuna, @prod/@challenger aliases, batch scoring (spark_udf for plain...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
         "references/custom-pyfunc.md",
+        "references/feature-store.md",
+        "references/feature-views.md",
         "references/genai-agents.md"
       ],
       "repo_dir": "skills",
@@ -427,8 +429,10 @@
         "assets/databricks.svg",
         "references/checkpoint-best-practices.md",
         "references/kafka-streaming.md",
+        "references/lakebase-sink-python.md",
         "references/merge-operations.md",
         "references/multi-sink-writes.md",
+        "references/real-time-mode.md",
         "references/stateful-operations.md",
         "references/stream-static-joins.md",
         "references/stream-stream-joins.md",

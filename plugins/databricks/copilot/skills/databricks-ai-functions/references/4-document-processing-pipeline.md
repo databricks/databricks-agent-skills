@@ -11,11 +11,11 @@ When processing documents with AI Functions, apply this order of preference for 
 | Stage | Preferred function | Use `ai_query` when... |
 |---|---|---|
 | Parse binary docs (PDF, DOCX, images) | `ai_parse_document` | Need image-level reasoning |
-| Extract fields from text (flat or nested) | `ai_extract` | Schema exceeds 128 fields or 7 nesting levels |
+| Extract fields from text (flat or nested) | `ai_extract` | Schema exceeds 256 fields or 12 nesting levels |
 | Classify document type or status | `ai_classify` | More than 20 categories |
 | Score item similarity / matching | `ai_similarity` | Need cross-document reasoning |
 | Summarize long sections | `ai_summarize` | — |
-| Extract deeply nested JSON | `ai_query` with `responseFormat` | Schema exceeds `ai_extract` limits (128 fields, 7 levels) |
+| Extract deeply nested JSON | `ai_query` with `responseFormat` | Schema exceeds `ai_extract` limits (256 fields, 12 levels) |
 
 ---
 
@@ -173,7 +173,7 @@ def extracted_flat():
 
 
 # ── Stage 3b: Nested JSON extraction (last resort: ai_query) ─────────────────
-# Use ai_query only for deeply nested schemas that exceed ai_extract's 7-level limit
+# Use ai_query only for deeply nested schemas that exceed ai_extract's 12-level limit
 
 @dlt.table(comment="Nested line items extracted — ai_query used for array schema only")
 def extracted_line_items():
@@ -496,7 +496,7 @@ with mlflow.start_run():
 ## Tips
 
 1. **Parse first, enrich second** — always run `ai_parse_document` as the first stage. Feed its text output to task-specific functions; never pass raw binary to `ai_query`.
-2. **Flat or nested fields → `ai_extract`; deeply nested JSON exceeding 7 levels → `ai_query`** — pass `MAP('version', '2.0')` and access results through `:response`.
+2. **Flat or nested fields → `ai_extract`; deeply nested JSON exceeding 12 levels → `ai_query`** — pass `MAP('version', '2.0')` and access results through `:response`.
 3. **`failOnError => false` is mandatory in batch** — write errors to a sidecar `_errors` table rather than crashing the pipeline.
 4. **Truncate before sending to `ai_query`** — use `LEFT(text, 6000)` or chunk long documents to stay within context window limits.
 5. **Prompts belong in `config.yml`** — never hardcode prompt strings in pipeline code. A prompt change should be a config change, not a code change.

@@ -90,14 +90,17 @@ Sample rows alone don't tell you what to build. you can write aggregate SQL thro
 - **Trend viability** at daily/weekly/monthly grain → picks the right trend granularity.
 - **Story confirmation** — run the aggregations you plan to put in the dashboard and check they're not flat, empty, or uninteresting. Fix the query or adjust the story before moving on.
 
-Fan out independent probes (state ∈ `PENDING|RUNNING|SUCCEEDED|FAILED|CANCELED|CLOSED`):
+Fan out independent probes in one call — pass several positional SQLs (and/or repeated `--file`) and they run in parallel (default `--concurrency 8`):
 
 ```bash
-submit() { databricks api post /api/2.0/sql/statements --json "$(jq -nc --arg w "$1" --arg s "$2" '{warehouse_id:$w,statement:$s,wait_timeout:"0s",on_wait_timeout:"CONTINUE"}')" | jq -r .statement_id; }
-SIDS=(); for q in "$@"; do SIDS+=( "$(submit "$WH" "$q")" ); done
-for s in "${SIDS[@]}"; do databricks api get "/api/2.0/sql/statements/$s" | jq '{state:.status.state, rows:.result.data_array}'; done
-# cancel: databricks api post "/api/2.0/sql/statements/$SID/cancel"
+DATABRICKS_WAREHOUSE_ID=<WH> databricks experimental aitools tools query --output json \
+  "SELECT COUNT(*) FROM catalog.schema.orders" \
+  "SELECT region, COUNT(*) FROM catalog.schema.orders GROUP BY region ORDER BY 2 DESC LIMIT 10" \
+  "SELECT MIN(ts), MAX(ts) FROM catalog.schema.orders"
 ```
+
+- **`--output json` is mandatory** in multi-query mode. Returns one object per statement: `{sql, state, rows, error}`; failures are per-statement (`state: "FAILED"`), others still succeed.
+- ⚠️ **Don't trust the exit code** (a failed statement can still exit `0`) — gate on each object's `state != "SUCCEEDED"`.
 
 > **Dashboard queries are different** — inside the dashboard JSON, the `FROM` clause must reference ONLY the table name, with no catalog or schema prefix:
 > - ✅ Correct: `FROM trips`
@@ -120,7 +123,9 @@ If values don't match expectations, ensure the query is correct, fix the data if
 
 Before writing JSON, plan your dashboard:
 
-1. You must know the expected specific JSON structure. For this, **Read reference files**: [1-widget-specifications.md](references/1-widget-specifications.md), [3-filters.md](references/3-filters.md), [4-examples.md](references/4-examples.md)
+1. You must know the expected specific JSON structure. For this, **Read reference files**: [1-widget-specifications.md](references/1-widget-specifications.md), [3-filters.md](references/3-filters.md).
+
+Always make sure you read an entire example to understand the structure, like [4-examples.md](references/4-examples.md).
 
 2. Think: **What widgets?** Map each visualization to a dataset:
    | Widget | Type | Dataset | Has filter field? |
@@ -192,6 +197,8 @@ databricks workspace-entity-tag-assignments create-tag-assignment \
 
 Every dashboard's `serialized_dashboard` content must follow this exact structure:
 
+Important: ALWAYS add a space or `\n` at the end of each `queryLines` value as they are concatenated to create the dataset.
+
 ```json
 {
   "datasets": [
@@ -215,7 +222,7 @@ Every dashboard's `serialized_dashboard` content must follow this exact structur
 ```
 
 **Structural rules (violations cause "failed to parse serialized dashboard"):**
-- `queryLines`: Array of strings, NOT `"query": "string"`. Elements are **joined verbatim** with no separator — end each line with `\n` (or strip `-- comments`). A line ending in `-- comment` with no newline swallows the next line.
+- `queryLines`: Array of strings, NOT `"query": "string"`. Elements are **joined verbatim** with no separator — end each line with ` ` or `\n` (or strip `-- comments`). A line ending in `-- comment` with no newline swallows the next line.
 - Widgets: INLINE in `layout[].widget`, NOT a separate `"widgets"` array
 - `pageType`: Required on every page (`PAGE_TYPE_CANVAS` or `PAGE_TYPE_GLOBAL_FILTERS`)
 - Query binding: `query.fields[].name` must exactly match `encodings.*.fieldName`
