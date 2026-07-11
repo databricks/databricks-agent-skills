@@ -126,6 +126,56 @@ reader.option("maxBytesPerTrigger", "100MB").load("/path/to/data")
 spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "1g")
 ```
 
+## Stopping a streaming query
+
+`writeStream…start()` returns a `StreamingQuery` handle. The Python cell that called `.start()` exits immediately after — the stream continues running on the driver in the background. How you shut it down depends on whether the run is unbounded or bounded.
+
+### Unbounded runs — block the driver
+
+If the notebook / job is meant to keep running until externally cancelled, block on the query so the driver process doesn't exit:
+
+```python
+query = df.writeStream.<sink>.start()
+query.awaitTermination()   # blocks forever; returns only if the query terminates
+```
+
+Without this, a triggered job's driver cell returns as soon as `.start()` does, the job succeeds, and the stream is killed on job teardown.
+
+### Bounded runs — timeout + stop
+
+For a run bounded to a specific duration (e.g. an hourly triggered job), pass a `timeout` and call `stop()` explicitly:
+
+```python
+query = df.writeStream.<sink>.start()
+
+query.awaitTermination(timeout=3600)   # returns after 3600 s, OR sooner if the query terminates
+if query.isActive:                     # true when timeout expired but query still running
+    query.stop()                       # drain sink buffer, finalise current batch, release checkpoint
+```
+
+`stop()` is a **graceful** shutdown: it waits for the current micro-batch (or RTM long-running batch) to finalise, drains sink buffers, and releases the checkpoint lock. This can take up to the trigger interval — in RTM, up to the `realTime="…"` duration (default 5 min). Contrast with cancelling the job run, which is abrupt and leaves the checkpoint in whatever state the last successful commit was in.
+
+### Stopping from another cell or process
+
+`query.stop()` is safe to call from anywhere with a handle to the same `StreamingQuery`. If you don't have the handle (e.g. from another notebook), enumerate active queries and match by name (see [item 7 above](#7-name-your-streaming-query) for why naming matters):
+
+```python
+for q in spark.streams.active:
+    if q.name == "orders_bronze":
+        q.stop()
+```
+
+### Orphan streams on shared clusters
+
+An All-Purpose cluster shared across job runs keeps the SparkSession alive between runs. A cancelled or crashed prior run can leave streams active and holding the checkpoint dir, which blocks the next run from starting cleanly. Idempotent pattern at the top of each stream-starting notebook:
+
+```python
+for q in spark.streams.active:
+    q.stop()
+```
+
+Combined with wiping the checkpoint dir when the stream's semantics allow it (e.g. a rate-source demo). Job clusters don't need this — they get a fresh SparkSession per run.
+
 ## Advanced Checklist
 
 ### 12. Checkpoint Naming Convention

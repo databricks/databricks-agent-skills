@@ -40,6 +40,8 @@ df.writeStream \
 | Pattern | Description | Reference |
 |---------|-------------|-----------|
 | **Kafka Streaming** | Kafka to Delta, Kafka to Kafka, Real-Time Mode | See [references/kafka-streaming.md](references/kafka-streaming.md) |
+| **Real-Time Mode (RTM)** | Sub-second E2E latency — cluster setup, slot math, supported ops (incl. stream-stream inner join on DBR 18+), `transformWithState`, observability, error classes, delivery semantics | See [references/real-time-mode.md](references/real-time-mode.md) |
+| **Lakebase Sink** | Write streaming records into Lakebase Postgres with transactional upserts. Native `format("postgresql")` sink (DBR 18.3+) and manual `foreach` sink as a fallback | See [references/lakebase-sink-python.md](references/lakebase-sink-python.md) |
 | **Stream Joins** | Stream-stream joins, stream-static joins | See [references/stream-stream-joins.md](references/stream-stream-joins.md), [references/stream-static-joins.md](references/stream-static-joins.md) |
 | **Multi-Sink Writes** | Write to multiple tables, parallel merges | See [references/multi-sink-writes.md](references/multi-sink-writes.md) |
 | **Merge Operations** | MERGE performance, parallel merges, optimizations | See [references/merge-operations.md](references/merge-operations.md) |
