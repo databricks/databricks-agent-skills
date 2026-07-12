@@ -41,7 +41,7 @@ const pool = createLakebasePool({
 - OpenTelemetry metrics: `lakebase.token.refresh.duration`, `lakebase.query.duration`, pool connection gauges
 - Logging: `{ debug, info, warn, error }` boolean flags or custom logger instance
 
-> **Lakebase Autoscaling only.** This package is not compatible with Lakebase Provisioned. For the full config reference, see the [`@databricks/lakebase` README](https://github.com/databricks/appkit/tree/main/packages/lakebase).
+> For the full config reference, see the [`@databricks/lakebase` README](https://github.com/databricks/appkit/tree/main/packages/lakebase).
 
 **ORM integration:**
 
