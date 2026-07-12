@@ -13,7 +13,20 @@ parent: databricks-core
 
 Lakebase is Databricks' serverless Postgres-compatible database, available on both AWS and Azure (GA). It provides fully managed OLTP storage with autoscaling, branching, and scale-to-zero.
 
-> **Autoscaling by Default (March 2026):** All new Lakebase instances are Autoscaling projects. The `/database/` APIs now create autoscaling instances behind the scenes. Existing provisioned instances are unchanged.
+> **Provisioned Lakebase no longer exists — never create it.** The old Provisioned tier (static, non-scalable Postgres; `databricks database` CLI / `w.database` SDK) is being migrated to Autoscaling over summer 2026, with no customer action required. Lakebase today is Autoscaling-only (`databricks postgres` / `w.postgres`). Do not attempt to create Provisioned instances; if a user asks for one, tell them Provisioned instances don't exist anymore and point them to Autoscaling. Treat the legacy `database` resource key in app configs as retired — migrate to the `postgres` resource key. For the legacy DAB `synced_database_tables` resource, use the `databricks postgres create-synced-table` CLI flow instead (see the Common Issues row and `references/synced-tables.md`).
+
+For context when reading older configs or docs, here is how the retired Provisioned tier maps to Autoscaling:
+
+| Aspect | Provisioned (retired) | Autoscaling (current) |
+|--------|-----------------------|-----------------------|
+| CLI group | `databricks database` | `databricks postgres` |
+| Top-level resource | Instance | Project |
+| Capacity | CU_1–CU_8 (16 GB/CU) | 0.5–112 CU (2 GB/CU) |
+| Branching | Not supported | Full support |
+| Scale-to-zero | Not supported | Configurable |
+| HA | Readable secondaries | 1–3 secondaries + read replicas |
+| Data API | Not available | PostgREST HTTP API |
+| Cloud | AWS only | AWS and Azure |
 
 **Compliance:** Supports HIPAA, C5, TISAX, or None.
 
@@ -157,23 +170,6 @@ databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --pr
 
 **Delete:** Protected branches must be unprotected first (`update-branch` to set `spec.is_protected` to `false`). Cannot delete branches with children. **Never delete the `production` branch.**
 
-## Key Differences from Lakebase Provisioned
-
-> All new instances default to Autoscaling as of March 2026. Automatic migration of Provisioned instances begins June 2026.
-
-| Aspect | Provisioned | Autoscaling |
-|--------|-------------|-------------|
-| CLI group | `databricks database` | `databricks postgres` |
-| Top-level resource | Instance | Project |
-| Capacity | CU_1--CU_8 (16 GB/CU) | 0.5--112 CU (2 GB/CU) |
-| Branching | Not supported | Full support |
-| Scale-to-zero | Not supported | Configurable |
-| HA | Readable secondaries | 1--3 secondaries + read replicas |
-| Data API | Not available | PostgREST HTTP API |
-| Cloud | AWS only | AWS and Azure |
-
-**Migration:** Manual via `pg_dump`/`pg_restore` (requires pausing writes). Automatic seamless upgrades (seconds of downtime) begin June 2026 -- no customer action required.
-
 ## What's Next
 
 ### Build a Databricks App
@@ -201,10 +197,9 @@ For the full app workflow, use the **`databricks-apps`** skill.
 `apps init --features lakebase` (above) wires the database at scaffold time. To
 attach a project to an **existing** app, update its resources.
 
-**Use the `postgres` resource key for an Autoscaling project** — its fields are
-`branch` + `database` (full resource paths from the table above). The legacy
-`database` key (`instance_name` + `database_name`) is for **Provisioned**
-instances only; using it for an Autoscaling project fails with
+**Use the `postgres` resource key** — its fields are `branch` + `database`
+(full resource paths from the table above). The legacy `database` key
+(`instance_name` + `database_name`) is deprecated; using it fails with
 `Database instance <name> does not exist`. Get the exact paths from
 `list-branches` / `list-databases` (the DB name is often hyphenated, e.g.
 `databricks-postgres`).
@@ -342,7 +337,7 @@ For vector embeddings with pgvector, see [pgvector.md](references/pgvector.md).
 | Sync permissions error | Ensure `USE CATALOG`/`USE SCHEMA` on source table and `CREATE TABLE` in storage catalog |
 | Synced table null bytes | Null bytes (0x00) in STRING/ARRAY/MAP/STRUCT columns cause sync failures. Sanitize source data: `REPLACE(col, CAST(CHAR(0) AS STRING), '')` |
 | Synced table data modified | Only read queries, indexes, and DROP TABLE allowed on synced tables in Postgres. Modifications break sync pipeline. |
-| DABs `synced_database_tables` with Autoscaling | Do NOT use — maps to the Provisioned API. Use `databricks postgres create-synced-table` CLI instead. DAB support for Autoscaling synced tables (`postgres_synced_tables`) is not yet available. |
+| DABs `synced_database_tables` | Deprecated — maps to a legacy API and fails on current Lakebase. Use `databricks postgres create-synced-table` CLI instead. DAB support via `postgres_synced_tables` is not yet available. |
 
 ## SDK and Version Requirements
 

@@ -3,7 +3,7 @@ name: databricks-aibi-dashboards
 description: "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries via CLI BEFORE deploying. Follow guidelines strictly."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 parent: databricks-core
 ---
 
@@ -190,6 +190,15 @@ databricks lakeview trash DASHBOARD_ID
 databricks workspace-entity-tag-assignments create-tag-assignment \
   dashboards DASHBOARD_ID aidevkit_project --tag-value ai-dev-kit
 ```
+
+---
+
+## UPDATING AN EXISTING DASHBOARD
+
+To change a dashboard that already exists, build the updated JSON with the [creation workflow](#new-dashboard-creation-workflow) above, then deploy it with `update` + `publish` on the **same** `DASHBOARD_ID` — never re-run `create`/import.
+
+- **Don't `create`/import to update.** That mints a new dashboard id + URL and breaks any link you've already shared; `create` is for brand-new dashboards only.
+- **`update` changes only the draft.** The `/published` link viewers see stays on the last snapshot until you `publish` again — so always `publish` after `update`.
 
 ---
 
