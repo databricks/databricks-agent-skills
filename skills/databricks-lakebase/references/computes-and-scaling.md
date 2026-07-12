@@ -2,7 +2,7 @@
 
 ## Compute Sizing
 
-Each Compute Unit (CU) allocates ~2 GB of RAM. Lakebase Provisioned used ~16 GB per CU.
+Each Compute Unit (CU) allocates ~2 GB of RAM.
 
 | Category | Range | Notes |
 |----------|-------|-------|

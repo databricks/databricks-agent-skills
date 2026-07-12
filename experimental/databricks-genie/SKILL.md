@@ -50,6 +50,9 @@ databricks genie list-spaces
 
 # Create a Genie Space from a local file
 # IMPORTANT: sample_questions require a 32-char hex "id" and "question" must be an array
+# IMPORTANT: parent_path must ALREADY EXIST — create it first, or create fails with
+#   "Tree node with path ... does not exist":
+databricks workspace mkdirs /Workspace/Users/you@company.com/genie_spaces
 databricks genie create-space --json "{
   \"warehouse_id\": \"WAREHOUSE_ID\",
   \"title\": \"Sales Analytics\",
@@ -121,7 +124,8 @@ The `serialized_space` field is a JSON string containing the full space configur
 
 - **ID format:** 32-character lowercase hex, unique across **all three lists combined** (a duplicate between e.g. `text_instructions` and `example_question_sqls` is rejected).
 - **Text fields are arrays:** `question`, `sql`, and `content` are arrays of strings, not plain strings.
-- **Sort order matters:** `data_sources.tables` must be sorted by `identifier`; `example_question_sqls` and `text_instructions` must be sorted by `id`. (`sample_questions` is silently re-sorted server-side.)
+- **Sort order matters:** `data_sources.tables` must be sorted by `identifier`, and each table's `column_configs` must be sorted by `column_name`; `example_question_sqls` and `text_instructions` must be sorted by `id`. (`sample_questions` is silently re-sorted server-side.)
+- **`text_instructions` accepts at most one item** — the API rejects more than one (`text_instructions must contain at most one item`). Merge all guidance (persona, table guide, investigation flow, answer style) into a single entry.
 - **Simple ID scheme that satisfies both rules:** prefix per list + monotonic counter, total 32 hex chars — `1…0001`, `1…0002` for `sample_questions`; `2…0001`, `2…0002` for `example_question_sqls`; `3…0001` for `text_instructions`. Authoring order = sort order, no collisions.
 
 ### Text Instructions
