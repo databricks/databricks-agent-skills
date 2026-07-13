@@ -1,10 +1,10 @@
 # Knowledge Assistants - Details
 
-For commands, see [SKILL.md](SKILL.md).
+For commands, see [SKILL.md](../SKILL.md).
 
 ## Source Types
 
-Both shapes go inside the `--json` body alongside `display_name` and `description` — see SKILL.md for the full invocation.
+Both shapes go inside the `--json` body alongside `display_name` and `description` — see [SKILL.md](../SKILL.md) for the full invocation.
 
 ### Files (Volume)
 
@@ -71,4 +71,4 @@ When testing a KA, check if the volume or project contains a `pdf_eval_questions
 }
 ```
 
-Use these questions to validate retrieval accuracy. See [databricks-unstructured-pdf-generation](../databricks-unstructured-pdf-generation/SKILL.md) for generating test PDFs with eval questions.
+Use these questions to validate retrieval accuracy. See [databricks-unstructured-pdf-generation](../../databricks-unstructured-pdf-generation/SKILL.md) for generating test PDFs with eval questions.

@@ -1,6 +1,6 @@
 # Supervisor Agents - Details
 
-For commands, see [SKILL.md](SKILL.md). All operations use the native `databricks supervisor-agents` CLI (Beta, requires CLI ≥ 0.299.2).
+For commands, see [SKILL.md](../SKILL.md). All operations use the native `databricks supervisor-agents` CLI (Beta, requires CLI ≥ v1.0.0).
 
 ## Unity Catalog Functions
 
@@ -24,6 +24,9 @@ databricks supervisor-agents create-tool supervisor-agents/<id> enricher --json 
 Connect to external systems (ERP, CRM) via UC HTTP Connection implementing MCP protocol.
 
 **1. Create UC HTTP Connection:**
+
+> **Security:** Do not paste the raw `client_secret` into SQL. Store it in a [Databricks secret scope](https://docs.databricks.com/security/secrets) and reference it with the `secret('scope','key')` function so the credential never appears in the statement, logs, or `SHOW CREATE CONNECTION` output.
+
 ```sql
 CREATE CONNECTION my_mcp TYPE HTTP
 OPTIONS (
@@ -31,7 +34,7 @@ OPTIONS (
   port '443',
   base_path '/api/mcp',
   client_id '<sp_id>',
-  client_secret '<sp_secret>',
+  client_secret secret('<secret_scope>', '<secret_key>'),  -- avoid inline literals
   oauth_scope 'all-apis',
   token_endpoint 'https://<workspace>.azuredatabricks.net/oidc/v1/token',
   is_mcp_connection 'true'
