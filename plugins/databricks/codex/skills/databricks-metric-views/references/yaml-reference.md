@@ -122,6 +122,7 @@ measures:
 **Multiple windows** can be composed on a single measure (e.g., for year-to-date):
 
 ```yaml
+measures:
   - name: ytd_sales
     expr: SUM(total_price)
     window:
@@ -136,6 +137,7 @@ measures:
 **Derived measures** can reference window measures using `MEASURE()`:
 
 ```yaml
+measures:
   - name: day_over_day_growth
     expr: (MEASURE(current_day_sales) - MEASURE(previous_day_sales)) / MEASURE(previous_day_sales) * 100
 ```

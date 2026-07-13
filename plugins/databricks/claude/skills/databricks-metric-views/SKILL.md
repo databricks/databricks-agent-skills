@@ -37,6 +37,8 @@ Before authoring a metric view, inspect the source tables. Use `discover-schema`
 
 For dimensions and measures, probe distribution beyond sampling — cardinality of candidate dimensions, min/max/percentiles for measures, top categorical values. Write aggregate SQL through `databricks experimental aitools tools query --warehouse <WH> "..."`. Both commands auto-pick the default warehouse; set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>` to override.
 
+> The `databricks experimental aitools tools` subcommands are experimental — subject to change between CLI versions. Confirm availability with `databricks experimental aitools tools --help` before relying on them; see [CLI Execution](#cli-execution) for the stable Statement Execution API fallback.
+
 ### Create a Metric View
 
 ```sql
@@ -164,35 +166,36 @@ DROP VIEW IF EXISTS catalog.schema.orders_metrics;
 
 ### CLI Execution
 
+> **The `databricks experimental aitools tools` commands are experimental and their surface can change between CLI versions.** Before relying on a subcommand (`query`, `statement submit`/`get`, `discover-schema`, `get-default-warehouse`), confirm it exists with `databricks experimental aitools tools --help`, and fall back to the stable [Statement Execution API](#statement-execution-api-stable-alternative) below if it isn't available. There is no stable `databricks sql execute` / `execute-statement` verb.
+
+For **short** statements (`SHOW`/`DESCRIBE`/`SELECT`), run the SQL inline:
+
 ```bash
-# Execute SQL via CLI
-databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
-CREATE OR REPLACE VIEW catalog.schema.orders_metrics
-WITH METRICS
-LANGUAGE YAML
-AS \$\$
-  version: 1.1
-  source: catalog.schema.orders
-  dimensions:
-    - name: Order Month
-      expr: DATE_TRUNC('MONTH', order_date)
-  measures:
-    - name: Total Revenue
-      expr: SUM(total_price)
-\$\$
-"
+databricks experimental aitools tools query --warehouse WAREHOUSE_ID "SHOW TABLES IN catalog.schema"
 ```
 
-> **Avoiding heredoc escaping**: the `\$\$` token-quoting above is fragile (it interacts with bash variable expansion, sed, and JSON encoding). For long DDL, prefer the Statement Execution API which takes the SQL as a JSON string:
->
-> ```bash
-> databricks api post /api/2.0/sql/statements --json '{
->   "warehouse_id": "WAREHOUSE_ID",
->   "statement": "CREATE OR REPLACE VIEW catalog.schema.orders_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.orders\ndimensions:\n  - name: Order Month\n    expr: DATE_TRUNC(MONTH, order_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(total_price)\n$$"
-> }'
-> ```
->
-> JSON-escaped strings are easier to template programmatically than shell heredocs.
+For **long DDL** (`CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$...$$`), write the SQL to a `.sql` file and submit the file — this avoids the `$$`-heredoc escaping traps (bash variable expansion, `sed`, JSON encoding) entirely:
+
+```bash
+# orders_metrics.sql holds the full CREATE OR REPLACE VIEW ... $$ ... $$ statement
+databricks experimental aitools tools statement submit --file orders_metrics.sql --warehouse WAREHOUSE_ID
+databricks experimental aitools tools statement get <statement_id>   # blocks until terminal
+```
+
+This is the same file-based path the [Metric View Advisor](references/metric-view-advisor.md) uses for deployment — keep to one method so the two don't drift.
+
+#### Statement Execution API (stable alternative)
+
+If the experimental `aitools` commands aren't available, use the stable Statement Execution REST API, which takes the SQL as a JSON string:
+
+```bash
+databricks api post /api/2.0/sql/statements/execute --json '{
+  "warehouse_id": "WAREHOUSE_ID",
+  "statement": "CREATE OR REPLACE VIEW catalog.schema.orders_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.orders\ndimensions:\n  - name: Order Month\n    expr: DATE_TRUNC(MONTH, order_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(total_price)\n$$"
+}'
+```
+
+For long statements, template the JSON from a `.sql` file rather than hand-escaping newlines.
 
 ### Convert an Existing View to a Metric View
 

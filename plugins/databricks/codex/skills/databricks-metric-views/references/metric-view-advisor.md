@@ -71,7 +71,7 @@ Establish these before generating definitions. Read them from the user's request
 
 Auth, profiles, warehouse discovery, and the basics of running SQL via the CLI are covered by the **`databricks-core`** skill — use it for `databricks auth login` / `auth describe`, listing profiles, and picking a warehouse. Below are the commands specific to building metric views from assets.
 
-> **No `databricks sql execute` / `execute-statement`** — those commands don't exist. Use the `aitools` query/statement commands below.
+> **No `databricks sql execute` / `execute-statement`** — those commands don't exist. Use the `aitools` query/statement commands below. These `databricks experimental aitools tools` commands are **experimental** and their surface can shift between CLI versions — confirm a subcommand with `databricks experimental aitools tools --help` before relying on it, and fall back to the stable Statement Execution API (`databricks api post /api/2.0/sql/statements/execute --json '{...}'`) if it's unavailable. The parent skill's [CLI Execution](../SKILL.md) section documents that same fallback; both files use the file-based `statement submit --file` path for long DDL so they stay consistent.
 
 **Running SQL:**
 - **Short statements** (`SHOW`/`DESCRIBE`/`SELECT`): `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (auto-picks the default warehouse).
