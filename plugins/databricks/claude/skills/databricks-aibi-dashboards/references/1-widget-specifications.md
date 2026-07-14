@@ -422,7 +422,7 @@ Mark an event on a time-series chart — release, holiday, incident — with a v
 }
 ```
 
-Multiple annotations are allowed — add more objects to the array. For non-datetime axes, use `"dataType": "STRING"` or `"NUMBER"` and set `dataValue` accordingly.
+Multiple annotations are allowed. For non-datetime axes: `"dataType": "STRING"` for categorical, `"INTEGER"` / `"DECIMAL"` for numeric (NOT `"NUMBER"` — silently dropped). `dataValue` is always a **string**, even for numeric types: `{"dataValue": "48", "dataType": "INTEGER"}`.
 
 ---
 
@@ -552,3 +552,13 @@ Allowed in `query.fields` (no CAST or complex SQL):
 ```
 
 For conditional logic, compute in dataset SQL instead.
+
+---
+
+## Widget Query Filters
+
+Prefer a `WHERE` in the dataset SQL. To filter a shared dataset per-widget, add `filters` to the `query` — each entry must be `{"expression": "<SQL boolean>"}` (the `{operand, operator, column}` shape fails: `query.filters[0].expression should not be empty`):
+
+```json
+"query": {"datasetName": "ds_fleet", "fields": [...], "filters": [{"expression": "`maintenance_status` = 'pending'"}]}
+```
