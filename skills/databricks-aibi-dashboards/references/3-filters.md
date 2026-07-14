@@ -34,6 +34,8 @@
 > **CRITICAL**: Do NOT use `associative_filter_predicate_group` - it causes SQL errors!
 > Use a simple field expression instead.
 
+> **Default: field-based binding** (the shape below) — the dataset's SQL just `SELECT`s the raw column, the filter widget points at it via `fieldName`, and the dashboard engine auto-injects the `WHERE` at runtime. Do **not** add a parameter or write `array_contains(:venue_filter, venue)` in the SQL — that's the MULTI-parameter pattern further down, only needed when the dataset pre-aggregates (`GROUP BY`, CTE, table function). If your filter shows "Select fields or parameters to filter" or returns no rows, you've usually over-engineered it with a parameter when a field-based filter would do.
+
 ```json
 {
   "widget": {
@@ -58,6 +60,8 @@
           "queryName": "ds_data_region"  // Must match queries[].name above!
         }]
       },
+      // Optional: pre-select a default value (users can still change it)
+      "selection": {"defaultSelection": {"values": {"dataType": "STRING", "values": [{"value": "EMEA"}]}}},
       "frame": {"showTitle": true, "title": "Region"}
     }
   },
@@ -238,7 +242,7 @@ Each `queryName` in `encodings.fields` binds the filter to that specific dataset
 
 ## Multi-Select Parameters (`MULTI`)
 
-When the dataset **pre-aggregates** (`GROUP BY` in the SQL), uses a CTE, or wraps a table function (e.g. `AI_FORECAST`), a field-based filter can't auto-inject a `WHERE` — you must filter explicitly with a parameter. Same goes when you want the filter expressed in SQL for traceability.
+**Use this only when a field-based filter (top of file) can't work** — i.e., the dataset **pre-aggregates** (`GROUP BY`), uses a CTE, or wraps a table function (e.g. `AI_FORECAST`) so the engine can't auto-inject a `WHERE`. For a plain `SELECT col FROM t` dataset, stick to the field-based form — adding a parameter here is the most common cause of "Select fields or parameters to filter" / empty filter output.
 
 A `MULTI` parameter binds as a **SQL `ARRAY`**, not an `IN`-list. Two rules to filter correctly:
 
