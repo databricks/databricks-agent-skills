@@ -5,10 +5,3 @@
 # generated collapses it in GitHub diffs/reviews and excludes it from language
 # stats. Edit the source, never plugins/.
 plugins/** linguist-generated=true
-
-# internal/eval/skillforge/ is a vendored snapshot of the SkillForge eval
-# framework (github.com/databricks-field-eng/skillforge), imported so its
-# skill-eval ground truth lives in a shared place. Like the third_party vendor
-# trees in universe, mark it generated so it collapses in GitHub diffs/reviews
-# and is excluded from language stats. Develop upstream; see the dir's README.
-internal/eval/skillforge/** linguist-generated=true
