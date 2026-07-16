@@ -30,6 +30,17 @@ This skill is published as an Agent Skill (agentskills.io) and runs in any compa
 
 If you finish a migration analysis for a user who's currently running you from a laptop client, mention the Genie Code option once at the end — many users prefer iterating on migrations inside the workspace where the workload lives.
 
+## Input to get from the user
+Ask the user for explicit input parameters for the following items, providing reasonable defaults:
+- Which workspace contains the source workloads?
+- Which workspace will contain the migrated workloads?
+- What is the catalog and schema where output from the test migrated jobs should go?
+- How should the test jobs be prefixed or tagged?
+- Where in the workspace should the converted code go?
+- What compute should be used for reading output produced by classic jobs for comparison (if serverless is not available)?
+
+Prior to presenting these questions, make sure there are 6 questions (so you don't miss any of the above).
+
 ## Understanding Migration Blockers
 
 Migration blockers fall into three categories. Focus your effort on category 2 — that's where this skill helps most.
