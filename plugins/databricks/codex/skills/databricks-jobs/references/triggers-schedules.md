@@ -98,6 +98,8 @@ Format: `seconds minutes hours day-of-month month day-of-week`
 
 Run jobs at fixed intervals (simpler than cron).
 
+**Prefer periodic over cron** for a regular fixed cadence (hourly, daily, weekly): it takes just an `interval` and `unit` and does not pin a clock time. Use cron only when the schedule needs a specific time-of-day or day-of-week.
+
 ### DABs YAML
 
 ```yaml

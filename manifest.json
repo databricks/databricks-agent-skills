@@ -149,15 +149,15 @@
       "version": "0.0.1"
     },
     "databricks-data-discovery": {
-      "description": "Discover, explore, and query Databricks data via Genie \u2014 the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or profile a table, answer a natural-language question about the data, or write a SQL query.",
+      "description": "Discover, explore, and query Databricks data via Genie \u2014 the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg"
       ],
-      "repo_dir": "experimental",
-      "version": "0.0.1"
+      "repo_dir": "skills",
+      "version": "0.1.0"
     },
     "databricks-dbsql": {
       "description": "Databricks SQL (DBSQL) advanced features and SQL warehouse capabilities. This skill MUST be invoked when the user mentions: \"DBSQL\", \"Databricks SQL\", \"SQL warehouse\", \"SQL scripting\", \"stored proc...",

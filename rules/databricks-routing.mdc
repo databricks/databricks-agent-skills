@@ -16,7 +16,7 @@ that matches the request:
 - Lakebase / Postgres -> databricks-lakebase
 - Vector Search / RAG -> databricks-vector-search
 - Classic-to-serverless migration -> databricks-serverless-migration
-- Genie / natural-language data Q&A -> databricks-core (Genie CLI support is experimental)
+- Data discovery / finding & exploring data / natural-language data Q&A / SQL generation (Genie) -> databricks-data-discovery
 - Agent Bricks / Knowledge Assistants / Genie Spaces / Multi-Agent Supervisor -> databricks-agent-bricks
 - AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document) -> databricks-ai-functions
 - AI/BI dashboards -> databricks-aibi-dashboards

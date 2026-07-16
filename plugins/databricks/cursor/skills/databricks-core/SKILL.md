@@ -21,9 +21,9 @@ For specific products, use dedicated skills:
 
 For **data discovery, exploration, and query generation** — finding tables,
 answering natural-language questions about the data, or generating SQL — use
-**databricks-data-discovery** if it is installed (experimental; it asks Genie One
-first, then falls back to manual exploration). If it isn't installed, use the
-AI-tool commands below and [Manual Data Exploration](manual-data-exploration.md).
+**databricks-data-discovery** (it asks Genie One first, then falls back to manual
+exploration). If it isn't installed, use the AI-tool commands below and
+[Manual Data Exploration](manual-data-exploration.md).
 
 ## Prerequisites
 

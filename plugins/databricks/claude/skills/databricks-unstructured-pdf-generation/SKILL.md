@@ -16,7 +16,7 @@ Workflow for producing **synthetic PDF documents + paired test questions** as a 
 1. Write HTML files to `./raw_data/html/` (write multiple files in parallel for speed) — domain-shaped to match the documents your retrieval pipeline will see in production.
 2. Convert HTML → PDF using `<SKILL_ROOT>/scripts/pdf_generator.py` (parallel conversion, wraps `plutoprint`).
 3. Upload PDFs to a Unity Catalog volume via `databricks fs cp` — same volume shape your production pipeline will read from.
-4. Generate `doc_questions.json` pairing each document with retrieval-eval questions; this becomes the gold dataset for `mlflow.genai.evaluate()` or comparable retrieval-quality scorers.
+4. Generate `./raw_data/pdf/pdf_eval_questions.json` pairing each document with retrieval-eval questions; this becomes the gold dataset for `mlflow.genai.evaluate()` or comparable retrieval-quality scorers.
 
 > If you only need ad-hoc PDFs (no Databricks workflow), any HTML → PDF tool (`weasyprint`, `wkhtmltopdf`, `playwright pdf`, `plutoprint`) works directly — this skill exists for the synthetic-dataset-on-UC end-to-end shape, not as a general PDF generator.
 
@@ -47,15 +47,15 @@ Skips files where PDF exists and is newer than HTML. Use `--force` to reconvert 
 
 ## Step 3: Upload to Volume
 
-`databricks fs` requires the `dbfs:` scheme prefix even for UC Volume paths. `-r` copies the *contents* of the source directory into the target (the source directory name is not preserved), so files land directly under `raw_data/`.
+`databricks fs` requires the `dbfs:` scheme prefix even for UC Volume paths. `-r` copies the *contents* of the source directory into the target (the source directory name is not preserved), so name the target `raw_data/pdf` explicitly to keep the PDFs in their own folder on the volume. They land under `raw_data/pdf/` — i.e. `dbfs:/Volumes/my_catalog/my_schema/raw_data/pdf/report.pdf` — so a Knowledge Assistant or ingest pipeline can point at that single folder.
 
 ```bash
-databricks fs cp -r --overwrite ./raw_data/pdf dbfs:/Volumes/my_catalog/my_schema/raw_data
+databricks fs cp -r --overwrite ./raw_data/pdf dbfs:/Volumes/my_catalog/my_schema/raw_data/pdf
 ```
 
 ## Step 4: Generate Test Questions
 
-Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Assistant evaluation or MAS:
+Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Assistant (KA) or Multi-Agent Supervisor (MAS) evaluation. It's fine for this file to be uploaded to the volume alongside the PDFs — downstream agents can use it:
 
 ```json
 {
@@ -114,6 +114,16 @@ Subfolder structure is preserved:
 └── legal/                          └── legal/
     └── terms.html          →           └── terms.pdf
 ```
+
+## Bundled Script
+
+This skill ships one helper script:
+
+| File | Description |
+|------|-------------|
+| [scripts/pdf_generator.py](scripts/pdf_generator.py) | HTML → PDF converter (wraps `plutoprint`); parallel folder conversion with timestamp-skip. Referenced by Step 2 and the CLI Reference. |
+
+The script ships at `<SKILL_ROOT>/scripts/pdf_generator.py`. If it is absent, recreate it from the [CLI Reference](#cli-reference) above (a `convert` subcommand taking `--input`/`--output`/`--force`/`--workers`, wrapping `plutoprint` for HTML → PDF).
 
 ## Troubleshooting
 
