@@ -59,7 +59,8 @@ Promoted skills include `databricks-ai-functions`, `databricks-agent-bricks`,
 `databricks-mlflow-evaluation`, `databricks-python-sdk`,
 `databricks-spark-structured-streaming`, `databricks-synthetic-data-gen`,
 `databricks-unity-catalog`, `databricks-unstructured-pdf-generation`, and
-`databricks-zerobus-ingest`.
+`databricks-zerobus-ingest`. `databricks-data-discovery` (Genie One data
+discovery / NL data Q&A / SQL generation) was also promoted to stable.
 
 Earlier experimental copies of `databricks-bundles`, `databricks-lakebase-autoscale`,
 and `databricks-config` were merged into the stable
