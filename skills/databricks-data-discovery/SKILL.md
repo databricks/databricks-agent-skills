@@ -1,9 +1,9 @@
 ---
 name: databricks-data-discovery
-description: "Discover, explore, and query Databricks data via Genie — the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), explore or profile a table, answer a natural-language question about the data, or write a SQL query."
+description: "Discover, explore, and query Databricks data via Genie — the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), answer a natural-language question about the data, or write a SQL query."
 compatibility: Requires databricks CLI with the experimental genie command (databricks experimental genie ask)
 metadata:
-  version: "0.0.1"
+  version: "0.1.0"
 parent: databricks-core
 ---
 
@@ -109,11 +109,15 @@ set up.
 
 ## If Genie One isn't available — manual fallback
 
+Only fall back if Genie One is genuinely unavailable — first **verify** with
+`databricks experimental genie ask --help`; don't assume the command is missing.
 When Genie One isn't enabled, the CLI is too old to have `experimental genie ask`,
 or Genie can't cover the question, do the discovery yourself with the parent skill's
-commands — see **[Manual Data Exploration](../../skills/databricks-core/manual-data-exploration.md)**
+commands — see **[Manual Data Exploration](../databricks-core/manual-data-exploration.md)**
 (keyword search via `information_schema`, `discover-schema`, and `tools query`).
 Running known SQL or profiling a known table that way is perfectly fine on its own.
+Do **not** default to `databricks tables list` or raw UC REST for data-location
+questions — invoke this skill and ask Genie first.
 
 ## Relationship to the Genie One MCP
 
@@ -126,8 +130,8 @@ the same Genie backend.
 
 ## Related Skills
 
-- **[databricks-genie](../databricks-genie/SKILL.md)** — build and manage **Genie
-  Agents**: curated agents that let you or a group ask questions of specific data
-  (create, configure, import/export).
+- **databricks-genie** (experimental) — build and manage **Genie Agents**: curated
+  agents that let you or a group ask questions of specific data (create, configure,
+  import/export).
 - **databricks-core** (parent) — CLI auth, profiles, and the manual data exploration
   reference used as the fallback.

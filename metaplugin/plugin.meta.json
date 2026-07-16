@@ -84,6 +84,7 @@
   "//skills": "Per-skill plugin metadata. Insertion order defines the keyword order in plugin.json: keywords = keywords_lead + [each skill's keyword] + keywords_tail. Repo-owned (does NOT live in SKILL.md frontmatter, which syncs from the internal source). Prompt-routing config lives in the separate routing block below.",
   "skills": {
     "databricks-core": { "keyword": "cli" },
+    "databricks-data-discovery": { "keyword": "data-discovery" },
     "databricks-apps": { "keyword": "apps" },
     "databricks-app-design": { "keyword": "app-design" },
     "databricks-lakebase": { "keyword": "lakebase" },
@@ -144,7 +145,12 @@
       "\\bserverless\\s+(compute|warehouse|migration)\\b",
       "\\bmedallion\\s+(architecture|tables?)\\b",
       "\\bsql\\s+warehouse\\b",
-      "\\bauto\\s+loader\\b"
+      "\\bauto\\s+loader\\b",
+      "\\bwhat\\s+tables?\\b",
+      "\\bwhich\\s+(catalog|schema)\\b",
+      "\\b(list|show|find)\\s+(the\\s+)?tables?\\b",
+      "\\bwhere\\s+does\\s+.{1,40}\\s+(data|table|live)\\b",
+      "\\binformation_schema\\b"
     ],
     "suppress": [
       "\\bbigquery\\b",
@@ -170,7 +176,7 @@
       { "label": "Lakebase / Postgres", "skill": "databricks-lakebase" },
       { "label": "Vector Search / RAG", "skill": "databricks-vector-search" },
       { "label": "Classic-to-serverless migration", "skill": "databricks-serverless-migration" },
-      { "label": "Genie / natural-language data Q&A", "skill": "databricks-core", "note": " (Genie CLI support is experimental)" },
+      { "label": "Data discovery / finding & exploring data / natural-language data Q&A / SQL generation (Genie)", "skill": "databricks-data-discovery" },
       { "label": "Agent Bricks / Knowledge Assistants / Genie Spaces / Multi-Agent Supervisor", "skill": "databricks-agent-bricks" },
       { "label": "AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document)", "skill": "databricks-ai-functions" },
       { "label": "AI/BI dashboards", "skill": "databricks-aibi-dashboards" },
