@@ -1,5 +1,5 @@
 {
   "//": "Release version state, owned by .github/workflows/release.yml. current_version is the latest published release; next_version is what the next manual release will tag (the workflow then sets current_version=next_version and bumps next_version by a patch). To cut a minor/major, set next_version here first. This is the version source for the generated plugin.json. It is committed here (public repo) and excluded from the private mirror so the release workflow owns versioning.",
-  "current_version": "0.2.9",
-  "next_version": "0.2.10"
+  "current_version": "0.2.10",
+  "next_version": "0.2.11"
 }
