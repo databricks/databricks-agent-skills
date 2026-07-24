@@ -39,6 +39,7 @@ parent: databricks-core
 | remote_query | `SELECT * FROM remote_query(...)` | Pro/Serverless | [references/ai-functions.md](references/ai-functions.md) |
 | read_files | `SELECT * FROM read_files(...)` | All | [references/ai-functions.md](references/ai-functions.md) |
 | Data Modeling | Star schema, Liquid Clustering | All | [references/best-practices.md](references/best-practices.md) |
+| SCD / Dimensional Patterns | SCD Type 1/2/6, MERGE upserts, surrogate keys, Deep Clone | All | [references/dimensional-modeling.md](references/dimensional-modeling.md) |
 
 ---
 
@@ -289,6 +290,7 @@ Load these for detailed syntax, full parameter lists, and advanced patterns:
 | [references/geospatial-collations.md](references/geospatial-collations.md) | 39 H3 functions, 80+ ST functions, Collation types and hierarchy | User needs spatial analysis, H3 indexing, case/accent handling |
 | [references/ai-functions.md](references/ai-functions.md) | 13 AI functions, http_request, remote_query, read_files (all options) | User needs AI enrichment, API calls, federation, file ingestion |
 | [references/best-practices.md](references/best-practices.md) | Data modeling, performance, Liquid Clustering, anti-patterns | User needs architecture guidance, optimization, or modeling advice |
+| [references/dimensional-modeling.md](references/dimensional-modeling.md) | SCD Type 1/2/6 MERGE patterns, surrogate keys (IDENTITY + hash), Deep Clone promotion | User needs SCD implementation, upsert patterns, or environment promotion for dimension tables |
 
 ---
 
