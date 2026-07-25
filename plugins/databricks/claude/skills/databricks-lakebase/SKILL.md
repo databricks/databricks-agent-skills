@@ -162,10 +162,13 @@ Branches require an expiration policy: `"no_expiry": true` for permanent, or `"t
 
 **Point-in-time branching:** Create from a past state (within restore window) for recovery. Run `databricks postgres create-branch -h` for time specification fields.
 
-**Reset:** Replaces branch data with latest from parent. Local changes are lost. Root branches and branches with children cannot be reset.
+**Reset:** Replaces branch data with the latest from parent -- a full overwrite, not a merge; local changes on the branch are lost. Root branches, branches with children, and protected branches cannot be reset.
+
+**No CLI or SDK support -- reset is UI-only.** Verified absent from `databricks postgres -h` (CLI v1.9.0) and from `WorkspaceClient().postgres` (databricks-sdk 0.120.0). Reset from the Branches page: kebab menu → **Reset from parent**.
 
 ```bash
-databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
+# ❌ WRONG: this command DOESN'T EXIST
+# databricks postgres reset-branch ...   ← no CLI equivalent; use the UI
 ```
 
 **Delete:** Protected branches must be unprotected first (`update-branch` to set `spec.is_protected` to `false`). Cannot delete branches with children. **Never delete the `production` branch.**
