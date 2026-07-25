@@ -140,7 +140,7 @@ originally imported from
 - They are **not installed by default** by `databricks aitools install`.
   Pass `--experimental` to install all of them, or install a specific one
   by name (with the `--experimental` flag — e.g. `databricks aitools install
-  databricks-genie --experimental`).
+  spark-python-data-source --experimental`).
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 

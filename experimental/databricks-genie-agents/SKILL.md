@@ -1,24 +1,26 @@
 ---
-name: databricks-genie
-description: "Create and query Databricks Genie Spaces for natural language SQL exploration. Use when building Genie Spaces, exporting and importing Genie Spaces, migrating Genie Spaces between workspaces or environments, or asking questions via the Genie Conversation API."
+name: databricks-genie-agents
+description: "Create, manage, and query Databricks Genie Agents — curated, per-data natural-language agents (formerly Genie Spaces): build, export/import, migrate across workspaces, and ask questions of a *specific* Agent via the Conversation API. For general data questions or finding data across your workspace, use databricks-data-discovery (Genie One) instead."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.0.1"
 ---
 
-# Databricks Genie
+# Databricks Genie Agents
 
-Create, manage, and query Genie Spaces - natural language interfaces for SQL-based data exploration.
+Create, manage, and query Genie Agents (formerly Genie Spaces) - natural language interfaces for SQL-based data exploration.
 
 ## Overview
 
-Genie Spaces allow users to ask natural language questions about structured data in Unity Catalog. The system translates questions into SQL queries, executes them on a SQL warehouse, and presents results conversationally.
+Genie Agents allow users to ask natural language questions about structured data in Unity Catalog. The system translates questions into SQL queries, executes them on a SQL warehouse, and presents results conversationally.
 
-## Creating a Genie Space
+A Genie Agent is a **curated agent scoped to specific data** — its tables, sample questions, and instructions are authored for a particular business area. This is distinct from **Genie One** / the general "ask Genie" data-discovery path (see the `databricks-data-discovery` skill), which answers questions across your data without a curated, per-scope agent.
+
+## Creating a Genie Agent
 
 ### Step 1: Understand the Data
 
-Before creating a Genie Space, explore the available tables to:
+Before creating a Genie Agent, explore the available tables to:
 - **Select relevant tables** — typically gold layer (aggregated KPIs) and sometimes silver layer (cleaned facts) or metric views
 - **Understand the story** — what business questions can this data answer? What insights can users discover?
 - **Design meaningful sample questions** — questions should reflect real use cases and lead to actionable insights in the data
@@ -40,15 +42,15 @@ for s in "${SIDS[@]}"; do databricks experimental aitools tools statement get "$
 # Use `status` for non-blocking peek; `cancel` to terminate.
 ```
 
-### Step 2: Create the Space
+### Step 2: Create the Genie Agent
 
-Define your space in a local JSON file (e.g., `genie_space.json`) for version control and easy iteration. See "serialized_space Format" below for the full structure.
+Define your Genie Agent in a local JSON file (e.g., `genie_agent.json`) for version control and easy iteration. See "serialized_space Format" below for the full structure.
 
 ```bash
-# List all Genie Spaces
+# List all Genie Agents
 databricks genie list-spaces
 
-# Create a Genie Space from a local file
+# Create a Genie Agent from a local file
 # IMPORTANT: sample_questions require a 32-char hex "id" and "question" must be an array
 # IMPORTANT: parent_path must ALREADY EXIST — create it first, or create fails with
 #   "Tree node with path ... does not exist":
@@ -58,54 +60,54 @@ databricks genie create-space --json "{
   \"title\": \"Sales Analytics\",
   \"description\": \"Explore sales data\",
   \"parent_path\": \"/Workspace/Users/you@company.com/genie_spaces\",
-  \"serialized_space\": $(cat genie_space.json | jq -c '.' | jq -Rs '.')
+  \"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')
 }"
 
-# Get space details (with full config)
+# Get agent details (with full config)
 databricks genie get-space SPACE_ID --include-serialized-space
 
-# Tag the Genie Space for resource tracking — use any tag the user indicated for their
+# Tag the Genie Agent for resource tracking — use any tag the user indicated for their
 # project; otherwise default to `ai_generated_source=databricks-agent-skills`.
 # (Beta CLI surface — ignore if the command fails.)
 databricks workspace-entity-tag-assignments create-tag-assignment \
   geniespaces SPACE_ID ai_generated_source --tag-value databricks-agent-skills || true
 
-# Delete a Genie Space
+# Delete a Genie Agent
 databricks genie trash-space SPACE_ID
 ```
 
 ### Step 3: Test and Iterate
 
-Use the Conversation API (section below) to ask questions and verify answers. If answers are inaccurate or incomplete, improve the space — see "Improving a Genie Space" below.
+Use the Conversation API (section below) to ask questions and verify answers. If answers are inaccurate or incomplete, improve the agent — see "Improving a Genie Agent" below.
 
 ### Export & Import
 
-**Convention:** `genie_space.json` always holds the **parsed** space object (not a JSON-string-encoded blob), so it's readable and editable. At each use site we stringify it with `jq -c '.' | jq -Rs '.'` — same pattern as Step 2 Create and "Improving a Genie Space" below. `jq -r '.serialized_space | fromjson'` on export strips the outer quoting so the file is already a parsed object.
+**Convention:** `genie_agent.json` always holds the **parsed** agent object (not a JSON-string-encoded blob), so it's readable and editable. At each use site we stringify it with `jq -c '.' | jq -Rs '.'` — same pattern as Step 2 Create and "Improving a Genie Agent" below. `jq -r '.serialized_space | fromjson'` on export strips the outer quoting so the file is already a parsed object.
 
 ```bash
 # Export: extract serialized_space AND unwrap it to a parsed object on disk
 databricks genie get-space SPACE_ID --include-serialized-space -o json \
-  | jq '.serialized_space | fromjson' > genie_space.json
+  | jq '.serialized_space | fromjson' > genie_agent.json
 
 # Import: same stringify pattern as Step 2 (Create)
 databricks genie create-space --json "{
   \"warehouse_id\": \"WAREHOUSE_ID\",
   \"title\": \"Sales Analytics\",
-  \"description\": \"Migrated space\",
+  \"description\": \"Migrated agent\",
   \"parent_path\": \"/Workspace/Users/you@company.com/genie_spaces\",
-  \"serialized_space\": $(cat genie_space.json | jq -c '.' | jq -Rs '.')
+  \"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')
 }"
 ```
 
-### Improving a Genie Space
+### Improving a Genie Agent
 
-When Genie answers are inaccurate or incomplete, improve the space by updating questions, SQL examples, or instructions:
+When Genie answers are inaccurate or incomplete, improve the agent by updating questions, SQL examples, or instructions:
 
 ```bash
-# 1. Edit your local genie_space.json (add questions, fix SQL examples, improve instructions)
+# 1. Edit your local genie_agent.json (add questions, fix SQL examples, improve instructions)
 
-# 2. Push updates back to the space
-databricks genie update-space SPACE_ID --json "{\"serialized_space\": $(cat genie_space.json | jq -c '.' | jq -Rs '.')}"
+# 2. Push updates back to the agent
+databricks genie update-space SPACE_ID --json "{\"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')}"
 ```
 
 ## serialized_space Format
@@ -130,7 +132,7 @@ The `serialized_space` field is a JSON string containing the full space configur
 
 ### Text Instructions
 
-`text_instructions` make the Genie Space more reliable by explaining:
+`text_instructions` make the Genie Agent more reliable by explaining:
 - **Where to find information** — which tables contain which metrics
 - **How to answer specific questions** — when a user asks X, use table Y with filter Z
 - **Business context** — definitions, thresholds, and domain knowledge
@@ -180,17 +182,23 @@ Top-level keys are `version`, `config`, `data_sources`, `instructions`. Every it
 
 ## Cross-Workspace Migration
 
-When migrating between workspaces, catalog names often differ. Export the space, remap with `sed`, then import:
+When migrating between workspaces, catalog names often differ. Export the agent, remap with `sed`, then import:
 
 ```bash
-python3 -c "import sys; p=sys.argv[1]; open(p,'w').write(open(p).read().replace('source_catalog','target_catalog'))" genie_space.json
+python3 -c "import sys; p=sys.argv[1]; open(p,'w').write(open(p).read().replace('source_catalog','target_catalog'))" genie_agent.json
 ```
 
 Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces.
 
 ## Conversation API
 
-Ask questions via three CLI primitives: `start-conversation`, `create-message` (follow-ups), and `get-message` (state + SQL + text). `--no-wait` on `start-conversation` / `create-message` returns immediately with `{conversation_id, message_id}`; poll `get-message` until `.status` is `COMPLETED`, `FAILED`, or `CANCELLED`. Intermediate states you'll see: `SUBMITTED`, `FILTERING_CONTEXT`, `ASKING_AI`, `EXECUTING_QUERY`.
+> **Scope:** use this to query **one specific Genie Agent** — typically to validate an Agent
+> after creating or editing it, or to lean on its curated business logic and certified queries.
+> For general natural-language data questions or finding data across your workspace, don't use
+> this — route to the **[databricks-data-discovery](../../skills/databricks-data-discovery/SKILL.md)**
+> skill (Genie One) instead.
+
+Ask questions of a specific Agent via three CLI primitives: `start-conversation`, `create-message` (follow-ups), and `get-message` (state + SQL + text). `--no-wait` on `start-conversation` / `create-message` returns immediately with `{conversation_id, message_id}`; poll `get-message` until `.status` is `COMPLETED`, `FAILED`, or `CANCELLED`. Intermediate states you'll see: `SUBMITTED`, `FILTERING_CONTEXT`, `ASKING_AI`, `EXECUTING_QUERY`.
 
 ```bash
 # Start a new conversation (async — get IDs back immediately)
@@ -224,12 +232,13 @@ On `FAILED`, `get-message` populates `.error.error` with the underlying error st
 | `sample_question.id must be provided` | Add 32-char hex UUID `id` to each sample question |
 | `Expected an array for question` | Use `"question": ["text"]` not `"question": "text"` |
 | No warehouse available | Create a SQL warehouse or provide `warehouse_id` |
-| Empty `serialized_space` on export | Requires CAN EDIT permission on the space |
+| Empty `serialized_space` on export | Requires CAN EDIT permission on the agent |
 | Tables not found after migration | Remap catalog name in `serialized_space` before import |
-| Slow answers / query timeouts | Size up the warehouse attached to the space; simplify or pre-aggregate tall source tables |
-| Wrong or empty answers | Add `example_question_sqls` and `text_instructions` — see "Improving a Genie Space" |
+| Slow answers / query timeouts | Size up the warehouse attached to the agent; simplify or pre-aggregate tall source tables |
+| Wrong or empty answers | Add `example_question_sqls` and `text_instructions` — see "Improving a Genie Agent" |
 
 ## Related Skills
 
+- **[databricks-data-discovery](../../skills/databricks-data-discovery/SKILL.md)** - General natural-language data exploration / "ask Genie" (Genie One) across your data; use it when you are not targeting a specific curated Genie Agent
 - **[databricks-synthetic-data-gen](../../skills/databricks-synthetic-data-gen/SKILL.md)** - Generate data for Genie tables
 - **[databricks-pipelines](../../skills/databricks-pipelines/SKILL.md)** - Build bronze/silver/gold tables

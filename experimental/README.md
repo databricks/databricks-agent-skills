@@ -34,7 +34,7 @@ These experimental skills are **not** installed by default. To install them via 
 databricks aitools install --experimental
 
 # Install a single experimental skill by name
-databricks aitools install databricks-genie --experimental
+databricks aitools install spark-python-data-source --experimental
 ```
 
 See the root [README](../README.md) for details on the stable install path.
@@ -42,7 +42,7 @@ See the root [README](../README.md) for details on the stable install path.
 ## Available Skills
 
 ### 📊 Analytics & Dashboards
-- **databricks-genie** - Genie Spaces: natural-language data Q&A, space authoring, and tuning (example questions, instructions)
+- **databricks-genie-agents** - Genie Agents: natural-language data Q&A, agent authoring, and tuning (example questions, instructions)
 
 ### 🔧 Data Engineering
 - **spark-python-data-source** - Python data sources for Spark (custom connectors)

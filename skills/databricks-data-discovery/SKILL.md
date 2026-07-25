@@ -130,7 +130,7 @@ the same Genie backend.
 
 ## Related Skills
 
-- **databricks-genie** (experimental) — build and manage **Genie Agents**: curated
+- **databricks-genie-agents** (experimental) — build and manage **Genie Agents**: curated
   agents that let you or a group ask questions of specific data (create, configure,
   import/export).
 - **databricks-core** (parent) — CLI auth, profiles, and the manual data exploration
