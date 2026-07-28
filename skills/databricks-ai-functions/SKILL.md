@@ -153,7 +153,7 @@ FROM prepped LATERAL VIEW explode(variant_get(prep, '$.document.contents', 'ARRA
 Then enable CDF (`ALTER TABLE parsed_chunks SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`) and use the **[databricks-vector-search](../databricks-vector-search/SKILL.md)** skill to build a Delta Sync index: PK `chunk_id`, embedding source `chunk_to_embed`, return `chunk_to_retrieve`.
 
 **Beyond batch:**
-- **Ask questions over the output** — point a Genie Agent at the resulting Delta table for natural-language querying instead of hand-written SQL; see the **[databricks-genie-agents](../../experimental/databricks-genie-agents/SKILL.md)** skill.
+- **Ask questions over the output** — point a Genie Agent at the resulting Delta table for natural-language querying instead of hand-written SQL; see the **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)** skill.
 - **Low-latency / serving** — to expose this as a real-time, governed endpoint (e.g. register a model to Unity Catalog and serve it), use the **[databricks-model-serving](../databricks-model-serving/SKILL.md)** skill.
 - **Production incremental ingestion** — for a runnable end-to-end streaming `ai_parse_document` job (checkpoints, `trigger(availableNow=True)`), see [databricks/bundle-examples · job_with_ai_parse_document](https://github.com/databricks/bundle-examples/tree/main/contrib/job_with_ai_parse_document).
 

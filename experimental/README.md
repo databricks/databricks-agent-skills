@@ -41,9 +41,6 @@ See the root [README](../README.md) for details on the stable install path.
 
 ## Available Skills
 
-### 📊 Analytics & Dashboards
-- **databricks-genie-agents** - Genie Agents: natural-language data Q&A, agent authoring, and tuning (example questions, instructions)
-
 ### 🔧 Data Engineering
 - **spark-python-data-source** - Python data sources for Spark (custom connectors)
 
@@ -54,7 +51,8 @@ Most of the original ai-dev-kit snapshot now lives in the stable
 flag). See the root [README](../README.md#available-skills) for the full list.
 Promoted skills include `databricks-ai-functions`, `databricks-agent-bricks`,
 `databricks-aibi-dashboards`, `databricks-apps-python`, `databricks-dbsql`,
-`databricks-docs`, `databricks-execution-compute`, `databricks-iceberg`,
+`databricks-docs`, `databricks-execution-compute`, `databricks-genie-agents`,
+`databricks-iceberg`,
 `databricks-lakeflow-connect`, `databricks-metric-views`, `databricks-ml-training`,
 `databricks-mlflow-evaluation`, `databricks-python-sdk`,
 `databricks-spark-structured-streaming`, `databricks-synthetic-data-gen`,

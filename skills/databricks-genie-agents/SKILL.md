@@ -3,7 +3,7 @@ name: databricks-genie-agents
 description: "Create, manage, and query Databricks Genie Agents — curated, per-data natural-language agents (formerly Genie Spaces): build, export/import, migrate across workspaces, and ask questions of a *specific* Agent via the Conversation API. For general data questions or finding data across your workspace, use databricks-data-discovery (Genie One) instead."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.0.1"
+  version: "0.1.0"
 ---
 
 # Databricks Genie Agents
@@ -101,6 +101,10 @@ databricks genie create-space --json "{
 
 ### Improving a Genie Agent
 
+**Recommendation-first:** when asked to optimize, tune, or fix an Agent (or its queries/tables), start by diagnosing and presenting a recommended change — do not run mutating actions (`update-space`, `ALTER`, `OPTIMIZE`, liquid clustering, warehouse changes) until the user approves. Diagnose with read-only queries only.
+
+**Wrong filter values** (Genie filters on a value that returns nothing — e.g. asking for `cancelled` when the column stores a different code or casing): fix with prompt matching / synonyms mapping the user's term to the actual categorical value, not a hardcoded text instruction.
+
 When Genie answers are inaccurate or incomplete, improve the agent by updating questions, SQL examples, or instructions:
 
 ```bash
@@ -129,6 +133,7 @@ The `serialized_space` field is a JSON string containing the full space configur
 - **Sort order matters:** `data_sources.tables` must be sorted by `identifier`, and each table's `column_configs` must be sorted by `column_name`; `example_question_sqls` and `text_instructions` must be sorted by `id`. (`sample_questions` is silently re-sorted server-side.)
 - **`text_instructions` accepts at most one item** — the API rejects more than one (`text_instructions must contain at most one item`). Merge all guidance (persona, table guide, investigation flow, answer style) into a single entry.
 - **Simple ID scheme that satisfies both rules:** prefix per list + monotonic counter, total 32 hex chars — `1…0001`, `1…0002` for `sample_questions`; `2…0001`, `2…0002` for `example_question_sqls`; `3…0001` for `text_instructions`. Authoring order = sort order, no collisions.
+- **`benchmarks` is a top-level key** of `serialized_space` (alongside `version`/`config`/`data_sources`/`instructions`), not nested under `instructions`. Each item takes a unique 32-char hex `id`.
 
 ### Text Instructions
 
@@ -195,7 +200,7 @@ Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces.
 > **Scope:** use this to query **one specific Genie Agent** — typically to validate an Agent
 > after creating or editing it, or to lean on its curated business logic and certified queries.
 > For general natural-language data questions or finding data across your workspace, don't use
-> this — route to the **[databricks-data-discovery](../../skills/databricks-data-discovery/SKILL.md)**
+> this — route to the **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)**
 > skill (Genie One) instead.
 
 Ask questions of a specific Agent via three CLI primitives: `start-conversation`, `create-message` (follow-ups), and `get-message` (state + SQL + text). `--no-wait` on `start-conversation` / `create-message` returns immediately with `{conversation_id, message_id}`; poll `get-message` until `.status` is `COMPLETED`, `FAILED`, or `CANCELLED`. Intermediate states you'll see: `SUBMITTED`, `FILTERING_CONTEXT`, `ASKING_AI`, `EXECUTING_QUERY`.
@@ -239,6 +244,6 @@ On `FAILED`, `get-message` populates `.error.error` with the underlying error st
 
 ## Related Skills
 
-- **[databricks-data-discovery](../../skills/databricks-data-discovery/SKILL.md)** - General natural-language data exploration / "ask Genie" (Genie One) across your data; use it when you are not targeting a specific curated Genie Agent
-- **[databricks-synthetic-data-gen](../../skills/databricks-synthetic-data-gen/SKILL.md)** - Generate data for Genie tables
-- **[databricks-pipelines](../../skills/databricks-pipelines/SKILL.md)** - Build bronze/silver/gold tables
+- **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)** - General natural-language data exploration / "ask Genie" (Genie One) across your data; use it when you are not targeting a specific curated Genie Agent
+- **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - Generate data for Genie tables
+- **[databricks-pipelines](../databricks-pipelines/SKILL.md)** - Build bronze/silver/gold tables

@@ -1,7 +1,7 @@
 ---
 name: databricks-data-discovery
 description: "Discover, explore, and query Databricks data via Genie — the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), answer a natural-language question about the data, or write a SQL query."
-compatibility: Requires databricks CLI with the experimental genie command (databricks experimental genie ask)
+compatibility: Requires databricks CLI >= v1.9.0 for `databricks genie ask` (older CLIs fall back to the deprecated `databricks experimental genie ask` alias)
 metadata:
   version: "0.1.0"
 parent: databricks-core
@@ -12,7 +12,7 @@ parent: databricks-core
 This skill **routes data work** — decide first:
 - the request is about *the data* — finding it, asking questions of it, or
   generating SQL → delegate to **Genie One**:
-  `databricks experimental genie ask -s <session-label> "..."` (see Routing below).
+  `databricks genie ask -s <session-label> "..."` (see Routing below).
 - writing files or anything else → use your own coding-agent tools.
 
 Genie One just needs an authenticated CLI profile (the parent `databricks-core`
@@ -58,18 +58,25 @@ and reusing it lets later questions build on everything asked so far ("summarize
 of the above"). Use a fresh session label only to start a deliberately separate
 session, or distinct session labels to run several in parallel.
 
+The command is `databricks genie ask` (CLI >= v1.9.0). On an older CLI it lives
+under `databricks experimental genie ask` — same flags and behavior; use that
+exact fallback if `databricks genie ask` is not found.
+
 ```bash
 # Always pass a session label, and reuse the SAME one so follow-ups build on each other
-databricks experimental genie ask -s trips "How many bookings were there last week?"
-databricks experimental genie ask -s trips "Break that down by destination"
-databricks experimental genie ask -s trips "Summarize all of the above"
+databricks genie ask -s trips "How many bookings were there last week?"
+databricks genie ask -s trips "Break that down by destination"
+databricks genie ask -s trips "Summarize all of the above"
 
 # --include-sql also prints the SQL Genie ran (use it to generate a query, too)
-databricks experimental genie ask -s trips "Write SQL for the top 5 destinations by revenue" --include-sql
+databricks genie ask -s trips "Write SQL for the top 5 destinations by revenue" --include-sql
 
 # --output json gives a parseable result
-databricks experimental genie ask -s trips "Top 5 destinations by revenue" --output json
+databricks genie ask -s trips "Top 5 destinations by revenue" --output json
 # → {"status":"completed","conversation_id":"…","text":"…","tool_calls":[{"name":"execute_sql","sql":"…","title":"…"}]}
+
+# Older CLI (< v1.9.0) — same command under the deprecated experimental alias:
+#   databricks experimental genie ask -s trips "How many bookings were there last week?"
 ```
 
 Genie searches across all the data you can see, runs SQL, and streams a grounded
@@ -110,8 +117,9 @@ set up.
 ## If Genie One isn't available — manual fallback
 
 Only fall back if Genie One is genuinely unavailable — first **verify** with
-`databricks experimental genie ask --help`; don't assume the command is missing.
-When Genie One isn't enabled, the CLI is too old to have `experimental genie ask`,
+`databricks genie ask --help` (or `databricks experimental genie ask --help` on a
+CLI older than v1.9.0); don't assume the command is missing. When Genie One isn't
+enabled, the CLI is too old to have either form of `genie ask`,
 or Genie can't cover the question, do the discovery yourself with the parent skill's
 commands — see **[Manual Data Exploration](../databricks-core/manual-data-exploration.md)**
 (keyword search via `information_schema`, `discover-schema`, and `tools query`).
@@ -130,7 +138,7 @@ the same Genie backend.
 
 ## Related Skills
 
-- **databricks-genie-agents** (experimental) — build and manage **Genie Agents**: curated
+- **databricks-genie-agents** — build and manage **Genie Agents**: curated
   agents that let you or a group ask questions of specific data (create, configure,
   import/export).
 - **databricks-core** (parent) — CLI auth, profiles, and the manual data exploration
