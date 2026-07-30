@@ -18,7 +18,7 @@ RTM has hard cluster requirements. Get any of these wrong and the stream either 
 | Setting | Required value | Notes |
 |---|---|---|
 | DBR | **16.4 LTS minimum, 18.1+ recommended** | Per the [GA blog](https://www.databricks.com/blog/announcing-general-availability-real-time-mode-apache-spark-structured-streaming-databricks): "we recommend DBR 18.1 for the latest features and optimizations." DBR 18+ is also required for stream-stream inner join (see [Supported operations](#supported-operations)) and DBR 18.2+ resolves a known latency floor with Python `transformWithState` at <5 rec/sec. |
-| Compute type | **Classic compute** (Dedicated or Standard access mode) | Standard supports Python only. Serverless is NOT supported for standalone RTM — only inside SDP-on-RTM (see [sdp-real-time-mode.md](sdp-real-time-mode.md)). |
+| Compute type | **Classic compute** (Dedicated or Standard access mode) | Standard supports Python only. Serverless is NOT supported for standalone RTM — only inside SDP-on-RTM (see [SDP real-time mode](../../databricks-pipelines/references/real-time-mode.md)). |
 | Autoscaling | **Off** | Streaming clusters must be fixed-size. |
 | Photon | **Off** | Incompatible with RTM. |
 | Spot instances | **Off** | Interruptions break the stream. |

@@ -91,7 +91,7 @@ Python: `F.session_window("event_timestamp", "30 minutes")`.
 | 15–60 minutes | Operational dashboards |
 | 1–24 hours | Analytical reports |
 
-Larger windows = less state pressure but stale results. Pick the smallest window that meets the freshness SLO.
+Larger windows = less state pressure but stale results. Pick the smallest window that meets the freshness SLO. For genuine sub-second operational latency, use [Real-Time Mode](real-time-mode.md).
 
 ---
 

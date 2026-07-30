@@ -114,6 +114,7 @@ Some features sit on top of others — read both:
 | Backfill Flow                | One-time historical load + ongoing live stream into same table. | `@dp.append_flow(once=True)` | `CREATE FLOW ... INSERT INTO ... ONCE` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
 | Sink (Delta/Kafka/EH/custom) | Write streaming output to external Delta / Kafka / Event Hubs.   | `dp.create_sink()`           | N/A — Python only                      | [sink-python](references/sink-python.md)                    | —                                                 |
 | ForEachBatch Sink            | Custom per-batch Python logic (merge/upsert, multi-destination). Public Preview. | `@dp.foreach_batch_sink()` | N/A — Python only         | [foreach-batch-sink-python](references/foreach-batch-sink-python.md) | —                                       |
+| RTM update flow              | Real-Time Mode: route a flow to a sink with sub-second latency. Public Preview. | `@dp.update_flow(target=...)` | N/A — Python only          | [real-time-mode](references/real-time-mode.md)              | —                                                 |
 
 ### CDC APIs
 
@@ -258,6 +259,7 @@ Cross-cutting patterns:
 - [streaming-patterns.md](references/streaming-patterns.md) — Dedup, windowed aggregations, late data, rescue-data quarantine, anomaly detection, lag monitoring.
 - [scd-2-querying.md](references/scd-2-querying.md) — Current-state, point-in-time, joining facts with historical dims.
 - [kafka.md](references/kafka.md) — Kafka / Event Hubs ingestion.
+- [real-time-mode.md](references/real-time-mode.md) — Real-Time Mode (RTM): sub-second continuous pipelines (`@dp.update_flow`, Kafka sinks, serverless or classic).
 
 Auto Loader format-specific options: [JSON](references/options-json.md) · [CSV](references/options-csv.md) · [XML](references/options-xml.md) · [Parquet](references/options-parquet.md) · [Avro](references/options-avro.md) · [Text](references/options-text.md) · [ORC](references/options-orc.md).
 

@@ -4,6 +4,8 @@ Sinks write pipeline output to non-pipeline-managed targets: Kafka / Event Hubs 
 
 For per-batch custom Python logic (merge/upsert, multi-destination), see [foreach-batch-sink-python.md](foreach-batch-sink-python.md).
 
+**Real-Time Mode:** in an RTM pipeline a sink is targeted by `@dp.update_flow` (not `@dp.append_flow`), and only `format="kafka"` is usable — Delta is not an RTM sink. See [real-time-mode.md](real-time-mode.md).
+
 ## `dp.create_sink(...)`
 
 Call at top level before any `@dp.append_flow` references it.
