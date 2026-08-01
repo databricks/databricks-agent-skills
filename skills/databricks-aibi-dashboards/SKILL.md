@@ -24,7 +24,7 @@ A dashboard should be showing something relevant for a human, typically some KPI
 | Get schema | `databricks experimental aitools tools discover-schema catalog.schema.table1 catalog.schema.table2` |
 | Test query | `databricks experimental aitools tools query --warehouse WH "SELECT..."` |
 | Create dashboard | `databricks lakeview create --display-name "X" --warehouse-id "WH" --dataset-catalog CATALOG --dataset-schema SCHEMA --serialized-dashboard "$(cat file.json)" --json '{"parent_path": "/Workspace/Users/<you>/path"}'` — `--dataset-catalog` / `--dataset-schema` are **flag-only** (REQUIRED; CLI silently drops them if put in `--json`); `parent_path` is JSON-only (no flag). Queries must use bare table names. |
-| Update dashboard | `databricks lakeview update DASHBOARD_ID --serialized-dashboard "$(cat file.json)"` |
+| Update dashboard | `databricks lakeview update DASHBOARD_ID --dataset-catalog CATALOG --dataset-schema SCHEMA --serialized-dashboard "$(cat file.json)"` — **always re-pass `--dataset-catalog` / `--dataset-schema` on update** (same flag-only rule as create); update replaces the serialized dashboard, so omitting them nulls the per-dataset defaults and breaks every bare-table query. |
 | Publish | `databricks lakeview publish DASHBOARD_ID --warehouse-id WH` |
 | Delete | `databricks lakeview trash DASHBOARD_ID` |
 
@@ -175,7 +175,12 @@ databricks lakeview list
 databricks lakeview get DASHBOARD_ID
 
 # Update a dashboard
-databricks lakeview update DASHBOARD_ID --serialized-dashboard "$(cat dashboard.json)"
+# ALWAYS re-pass --dataset-catalog / --dataset-schema: update replaces the
+# serialized dashboard, so omitting them nulls the defaults and breaks queries.
+databricks lakeview update DASHBOARD_ID \
+  --dataset-catalog "my_catalog" \
+  --dataset-schema "my_schema" \
+  --serialized-dashboard "$(cat dashboard.json)"
 
 # Publish a dashboard
 databricks lakeview publish DASHBOARD_ID --warehouse-id WAREHOUSE_ID
