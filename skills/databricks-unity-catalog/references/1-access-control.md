@@ -2,8 +2,8 @@
 
 The authoritative reference for **who can do what** in Unity Catalog: the securable
 hierarchy, the full privilege list, `GRANT`/`REVOKE`, ownership, and privilege inheritance.
-Volume-specific grants in [6-volumes.md](6-volumes.md) and system-table grants in
-[5-system-tables.md](5-system-tables.md) are special cases of the model described here.
+Volume-specific grants in 6-volumes and system-table grants in
+5-system-tables are special cases of the model described here.
 
 ## Securable Hierarchy
 
@@ -220,11 +220,11 @@ surprise rather than a bug — the table below maps the symptom to the cause.
 2. **Grant at the narrowest securable that works** — least privilege; prefer schema-level over catalog-level when a team only needs one schema.
 3. **Use inheritance deliberately** — a schema-level `SELECT` covers future tables; a table-level grant does not.
 4. **Own with groups** — `ALTER … OWNER TO` a group; delegate day-to-day grant admin with `MANAGE`.
-5. **Audit grants regularly** — query `system.information_schema.*_privileges` and watch `GRANT`/`REVOKE` events in [5-system-tables.md](5-system-tables.md).
+5. **Audit grants regularly** — query `system.information_schema.*_privileges` and watch `GRANT`/`REVOKE` events in 5-system-tables.
 
 ## Related
 
-- [2-external-locations.md](2-external-locations.md) — `READ FILES`/`WRITE FILES` and external-location grants
-- [3-securables-ddl.md](3-securables-ddl.md) — creating the securables you grant on
-- [4-fine-grained-access.md](4-fine-grained-access.md) — row/column-level controls layered on top of grants
-- [6-volumes.md](6-volumes.md) — `READ VOLUME`/`WRITE VOLUME` specifics
+- 2-external-locations — `READ FILES`/`WRITE FILES` and external-location grants
+- 3-securables-ddl — creating the securables you grant on
+- 4-fine-grained-access — row/column-level controls layered on top of grants
+- 6-volumes — `READ VOLUME`/`WRITE VOLUME` specifics

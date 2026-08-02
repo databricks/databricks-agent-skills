@@ -139,13 +139,13 @@ databricks external-locations create --json '{
 
 ## What Builds on External Locations
 
-- **External tables** — `CREATE TABLE … LOCATION 's3://my-bucket/analytics/orders'` (the path must sit under a registered external location). See [3-securables-ddl.md](3-securables-ddl.md).
-- **External volumes** — `CREATE EXTERNAL VOLUME … LOCATION 's3://my-bucket/analytics/files'`. See [6-volumes.md](6-volumes.md).
-- **External lineage** — register lineage to/from systems backed by external paths. See [5-system-tables.md](5-system-tables.md).
+- **External tables** — `CREATE TABLE … LOCATION 's3://my-bucket/analytics/orders'` (the path must sit under a registered external location). See 3-securables-ddl.
+- **External volumes** — `CREATE EXTERNAL VOLUME … LOCATION 's3://my-bucket/analytics/files'`. See 6-volumes.
+- **External lineage** — register lineage to/from systems backed by external paths. See 5-system-tables.
 
 ## Granting Access to External Locations
 
-External locations are securables (see [1-access-control.md](1-access-control.md)). Grant the
+External locations are securables (see 1-access-control). Grant the
 path-level file privileges plus the right to create externals on them:
 
 ```sql
@@ -199,7 +199,7 @@ w.grants.update(
 
 ## Related
 
-- [1-access-control.md](1-access-control.md) — the privilege model these grants belong to
-- [3-securables-ddl.md](3-securables-ddl.md) — external table DDL on these locations
-- [6-volumes.md](6-volumes.md) — external volume specifics
+- 1-access-control — the privilege model these grants belong to
+- 3-securables-ddl — external table DDL on these locations
+- 6-volumes — external volume specifics
 - **databricks-iceberg** — Iceberg REST Catalog credential *vending* for external engines (different concept)

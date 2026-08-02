@@ -106,7 +106,7 @@ These errors occur when the JSON structure is wrong:
 
 ## Forecast-line shows blank or partial line
 
-- Dataset must return both historical AND forecast columns, with historical rows having `NULL` in the forecast columns and forecast rows having `NULL` in the historical column. Use `UNION ALL` to glue them — see [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md#forecast-line-with-ai_forecast).
+- Dataset must return both historical AND forecast columns, with historical rows having `NULL` in the forecast columns and forecast rows having `NULL` in the historical column. Use `UNION ALL` to glue them — see 2-advanced-widget-specifications#forecast-line-with-ai_forecast.
 - All four y-encoding fields (`original`, `prediction`, `predictionUpper`, `predictionLower`) must reference columns that exist in `query.fields`.
 - `AI_FORECAST` requires the time column to be sorted and have no gaps — pre-aggregate (e.g., `DATE_TRUNC('WEEK', ts)`) before passing to the table function.
 
@@ -122,7 +122,7 @@ If you change the chart's aggregation grain (weekly → monthly), update **both*
 
 ## Range-slider filter shows error or no min/max
 
-- The filter's `query.fields[]` must expose `MIN(col)` and `MAX(col)` — the dashboard reads these to set the slider bounds. See [3-filters.md](3-filters.md#range-slider-numeric-range-filter).
+- The filter's `query.fields[]` must expose `MIN(col)` and `MAX(col)` — the dashboard reads these to set the slider bounds. See 3-filters#range-slider-numeric-range-filter.
 - Slider only works on numeric / temporal columns. Categorical fields fail at render — use `filter-single-select` / `filter-multi-select` instead.
 
 ## Symbol-map shows no points

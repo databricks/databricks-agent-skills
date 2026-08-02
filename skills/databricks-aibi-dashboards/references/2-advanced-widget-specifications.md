@@ -1,6 +1,6 @@
 # Advanced Widget Specifications
 
-Advanced visualization types for AI/BI dashboards. For core widgets (text, counter, table, bar, line, pie), see [1-widget-specifications.md](1-widget-specifications.md).
+Advanced visualization types for AI/BI dashboards. For core widgets (text, counter, table, bar, line, pie), see 1-widget-specifications.
 
 ---
 
@@ -10,7 +10,7 @@ Advanced visualization types for AI/BI dashboards. For core widgets (text, count
 - `widgetType`: "area"
 - Same structure as line chart - useful for showing cumulative values or emphasizing volume
 
-> Time-series area charts benefit from a `vertical-line` annotation marking a meaningful event (launch, incident, holiday) — turns a generic trend into a readable story. See [Annotations in 1-widget-specifications.md](1-widget-specifications.md#annotations-event-markers).
+> Time-series area charts benefit from a `vertical-line` annotation marking a meaningful event (launch, incident, holiday) — turns a generic trend into a readable story. See 1-widget-specifications#annotations-event-markers.
 
 ```json
 "spec": {
@@ -63,7 +63,7 @@ Combines bar and line visualizations on the same chart - useful for showing rela
 - `y.primary`: bar chart fields
 - `y.secondary`: line chart fields
 
-> Mark meaningful events with a `vertical-line` annotation when the x-axis is temporal. See [Annotations in 1-widget-specifications.md](1-widget-specifications.md#annotations-event-markers).
+> Mark meaningful events with a `vertical-line` annotation when the x-axis is temporal. See 1-widget-specifications#annotations-event-markers.
 
 ```json
 {
@@ -254,7 +254,7 @@ The `horizon` expression projects forward 50% of the historical range. Tune the 
 }
 ```
 
-> Annotations (`vertical-line`) work on forecast-line — useful for marking known seasonal events (holidays, releases) inside both the historical window and the prediction band. Shape documented in [1-widget-specifications.md](1-widget-specifications.md#annotations-event-markers).
+> Annotations (`vertical-line`) work on forecast-line — useful for marking known seasonal events (holidays, releases) inside both the historical window and the prediction band. Shape documented in 1-widget-specifications#annotations-event-markers.
 
 ---
 
