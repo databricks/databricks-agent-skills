@@ -889,9 +889,9 @@ def main() -> None:
                     sorted(per_skill.items(), key=lambda kv: (-kv[1], kv[0]))
                 ))
 
-    print(f"\n{'FINDING':<16} {'SEVERITY':<9} {'COUNT':>6}  TITLE")
+    print(f"\n{'FINDING':<20} {'SEVERITY':<9} {'COUNT':>6}  TITLE")
     for finding_id, severity, count, title in rows:
-        print(f"{finding_id:<16} {severity:<9} {count:>6}  {title}")
+        print(f"{finding_id:<20} {severity:<9} {count:>6}  {title}")
 
     # Heaviest skill first: the remediation plan sorts its work this way, so
     # the gate prints the same ordering it is planned against.
