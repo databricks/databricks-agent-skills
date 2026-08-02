@@ -10,14 +10,14 @@ Two options for writing streaming records into Lakebase Postgres:
 1. **Native `format("postgresql")` sink** — Public Preview. Workspace-managed authentication, built-in batching, automatic retries on transient JDBC errors, Unity Catalog `.toTable()` integration. The canonical choice when DBR 18.3+ and Public Preview features are acceptable.
 2. **Manual `foreach` sink** (a duck-typed Python class) — fallback for DBR <18.3, environments where Public Preview is unacceptable, customization the native sink doesn't offer (composing writes, conditional routing), or non-Lakebase targets. Also useful as a worked example of the `foreach` lifecycle for sinks to other systems (Redis, Cassandra, custom REST endpoints).
 
-For general Lakebase mechanics — projects, branches, sizing, the CU-to-connections cap, authentication methods, connection patterns from non-streaming clients — see the stable `databricks-lakebase` skill, specifically [connectivity.md](../databricks-lakebase/references/connectivity.md) and [computes-and-scaling.md](../databricks-lakebase/references/computes-and-scaling.md). For RTM cluster setup, see real-time-mode. This file covers only the sink-specific patterns.
+For general Lakebase mechanics — projects, branches, sizing, the CU-to-connections cap, authentication methods, connection patterns from non-streaming clients — see the stable `databricks-lakebase` skill, specifically its connectivity and computes-and-scaling references. For RTM cluster setup, see real-time-mode. This file covers only the sink-specific patterns.
 
 ## Prerequisites
 
 - A Lakebase Autoscaling project, branch, and endpoint. Default database is `databricks_postgres`.
 - A target table with a primary key for upserts. See [Target table](#target-table) below.
 - **For the native sink (Option A):** Databricks Runtime 18.3 or later, Classic compute (Dedicated or Standard access mode). Public Preview features must be acceptable for the workload. Per the [native sink docs](https://docs.databricks.com/aws/en/structured-streaming/lakebase): *"Serverless compute and Lakeflow Spark Declarative Pipelines are not supported"* — the native sink runs only inside a standalone Structured Streaming query on classic compute, not from a Lakeflow SDP pipeline.
-- **For the manual `foreach` sink (Option B):** the Lakebase instance must permit native Postgres password login. If the instance is configured to require OAuth only, executor-side logins are rejected. See [connectivity.md](../databricks-lakebase/references/connectivity.md) for the authentication-method matrix. You'll also need a Postgres role with a password (created via driver-side admin connection), stored in a Databricks secret scope.
+- **For the manual `foreach` sink (Option B):** the Lakebase instance must permit native Postgres password login. If the instance is configured to require OAuth only, executor-side logins are rejected. See the `databricks-lakebase` skill's connectivity reference for the authentication-method matrix. You'll also need a Postgres role with a password (created via driver-side admin connection), stored in a Databricks secret scope.
 
 ## Target table
 
@@ -114,7 +114,7 @@ Use this when the native sink isn't available or sufficient:
 ### Two non-obvious rules (manual sink only)
 
 1. **The sink class is duck-typed in Python — no base class.** Official Databricks docs show the foreach pattern as a Scala `ForeachWriter` subclass. Translate to Python — `foreach()` accepts duck-typed objects with `open`/`process`/`close` methods, so no base class is involved. The `pyspark.sql.streaming.ForeachWriter` symbol is a Scala class with no exported Python equivalent.
-2. **For the executor-side sink, use native Postgres password auth, not OAuth.** OAuth refresh requires Databricks SDK context that executors don't have — executors are separate Python processes with no SDK state. Use the Postgres role's password, pulled from a Databricks secret scope at driver startup and serialized into the sink instance. (Driver-side admin setup — `CREATE ROLE`, `CREATE DATABASE`, `GRANT` — is different; that runs on the driver where the SDK is available, so use an SDK-minted JWT for those.) See [connectivity.md](../databricks-lakebase/references/connectivity.md) for the two auth methods.
+2. **For the executor-side sink, use native Postgres password auth, not OAuth.** OAuth refresh requires Databricks SDK context that executors don't have — executors are separate Python processes with no SDK state. Use the Postgres role's password, pulled from a Databricks secret scope at driver startup and serialized into the sink instance. (Driver-side admin setup — `CREATE ROLE`, `CREATE DATABASE`, `GRANT` — is different; that runs on the driver where the SDK is available, so use an SDK-minted JWT for those.) See the `databricks-lakebase` skill's connectivity reference for the two auth methods.
 
 ### The `LakebaseSink` class
 
@@ -274,7 +274,7 @@ In both cases the upsert is idempotent — `INSERT … ON CONFLICT (id) DO UPDAT
 
 ## Connection budget
 
-Each Lakebase CU has a max-connections cap (see the CU-to-connections table in [computes-and-scaling.md](../databricks-lakebase/references/computes-and-scaling.md)). For a realtime app, total Postgres connections at peak =
+Each Lakebase CU has a max-connections cap (see the CU-to-connections table in the `databricks-lakebase` skill's computes-and-scaling reference). For a realtime app, total Postgres connections at peak =
 
 ```
 (app's connection pool max × app replicas) + (streaming sink partitions)
@@ -309,7 +309,7 @@ If you need the operational data in Delta, capture it from an **append-only even
 - Keep the serving (upsert) tables `REPLICA IDENTITY DEFAULT` and **out of CDF** — autovacuum then reclaims them freely.
 - Have the sink *also* insert each row into an append-only `*_events` table and point CDF only at that. Inserts create no dead tuples, so a lagging slot can never bloat it.
 
-For Lakehouse Sync setup itself (CDF from Lakebase → Delta), see [lakehouse-sync.md](../databricks-lakebase/references/lakehouse-sync.md).
+For Lakehouse Sync setup itself (CDF from Lakebase → Delta), see the `databricks-lakebase` skill's Lakehouse Sync reference.
 
 ### Reconnect instead of failing the query
 

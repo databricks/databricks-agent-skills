@@ -23,7 +23,7 @@ Run code on Databricks. Three execution modes—choose based on workload. All ex
 
 ### Decision Flow
 
-Main decision point: if you're using Declarative Automation Bundles (DABs) then follow the instructions of the [`databricks-dabs` skill](../../skills/databricks-dabs/SKILL.md) first. In short, you can use `databricks bundle run` to run code associated with jobs, pipelines, and other resources. This can be recognized by looking for a `databricks.yml` file in the project root. If these resources don't exist, or if you're not using DABs, then proceed with the below.
+Main decision point: if you're using Declarative Automation Bundles (DABs) then follow the instructions of the `databricks-dabs` skill first. In short, you can use `databricks bundle run` to run code associated with jobs, pipelines, and other resources. This can be recognized by looking for a `databricks.yml` file in the project root. If these resources don't exist, or if you're not using DABs, then proceed with the below.
 
 Prefer Databricks Connect for all spark-based workload, then serverless.
 ```
@@ -168,6 +168,6 @@ databricks warehouses delete <WAREHOUSE_ID>
 
 ## Related Skills
 
-- **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** — Data generation using Spark + Faker
+- **`databricks-synthetic-data-gen`** — Data generation using Spark + Faker
 - **databricks-jobs** — Production job orchestration
-- **[databricks-dbsql](../databricks-dbsql/SKILL.md)** — SQL warehouse and AI functions
+- **`databricks-dbsql`** — SQL warehouse and AI functions

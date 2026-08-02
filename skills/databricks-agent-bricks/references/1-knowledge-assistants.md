@@ -71,4 +71,4 @@ When testing a KA, check if the volume or project contains a `pdf_eval_questions
 }
 ```
 
-Use these questions to validate retrieval accuracy. See [databricks-unstructured-pdf-generation](../../databricks-unstructured-pdf-generation/SKILL.md) for generating test PDFs with eval questions.
+Use these questions to validate retrieval accuracy. See the `databricks-unstructured-pdf-generation` skill for generating test PDFs with eval questions.

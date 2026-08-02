@@ -200,4 +200,4 @@ export default defineConfig({
 
 - For on-platform connection patterns, see connectivity
 - For vector similarity search with pgvector, see pgvector
-- For AppKit-based Lakebase integration, see the `databricks-apps` skill's [lakebase.md](../../databricks-apps/references/appkit-lakebase.md)
+- For AppKit-based Lakebase integration, see the `databricks-apps` skill's Lakebase Guide

@@ -217,11 +217,11 @@ env:
     valueFrom: serving-endpoint
 ```
 
-Then wire the endpoint into your app via the `serving()` plugin or a custom route in `onPluginsReady`. For the full app integration pattern, use the **`databricks-apps`** skill and read the [Model Serving Guide](../databricks-apps/references/appkit-model-serving.md).
+Then wire the endpoint into your app via the `serving()` plugin or a custom route in `onPluginsReady`. For the full app integration pattern, use the **`databricks-apps`** skill and read the Model Serving Guide.
 
 ### Develop & deploy new models
 
-This skill is ops-focused (manage existing endpoints). For the dev-side flow — training, MLflow tracking, UC registration, custom PyFunc authoring, and hand-rolled `ResponsesAgent` code — see **[databricks-ml-training](../databricks-ml-training/SKILL.md)** (experimental).
+This skill is ops-focused (manage existing endpoints). For the dev-side flow — training, MLflow tracking, UC registration, custom PyFunc authoring, and hand-rolled `ResponsesAgent` code — see the **`databricks-ml-training`** skill (experimental).
 
 ## Foundation Model API endpoints
 

@@ -61,6 +61,12 @@ gate.
   path, so any cwd works, but the paths it prints are repo-relative. There is
   no `--root` flag: to measure another commit, `git worktree add` it and run
   *that tree's* copy of the script.
+- Editing skill markdown makes `scripts/skills.py validate` fail until you run
+  `python3 scripts/skills.py generate` — `plugins/<target>/skills/**` is a
+  byte-for-byte mirror of the source files, so a content sweep dirties 4
+  bundle copies per file. `manifest.json` only changes when a file is added,
+  removed, or renamed.
+
 - The counting conventions (token basis, the `../` matcher's ellipsis
   exclusion, code-fence exemption, TOC heuristic) live in the module
   docstring — that's the contract; changing one moves every number.

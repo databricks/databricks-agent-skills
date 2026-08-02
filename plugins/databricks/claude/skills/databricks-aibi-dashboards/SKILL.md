@@ -377,7 +377,7 @@ Two ways to define measures:
    }
    ```
 
-2. **Metric-view source** — if the dataset's `asset_name` (or `FROM` clause) is a UC metric view, its YAML-defined measures are already queryable. **Do not redeclare them** in `columns`. See [databricks-metric-views](../databricks-metric-views/SKILL.md).
+2. **Metric-view source** — if the dataset's `asset_name` (or `FROM` clause) is a UC metric view, its YAML-defined measures are already queryable. **Do not redeclare them** in `columns`. See the `databricks-metric-views` skill.
 
 Either way, widgets reference the measure by name:
 
@@ -527,7 +527,7 @@ If the range is very small relative to the scale (e.g., 83-89% on a 0-100 scale)
 
 ## Related Skills
 
-- **[databricks-apps](../../skills/databricks-apps/SKILL.md)** - when the user needs a custom-code interactive app (write-back, bespoke UI, in-app chat / Genie) instead of a managed dashboard
-- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - for querying the underlying data and system tables
-- **[databricks-pipelines](../databricks-pipelines/SKILL.md)** - for building the data pipelines that feed dashboards
-- **[databricks-jobs](../databricks-jobs/SKILL.md)** - for scheduling dashboard data refreshes
+- **`databricks-apps`** - when the user needs a custom-code interactive app (write-back, bespoke UI, in-app chat / Genie) instead of a managed dashboard
+- **`databricks-unity-catalog`** - for querying the underlying data and system tables
+- **`databricks-pipelines`** - for building the data pipelines that feed dashboards
+- **`databricks-jobs`** - for scheduling dashboard data refreshes

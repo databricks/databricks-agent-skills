@@ -222,15 +222,15 @@ external locations / storage credentials, securable DDL, fine-grained access, sy
 tables, and volumes. For adjacent concerns, use the sibling skill instead:
 
 - **databricks-core** (declared parent) — auth, profile selection, generic CLI, and catalog/table *exploration*
-- **[databricks-metric-views](../databricks-metric-views/SKILL.md)** — metric view definitions / DDL (`WITH METRICS LANGUAGE YAML`)
-- **[databricks-iceberg](../databricks-iceberg/SKILL.md)** — Managed Iceberg, External Iceberg Reads (fka Uniform), and **Iceberg REST Catalog (IRC) credential *vending*** for external engines — distinct from UC storage credentials (see [references/2-external-locations.md](references/2-external-locations.md))
-- **[databricks-ml-training](../databricks-ml-training/SKILL.md)** — UC model registration and `@prod`/`@challenger` aliases
-- **[databricks-vector-search](../databricks-vector-search/SKILL.md)** — Vector Search indexes
-- **[databricks-pipelines](../databricks-pipelines/SKILL.md)**, **[databricks-jobs](../databricks-jobs/SKILL.md)**, **[databricks-lakeflow-connect](../databricks-lakeflow-connect/SKILL.md)** — *producing* tables via pipelines/jobs/managed ingestion
-- **[databricks-lakebase](../databricks-lakebase/SKILL.md)** — Lakebase / synced tables (OLTP)
-- **[databricks-ai-functions](../databricks-ai-functions/SKILL.md)** — AI functions such as `ai_mask` / `ai_classify` (AI *transforms*, **not** access control — see [references/4-fine-grained-access.md](references/4-fine-grained-access.md))
-- **[databricks-aibi-dashboards](../databricks-aibi-dashboards/SKILL.md)** — AI/BI dashboards on UC data
-- **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** — generating data stored in UC volumes
+- **`databricks-metric-views`** — metric view definitions / DDL (`WITH METRICS LANGUAGE YAML`)
+- **`databricks-iceberg`** — Managed Iceberg, External Iceberg Reads (fka Uniform), and **Iceberg REST Catalog (IRC) credential *vending*** for external engines — distinct from UC storage credentials (see [references/2-external-locations.md](references/2-external-locations.md))
+- **`databricks-ml-training`** — UC model registration and `@prod`/`@challenger` aliases
+- **`databricks-vector-search`** — Vector Search indexes
+- **`databricks-pipelines`**, **`databricks-jobs`**, **`databricks-lakeflow-connect`** — *producing* tables via pipelines/jobs/managed ingestion
+- **`databricks-lakebase`** — Lakebase / synced tables (OLTP)
+- **`databricks-ai-functions`** — AI functions such as `ai_mask` / `ai_classify` (AI *transforms*, **not** access control — see [references/4-fine-grained-access.md](references/4-fine-grained-access.md))
+- **`databricks-aibi-dashboards`** — AI/BI dashboards on UC data
+- **`databricks-synthetic-data-gen`** — generating data stored in UC volumes
 
 ### Roadmap (not yet covered — deferred to a later version)
 

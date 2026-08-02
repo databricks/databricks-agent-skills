@@ -169,7 +169,7 @@ Overlays a model prediction on top of historical data — historical line contin
 
 - `version`: **1**
 - `widgetType`: "forecast-line"
-- The dataset SQL produces the original series **plus** three forecast columns: a point forecast, upper band, lower band. Spark's built-in `AI_FORECAST` table function generates them. Full `AI_FORECAST` params (grouping, intervals, `global_floor`/`global_cap`, seasonality) → [databricks-ai-functions / 3-ai-forecast.md](../../databricks-ai-functions/references/3-ai-forecast.md).
+- The dataset SQL produces the original series **plus** three forecast columns: a point forecast, upper band, lower band. Spark's built-in `AI_FORECAST` table function generates them. Full `AI_FORECAST` params (grouping, intervals, `global_floor`/`global_cap`, seasonality) → the `databricks-ai-functions` skill's `AI_FORECAST` reference.
 
 ### Dataset SQL pattern
 

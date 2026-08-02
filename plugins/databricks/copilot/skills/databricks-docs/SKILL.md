@@ -61,8 +61,8 @@ The llms.txt file is organized by category:
 
 ## Related Skills
 
-- **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - SDK patterns for programmatic Databricks access
+- **`databricks-python-sdk`** - SDK patterns for programmatic Databricks access
 - **databricks-pipelines** - DLT / Lakeflow pipeline workflows
-- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - Governance and catalog management
+- **`databricks-unity-catalog`** - Governance and catalog management
 - **databricks-model-serving** - Serving endpoints and model deployment
-- **[databricks-mlflow-evaluation](../databricks-mlflow-evaluation/SKILL.md)** - MLflow 3 GenAI evaluation workflows
+- **`databricks-mlflow-evaluation`** - MLflow 3 GenAI evaluation workflows

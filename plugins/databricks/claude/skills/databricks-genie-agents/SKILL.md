@@ -200,7 +200,7 @@ Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces.
 > **Scope:** use this to query **one specific Genie Agent** — typically to validate an Agent
 > after creating or editing it, or to lean on its curated business logic and certified queries.
 > For general natural-language data questions or finding data across your workspace, don't use
-> this — route to the **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)**
+> this — route to the **`databricks-data-discovery`**
 > skill (Genie One) instead.
 
 Ask questions of a specific Agent via three CLI primitives: `start-conversation`, `create-message` (follow-ups), and `get-message` (state + SQL + text). `--no-wait` on `start-conversation` / `create-message` returns immediately with `{conversation_id, message_id}`; poll `get-message` until `.status` is `COMPLETED`, `FAILED`, or `CANCELLED`. Intermediate states you'll see: `SUBMITTED`, `FILTERING_CONTEXT`, `ASKING_AI`, `EXECUTING_QUERY`.
@@ -244,6 +244,6 @@ On `FAILED`, `get-message` populates `.error.error` with the underlying error st
 
 ## Related Skills
 
-- **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)** - General natural-language data exploration / "ask Genie" (Genie One) across your data; use it when you are not targeting a specific curated Genie Agent
-- **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - Generate data for Genie tables
-- **[databricks-pipelines](../databricks-pipelines/SKILL.md)** - Build bronze/silver/gold tables
+- **`databricks-data-discovery`** - General natural-language data exploration / "ask Genie" (Genie One) across your data; use it when you are not targeting a specific curated Genie Agent
+- **`databricks-synthetic-data-gen`** - Generate data for Genie tables
+- **`databricks-pipelines`** - Build bronze/silver/gold tables

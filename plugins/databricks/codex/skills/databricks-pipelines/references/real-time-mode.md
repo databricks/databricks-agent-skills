@@ -2,7 +2,7 @@
 
 RTM runs an SDP flow on a continuous engine instead of micro-batches, targeting end-to-end latency "as low as five milliseconds" ([Use real-time mode in SDP](https://docs.databricks.com/aws/en/ldp/real-time)). You keep the declarative `sinks + flows` authoring surface — no `writeStream`, no `awaitTermination`, no checkpoint paths — and the framework runs it continuously. **Public Preview.**
 
-This file is SDP-specific. For standalone Structured Streaming RTM (`writeStream…trigger(realTime=…)` on classic compute) — including the shared error classes, cluster prohibitions, and observability internals — see [../databricks-spark-structured-streaming/references/real-time-mode.md](../../databricks-spark-structured-streaming/references/real-time-mode.md).
+This file is SDP-specific. For standalone Structured Streaming RTM (`writeStream…trigger(realTime=…)` on classic compute) — including the shared error classes, cluster prohibitions, and observability internals — see the `databricks-spark-structured-streaming` skill's RTM reference.
 
 ## When to reach for RTM
 
@@ -114,11 +114,11 @@ In RTM the batch is long-running and records are processed as they arrive; `pipe
 
 - **Serverless** — managed for you; the default and simplest choice.
 - **Classic** — set compute in the pipeline's `clusters` config. Keep **Photon off** (RTM does not use Photon, so enabling it only adds the Photon DBU uplift for no benefit) and **autoscaling off** (RTM runs continuously — size the cluster to fixed capacity). A pipeline will still *start* with either enabled, but neither helps an RTM flow, so leave them disabled.
-  - **Size for the slot math.** RTM schedules all stages concurrently, so free slots must cover the **sum of partitions across *every* stage**, not just the source: source read tasks **+** each stateful stage's `spark.sql.shuffle.partitions` **+** any explicit `repartition(n)`. E.g. an 8-task Kafka source feeding one `groupBy` at `shuffle.partitions=20` needs 8 + 20 = 28 slots. Undersize → the flow fails at start with `CONCURRENT_SCHEDULER_INSUFFICIENT_SLOT` (note: this class is **not** in the `STREAMING_REAL_TIME_MODE.*` namespace). Your two levers to shrink the total: cap the source with `maxPartitions` (reads topic partitions across fewer tasks; unset = topic partition count) and set `shuffle.partitions` low. RTM also allows **at most one streaming shuffle stage** per flow (`SHUFFLE_MORE_THAN_ONCE` otherwise) — combine aggregations or use a broadcast join to stay within one. The SS ref's [slot-math table](../../databricks-spark-structured-streaming/references/real-time-mode.md) works through more shapes. On **serverless** you don't size a cluster yourself — it scales to fit — but you should **still set these partition counts**.
+  - **Size for the slot math.** RTM schedules all stages concurrently, so free slots must cover the **sum of partitions across *every* stage**, not just the source: source read tasks **+** each stateful stage's `spark.sql.shuffle.partitions` **+** any explicit `repartition(n)`. E.g. an 8-task Kafka source feeding one `groupBy` at `shuffle.partitions=20` needs 8 + 20 = 28 slots. Undersize → the flow fails at start with `CONCURRENT_SCHEDULER_INSUFFICIENT_SLOT` (note: this class is **not** in the `STREAMING_REAL_TIME_MODE.*` namespace). Your two levers to shrink the total: cap the source with `maxPartitions` (reads topic partitions across fewer tasks; unset = topic partition count) and set `shuffle.partitions` low. RTM also allows **at most one streaming shuffle stage** per flow (`SHUFFLE_MORE_THAN_ONCE` otherwise) — combine aggregations or use a broadcast join to stay within one. The `databricks-spark-structured-streaming` skill's slot-math table works through more shapes. On **serverless** you don't size a cluster yourself — it scales to fit — but you should **still set these partition counts**.
 
 ## Sources, sinks, and operators
 
-Sources/sinks and most operator restrictions are the **same as standalone RTM** — see its [reference and error-class matrix](../../databricks-spark-structured-streaming/references/real-time-mode.md) for the full set. Sources/sinks: Kafka / MSK / Event Hubs (Kafka connector) as source and sink, Kinesis (EFO) source-only; Delta and file-based sources (Auto Loader, direct file reads) are not supported. The same operators are unsupported as in standalone RTM — session windows, `dropDuplicatesWithinWatermark`, `flatMapGroupsWithState`, `mapPartitions`, and `transformWithStateInPandas`.
+Sources/sinks and most operator restrictions are the **same as standalone RTM** — see the `databricks-spark-structured-streaming` skill's RTM reference and error-class matrix for the full set. Sources/sinks: Kafka / MSK / Event Hubs (Kafka connector) as source and sink, Kinesis (EFO) source-only; Delta and file-based sources (Auto Loader, direct file reads) are not supported. The same operators are unsupported as in standalone RTM — session windows, `dropDuplicatesWithinWatermark`, `flatMapGroupsWithState`, `mapPartitions`, and `transformWithStateInPandas`.
 
 **Where SDP-on-RTM is *more* restricted than standalone RTM:**
 
@@ -129,7 +129,7 @@ Sources/sinks and most operator restrictions are the **same as standalone RTM** 
 
 **Not applicable in RTM:** Auto CDC (`dp.create_auto_cdc_flow` / `apply_changes`) is rejected in an RTM flow — RTM flows are plain streaming reads written to a sink.
 
-`transformWithState` itself is supported, with RTM-specific behavior the [SDP docs](https://docs.databricks.com/aws/en/ldp/real-time) spell out: `handleInputRows` is invoked **once per row** (not once per key per batch) and **event-time timers are unsupported** (processing-time only). Same behavior as standalone RTM — see its [reference](../../databricks-spark-structured-streaming/references/real-time-mode.md) for deeper detail.
+`transformWithState` itself is supported, with RTM-specific behavior the [SDP docs](https://docs.databricks.com/aws/en/ldp/real-time) spell out: `handleInputRows` is invoked **once per row** (not once per key per batch) and **event-time timers are unsupported** (processing-time only). Same behavior as standalone RTM — see that skill's RTM reference for deeper detail.
 
 ## One real-time flow per pipeline
 
@@ -137,11 +137,11 @@ Run **one real-time flow per pipeline, and keep non-RTM (micro-batch) flows out 
 
 ## Lakebase as a serving layer
 
-An RTM flow in SDP sinks to Kafka — there is no Lakebase sink in the SDP RTM path. To serve an app from Lakebase, wire it up outside the RTM flow; see the [databricks-lakebase](../../databricks-lakebase/SKILL.md) skill (e.g. synced tables).
+An RTM flow in SDP sinks to Kafka — there is no Lakebase sink in the SDP RTM path. To serve an app from Lakebase, wire it up outside the RTM flow; see the `databricks-lakebase` skill (e.g. synced tables).
 
 ## Observability and tuning
 
-RTM emits per-batch latency percentiles (`processingLatencyMs`, `sourceQueuingLatencyMs`, `e2eLatencyMs`) in the streaming query progress; watch p99, not the average. See the [standalone RTM reference](../../databricks-spark-structured-streaming/references/real-time-mode.md) for what each measures.
+RTM emits per-batch latency percentiles (`processingLatencyMs`, `sourceQueuingLatencyMs`, `e2eLatencyMs`) in the streaming query progress; watch p99, not the average. See the `databricks-spark-structured-streaming` skill's RTM reference for what each measures.
 
 **Set `spark.sql.shuffle.partitions` on stateful flows.** The default is `200`, which a stateful stage (aggregation, `dropDuplicates`, stream-static join) turns into 200 concurrent slots — see the slot math above. Set it low, matched to the stage's real parallelism (the docs' aggregation example uses `"8"`), in the flow's `@dp.update_flow(spark_conf={...})`.
 
@@ -150,4 +150,4 @@ RTM emits per-batch latency percentiles (`processingLatencyMs`, `sourceQueuingLa
 - sink-python — general SDP sinks (`dp.create_sink`, Delta/Kafka, `@dp.append_flow`).
 - kafka — Kafka / Event Hubs source options.
 - streaming-patterns — dedup, windowing, late data for non-RTM streaming.
-- [../databricks-spark-structured-streaming/references/real-time-mode.md](../../databricks-spark-structured-streaming/references/real-time-mode.md) — standalone RTM: cluster setup, slot math, full error-class catalog, observability internals.
+- The `databricks-spark-structured-streaming` skill — standalone RTM: cluster setup, slot math, full error-class catalog, observability internals.

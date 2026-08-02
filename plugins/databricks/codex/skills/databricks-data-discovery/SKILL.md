@@ -121,7 +121,7 @@ Only fall back if Genie One is genuinely unavailable — first **verify** with
 CLI older than v1.9.0); don't assume the command is missing. When Genie One isn't
 enabled, the CLI is too old to have either form of `genie ask`,
 or Genie can't cover the question, do the discovery yourself with the parent skill's
-commands — see **[Manual Data Exploration](../databricks-core/manual-data-exploration.md)**
+commands — see **Manual Data Exploration** in the `databricks-core` skill
 (keyword search via `information_schema`, `discover-schema`, and `tools query`).
 Running known SQL or profiling a known table that way is perfectly fine on its own.
 Do **not** default to `databricks tables list` or raw UC REST for data-location

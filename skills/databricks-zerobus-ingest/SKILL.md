@@ -219,10 +219,10 @@ event_time = int(datetime.now(timezone.utc).timestamp() * 1_000_000)  # epoch mi
 
 ## Related Skills
 
-- **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - General SDK patterns and WorkspaceClient for table/schema management
+- **`databricks-python-sdk`** - General SDK patterns and WorkspaceClient for table/schema management
 - **databricks-pipelines** - Downstream pipeline processing of ingested data
-- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - Managing catalogs, schemas, and tables that Zerobus writes to
-- **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** - Generate test data to feed into Zerobus producers
+- **`databricks-unity-catalog`** - Managing catalogs, schemas, and tables that Zerobus writes to
+- **`databricks-synthetic-data-gen`** - Generate test data to feed into Zerobus producers
 - **databricks-core** - CLI install, profile selection, authentication
 
 ## Resources

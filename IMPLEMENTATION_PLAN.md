@@ -135,6 +135,20 @@ hard constraint** — "the protected CI runner has no pypi"
 - **Landed** on branch `feature/claude-skill-agent-loop` (not the planned
   `ralph/audit-check-bootstrap` — the loop pushes this branch).
 
+**Phase 1 close runs off `ralph/phase1-base`.** The earlier loops left two
+divergent heads — `ralph/spec-10a-intra` (cross + intra, off `2b9807a`) and
+`ralph/pd-5-rest` (PD-5 + PD-5b, off `bc9ddb7`) — so no single branch carried
+all the completed work and no two counts were comparable. `ralph/phase1-base`
+is `ralph/pd-5-rest` plus the checker commit `20ac968` (GEN-1 as a freshness
+check) plus the SPEC-10a-cross sweep `32c297d`, cherry-picked in that order.
+The intra sweep was NOT carried over: on this base the count is **19**, not the
+21 the older branch swept, because the PD-5b appkit flatten already cleared 2.
+Redoing it against the live population is branch `ralph/spec-10a-remainder`.
+Conflict resolutions were semantic, not textual — where PD-5 and SPEC-10a-cross
+edited the same line, the cross fix (drop the sibling path, name the skill) and
+the PD-5 fix (strip the intra-`references/` link to a plain name) were both
+applied. Every remaining branch chains off this base.
+
 **Per-finding count table — the live baseline every future loop measures
 against:**
 
@@ -143,11 +157,11 @@ against:**
 | PD-6 | must-fix | 125 |
 | PD-5 | must-fix | **0 — DONE** (was 228) |
 | PD-5b | must-fix | **0 — DONE** (was 12) |
-| SPEC-10a-cross | must-fix | 90 |
+| SPEC-10a-cross | must-fix | **0 — DONE** (was 90) |
 | SPEC-10a-intra | must-fix | 19 (was 21; the PD-5b flatten cleared 2) |
 | SPEC-10a-prose | must-fix | 0 (the 3 moved to `SPEC-10a-self-parent`, `2b9807a`) |
 | SPEC-10b | must-fix | 64 |
-| NEW-A | must-fix | 6 |
+| NEW-A | must-fix | 0 |
 | NEW-C | must-fix | 4 |
 | PD-4a | must-fix | 3 |
 | PD-4c | must-fix | **0 — DONE** (was 3; the PD-5 sweep cleared all 3) |
@@ -164,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **323** (rollup/advisory not summed); resident set 2,975 stable /
+must-fix total **227** (rollup/advisory not summed); resident set 2,975 stable /
 3,199 all-in — unchanged by every sweep so far.
 
 ---
@@ -286,53 +300,36 @@ decide what to rewrite, so it needs the post-move paths to be correct.
 
 ---
 
-## 4. SPEC-10a-cross — cross-skill `../` traversal — 90 → 0
+## 4. SPEC-10a-cross — cross-skill `../` traversal — DONE
 
-- **Finding:** SPEC-10a-cross (includes **NEW-A**)
-- **Paths:** 90 links, 26 files, **20 skills**.
-  `skills/databricks-ml-training` 14, `skills/databricks-unity-catalog` 11,
-  `skills/databricks-apps-python` 8, `skills/databricks-pipelines` 7,
-  `skills/databricks-spark-structured-streaming` 7,
-  `skills/databricks-aibi-dashboards` 6, `skills/databricks-genie-agents` 4,
-  `skills/databricks-mlflow-evaluation` 4, then 12 skills with 1–3
-- **Count:** 90 → **0**
-- **Backpressure:** `python3 scripts/audit_check.py --only SPEC-10a-cross` → 0
-
-Replace each cross-skill file path with the bare skill name in prose. There is
-no valid cross-skill link form — do not invent one. Skills install as subsets;
-the path dangles by construction.
-
-**Raw floor is a smoke check only, never the gate:**
-`grep -rn '](\.\./databricks-' skills/ experimental/ --include='*.md' | wc -l`
-→ 68 lines (71 occurrences). It misses the **19** deeper forms whose target
-does not start `../databricks-`: 17 × `../../`, 2 × `../../skills/`, 0 ×
-`../../../` (re-measured after the PD-5b flatten, which moved
-`apps/references/appkit/lakebase.md` up a level and turned the repo's only two
-`../../../` links into `../../`). Those live in `agent-bricks`,
-`aibi-dashboards` ×2, `apps/references/appkit-lakebase.md` ×2,
-`execution-compute`, `lakebase` ×3,
-`ml-training` ×2, `pipelines/references/real-time-mode.md` ×7,
-`spark-structured-streaming` ×1. (Quote the glob — unquoted `--include=*.md`
-aborts under zsh. Same for every raw command in this plan.)
-
-### 4a. `[SEV]` NEW-A — 6 traversals that are also **dangling** — fix here
-
-- **Finding:** NEW-A (not in `specs/02`)
-- **Path:** `skills/databricks-spark-structured-streaming/references/lakebase-sink-python.md`
-  lines **13 (×2), 20, 117, 277, 312**
-- **Count:** 6 → **0**
-- **Backpressure:** `grep -c '\.\./databricks-lakebase'
-  skills/databricks-spark-structured-streaming/references/lakebase-sink-python.md`
-  → 0 (currently 6 occurrences)
-
-Targets `../databricks-lakebase/references/{connectivity,computes-and-scaling,lakehouse-sync}.md`.
-All three files exist under `skills/databricks-lakebase/references/`, but from
-inside `references/` a single `../` resolves to the streaming skill's own root —
-it would need `../../`. **These are broken today, even in a full checkout.**
-A full-corpus link resolution found **6 dangling relative `.md` links** left in
-the repo — these. It was 7 at baseline; the seventh was NEW-B, whose link the
-PD-5 sweep turned into prose. The fix (name `databricks-lakebase`, drop the
-path) closes SPEC-10a-cross and NEW-A at once.
+- **Finding:** SPEC-10a-cross (includes NEW-A) — **DONE**, 90 → 0 and 6 → 0.
+- **Landed** on branch `ralph/spec-10a-cross` (branched off
+  `feature/claude-skill-agent-loop`, which owns MNT-1a — one finding class per
+  branch).
+- **Scope:** 90 links across 26 files in 20 skills; diff was 26 files, 87
+  changed lines, zero net line change, plus 104 regenerated bundle mirrors
+  (26 × 4 provider targets). `manifest.json` did NOT change (no file paths
+  moved).
+- **Adopted convention — a rule for future branches:** a cross-skill pointer
+  becomes prose naming the sibling skill in backticks plus the word "skill"
+  (the house form already in-tree, e.g. "see the `databricks-lakebase`
+  skill"). The sibling's file path is DROPPED ENTIRELY, not rewritten — a
+  cross-skill path in prose is still a cross-skill path, just one no
+  validator can see, so it rots silently. Where the link pointed at a
+  reference file in the sibling, a descriptive label replaces the path ("its
+  Lakebase Guide", "the `databricks-spark-structured-streaming` skill's RTM
+  reference"), with labels chosen to be greppable in the sibling's own
+  SKILL.md.
+- **Consequence worth recording:** this DECOUPLES the appkit flatten. Because
+  no prose now carries a `references/appkit/...` path, PD-5b (item 3a) no
+  longer has to touch
+  `skills/databricks-lakebase/references/{off-platform,pgvector,connectivity}.md`
+  or `skills/databricks-model-serving/SKILL.md`.
+- **Mechanical shape** used for the ~70 routine sites:
+  `**[databricks-x](../databricks-x/SKILL.md)**` -> ``**`databricks-x`**``,
+  emphasis preserved.
+- **Backpressure:** `python3 scripts/audit_check.py --only SPEC-10a-cross,NEW-A`
+  → 0.
 
 ---
 
@@ -703,8 +700,8 @@ still constrain the order.
 | Step | Branch | Item | Count → target |
 |---|---|---|---|
 | 1 | `feature/claude-skill-agent-loop` | 1 · MNT-1a | DONE |
-| 2 | `ralph/spec-10a-cross` | 4 · SPEC-10a-cross + NEW-A | 90 → 0 |
-| 3 | `ralph/spec-10a-intra` | 7 · SPEC-10a-intra | 19 → 0 |
+| 2 | `ralph/spec-10a-cross` | 4 · SPEC-10a-cross + NEW-A | DONE (90 → 0) |
+| 3 | `ralph/spec-10a-remainder` | 7 · SPEC-10a-intra | 19 → 0 |
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | already 0 — regression guard only |
 | 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | 64 → 0 |
 | 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | 12 links / 4 files → 0 |
@@ -767,7 +764,7 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 
 Nothing goes into a diff its branch does not own.
 
-- NEW-A → branch 2 (item 4a). NEW-C → branch 6 (item 9).
+- NEW-C → branch 6 (item 9).
 - `databricks-app-design`'s 3 bare basenames → branch 5 (item 5), not a new branch.
 - `experimental/databricks-ai-runtime/SKILL.md:33` → branch 6 with the other 11.
 - `databricks-jobs` / `databricks-python-sdk` frontmatter-vs-body version
@@ -779,6 +776,14 @@ Nothing goes into a diff its branch does not own.
   `specs/02-audit-findings.md` was corrected in `bc9ddb7`. `SPEC-10a-prose`
   stays a must-fix row at 0 so a regression is caught; branch 4 is a guard, not
   a sweep.
+- `experimental/README.md` carries 10 `../` link occurrences (lines 10, 15, 40,
+  50, 51, 65–67, 70, 71) but sits OUTSIDE every skill directory, so
+  `iter_all_skill_dirs` never scans it and no finding counts it. Confirmed out
+  of corpus scope — `specs/01`'s link rules govern skill directories. Not a
+  defect; do not "fix" it.
+- `skills/databricks-spark-structured-streaming/references/lakebase-sink-python.md:13`
+  retains an intra-`references/` link `[real-time-mode.md](real-time-mode.md)`.
+  That is PD-5, already inside the 228, and belongs to branch 7.
 
 ---
 
@@ -863,3 +868,9 @@ Upstream cannot merge PRs directly; these need a decision, not a diff.
 - **SPEC-11** — `agents/openai.yaml` and `assets/` sit outside the spec's
   directory set, but `CONTRIBUTING.md` requires both for every skill as Codex
   marketplace metadata. Deliberate.
+- An independent second measurement of the `../` corpus (blind to
+  `scripts/audit_check.py`) returned 87 in-fence and 8 ellipsis false
+  positives vs the checker's 81 and 14. Not a disagreement: the checker
+  strips ellipsis matches BEFORE classifying, so the 6 occurrences that are
+  both in-fence and ellipsis-abutting land in the ellipsis bucket. Totals
+  reconcile. No spec change needed.

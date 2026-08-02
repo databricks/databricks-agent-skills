@@ -627,7 +627,7 @@ If I'm unsure about a method, I should:
 - **databricks-core** - profile and authentication setup
 - **databricks-dabs** - deploying resources via DABs
 - **databricks-jobs** - job orchestration patterns
-- **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - catalog governance
+- **`databricks-unity-catalog`** - catalog governance
 - **databricks-model-serving** - serving endpoint management
-- **[databricks-vector-search](../databricks-vector-search/SKILL.md)** - vector index operations
+- **`databricks-vector-search`** - vector index operations
 - **databricks-lakebase** - managed PostgreSQL with autoscaling + branching
