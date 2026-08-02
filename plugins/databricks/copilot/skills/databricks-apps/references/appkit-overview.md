@@ -16,8 +16,8 @@ Before scaffolding, decide which data pattern the app needs:
 | **Jobs** (trigger Lakeflow Jobs) | Kick off and monitor pre-existing notebooks / Python / SQL / dbt jobs | `--features jobs --set jobs.<resourceKey>.<field>=<JOB_ID>` (check manifest) |
 | **Multiple** | Combine plugins as needed (e.g. dashboard + CRUD, analytics + Genie) | `--features analytics,lakebase,genie,...` with all required `--set` flags per plugin |
 
-See [Lakebase Guide](lakebase.md) for full Lakebase scaffolding and app-code patterns.
-See [Genie Guide](genie.md) for space creation, plugin setup, and frontend components.
+See appkit-lakebase for full Lakebase scaffolding and app-code patterns.
+See appkit-genie for space creation, plugin setup, and frontend components.
 
 ## Workflow
 
@@ -122,14 +122,14 @@ Do not guess paths — run without args first, then pick from the index.
 
 | When you're about to... | Read |
 |-------------------------|------|
-| Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
-| Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
-| Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
-| Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) — only if you need server-side logic |
-| Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
-| Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
-| Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
-| Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
+| Write SQL files | appkit-sql-queries — parameterization, dialect, sql.* helpers |
+| Use `useAnalyticsQuery` | appkit-sdk — memoization, conditional queries |
+| Add chart/table components | appkit-frontend — component quick reference, anti-patterns |
+| Add API mutation endpoints | appkit-custom-endpoints — only if you need server-side logic |
+| Use Lakebase for CRUD / persistent state | appkit-lakebase — Lakebase plugin API, `onPluginsReady` patterns, schema init |
+| Add Genie chat | appkit-genie — space creation, plugin setup, frontend components |
+| Call ML model serving endpoints | appkit-model-serving — serving plugin, frontend hooks |
+| Trigger / monitor Lakeflow Jobs from the app | appkit-jobs — env discovery, JobHandle API, SSE streaming |
 
 ## Critical Rules
 

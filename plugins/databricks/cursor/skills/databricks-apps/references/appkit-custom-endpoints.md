@@ -98,7 +98,7 @@ await createApp({
 });
 ```
 
-For Lakebase CRUD routes, schema initialization, and chat persistence, see [Lakebase Guide](lakebase.md).
+For Lakebase CRUD routes, schema initialization, and chat persistence, see appkit-lakebase.
 
 ## Client-side Pattern
 
@@ -138,8 +138,8 @@ function MyComponent() {
    - **Never** add custom endpoints for SQL SELECT statements against the warehouse
 
 2. **Need to call a Databricks API?**
-   - Serving endpoints → use `serving()` plugin (see [Model Serving Guide](model-serving.md))
-   - Jobs → use `jobs()` plugin (see [Jobs Guide](jobs.md))
+   - Serving endpoints → use `serving()` plugin (see appkit-model-serving)
+   - Jobs → use `jobs()` plugin (see appkit-jobs)
    - MLflow, Workspace API, other APIs → custom endpoint via `onPluginsReady`
 
 3. **Need to modify data?** → Custom endpoint in `onPluginsReady`

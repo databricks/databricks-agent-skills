@@ -218,5 +218,5 @@ AppKit integrates with **Model Serving endpoints**. AI Gateway (beta) endpoints 
 |-------|-------|---------|
 | `PERMISSION_DENIED` on query | SP missing CAN_QUERY | Declare `serving_endpoint` resource in `databricks.yml` with `permission: CAN_QUERY` |
 | `DATABRICKS_SERVING_ENDPOINT_NAME` env var empty | Missing env injection | Add `valueFrom: serving-endpoint` to `app.yaml` env section |
-| 504 Gateway Timeout | Inference exceeds 120s proxy limit | Reduce `max_tokens` or use WebSockets — see [Platform Guide](../platform-guide.md) |
+| 504 Gateway Timeout | Inference exceeds 120s proxy limit | Reduce `max_tokens` or use WebSockets — see platform-guide |
 | Unknown serving endpoint alias | Alias not configured or env var not set | Check `serving()` config in `server.ts` and `DATABRICKS_SERVING_ENDPOINT_*` in `app.yaml` / `.env` |

@@ -2,7 +2,7 @@
 
 Setup guide for non-AppKit apps: Streamlit, FastAPI, Flask, Gradio, Dash, Django, Next.js, React, etc.
 
-For universal platform rules (permissions, deployment, timeouts, resource injection), see [Platform Guide](platform-guide.md).
+For universal platform rules (permissions, deployment, timeouts, resource injection), see platform-guide.
 
 ## 1. Port & Host Configuration
 

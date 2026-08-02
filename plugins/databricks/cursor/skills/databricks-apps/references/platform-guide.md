@@ -2,7 +2,7 @@
 
 Universal platform rules that apply to ALL Databricks Apps regardless of framework (AppKit, Streamlit, FastAPI, etc.).
 
-For non-AppKit framework-specific setup (port config, app.yaml, Streamlit gotchas), see [Other Frameworks](other-frameworks.md).
+For non-AppKit framework-specific setup (port config, app.yaml, Streamlit gotchas), see other-frameworks.
 
 ## Service Principal Permissions
 

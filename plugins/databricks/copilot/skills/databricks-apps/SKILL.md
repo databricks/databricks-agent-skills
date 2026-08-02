@@ -22,16 +22,16 @@ Build apps that deploy to Databricks Apps platform.
 | Phase | READ BEFORE proceeding |
 |-------|------------------------|
 | Scaffolding | **⚠️ STOP — review the State Storage Guidance and complete the Data Access Decision Gate below before scaffolding.** Parent `databricks-core` skill (auth, warehouse discovery); then run `databricks apps manifest` + `databricks apps init` with `--features` and `--set` (see AppKit section below) |
-| Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
-| Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
-| Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
-| Adding API endpoints | [Custom Endpoints Guide](references/appkit/custom-endpoints.md) |
-| Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
-| Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — follow the Genie agent workflow below |
-| Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
-| Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
-| Managing files in UC Volumes | [Files Guide](references/appkit/files.md) |
-| Triggering / monitoring Lakeflow Jobs from the app | [Jobs Guide](references/appkit/jobs.md) |
+| Writing SQL queries | [SQL Queries Guide](references/appkit-sql-queries.md) |
+| Writing UI components | [Frontend Guide](references/appkit-frontend.md) |
+| Using `useAnalyticsQuery` | [AppKit SDK](references/appkit-sdk.md) |
+| Adding API endpoints | [Custom Endpoints Guide](references/appkit-custom-endpoints.md) |
+| Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit-lakebase.md) |
+| Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit-genie.md) — follow the Genie agent workflow below |
+| Using Model Serving (ML inference) | [Model Serving Guide](references/appkit-model-serving.md) |
+| Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit-proto-first.md) and [Plugin Contracts](references/appkit-proto-contracts.md) |
+| Managing files in UC Volumes | [Files Guide](references/appkit-files.md) |
+| Triggering / monitoring Lakeflow Jobs from the app | [Jobs Guide](references/appkit-jobs.md) |
 | Platform rules (permissions, deployment, limits) | [Platform Guide](references/platform-guide.md) — READ for ALL apps including AppKit |
 | Non-AppKit app (Streamlit, FastAPI, Flask, Gradio, Next.js, etc.) | [Other Frameworks](references/other-frameworks.md) |
 
@@ -93,7 +93,7 @@ If the app reads from Unity Catalog / lakehouse tables, you MUST show the compar
 After showing the table, add a brief recommendation. Default to recommending Analytics (B) for most read-only apps — dashboards, charts, filtered queries, browsing, and aggregations. Recommend Lakebase synced tables (A) only when the app needs sub-second latency for full-text search, typeahead/autocomplete, real-time lookups by ID, or operational data serving. Note: "search" or "filter" in a prompt usually means SQL WHERE clauses (Analytics), not full-text search (Lakebase). Always let the user make the final call.
 
 After the user chooses:
-- (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
+- (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit-lakebase.md) for full workflow.
 - (B) Analytics → scaffold with `--features analytics`.
 - Both → scaffold with `--features analytics,lakebase` if the app needs both patterns.
 - If the app does NOT read Unity Catalog data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
@@ -109,7 +109,7 @@ After the user chooses:
 
 **DO NOT** write UI code before running typegen — types won't exist and you'll waste time on compilation errors.
 
-**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit/lakebase.md) for the `onPluginsReady` pattern: initialize schema at startup, register Express routes in `server/server.ts`, then build the React frontend.
+**Lakebase apps** (`--features lakebase`): No SQL files or typegen. See [Lakebase Guide](references/appkit-lakebase.md) for the `onPluginsReady` pattern: initialize schema at startup, register Express routes in `server/server.ts`, then build the React frontend.
 
 ## When to Use What
 
@@ -118,11 +118,11 @@ After completing the decision gate above, use this routing table:
 - **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
-- **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit/lakebase.md)
-- **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase via Express routes in `onPluginsReady` — see [Lakebase Guide](references/appkit/lakebase.md)
-- **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
-- **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
-- **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
+- **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit-lakebase.md)
+- **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase via Express routes in `onPluginsReady` — see [Lakebase Guide](references/appkit-lakebase.md)
+- **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit-genie.md)
+- **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit-model-serving.md)
+- **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit-jobs.md)
 - **⚠️ NEVER add custom endpoints to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
 - **⚠️ NEVER use `useAnalyticsQuery` for Lakebase data** — it queries the SQL warehouse only
 
@@ -186,17 +186,17 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 4. **Conflict detection** — if a plugin `must` rule contradicts a template `never` rule on the same target (or vice versa), STOP and ask the user which to follow before proceeding. Do not silently pick one. Treat `must` vs `never` on the same action as a conflict; `should` is advisory and does not block.
 5. **Reporting** — before running `databricks apps init`, surface the merged working set to the user grouped by phase (Before init / After init / Always) and by severity (must / should / never), so the active guardrails are explicit.
 
-**READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
+**READ [AppKit Overview](references/appkit-overview.md)** for project structure, workflow, and pre-implementation checklist.
 
 **Genie Agent Workflow** — when the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
 
 1. Ask which Unity Catalog tables the app should query (fully qualified: `catalog.schema.table`).
 2. Ask whether to reuse an existing Genie space or create a new one.
-3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Guide](references/appkit/genie.md) for syntax and serialized space format).
+3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Guide](references/appkit-genie.md) for syntax and serialized space format).
 4. If reusing: discover existing spaces with `databricks genie list-spaces --profile <PROFILE>` and let the user pick.
 5. Scaffold or wire the space ID into the app — derive `--set` keys from `databricks apps manifest`.
 
-Read the [Genie Guide](references/appkit/genie.md) for configuration, SSE endpoints, and frontend integration.
+Read the [Genie Guide](references/appkit-genie.md) for configuration, SSE endpoints, and frontend integration.
 
 ### Common Scaffolding Mistakes
 

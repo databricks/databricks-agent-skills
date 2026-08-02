@@ -4,7 +4,7 @@
 
 Use the `jobs()` plugin when your app needs to **trigger or monitor pre-existing Databricks Lakeflow Jobs** (notebooks, Python scripts, SQL, dbt, JARs) and surface their status to users. The jobs themselves still live as regular Lakeflow Jobs in the workspace — the plugin is the typed, resource-scoped accessor that lets app code start runs, poll status, and stream completion events.
 
-The plugin is **resource-scoped**: only jobs declared via config or discovered from `DATABRICKS_JOB_*` env vars are accessible. It is not a generic Jobs SDK wrapper — to author or schedule jobs, use the `databricks-jobs` (Lakeflow) skill instead. See [`overview.md`](./overview.md) for the cross-plugin data-pattern selector.
+The plugin is **resource-scoped**: only jobs declared via config or discovered from `DATABRICKS_JOB_*` env vars are accessible. It is not a generic Jobs SDK wrapper — to author or schedule jobs, use the `databricks-jobs` (Lakeflow) skill instead. See appkit-overview for the cross-plugin data-pattern selector.
 
 ## Scaffolding
 
@@ -94,7 +94,7 @@ for await (const status of etl.runAndWait({ startDate: "2025-01-01" })) {
 }
 ```
 
-Read methods (`lastRun`, `listRuns`, `getRun`, `getRunOutput`, `getJob`) and `cancelRun` follow the same `ExecutionResult<T>` shape. Reads cache for 60s with 3 retries. `runAndWait` has a 600s server-side cap, but **client-facing requests are bounded by the Apps platform's 120s reverse-proxy timeout** (see [Platform Guide](../platform-guide.md), "HTTP Proxy & Streaming"). For runs longer than ~120s, use `runNow` and poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests instead of streaming.
+Read methods (`lastRun`, `listRuns`, `getRun`, `getRunOutput`, `getJob`) and `cancelRun` follow the same `ExecutionResult<T>` shape. Reads cache for 60s with 3 retries. `runAndWait` has a 600s server-side cap, but **client-facing requests are bounded by the Apps platform's 120s reverse-proxy timeout** (see platform-guide, "HTTP Proxy & Streaming"). For runs longer than ~120s, use `runNow` and poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests instead of streaming.
 
 ### Execution context
 
