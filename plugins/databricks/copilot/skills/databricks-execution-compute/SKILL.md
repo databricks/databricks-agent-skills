@@ -1,6 +1,6 @@
 ---
 name: databricks-execution-compute
-description: "Execute code and manage compute on Databricks: run Python/Scala/SQL/R via serverless, classic, or interactive clusters, and create/resize/delete clusters and SQL warehouses."
+description: "Run code on Databricks and manage the compute that runs it: Databricks Connect for Spark, serverless jobs for heavy processing, interactive clusters for Scala/R or state across calls, plus create/resize/delete for clusters and SQL warehouses. Use this skill when the user asks to 'run this on Databricks', 'execute this notebook', 'start a cluster', or 'which compute should I use'. Do not use when a databricks.yml exists (databricks-dabs) or for scheduled multi-task workflows (databricks-jobs)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"

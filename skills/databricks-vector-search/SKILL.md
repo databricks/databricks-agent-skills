@@ -1,6 +1,6 @@
 ---
 name: databricks-vector-search
-description: "Databricks Vector Search endpoints and indexes for RAG and semantic search; covers index types, search modes, end-to-end RAG patterns"
+description: "Create, manage, and query Databricks Vector Search endpoints and indexes: Delta Sync versus Direct Access index types, Standard versus Storage-Optimized endpoints, and filtered similarity queries. Use this skill when the user asks to 'build a RAG pipeline', 'set up semantic search', 'create a vector index', or 'find similar documents' on Databricks. Do not use for pgvector inside Lakebase Postgres (databricks-lakebase) or for embedding from SQL via ai_query (databricks-ai-functions)."
 metadata:
   version: "0.1.0"
 parent: databricks-core

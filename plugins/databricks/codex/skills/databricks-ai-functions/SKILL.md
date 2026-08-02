@@ -1,6 +1,6 @@
 ---
 name: databricks-ai-functions
-description: "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse → prep_search → index → query)."
+description: "Databricks built-in AI Functions for SQL and PySpark: ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, ai_query, ai_forecast. Use this skill when the user asks to 'classify', 'summarize', 'extract from', or 'mask' a column, to 'parse PDFs in SQL', or to 'add AI to this query'. Do not use for serving endpoints (databricks-model-serving) or vector indexes (databricks-vector-search)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.2.0"

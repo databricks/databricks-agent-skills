@@ -1,6 +1,6 @@
 ---
 name: databricks-genie-agents
-description: "Create, manage, and query Databricks Genie Agents — curated, per-data natural-language agents (formerly Genie Spaces): build, export/import, migrate across workspaces, and ask questions of a *specific* Agent via the Conversation API. For general data questions or finding data across your workspace, use databricks-data-discovery (Genie One) instead."
+description: "Create, manage, and query Genie Agents (formerly Genie Spaces): curated natural-language agents scoped to a chosen set of UC tables, covering table selection, sample questions, export/import, workspace migration, and querying an Agent via the Conversation API. Use this skill when the user asks to 'build a Genie space', 'set up a Genie agent for this data', or 'migrate a Genie space'. Do not use for general data questions or workspace-wide data discovery (databricks-data-discovery / Genie One)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"

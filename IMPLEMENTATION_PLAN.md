@@ -167,7 +167,7 @@ against:**
 | PD-4c | must-fix | **0 — DONE** (was 3; the PD-5 sweep cleared all 3) |
 | PD-1 | must-fix | 3 |
 | PD-2 | must-fix | 3 |
-| DESC-1 | must-fix | 6 |
+| DESC-1 | must-fix | **0 — DONE** (was 6) |
 | PD-3 | rollup | 4 |
 | PD-4b | blocked | 19 |
 | TOK-5 | blocked | 21 |
@@ -178,8 +178,8 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **133** (rollup/advisory not summed); resident set 2,975 stable /
-3,199 all-in — unchanged by every sweep so far.
+must-fix total **127** (rollup/advisory not summed); resident set **3,347 stable /
+3,571 all-in** (was 2,975 / 3,199; the DESC-1 rewrite added 372 tokens).
 
 ---
 
@@ -537,35 +537,39 @@ new reference files must ship with TOCs and without second hops.
 
 ---
 
-## 12. DESC-1 / DESC-3 — descriptions without trigger conditions — 6 → 0
+## 12. DESC-1 / DESC-3 — descriptions without trigger conditions — 6 → 0 — DONE
 
-- **Finding:** DESC-1 / DESC-3
-- **Paths / counts (chars), rewrite shortest first:**
-  `skills/databricks-agent-bricks` (122, shortest in repo),
-  `skills/databricks-vector-search` (133, "covers index types, search modes" —
-  contents, not conditions), `skills/databricks-execution-compute` (173),
-  `skills/databricks-unstructured-pdf-generation` (253),
-  **`skills/databricks-genie-agents` (350 — 6th, not in `specs/02`)**,
-  `skills/databricks-ai-functions` (415)
-- **Count:** **6 → 0**
-- **Backpressure:** `python3 scripts/audit_check.py --only DESC-1` → 0, and the
-  rollup's resident-set line printed for the PR body
+- **Finding:** DESC-1 — **DONE**, 6 → 0.
+- **Landed** on branch `ralph/desc-1-triggers`, off `ralph/new-c-root-refs`.
+- **Shape applied to all six**, from the `databricks-data-discovery` model:
+  what the skill does → `Use this skill when the user asks to '<literal
+  phrasing>'…` → `Do not use for … (<named sibling>)`. Third person; the
+  quoted phrasings are what a user actually types, not paraphrases of the
+  body.
+- **Sibling named in every one**, which is what makes the clause load-bearing:
 
-**Use a fixed reviewed list, not a regex gate.** `specs/02` names 5; a
-when-clause regex flags 8–10 depending on wording, and independent review says
-**6**. `databricks-genie-agents` opens with a bare capability list ("Create,
-manage, and query…") and carries only a *negative* sibling clause, never a
-positive self-trigger — structurally identical to `agent-bricks`. The extra
-regex hits (`unity-catalog`, `core`, `ml-training`) are false positives:
-"Use to grant or revoke…" and "Load this first for…" are valid elided-object
-self-references. Hardcode the reviewed 6; file the heuristic as an issue.
+  | Skill | chars (was → now) | Yields to |
+  |---|---|---|
+  | `databricks-agent-bricks` | 122 → 495 | `genie-agents`, `ml-training` |
+  | `databricks-vector-search` | 133 → 488 | `lakebase` (pgvector), `ai-functions` |
+  | `databricks-execution-compute` | 173 → 497 | `dabs` (a `databricks.yml` exists), `jobs` |
+  | `databricks-unstructured-pdf-generation` | 253 → 481 | `synthetic-data-gen` |
+  | `databricks-genie-agents` | 350 → 498 | `data-discovery` (Genie One) |
+  | `databricks-ai-functions` | 415 → 476 | `model-serving`, `vector-search` |
 
-Target 300–500 chars, hard cap 1,024 (currently 0 violations; max 845).
-Model: `skills/databricks-data-discovery` (literal user phrasings); second-best
-`skills/databricks-apps-python` (names its sibling and when it wins instead).
-Baseline resident set **2,975 tokens stable / 3,199 all-in** — reproduced
-exactly, but only after unescaping YAML `\"` in the `apps` and `unity-catalog`
-descriptions; a naive parser reports 2,964/3,187.
+- **All six land inside the 300–500 target band** (476–498), well under the
+  1,024 hard cap. Four first drafts came in at 504–581 and were tightened
+  rather than allowed to run long.
+- **`databricks-ai-functions` keeps all 12 function names.** They are literal
+  trigger tokens a user types (`ai_extract`, `ai_parse_document`, …), so they
+  were treated as trigger content and the surrounding prose was cut instead.
+- **Resident-set delta against the 2,975-token stable baseline:
+  2,975 → 3,347 stable (+372 tokens, +12.5%); 3,199 → 3,571 all-in (+372).**
+  All six are stable skills, so both figures move by the same amount. The
+  1,477 added characters ÷ 4 = 369 predicted; the 3-token gap is the single
+  division over the summed corpus, exactly as D6 specifies.
+- **Backpressure:** `audit_check.py --only DESC-1` → 0; must-fix 133 → **127**;
+  exactly one row moved; `skills.py validate` → 0; 149 tests pass.
 
 ---
 
@@ -718,7 +722,7 @@ still constrain the order.
 | 9 | `ralph/pd-6-toc` | 2 · PD-6 (≥3 commits) | 125 → 0 |
 | 10 | `ralph/pd-1-ceilings` | 11 · PD-1/2/3 (1 commit each) | 4 → 0 |
 | 11 | `ralph/pd-4-routing` | 13 · PD-4a | DONE (3 → 0) |
-| 12 | `ralph/desc-1-triggers` | 12 · DESC-1/3 | 6 → 0 |
+| 12 | `ralph/desc-1-triggers` | 12 · DESC-1/3 | DONE (6 → 0) |
 | 13 | `ralph/tok-5-preview` | 6 · TOK-5 — **BLOCKED on D5** | 21 → 0 |
 | 14 | `ralph/pd-4b-core-routing` | 8 · PD-4b — **BLOCKED** | 5 → full graph |
 | 15 | `ralph/compat-pin` | 10 · Compatibility — **BLOCKED** | 8 shapes → 1 |

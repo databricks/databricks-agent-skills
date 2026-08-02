@@ -1,6 +1,6 @@
 ---
 name: databricks-agent-bricks
-description: "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS)."
+description: "Create and manage Databricks Agent Bricks: Knowledge Assistants for document Q&A over PDFs and text in Unity Catalog volumes, and Supervisor Agents that orchestrate other agents, endpoints, UC functions, and MCP servers. Use this skill when the user says 'Agent Bricks', 'Knowledge Assistant', or 'supervisor agent', or asks for document Q&A without writing RAG code. Do not use for natural-language SQL over tables (databricks-genie-agents) or hand-authored agent code (databricks-ml-training)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"

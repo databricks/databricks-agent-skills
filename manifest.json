@@ -2,7 +2,7 @@
   "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
   "skills": {
     "databricks-agent-bricks": {
-      "description": "Create Agent Bricks: Knowledge Assistants (KA) for document Q&A and Supervisor Agents for multi-agent orchestration (MAS).",
+      "description": "Create and manage Databricks Agent Bricks: Knowledge Assistants for document Q&A over PDFs and text in Unity Catalog volumes, and Supervisor Agents that orchestrate other agents, endpoints, UC func...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -15,7 +15,7 @@
       "version": "0.1.0"
     },
     "databricks-ai-functions": {
-      "description": "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, a...",
+      "description": "Databricks built-in AI Functions for SQL and PySpark: ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, a...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -187,7 +187,7 @@
       "version": "0.1.0"
     },
     "databricks-execution-compute": {
-      "description": "Execute code and manage compute on Databricks: run Python/Scala/SQL/R via serverless, classic, or interactive clusters, and create/resize/delete clusters and SQL warehouses.",
+      "description": "Run code on Databricks and manage the compute that runs it: Databricks Connect for Spark, serverless jobs for heavy processing, interactive clusters for Scala/R or state across calls, plus create/r...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -201,7 +201,7 @@
       "version": "0.1.0"
     },
     "databricks-genie-agents": {
-      "description": "Create, manage, and query Databricks Genie Agents \u2014 curated, per-data natural-language agents (formerly Genie Spaces): build, export/import, migrate across workspaces, and ask questions of a *speci...",
+      "description": "Create, manage, and query Genie Agents (formerly Genie Spaces): curated natural-language agents scoped to a chosen set of UC tables, covering table selection, sample questions, export/import, works...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -475,7 +475,7 @@
       "version": "0.3.0"
     },
     "databricks-unstructured-pdf-generation": {
-      "description": "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for Knowledge Assistant) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair eac...",
+      "description": "Produce synthetic PDF documents paired with retrieval-eval questions and land them in a Unity Catalog volume as the gold dataset for RAG and unstructured-document evaluation.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -487,7 +487,7 @@
       "version": "0.1.0"
     },
     "databricks-vector-search": {
-      "description": "Databricks Vector Search endpoints and indexes for RAG and semantic search; covers index types, search modes, end-to-end RAG patterns",
+      "description": "Create, manage, and query Databricks Vector Search endpoints and indexes: Delta Sync versus Direct Access index types, Standard versus Storage-Optimized endpoints, and filtered similarity queries.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
