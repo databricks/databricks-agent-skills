@@ -899,3 +899,53 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# --- Generated-artifact guard -------------------------------------------------
+# plugins/**, manifest.json, rules/, hooks/, */agents/openai.yaml and */assets/
+# are generated from metaplugin/plugin.meta.json by scripts/skills.py generate.
+# Hand edits get silently overwritten, and mirroring a skills/ change into all
+# four platform trees inflates a diff ~5x. Prose guardrails did not hold this;
+# backpressure does.
+
+import re as _re
+import subprocess as _sp
+
+_GENERATED = (
+    _re.compile(r"^plugins/"),
+    _re.compile(r"^manifest\.json$"),
+    _re.compile(r"^rules/"),
+    _re.compile(r"^hooks/.*\.json$"),
+    _re.compile(r"^(skills|experimental)/[^/]+/agents/"),
+    _re.compile(r"^(skills|experimental)/[^/]+/assets/"),
+)
+
+
+def check_generated_artifacts(base: str = "upstream/main") -> int:
+    """Fail if the working branch touches generated output. Returns violation count."""
+    try:
+        merge_base = _sp.run(
+            ["git", "merge-base", "HEAD", base],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        changed = _sp.run(
+            ["git", "diff", "--name-only", merge_base],
+            capture_output=True, text=True, check=True,
+        ).stdout.split()
+    except (_sp.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(
+            f"GEN-1: cannot diff against {base} to check generated artifacts: {exc}"
+        ) from exc
+
+    hits = [p for p in changed if any(rx.match(p) for rx in _GENERATED)]
+    if hits:
+        shown = "\n  ".join(hits[:15])
+        more = f"\n  ... and {len(hits) - 15} more" if len(hits) > 15 else ""
+        raise RuntimeError(
+            f"GEN-1 (must-fix): {len(hits)} generated artifacts modified.\n"
+            f"  {shown}{more}\n"
+            f"  Source of truth is metaplugin/plugin.meta.json.\n"
+            f"  Fix: git checkout {base} -- plugins/ && "
+            f"python3 scripts/skills.py generate"
+        )
+    return 0
