@@ -1,32 +1,69 @@
 # Spec: audit findings
 
-Measured against clone `50ccd08`. Counts are calibration targets for
-`scripts/audit_check.py`. If your measurement disagrees with a count here, the
-disagreement is itself a finding — record it, do not silently adopt either
-number.
+Measured against clone `50ccd08`, which is `upstream/main` itself. The corpus is
+unremediated: `skills/` (tree `4675ac0`) and `experimental/` (tree `32b7073`) are
+byte-identical to `upstream/main`, so `python3 scripts/audit_check.py` run in a
+working tree on this branch *is* the upstream baseline — no worktree or detached
+checkout needed.
 
-Corpus: 30 stable + 2 experimental skills. Baseline resident set 2,975 tokens
+**Every `Count:` below is the checker's number in the checker's unit**, tagged
+with the `audit_check.py` row ID that reports it. The unit is named explicitly —
+occurrences, links, files, mentions, skills, or descriptions — because the
+original audit and the checker frequently measure the same defect at different
+granularity, and a target stated in the wrong unit cannot be gated. Where the
+audit's stated figure differs, it is preserved in the Reconciliation section
+below rather than discarded; the disagreement is itself a finding.
+
+Baseline totals: **568 must-fix** across 31 skills. Resident set 2,975 tokens
 (stable only), 3,199 all-in.
+
+Corpus: 30 stable + 2 experimental skills.
+
+Backpressure per finding: `python3 scripts/audit_check.py --only <row-id>`. The
+row IDs used as tags below are exactly the IDs that flag accepts.
 
 ---
 
 ## Phase 1 — must-fix (one branch and one PR per finding class)
 
-### SPEC-10a — cross-skill `../` traversal
-**Count: 19 skills, 128 occurrences. Target 0.**
+### SPEC-10a — `../` traversal
 
-Heaviest: `databricks-ml-training` (26), `databricks-unity-catalog` (22),
-`databricks-apps-python` (16), `databricks-aibi-dashboards` (11),
-`databricks-pipelines` (9), `databricks-mlflow-evaluation` (8),
-`databricks-genie-agents` (8), `databricks-spark-structured-streaming` (7).
+The audit's single count conflates four classes with different fixes. The
+checker reports each separately, and the units differ per class.
 
-Fix: replace each cross-skill file path with the bare skill name in prose.
-There is no valid cross-skill link form — do not invent one. Then add a
+**Count (`SPEC-10a-cross`): 90 links across 20 skills. Target 0.**
+**Count (`SPEC-10a-intra`): 21 links across 9 skills. Target 0.**
+**Count (`SPEC-10a-prose`): 0. Target 0 — already clean.**
+**Exempt (`SPEC-10a-fence`, advisory): 81 occurrences across 5 skills.**
+**Exempt (`SPEC-10a-self-parent`, advisory): 3 occurrences in 1 skill.**
+
+The unit is **links**, not occurrences: a `../../` target matches the traversal
+regex twice, so the same 90 cross-skill links are 111 `../` occurrences. Audit
+said 19 skills / 128 occurrences — see Reconciliation.
+
+Heaviest cross-skill (`SPEC-10a-cross`, links): `databricks-ml-training` (14),
+`databricks-unity-catalog` (11), `databricks-apps-python` (8),
+`databricks-pipelines` (7), `databricks-spark-structured-streaming` (7),
+`databricks-aibi-dashboards` (6), `databricks-genie-agents` (4),
+`databricks-mlflow-evaluation` (4).
+
+Heaviest intra-skill (`SPEC-10a-intra`, links): `databricks-pipelines` (5),
+`databricks-ml-training` (4), `databricks-agent-bricks` (3),
+`databricks-ai-functions` (3), `databricks-apps` (2), then 1 each in
+`databricks-aibi-dashboards`, `databricks-lakeflow-connect`,
+`databricks-metric-views`, `databricks-serverless-migration`.
+
+Fix (`SPEC-10a-cross`): replace each cross-skill file path with the bare skill
+name in prose. There is no valid cross-skill link form — do not invent one.
+Fix (`SPEC-10a-intra`): rewrite the path relative to the skill root. Then add a
 traversal check to `scripts/skillsgen/validators.py` matching the style of the
 existing `check_*` functions, so it cannot regress.
 
+Clearing `SPEC-10a-cross` also clears all 6 `NEW-A` links — they are the same
+links, counted once as traversals and once as dangling targets.
+
 ### SPEC-10b — bare-basename references
-**Count: 64 mentions across 2 skills. Target 0.**
+**Count (`SPEC-10b`): 64 mentions across 2 skills. Target 0.**
 
 Units: 64 counts *mentions*; 11 counts reference *files*. Both are correct
 measurements of the same defect at different granularity. `databricks-mlflow-evaluation`
@@ -43,28 +80,62 @@ numbered workflow tables are the best routing in the repo; only the paths are
 wrong.
 
 
-### PD-5 — reference-to-reference links
-**Count: 17 skills. Target 0.**
+### NEW-A — dangling relative `.md` links
+**Count (`NEW-A`): 6 links in 1 skill. Target 0.**
 
-`databricks-pipelines` (103 — consider its own commit), `unity-catalog` (29),
-`spark-structured-streaming` (22), `apps` (21), `aibi-dashboards` (21), plus 12
-others.
+Not in the original audit. All 6 sit in
+`skills/databricks-spark-structured-streaming/references/lakebase-sink-python.md`
+at `:13` (×2), `:20`, `:117`, `:277`, `:312`, and all target
+`../databricks-lakebase/references/{connectivity,computes-and-scaling,lakehouse-sync}.md`
+— paths that do not exist under any spelling.
+
+The unit is **links**, the same unit as `SPEC-10a-cross`, and these are the same
+6 links: they are counted once for traversing out of the skill and once for not
+resolving. Fixing the cross-skill sweep zeroes both rows; no separate commit.
+
+### PD-5 — reference-to-reference links
+**Count (`PD-5`): 228 links across 15 skills. Target 0.**
+
+The unit is **links to strip**, not skills carrying the defect — the audit
+counted skills (17). Heaviest: `databricks-pipelines` (91 — consider its own
+commit), `databricks-unity-catalog` (29), `databricks-aibi-dashboards` (19),
+`databricks-apps` (19), `databricks-spark-structured-streaming` (15),
+`databricks-metric-views` (13), `databricks-lakebase` (9),
+`databricks-ml-training` (8), `databricks-execution-compute` (6),
+`databricks-iceberg` (6), `databricks-apps-python` (5), then 2 each in
+`databricks-lakeflow-connect`, `databricks-serverless-migration`,
+`databricks-zerobus-ingest`, `spark-python-data-source`.
 
 Fix: strip inter-reference links to plain names; ensure every reference is
 linked directly from its SKILL.md with a load condition.
 
-Also flatten `skills/databricks-apps/references/appkit/*.md` to
-`references/appkit-*.md` — the only two-level reference directory in the repo.
+### PD-5b — nested `references/` subdirectory
+**Count (`PD-5b`): 12 files in 1 skill. Target 0.**
+
+References are one level deep. Every file under
+`skills/databricks-apps/references/appkit/` breaches it — the only two-level
+reference directory in the repo. Flatten to `references/appkit-*.md`.
+
+The audit described this inside PD-5's prose but never gave it a count. It is a
+separate row with a separate gate (`--only PD-5b`) because the fix is a rename,
+not a link edit, and the unit is **files moved**, not links stripped.
 
 ### PD-1 / PD-2 / PD-3 — ceiling breaches
-**Count: 4 skills. Target 0 over either ceiling.**
+**Count (`PD-1`): 3 skills over 500 lines. Target 0.**
+**Count (`PD-2`): 3 skills over 5,000 tokens. Target 0.**
+**Count (`PD-3`, rollup): 4 skills over either ceiling. Not a gate — the union
+of PD-1 and PD-2, reported so the audit's stated 4 stays traceable.**
 
-| Skill | Lines | Tokens | Split |
-|---|---|---|---|
-| `databricks-serverless-migration` | 839 | 15,683 | "Quick Fixes Reference" → `references/quick-fixes.md`; Step 2 notebook transcripts → `references/analysis-output-examples.md` |
-| `databricks-python-sdk` | 625 | 4,470 | split by SDK object family (clusters, jobs, unity catalog, serving) |
-| `databricks-aibi-dashboards` | 525 | 8,147 | widget-spec detail into existing `references/` |
-| `databricks-pipelines` | 258 | 8,404 | decision tree and Common Traps → `references/` |
+The unit is **skills** in all three rows. The audit's single "4 skills" is the
+`PD-3` rollup; because the two ceilings bind independently, two of the four
+breach only one of them, so neither must-fix row is 4.
+
+| Skill | Lines | Tokens | Breaches | Split |
+|---|---|---|---|---|
+| `databricks-serverless-migration` | 839 | 15,683 | PD-1 + PD-2 | "Quick Fixes Reference" → `references/quick-fixes.md`; Step 2 notebook transcripts → `references/analysis-output-examples.md` |
+| `databricks-python-sdk` | 625 | 4,470 | PD-1 only | split by SDK object family (clusters, jobs, unity catalog, serving) |
+| `databricks-aibi-dashboards` | 525 | 8,147 | PD-1 + PD-2 | widget-spec detail into existing `references/` |
+| `databricks-pipelines` | 258 | 8,404 | PD-2 only | decision tree and Common Traps → `references/` |
 
 `databricks-pipelines` passes the line check and fails on tokens — mean line
 128 chars. Both checks bind independently.
@@ -74,24 +145,48 @@ load conditions. Total characters across each skill directory must land within
 2% of pre-split, which proves content moved rather than vanished.
 
 ### PD-4 — dead and missing routing
-**Count: 5 defects. Target 0.**
 
-- `databricks-docs` references a skill named
-  `databricks-spark-declarative-pipelines` in two places. No such skill exists;
-  it is `databricks-pipelines`. Fix both. While in the file, settle terminology
-  — it mixes "Delta Live Tables", "DLT", and "Lakeflow" for one product in a
-  60-line body.
-- `databricks-core` routes to 5 children, but 26 skills declare
-  `parent: databricks-core`. Regenerate the Product Skills list from the parent
-  graph.
-- Three orphan references, linked from nowhere: link with a load condition, or
-  delete and say which in the commit message.
-  - `databricks-lakebase/references/medallion-from-cdc.md`
-  - `databricks-pipelines/references/python-basics.md`
-  - `databricks-pipelines/references/sql-basics.md`
+The audit's "5 defects" is one headline over three checker rows with three
+units, three fixes, and — for `PD-4b` — a different severity.
+
+#### PD-4a — pointer to a nonexistent skill
+**Count (`PD-4a`): 3 occurrences across 2 skills. Target 0.**
+
+`databricks-spark-declarative-pipelines` does not exist; it is
+`databricks-pipelines`. Occurrences at `databricks-docs/SKILL.md:23` and `:52`
+and `experimental/spark-python-data-source/SKILL.md:145` — three, not the two
+the audit named, and the third is in a skill the audit did not name. While in
+`databricks-docs`, settle terminology — it mixes "Delta Live Tables", "DLT", and
+"Lakeflow" for one product in a 60-line body.
+
+#### PD-4b — core children missing from core routing
+**Count (`PD-4b`): 19 skills unrouted. Blocked, not must-fix.**
+
+The unit is **skills absent from `databricks-core/SKILL.md`**, not the audit's
+count of skills declaring the parent. 25 skills declare
+`parent: databricks-core` (not 26); `databricks-core` mentions 6 of them; 19 are
+unreachable from core.
+
+Blocked because regenerating the Product Skills list from the parent graph is a
+routing-policy decision — whether every child belongs in core's body, or only a
+curated set, is a maintainer call. The checker reports it and does not gate on
+it.
+
+#### PD-4c — orphan reference files
+**Count (`PD-4c`): 3 files across 2 skills. Target 0.**
+
+Linked from nowhere: link with a load condition, or delete and say which in the
+commit message.
+
+- `databricks-lakebase/references/medallion-from-cdc.md`
+- `databricks-pipelines/references/python-basics.md`
+- `databricks-pipelines/references/sql-basics.md`
 
 ### DESC-1 / DESC-3 — descriptions without trigger conditions
-**Count: 5 skills. Target 0.**
+**Count (`DESC-1`): 6 descriptions across 6 skills. Target 0.**
+
+The unit is **descriptions** — one per skill, so the skill count matches. The
+audit named 5; the checker finds 6.
 
 | Skill | Chars | Problem |
 |---|---|---|
@@ -99,50 +194,114 @@ load conditions. Total characters across each skill directory must land within
 | `databricks-vector-search` | 133 | "covers index types, search modes" — contents, not conditions |
 | `databricks-execution-compute` | 173 | capability only |
 | `databricks-unstructured-pdf-generation` | 253 | capability only |
+| `databricks-genie-agents` | 350 | capability only — the sixth, unnamed by the audit |
 | `databricks-ai-functions` | 415 | keyword-dense, still no when-clause |
 
 Target 300–500 chars. Hard cap 1,024. Report the resident-set delta against the
 2,975-token baseline.
+
+`databricks-genie-agents` is the reason length alone is not the gate: at 350
+chars it already sits inside the 300–500 target band and still states no
+condition for firing.
+
+### NEW-C — reference files at the skill root
+**Count (`NEW-C`): 4 files across 2 skills. Target 0.**
+
+Not in the original audit, but load-bearing for two findings that already cite
+it. Reference content sitting beside `SKILL.md` instead of under `references/`
+resolves fine on disk, so nothing looks broken — while every `references/`-scoped
+check (TOC, orphan, one-level-deep) skips it silently.
+
+- `skills/databricks-core/databricks-cli-auth.md`
+- `skills/databricks-core/databricks-cli-install.md`
+- `skills/databricks-core/manual-data-exploration.md`
+- `experimental/databricks-ai-runtime/docker-images.md`
+
+All four are over 100 lines and none carries a TOC, so they are also 4 of the
+125 `PD-6` files. The `PD-6` and `SPEC-10b` reconciliations below both defer to
+"the root-file finding" — this is it.
 
 ---
 
 ## Phase 2 — structural (batch after Phase 1 is green)
 
 ### PD-6 — missing reference tables of contents
-**Count: ~120 files across 25 skills. Target 0.**
+**Count (`PD-6`): 125 files across 26 skills. Target 0.**
+
+The unit is **files lacking a TOC**, and it includes the 4 `NEW-C` root-level
+files — excluding them is the exact blind spot the root-file finding describes.
+Audit said ~120 across 25 skills.
+
+Heaviest: `databricks-apps` (14), `databricks-pipelines` (13),
+`databricks-spark-structured-streaming` (11), `databricks-serverless-migration`
+(8), `spark-python-data-source` (8), `databricks-lakebase` (7),
+`databricks-unity-catalog` (7).
 
 Start with `databricks-metric-views/references/metric-view-advisor.md` — 59,852
 chars, the largest single file in the repo, no TOC.
 
 ### TOK-5 — uncontained preview and beta markers
-**Count: 30 markers across 10 skills. Target 0 bare inline markers.**
+**Count (`TOK-5`): 21 markers across 10 skills, strict basis. Blocked.**
 
-Heaviest `databricks-lakeflow-connect` (9), `databricks-pipelines` (6),
-`databricks-serverless-migration` (3), `databricks-zerobus-ingest` (3).
+The unit is **markers**. Blocked, not must-fix: the audit's 30 reproduces under
+no basis, so the definition is a maintainer decision and no sweep should run
+against an unreproducible number. See Reconciliation.
 
-Fix: consolidate into a per-skill dated status table or an "old patterns"
-section. Do not delete the information.
+Heaviest on the strict basis the checker reports: `databricks-pipelines` (8),
+`databricks-zerobus-ingest` (3), `databricks-iceberg` (2),
+`databricks-ml-training` (2), then 1 each in `databricks-apps`,
+`databricks-apps-python`, `databricks-lakebase`, `databricks-lakeflow-connect`,
+`databricks-mlflow-evaluation`, `databricks-spark-structured-streaming`.
 
-### Compatibility pin inconsistency
-**Count: 4 conflicting values. Target 1, or per-skill values individually
-justified.**
+Note this list barely overlaps the audit's: `databricks-lakeflow-connect` is 1
+strict, not 9, and `databricks-serverless-migration` is 0 under every basis —
+the phantom the reconciliation isolates.
 
-`>= v0.292.0` (2, including `databricks-core`), `>= v0.294.0` (5),
-`>= v1.0.0` (20), `>= v1.9.0` (1). A repo cannot require CLI 0.292 and 1.9 for
-skills that all route through core. Derive from one constant in
-`scripts/skillsgen/`.
+Fix, once unblocked: consolidate into a per-skill dated status table or an "old
+patterns" section. Do not delete the information.
+
+### COMPAT-1 — compatibility pin inconsistency
+**Count (`COMPAT-1`): 7 = 5 excess pin shapes + 2 body-vs-frontmatter
+conflicts. Blocked. Target 1 surviving shape and 0 conflicts.**
+
+The unit is **excess shapes**, not conflicting values: the checker charges one
+shape as the target and counts every additional one, so the row reaches zero
+when a single shape remains. Six distinct shapes exist across the 32 skills —
+
+| Shape | Skills |
+|---|---|
+| *(no `compatibility` field)* | 3 |
+| `>= v0.292.0` | 2, including `databricks-core` |
+| `>= v0.294.0` | 5 |
+| `>= v1.0.0` | 20 |
+| `>= v1.9.0` (`databricks genie ask`) | 1 |
+| `databricks-air` CLI | 1 |
+
+— of which 6 − 1 = 5 are excess. The audit's 4 counted only the four numeric
+CLI pins. A repo cannot require CLI 0.292 and 1.9 for skills that all route
+through core. Derive from one constant in `scripts/skillsgen/`.
+
+The 2 conflicts are a skill's own body contradicting its frontmatter pin:
+`databricks-jobs/SKILL.md:44` (body v0.288.0) and
+`databricks-python-sdk/SKILL.md:24` (body 0.278.0), both against `>= v1.0.0`.
+These are mechanically fixable without knowing the target floor — the body and
+the frontmatter of one file disagree regardless of which value is right.
 
 **Blocked:** requires a verified current Databricks CLI version. Do not guess.
 If unverified, plan it and stop.
 
 ### GC-1 / GC-8 — no Genie Code surface
-**Count: 0 skills. Target 1.**
+**Count: 0 skills. Target 1. No `audit_check.py` row** — an authoring task has
+no defect count to measure until the skill exists, at which point the ordinary
+rows gate it.
 
 See `specs/03-genie-code-skill.md`. Authoring task, not a sweep.
 
 ### PD-8 / MNT-6 — gotchas and script execution intent
-**Count: 29 skills lacking gotchas; 2 skills with scripts lacking
-execute-vs-read intent. Lower value, batch last.**
+**Count (`PD-8`, advisory): 30 SKILL.md with no gotchas section.**
+**Count (`MNT-6`, advisory): 1 skill bundling `scripts/` with no stated intent.**
+
+Units are **skills** in both. Audit said 29 and 2. Lower value, batch last.
 
 `databricks-ml-training` is the model for a gotchas section.
 `databricks-synthetic-data-gen` and `databricks-unstructured-pdf-generation`
@@ -172,6 +331,25 @@ these need a decision, not a diff.
 - **MNT-7a** — `experimental/README.md` self-contradicts on re-sync cadence.
 - **MNT-7b** — `.gen.json` pins `source_commit: 70f06e3`, not an object in this
   repo's history.
+- **NEW-B** — **1 link, advisory.**
+  `skills/databricks-apps/references/appkit/proto-first.md:306` links
+  `references/plugin-contracts.md`, which exists nowhere in the repo under any
+  path. Which file it meant is a maintainer decision, so it is held out of
+  `NEW-A` and reported on its own — guessing a target ships a wrong pointer.
+
+## Exempt (advisory, counted for context only)
+
+Reported by the checker, never a defect. Listed so a reader who sees the number
+in the rollup can find its rationale.
+
+- **`SPEC-10a-fence` — 81 occurrences across 5 skills.** `../` inside a code
+  fence is a working example (DAB `notebook_path:` values, TypeScript imports,
+  one deliberate failing `%run`). Rewriting them would break the examples.
+- **`SPEC-10a-self-parent` — 3 occurrences in 1 skill.** `../SKILL.md` from a
+  `references/` file names the skill's own parent, at
+  `databricks-metric-views/references/metric-view-advisor.md:18`, `:28`, `:808`.
+  The path never leaves the skill directory, so no subset install can break it —
+  which is the sole rationale for the SPEC-10a class.
 
 ## Withdrawn
 
@@ -218,21 +396,28 @@ finding describes.
 different fixes; the checker counts each separately.** A naive `\.\./` finds
 240; 14 are `...` truncation markers (`/Volumes/.../file.csv`); corrected, 226.
 
-| Class | Count | Skills | Defects |
-|---|---|---|---|
-| in-fence | 81 occ | 5 | 0 (exempt) |
-| cross-skill links | 90 links / 111 occ | 20 | 90 |
-| intra-skill links | 21 links / 21 occ | 9 | 21 |
-| outside link targets | 13 occ | 6 | 3 |
+| Class | Checker row | Count | Skills | Defects |
+|---|---|---|---|---|
+| in-fence | `SPEC-10a-fence` | 81 occ | 5 | 0 (exempt) |
+| cross-skill links | `SPEC-10a-cross` | 90 links / 111 occ | 20 | 90 |
+| intra-skill links | `SPEC-10a-intra` | 21 links / 21 occ | 9 | 21 |
+| outside link targets | `SPEC-10a-prose` | 13 occ | 6 | 0 |
+| — of which self-parent | `SPEC-10a-self-parent` | 3 occ | 1 | 0 (exempt) |
 
 81 + 111 + 21 + 13 = 226. Units matter: 90 is **links**; the same set is 111
 `../` *occurrences*, because a `../../` target matches twice — the gap is
 exactly 15 × `../../` + 2 × `../../skills/` + 2 × `../../../`. The checker
 counts links. The in-fence 81 are working examples (DAB `notebook_path:`
-values, TypeScript imports, one deliberate failing `%run`). Of the 13 outside
-link targets (11 plain prose, 2 inside link labels) only 3 are defects, all
-`../SKILL.md`, in `databricks-metric-views` at
-`references/metric-view-advisor.md:18`, `:28`, `:808`.
+values, TypeScript imports, one deliberate failing `%run`).
+
+The 13 outside link targets (11 plain prose, 2 inside link labels) once counted
+3 defects, all `../SKILL.md` in `databricks-metric-views` at
+`references/metric-view-advisor.md:18`, `:28`, `:808`. Those 3 are now exempt
+under D8 and reported as `SPEC-10a-self-parent`, so **`SPEC-10a-prose` is 0**:
+`../SKILL.md` from a `references/` file names its own parent, the path never
+leaves the skill directory, and no subset install can break it — which is the
+sole rationale for the SPEC-10a class. The row stays must-fix at zero so a
+regression is caught.
 
 **SPEC-10b — spec 11 in one skill, corpus 64 across two; checker 64.** 11 is
 the count of reference *files*, not of mentions:
@@ -254,6 +439,64 @@ Traps", `SKILL.md:49`) carry a genuine gotchas section. Admitting
 `model-serving`, `unstructured-pdf-generation`) and drops the count to 25 — but
 that is error recovery after a failure, not an up-front trap list.
 
+**PD-5 — spec 17 skills; checker 228 links across 15 skills.** Different units,
+not a different measurement: the audit counted skills carrying the defect, the
+checker counts the links to strip, which is what the fix operates on. Only
+`databricks-unity-catalog` (29) reproduces exactly. `databricks-pipelines` is 91,
+not 103; `spark-structured-streaming` 15, not 22; `apps` and `aibi-dashboards`
+19 each, not 21. The audit's "plus 12 others" resolves to 10 — 15 skills total.
+
+**PD-5b — not counted by the audit; checker 12 files in 1 skill.** The audit
+described the defect in PD-5's prose ("flatten
+`skills/databricks-apps/references/appkit/*.md`") without a count, so it had no
+gate. Split out because the unit is **files renamed**, not links stripped, and
+because `--only PD-5` reaching zero would otherwise leave the nested directory
+in place.
+
+**DESC-1 — spec 5 skills; checker 6 descriptions across 6 skills.** The unit
+matches (one description per skill); the population does not. The sixth is
+`databricks-genie-agents` at 350 chars — already inside the 300–500 target band,
+which is why a length-based screen missed it. It states capability only and
+names no condition for firing, the same defect as the other five.
+
+**COMPAT-1 — spec 4 conflicting values; checker 7, blocked.** 7 = **5 excess
+shapes + 2 body-vs-frontmatter conflicts**. Six distinct `compatibility` shapes
+exist over 32 skills: absent (3), `>= v0.292.0` (2), `>= v0.294.0` (5),
+`>= v1.0.0` (20), `>= v1.9.0` (1), `databricks-air` (1). The checker charges one
+shape as the target and counts the rest, so 6 − 1 = 5. The audit's 4 counted
+only the numeric CLI pins, omitting both `databricks-ai-runtime`'s
+`databricks-air` requirement and the 3 skills with no field at all. The 2
+conflicts are `databricks-jobs/SKILL.md:44` (body v0.288.0) and
+`databricks-python-sdk/SKILL.md:24` (body 0.278.0) against a `>= v1.0.0` pin.
+
+*Checker question, not a corpus defect:* the shape charged as the target is the
+first in sort order, and `(absent)` sorts ahead of `Requires…`. As written the
+row reaches 0 only if the one surviving shape is "no `compatibility` field at
+all". Recorded here rather than fixed — this pass restates counts and must not
+move one.
+
+**PD-4 — spec 5 defects in one headline; checker 3 + 19 (blocked) + 3 across
+three rows.** The headline conflates three units. `PD-4a` is 3 *occurrences* of
+the dead pointer (see below). `PD-4b` is 19 *skills* unrouted from core, which
+is neither the audit's "5 children" (core mentions 6) nor its "26 skills declare
+parent" (25 do) — it is the difference between them, and it is blocked because
+which children belong in core's body is a routing-policy call. `PD-4c` is 3
+*files*, which confirms exactly.
+
+**PD-1 / PD-2 / PD-3 — spec 4 skills; checker 3 + 3 + 4.** The per-skill line
+and token figures reproduce to the digit (below); only the aggregation differs.
+The audit's 4 is the union of the two ceilings, which the checker reports as the
+`PD-3` rollup. Because the ceilings bind independently, `databricks-python-sdk`
+breaches lines only (4,470 tokens) and `databricks-pipelines` tokens only (258
+lines), leaving 3 in each must-fix row. Gating on the rollup would let a skill
+that fixed one ceiling read as unresolved.
+
+**NEW-A / NEW-B / NEW-C — not in the audit; checker 6 links / 1 link / 4
+files.** `NEW-A`'s 6 are a strict subset of `SPEC-10a-cross`'s 90 — the same
+links, counted once for leaving the skill and once for not resolving — so the
+cross-skill sweep zeroes both. `NEW-B` is held out of `NEW-A` because its
+intended target is unknowable. `NEW-C`'s 4 are also 4 of `PD-6`'s 125.
+
 **Confirmed exact, no reconciliation needed.** PD-1 / PD-2 / PD-3 reproduce to
 the digit under `round(len(body) / 4)`: 839/15,683 · 625/4,470 · 525/8,147 ·
 258/8,404. The 2,975 / 3,199 resident set reproduces exactly, but only with
@@ -264,3 +507,9 @@ PD-4c's 3 orphans confirm. The dead `databricks-spark-declarative-pipelines`
 pointer occurs 3 times, not two (`databricks-docs/SKILL.md:23` and `:52`, plus
 `experimental/spark-python-data-source/SKILL.md:145`); and 25 skills declare
 `parent: databricks-core`, not 26.
+
+**Aggregate.** must-fix total **568** across 31 skills, heaviest
+`databricks-pipelines` (119), `databricks-mlflow-evaluation` (70),
+`databricks-apps` (49), `databricks-unity-catalog` (47),
+`databricks-spark-structured-streaming` (39). Rollup and advisory rows are not
+summed into it.
