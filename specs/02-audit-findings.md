@@ -173,45 +173,42 @@ these need a decision, not a diff.
 
 ## Reconciliation (measured by scripts/audit_check.py)
 
-Seven counts above were re-measured while building `scripts/audit_check.py`.
-Where a count here and the corpus disagree, the checker implements the corpus.
+Counts re-measured while building `scripts/audit_check.py`. Where a count above
+and the corpus disagree, the checker implements the corpus.
 
-**MNT-6 — spec 2 skills, corpus 1; checker 1.**
-`databricks-unstructured-pdf-generation` does state run intent:
-`skills/databricks-unstructured-pdf-generation/SKILL.md:17` ("Convert HTML →
-PDF using `<SKILL_ROOT>/scripts/pdf_generator.py`"), the literal invocation at
-`:43`, a file manifest at `:124`, a recreate-if-absent fallback at `:126`. Only
-`databricks-synthetic-data-gen` lacks it, and more severely than stated: its
+**MNT-6 — spec 2 skills, corpus 1; checker 1.** The PDF skill states run intent
+plainly: `skills/databricks-unstructured-pdf-generation/SKILL.md:17` ("Convert
+HTML → PDF using `<SKILL_ROOT>/scripts/pdf_generator.py`"), literal invocation
+at `:43`, file manifest at `:124`, recreate-if-absent fallback at `:126`. Only
+`databricks-synthetic-data-gen` lacks it, and worse than stated: its
 `scripts/generate_synthetic_data.py` (300 lines) is referenced nowhere in the
-skill — SKILL.md, `references/`, `agents/`, `assets/` all return zero matches.
-The residual defect is arguably orphan-script, not missing-intent.
+skill — SKILL.md, `references/`, `agents/`, `assets/` all return zero. That
+residual defect is orphan-script, not missing-intent.
 
-**TOK-5 — spec 30 markers / 10 skills; no basis reproduces it. Checker 21,
-blocked.** Measured: strict parenthesised `(Public Preview|Private
-Preview|Beta)` 21 / 10 skills; broad case-insensitive over all `.md` 87 / 15;
-broad restricted to SKILL.md 27 / 9; strict restricted to SKILL.md 7 / 3. The
-named figures (`lakeflow-connect` 9, `pipelines` 6, `zerobus-ingest` 3) match
-the broad SKILL.md basis, but the fourth named skill
-`databricks-serverless-migration` (3) contains zero preview/beta markers of any
-kind — strict or broad, case-insensitive, across all 11 of its `.md` files.
-30 = 27 + a phantom 3. The checker reports the strict basis and stays
-**blocked** until a maintainer picks the definition; no sweep should run
+**TOK-5 — spec 30 markers / 10 skills; no basis reproduces it; checker 21,
+blocked.** Strict parenthesised `(Public Preview|Private Preview|Beta)` over
+all `.md` = 21 / 10 skills; broad case-insensitive = 87 / 15; broad on SKILL.md
+only = 27 / 9; strict on SKILL.md only = 7 / 3. The named figures
+(`lakeflow-connect` 9, `pipelines` 6, `zerobus-ingest` 3) match the broad
+SKILL.md basis, but the fourth named skill `databricks-serverless-migration`
+(3) has zero preview/beta markers of any kind, strict or broad, across all 11
+of its `.md` files: 30 = 27 + a phantom 3. The checker reports the strict basis
+and stays blocked until a maintainer picks the definition; no sweep should run
 against an unreproducible number.
 
-**PD-6 — spec ~120 files / 25 skills; corpus 125 / 26; checker 125.** The scope
-needs stating: 121 of the 125 sit under `references/`, the other 4 are
-root-level reference files —
-`skills/databricks-core/{databricks-cli-auth,databricks-cli-install,manual-data-exploration}.md`
-and `experimental/databricks-ai-runtime/docker-images.md` — all four over 100
-lines and none with a TOC. Totals: 168 files under `references/` + 4 at skill
-roots = 172; 133 + 4 = 137 over 100 lines; 121 + 4 = 125 lacking a TOC. The
-checker includes the root-level files, because excluding them is the exact
-blind spot the root-file finding describes.
+**PD-6 — spec ~120 files / 25 skills, corpus 125 / 26; checker 125.** 121 of
+the 125 sit under `references/`; the other 4 are root-level reference files
+(`databricks-cli-auth.md`, `databricks-cli-install.md`,
+`manual-data-exploration.md` in `skills/databricks-core/`, plus
+`experimental/databricks-ai-runtime/docker-images.md`) — all over 100 lines,
+none with a TOC. Totals: 168 under `references/` + 4 at skill roots = 172
+files; 133 + 4 = 137 over 100 lines; 121 + 4 = 125 lacking a TOC. Root-level
+files are included because excluding them is the exact blind spot the root-file
+finding describes.
 
-**SPEC-10a — spec 128 occurrences / 19 skills; one count over four classes with
-different fixes. The checker counts each class separately.** A naive `\.\./`
-finds 240; 14 are `...` truncation markers (`/Volumes/.../file.csv`); the
-corrected matcher finds 226.
+**SPEC-10a — spec 128 occurrences / 19 skills conflates four classes with
+different fixes; the checker counts each separately.** A naive `\.\./` finds
+240; 14 are `...` truncation markers (`/Volumes/.../file.csv`); corrected, 226.
 
 | Class | Count | Skills | Defects |
 |---|---|---|---|
@@ -220,45 +217,42 @@ corrected matcher finds 226.
 | intra-skill links | 21 links / 21 occ | 9 | 21 |
 | outside link targets | 13 occ | 6 | 3 |
 
-81 + 111 + 21 + 13 = 226. Counting units matter: 90 is **links**; the same set
-is 111 `../` *occurrences*, because a `../../` target matches twice. The gap is
+81 + 111 + 21 + 13 = 226. Units matter: 90 is **links**; the same set is 111
+`../` *occurrences*, because a `../../` target matches twice — the gap is
 exactly 15 × `../../` + 2 × `../../skills/` + 2 × `../../../`. The checker
 counts links. The in-fence 81 are working examples (DAB `notebook_path:`
 values, TypeScript imports, one deliberate failing `%run`). Of the 13 outside
-link targets (11 in plain prose, 2 inside link labels) only 3 name a `.md` and
-are defects — all `../SKILL.md`, at
-`skills/databricks-metric-views/references/metric-view-advisor.md:18,28,808`;
-the rest document traversal itself. No measured basis yields 128.
+link targets (11 plain prose, 2 inside link labels) only 3 are defects, all
+`../SKILL.md`, in `databricks-metric-views` at
+`references/metric-view-advisor.md:18`, `:28`, `:808`.
 
-**SPEC-10b — spec 11 in one skill; corpus 64 across two; checker 64.** 11 is
-the number of reference *files*, not of mentions. Measured:
+**SPEC-10b — spec 11 in one skill, corpus 64 across two; checker 64.** 11 is
+the count of reference *files*, not of mentions:
 `databricks-mlflow-evaluation/SKILL.md` 61 (59 backticked, 2 bold prose at
 `:27`-`:28`) and `databricks-app-design/SKILL.md` 3 (backticked, `:27`, `:29`,
-`:30`) — a second skill this spec does not name. Zero are markdown links, so a
-`](...)`-only regex finds none of them. Two exclusions are load-bearing: a
-basename inside a markdown link *label* is display text and routes correctly
-(`[1-widget-specifications.md#counter](references/1-widget-specifications.md#counter)`),
-so counting labels inflates the class to 167; and a basename resolving at the
-*skill root* belongs to the root-level-file finding, or the two classes each
-report the other's work as outstanding.
+`:30`) — a second skill this spec does not name. None are markdown links, so a
+`](...)`-only regex finds zero. Two exclusions are load-bearing: a basename in
+a link *label* is display text that routes correctly
+(`[1-widget-specifications.md#counter](references/1-widget-specifications.md#counter)`)
+and counting labels inflates the class to 167; and a basename resolving at the
+*skill root* belongs to the root-file finding, or the two classes each report
+the other's work as outstanding.
 
-**PD-8 — spec 29 skills; corpus 30 of 32; checker 30**, with a heading regex
+**PD-8 — spec 29 skills, corpus 30 of 32; checker 30**, with a heading regex
 that excludes "Troubleshooting". Only `databricks-ml-training` ("Gotchas (the
 ones that cost time)", `SKILL.md:252`) and `databricks-pipelines` ("Common
 Traps", `SKILL.md:49`) carry a genuine gotchas section. Admitting
 "Troubleshooting" credits 5 more (`core`, `genie-agents`, `lakebase`,
 `model-serving`, `unstructured-pdf-generation`) and drops the count to 25 — but
-a troubleshooting section is error recovery after a failure, not the up-front
-trap list this finding asks for.
+that is error recovery after a failure, not an up-front trap list.
 
 **Confirmed exact, no reconciliation needed.** PD-1 / PD-2 / PD-3 reproduce to
 the digit under `round(len(body) / 4)`: 839/15,683 · 625/4,470 · 525/8,147 ·
-258/8,404. The 2,975 / 3,199 resident set reproduces exactly, but only when
-YAML-escaped `\"` is unescaped, `>-` block scalars are folded, and characters
-are summed across the whole set before a single division — per-skill rounding
-on that basis gives 2,974 / 3,199, and leaving the block scalars unfolded gives
-2,980 / 3,205. PD-4c's 3 orphans confirm. Two corrections in passing: the dead
-`databricks-spark-declarative-pipelines` pointer occurs 3 times, not two
-(`databricks-docs/SKILL.md:23` and `:52`, plus
+258/8,404. The 2,975 / 3,199 resident set reproduces exactly, but only with
+YAML-escaped `\"` unescaped, `>-` block scalars folded, and characters summed
+across the whole set before a single division; per-skill rounding on that basis
+gives 2,974 / 3,199, and leaving block scalars unfolded gives 2,980 / 3,205.
+PD-4c's 3 orphans confirm. The dead `databricks-spark-declarative-pipelines`
+pointer occurs 3 times, not two (`databricks-docs/SKILL.md:23` and `:52`, plus
 `experimental/spark-python-data-source/SKILL.md:145`); and 25 skills declare
 `parent: databricks-core`, not 26.
