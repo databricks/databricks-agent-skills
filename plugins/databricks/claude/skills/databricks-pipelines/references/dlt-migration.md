@@ -163,4 +163,4 @@ Run old and new in parallel during cutover and diff outputs before retiring the 
 
 - python-basics — modern `dp` API reference
 - auto-cdc-python / auto-cdc-sql — full CDC API
-- [SKILL.md](../SKILL.md#legacy-dlt-syntax--always-migrate) — Legacy DLT Syntax mapping table
+- `SKILL.md` — Legacy DLT Syntax mapping table

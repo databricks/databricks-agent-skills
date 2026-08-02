@@ -2,7 +2,7 @@
 
 ## Setup
 
-- `from pyspark import pipelines as dp` — required at the top. Legacy `import dlt` still parses but should be migrated (see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate)).
+- `from pyspark import pipelines as dp` — required at the top. Legacy `import dlt` still parses but should be migrated (see `SKILL.md` § "Legacy DLT Syntax").
 - `spark` (SparkSession) is pre-imported in pipeline files. In utility modules, import it normally.
 
 ## Core decorators

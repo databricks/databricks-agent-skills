@@ -158,7 +158,7 @@ against:**
 | PD-5 | must-fix | **0 — DONE** (was 228) |
 | PD-5b | must-fix | **0 — DONE** (was 12) |
 | SPEC-10a-cross | must-fix | **0 — DONE** (was 90) |
-| SPEC-10a-intra | must-fix | 19 (was 21; the PD-5b flatten cleared 2) |
+| SPEC-10a-intra | must-fix | **0 — DONE** (was 19; 21 at audit, the PD-5b flatten cleared 2) |
 | SPEC-10a-prose | must-fix | 0 (the 3 moved to `SPEC-10a-self-parent`, `2b9807a`) |
 | SPEC-10b | must-fix | **0 — DONE** (was 64) |
 | NEW-A | must-fix | 0 |
@@ -178,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **163** (rollup/advisory not summed); resident set 2,975 stable /
+must-fix total **144** (rollup/advisory not summed); resident set 2,975 stable /
 3,199 all-in — unchanged by every sweep so far.
 
 ---
@@ -378,22 +378,32 @@ Do not delete the information.
 
 ---
 
-## 7. SPEC-10a-intra — `../` inside a skill — 19 → 0
+## 7. SPEC-10a-intra — `../` inside a skill — 19 → 0 — DONE
 
-- **Finding:** SPEC-10a-intra
-- **Paths:** 19 links, 17 files, **8 skills**. `skills/databricks-pipelines` 5,
-  `skills/databricks-ml-training` 4, `skills/databricks-agent-bricks` 3,
-  `skills/databricks-ai-functions` 3, and 1 each in `aibi-dashboards`,
-  `lakeflow-connect`, `metric-views`, `serverless-migration`
-- **Count:** 19 → **0**. Zero are dangling.
-- **Backpressure:** `python3 scripts/audit_check.py --only SPEC-10a-intra` → 0
-
-All 19 are now `../SKILL.md` (often with an anchor) from a `references/` file.
-`databricks-apps` no longer appears: its 2 were
-`references/appkit/{jobs,model-serving}.md → ../platform-guide.md`, and the
-PD-5b flatten (item 3a) turned them into sibling links, taking the row 21 → 19.
-Safer fix than item 4: rewrite relative to the skill root; the target never
-leaves the install subset.
+- **Finding:** SPEC-10a-intra — **DONE**, 19 → 0.
+- **Landed** on branch `ralph/spec-10a-remainder`, off `ralph/spec-10b-basenames`.
+- **Population was 19, not the audit's 21.** The PD-5b appkit flatten already
+  cleared the 2 `references/appkit/{jobs,model-serving}.md → ../platform-guide.md`
+  links, exactly as this plan predicted. All 19 survivors were the same shape:
+  a markdown link from a `references/` file to its own skill's `SKILL.md`.
+- **Convention (re-landed from `e9c265c`, unchanged):** drop the link, keep the
+  name — `[SKILL.md](../SKILL.md)` → `` `SKILL.md` ``; where the anchor carried
+  routing, keep it as `` `SKILL.md` § "Exact Heading" ``. There is no `../`-free
+  markdown path from `references/x.md` to its own `SKILL.md`: `](SKILL.md)`
+  resolves to `references/SKILL.md` and would dangle as NEW-A. Rewriting is
+  impossible, so the link is dropped rather than repaired.
+- **18 of the 19 sites matched `e9c265c` byte-for-byte.** The 19th
+  (`databricks-lakeflow-connect/references/4-ingestion-decision-tree.md:22`)
+  differed only because the PD-5 sweep had already stripped a neighbouring link
+  on the same line; the `SKILL.md` substitution there is identical.
+- **All 8 quoted `§` headings verified present** in their target `SKILL.md`.
+  A mis-quoted heading is a silent routing defect and no checker row sees it.
+- **No product-name demotion.** Four labels named a *thing* rather than the
+  file (`Overview table`, `Widget Index`, `CLI Execution`,
+  `Failure Reporting Protocol`); each survives as prose or as a `§` clause.
+- **Backpressure:** `audit_check.py --only SPEC-10a-intra` → 0; unscoped run
+  moved exactly one row, must-fix 163 → **144**; `skills.py validate` → 0;
+  149 tests pass.
 
 ---
 
@@ -693,7 +703,7 @@ still constrain the order.
 |---|---|---|---|
 | 1 | `feature/claude-skill-agent-loop` | 1 · MNT-1a | DONE |
 | 2 | `ralph/spec-10a-cross` | 4 · SPEC-10a-cross + NEW-A | DONE (90 → 0) |
-| 3 | `ralph/spec-10a-remainder` | 7 · SPEC-10a-intra | 19 → 0 |
+| 3 | `ralph/spec-10a-remainder` | 7 · SPEC-10a-intra | DONE (19 → 0) |
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | already 0 — regression guard only |
 | 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | DONE (64 → 0) |
 | 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | 12 links / 4 files → 0 |

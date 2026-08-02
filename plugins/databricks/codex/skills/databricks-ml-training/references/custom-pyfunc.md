@@ -93,7 +93,7 @@ client.set_registered_model_alias(FULL_NAME, "prod", v)
 
 ## Consume
 
-Same two paths as autologged classical ML — see [SKILL.md § batch scoring](../SKILL.md#consume-batch-scoring-over-delta).
+Same two paths as autologged classical ML — see `SKILL.md` § "Consume: batch scoring over Delta".
 
 - **Batch**: `mlflow.pyfunc.spark_udf(spark, model_uri=f"models:/{FULL_NAME}@prod", env_manager="local")` over a Delta table.
 - **Real-time**: `client.create_endpoint(...)` for the dev-side call; endpoint lifecycle in the `databricks-model-serving` skill. Query returns a DataFrame-shaped JSON since `predict` returns a DataFrame.

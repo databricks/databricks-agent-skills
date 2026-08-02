@@ -25,7 +25,7 @@ A working dashboard JSON that exercises the new feature set:
 | `bar`, `line`, `area`, `pie`, `pivot`, `histogram`, `heatmap` | **3** |
 | `combo`, `choropleth-map`, `forecast-line`, `sankey`, `funnel`, `box`, `waterfall` | **1** |
 
-See [SKILL.md](../SKILL.md#widget-index-version--where-documented) for the full version table.
+See `SKILL.md` § "Widget Index (Version + Where Documented)" for the full version table.
 
 ### Layout (12-col grid)
 

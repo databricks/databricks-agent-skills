@@ -1,6 +1,6 @@
 # `ai_forecast` — Full Reference
 
-**Table-valued function** — returns rows, not a scalar. Call with `SELECT * FROM ai_forecast(...)`; from PySpark it must go through `spark.sql()`. Needs a **Pro or Serverless** SQL warehouse. See the [Overview table](../SKILL.md#overview) for the signature summary.
+**Table-valued function** — returns rows, not a scalar. Call with `SELECT * FROM ai_forecast(...)`; from PySpark it must go through `spark.sql()`. Needs a **Pro or Serverless** SQL warehouse. See the Overview table in `SKILL.md` for the signature summary.
 
 ## Parameters
 

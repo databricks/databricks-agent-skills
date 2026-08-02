@@ -221,7 +221,7 @@ dbutils.notebook.exit(json.dumps({
 }))
 ```
 
-Submit via the same `jobs submit --no-wait` pattern shown in [SKILL.md § Train + deploy as a serverless job](../SKILL.md#train--deploy-as-a-serverless-job) — same script, just `deploy_agent.py` as the notebook.
+Submit via the same `jobs submit --no-wait` pattern shown in `SKILL.md` § "Train + deploy as a serverless job" — same script, just `deploy_agent.py` as the notebook.
 
 ## Query
 

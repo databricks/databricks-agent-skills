@@ -1,6 +1,6 @@
 # Supervisor Agents - Details
 
-For commands, see [SKILL.md](../SKILL.md). All operations use the native `databricks supervisor-agents` CLI (Beta, requires CLI ≥ v1.0.0).
+For commands, see `SKILL.md`. All operations use the native `databricks supervisor-agents` CLI (Beta, requires CLI ≥ v1.0.0).
 
 ## Unity Catalog Functions
 

@@ -4,7 +4,7 @@ CDC from streaming events (`dp.create_auto_cdc_flow`) or periodic snapshots (`dp
 
 Use streaming when CDC events arrive continuously (transaction logs, Kafka, Delta change feeds). Use snapshot when the source is a full dump compared to the previous state (daily extracts, batch exports).
 
-Legacy aliases `dp.apply_changes()` / `dp.apply_changes_from_snapshot()` still parse but should be migrated (see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate)).
+Legacy aliases `dp.apply_changes()` / `dp.apply_changes_from_snapshot()` still parse but should be migrated (see `SKILL.md` § "Legacy DLT Syntax").
 
 For querying SCD Type 2 history tables, see scd-2-querying.
 

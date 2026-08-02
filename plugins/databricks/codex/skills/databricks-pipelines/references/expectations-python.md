@@ -2,7 +2,7 @@
 
 Data-quality constraints stacked above `@dp.materialized_view()` / `@dp.table()` / `@dp.temporary_view()` functions. Each constraint is a SQL Boolean string evaluated per row.
 
-Legacy `@dlt.expect*` decorators still parse but should be migrated to `@dp.expect*` (same names, same semantics) — see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate).
+Legacy `@dlt.expect*` decorators still parse but should be migrated to `@dp.expect*` (same names, same semantics) — see `SKILL.md` § "Legacy DLT Syntax".
 
 ## Decorators
 

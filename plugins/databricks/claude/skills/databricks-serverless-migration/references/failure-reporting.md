@@ -1,6 +1,6 @@
 # Failure Reporting — Filing a Migration Skill Issue
 
-Reference for the [Failure Reporting Protocol](../SKILL.md#failure-reporting-protocol) in `SKILL.md`. Read this when migration could not complete and you need to file a GitHub issue with anonymized context.
+Reference for the Failure Reporting Protocol in `SKILL.md`. Read this when migration could not complete and you need to file a GitHub issue with anonymized context.
 
 ## Why this exists
 

@@ -1,6 +1,6 @@
 # `ai_query` — Full Reference
 
-Calls any Model Serving endpoint by name — a **built-in Databricks foundation model** (`databricks-claude-sonnet-4`, etc.) or your **own custom/fine-tuned serving endpoint**. **Last resort** among AI Functions — use only when no task-specific function fits: multimodal image input, cross-document reasoning, sampling-param control, a custom model, or JSON beyond `ai_extract`'s limits. See the [Overview table](../SKILL.md#overview) for the signature.
+Calls any Model Serving endpoint by name — a **built-in Databricks foundation model** (`databricks-claude-sonnet-4`, etc.) or your **own custom/fine-tuned serving endpoint**. **Last resort** among AI Functions — use only when no task-specific function fits: multimodal image input, cross-document reasoning, sampling-param control, a custom model, or JSON beyond `ai_extract`'s limits. See the Overview table in `SKILL.md` for the signature.
 
 ## Parameters
 

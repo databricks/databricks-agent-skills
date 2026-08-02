@@ -2,7 +2,7 @@
 
 Pipeline-scoped logical datasets — not materialized, not published to UC. Used for shared intermediate transformations that drive multiple downstream tables.
 
-`@dp.temporary_view()` is the current decorator. Legacy `@dlt.view()` (and `@dp.view()` if present in older code) should be migrated — see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate).
+`@dp.temporary_view()` is the current decorator. Legacy `@dlt.view()` (and `@dp.view()` if present in older code) should be migrated — see `SKILL.md` § "Legacy DLT Syntax".
 
 ```python
 @dp.temporary_view(name="<name>", comment="<comment>")     # both optional

@@ -1,10 +1,10 @@
 # Knowledge Assistants - Details
 
-For commands, see [SKILL.md](../SKILL.md).
+For commands, see `SKILL.md`.
 
 ## Source Types
 
-Both shapes go inside the `--json` body alongside `display_name` and `description` — see [SKILL.md](../SKILL.md) for the full invocation.
+Both shapes go inside the `--json` body alongside `display_name` and `description` — see `SKILL.md` for the full invocation.
 
 ### Files (Volume)
 

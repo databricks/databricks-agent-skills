@@ -19,7 +19,7 @@ Pick the row that matches your source type and constraint.
 
 | Where does the data live? | Need a copy? | Approach | Read more |
 |---|---|---|---|
-| SaaS app with a Lakeflow Connect connector (Salesforce, Workday, ServiceNow, GA4, HubSpot, Confluence, etc.) | Yes | Lakeflow Connect | [SKILL.md](../SKILL.md), 1-saas-connectors |
+| SaaS app with a Lakeflow Connect connector (Salesforce, Workday, ServiceNow, GA4, HubSpot, Confluence, etc.) | Yes | Lakeflow Connect | `SKILL.md`, 1-saas-connectors |
 | Operational database (SQL Server, PostgreSQL, MySQL) with a Lakeflow Connect connector | Yes, with CDC | Lakeflow Connect | 2-database-connectors |
 | Operational database, low query volume, source can absorb the load | No copy needed | Lakehouse Federation | [docs](https://docs.databricks.com/aws/en/query-federation/) |
 | Cloud object storage (S3, ADLS, GCS) with files | Yes | Auto Loader | **databricks-pipelines** |

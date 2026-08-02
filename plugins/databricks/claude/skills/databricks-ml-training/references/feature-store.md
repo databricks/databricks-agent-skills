@@ -9,7 +9,7 @@
 - **Feature lineage** — Unity Catalog tracks every registered model's feature table dependencies; catch upstream data changes before they silently impact model quality
 - **Point-in-time correctness** — rolling/window features automatically reflect only information available at label time, preventing data leakage without writing time-join logic
 
-**Use Feature Engineering instead of plain `mlflow.autolog` when you need** feature reuse across models, point-in-time correctness, lineage in the registered model, or real-time feature lookups. For simple one-off models with no sharing requirement, the plain autolog path in [SKILL.md](../SKILL.md) is sufficient.
+**Use Feature Engineering instead of plain `mlflow.autolog` when you need** feature reuse across models, point-in-time correctness, lineage in the registered model, or real-time feature lookups. For simple one-off models with no sharing requirement, the plain autolog path in `SKILL.md` is sufficient.
 
 Canonical flow — adds a managed feature layer between silver tables and training:
 
@@ -290,7 +290,7 @@ fe.publish_table(
 | **Feature Serving Endpoint** | Scoring model lives outside Databricks; app needs raw features via REST | `fe.create_feature_spec()` → `fe.create_feature_serving_endpoint()` → `client.predict(inputs={"dataframe_records": [{"entity_id": 1}]})` |
 | **Model Serving Endpoint** | Model deployed in Databricks; endpoint auto-looks up features | `client.create_endpoint(entity_name=FULL_NAME, ...)` → `client.predict(inputs={"dataframe_records": [{"entity_id": 1}]})` — no feature join code needed in the caller |
 
-For full endpoint creation code, see [SKILL.md](../SKILL.md#real-time-serving-when-required).  
+For full endpoint creation code, see `SKILL.md` § "Real-time serving (when required)".  
 For the Feature Serving Endpoint API details, see feature-views#feature-serving-endpoint.
 
 ---

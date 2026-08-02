@@ -1,6 +1,6 @@
 # Task-Specific AI Functions — Full Reference
 
-Deep reference for each task-specific function: full options, schemas, and non-trivial examples. For the at-a-glance signature/input/output/prereqs index, see the function table in [SKILL.md](../SKILL.md#overview). These functions need no model endpoint selection — they call pre-configured Foundation Model APIs optimized for each task.
+Deep reference for each task-specific function: full options, schemas, and non-trivial examples. For the at-a-glance signature/input/output/prereqs index, see the function table in `SKILL.md` § "Overview". These functions need no model endpoint selection — they call pre-configured Foundation Model APIs optimized for each task.
 
 ---
 
