@@ -20,7 +20,7 @@ This is a **reference skill**, not an action skill. Use it to:
 - Find detailed information to inform CLI commands and SDK usage
 - Discover features and capabilities you may not know about
 
-**Always prefer using CLI/SDK for actions** and **load specific skills for workflows** (databricks-python-sdk, databricks-spark-declarative-pipelines, etc.). Use this skill when you need reference documentation.
+**Always prefer using CLI/SDK for actions** and **load specific skills for workflows** (databricks-python-sdk, databricks-pipelines, etc.). Use this skill when you need reference documentation.
 
 ## How to Use
 
@@ -49,7 +49,7 @@ The llms.txt file is organized by category:
 
 **Scenario:** User wants to create a Delta Live Tables pipeline
 
-1. Load `databricks-spark-declarative-pipelines` skill for workflow patterns
+1. Load `databricks-pipelines` skill for workflow patterns
 2. Use this skill to fetch docs if you need clarification on specific DLT features
 3. Use `databricks pipelines create` CLI command to create the pipeline
 
