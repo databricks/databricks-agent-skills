@@ -163,7 +163,7 @@ against:**
 | SPEC-10b | must-fix | **0 — DONE** (was 64) |
 | NEW-A | must-fix | 0 |
 | NEW-C | must-fix | 4 |
-| PD-4a | must-fix | 3 |
+| PD-4a | must-fix | **0 — DONE** (was 3) |
 | PD-4c | must-fix | **0 — DONE** (was 3; the PD-5 sweep cleared all 3) |
 | PD-1 | must-fix | 3 |
 | PD-2 | must-fix | 3 |
@@ -178,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **144** (rollup/advisory not summed); resident set 2,975 stable /
+must-fix total **141** (rollup/advisory not summed); resident set 2,975 stable /
 3,199 all-in — unchanged by every sweep so far.
 
 ---
@@ -568,21 +568,25 @@ descriptions; a naive parser reports 2,964/3,187.
 
 ---
 
-## 13. PD-4a — dead skill pointer — 3 → 0
+## 13. PD-4a — dead skill pointer — 3 → 0 — DONE
 
-- **Finding:** PD-4a
-- **Paths:** `skills/databricks-docs/SKILL.md:23`,
-  `skills/databricks-docs/SKILL.md:52`,
-  `experimental/spark-python-data-source/SKILL.md:145`
-- **Count:** **3 → 0** (`specs/02` says two places; the third is in
-  `experimental/`, which the audit did not scan for this finding)
-- **Backpressure:** `grep -ro 'databricks-spark-declarative-pipelines' skills/
-  experimental/ | wc -l` → 0 (currently 3)
-
-All three name a non-existent `databricks-spark-declarative-pipelines`; the real
-skill is `databricks-pipelines`. While in `databricks-docs/SKILL.md`, settle
-terminology — it mixes "Delta Live Tables", "DLT", and "Lakeflow" for one
-product in a 60-line body. **Separate commit** from the pointer fix.
+- **Finding:** PD-4a — **DONE**, 3 → 0.
+- **Landed** on branch `ralph/pd-4-routing`, off `ralph/spec-10a-remainder`,
+  in two commits: the pointer swap, then the terminology settlement.
+- **Sites:** `databricks-docs/SKILL.md:23`, `:52`,
+  `experimental/spark-python-data-source/SKILL.md:145`. Name swapped only;
+  surrounding prose byte-preserved.
+- **Terminology settled in `databricks-docs`** using the canonical name from
+  the skill that owns the product rather than one invented here:
+  `databricks-pipelines` titles itself "Lakeflow Spark Declarative Pipelines"
+  and records the alias set at its `SKILL.md:51`. The legacy names now appear
+  exactly once, on the Related Skills routing line where a reader who knows
+  the product as "DLT" needs to recognise it. `:42` was left alone — it
+  enumerates llms.txt documentation categories, not one product under three
+  names.
+- **Backpressure:** `audit_check.py --only PD-4a` → 0; unscoped run moved
+  exactly one row, must-fix 144 → **141**; the terminology commit moved no row
+  by design; `skills.py validate` → 0.
 
 ---
 
@@ -712,7 +716,7 @@ still constrain the order.
 | 8 | ~~`ralph/pd-4c-orphans`~~ **absorbed by 7 + 7b** | 14 · PD-4c | 3 → 0, done |
 | 9 | `ralph/pd-6-toc` | 2 · PD-6 (≥3 commits) | 125 → 0 |
 | 10 | `ralph/pd-1-ceilings` | 11 · PD-1/2/3 (1 commit each) | 4 → 0 |
-| 11 | `ralph/pd-4a-dead-pointer` | 13 · PD-4a | 3 → 0 |
+| 11 | `ralph/pd-4-routing` | 13 · PD-4a | DONE (3 → 0) |
 | 12 | `ralph/desc-1-triggers` | 12 · DESC-1/3 | 6 → 0 |
 | 13 | `ralph/tok-5-preview` | 6 · TOK-5 — **BLOCKED on D5** | 21 → 0 |
 | 14 | `ralph/pd-4b-core-routing` | 8 · PD-4b — **BLOCKED** | 5 → full graph |
@@ -818,6 +822,21 @@ Nothing goes into a diff its branch does not own.
 ## File as issue, do not PR
 
 Upstream cannot merge PRs directly; these need a decision, not a diff.
+
+- **`[NEW]` Two more pointers to skills that do not exist, in the same list as
+  PD-4a's third site.** `experimental/spark-python-data-source/SKILL.md:144`
+  names `databricks-testing` and `:146` names `python-dev`; neither exists in
+  this repo under any spelling. Found by sweeping every `databricks-*` token in
+  the corpus against the real directory set — the other 36 candidate names are
+  all false positives (PyPI packages `databricks-sdk` / `databricks-connect` /
+  `databricks-vectorsearch`, Foundation Model endpoint names
+  `databricks-claude-sonnet-4` / `databricks-gte-large-en`, env vars, and the
+  repo's own name). **`PD-4a` does not count these**: the row hardcodes the one
+  dead name `databricks-spark-declarative-pipelines`, so the class is real but
+  the gate is narrower than the class. *Policy: which skills those two lines
+  meant is unknowable from the corpus — the same situation as NEW-B, and
+  guessing ships a wrong pointer. Either a maintainer names the targets or the
+  two lines are dropped.*
 
 - **`[NEW]` NEW-B — `plugin-contracts.md` does not exist. Still open; the row
   now reads 0.** `skills/databricks-apps/references/appkit-proto-first.md:306`
