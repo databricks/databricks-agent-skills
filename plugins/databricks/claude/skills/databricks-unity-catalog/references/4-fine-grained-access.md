@@ -2,7 +2,7 @@
 
 Row- and column-level security in Unity Catalog: **row filters**, **column masks**, and
 **dynamic views**. These layer *on top of* table grants — a principal still needs `SELECT`
-(see [1-access-control.md](1-access-control.md)); fine-grained controls then restrict *which
+(see 1-access-control); fine-grained controls then restrict *which
 rows* and *what column values* that principal sees.
 
 > **Not `ai_mask`.** Databricks also ships an `ai_mask` SQL function (and `ai_classify`,
@@ -162,6 +162,6 @@ GRANT SELECT ON VIEW analytics.gold.customers_secure TO `analysts`;
 
 ## Related
 
-- [1-access-control.md](1-access-control.md) — the underlying grants these controls layer on
-- [3-securables-ddl.md](3-securables-ddl.md) — creating the tables/views governed here
+- 1-access-control — the underlying grants these controls layer on
+- 3-securables-ddl — creating the tables/views governed here
 - **databricks-ai-functions** — `ai_mask` / `ai_classify` (AI transforms, **not** access control)

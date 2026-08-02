@@ -3,8 +3,8 @@
 `CREATE`/`ALTER`/`DROP` for the core Unity Catalog securables — catalogs, schemas, managed
 vs external tables, and views — plus the metadata that governs them: comments, table
 properties, ownership, and tags. Grants on these objects live in
-[1-access-control.md](1-access-control.md); the external locations that external tables
-sit on live in [2-external-locations.md](2-external-locations.md).
+1-access-control; the external locations that external tables
+sit on live in 2-external-locations.
 
 > **Out of scope (siblings own these DDLs):** metric views (`WITH METRICS LANGUAGE YAML`) →
 > **databricks-metric-views**; Managed Iceberg / Uniform tables → **databricks-iceberg**.
@@ -54,8 +54,8 @@ DROP SCHEMA IF EXISTS analytics.staging CASCADE;
 
 A **managed** table stores its data in the catalog/schema/metastore managed location and is
 fully lifecycle-managed by UC (dropping it deletes the data). An **external** table points at
-a path under a registered [external location](2-external-locations.md) and UC manages only the
-metadata (dropping it leaves the files in place).
+a path under a registered external location (see 2-external-locations) and UC manages only
+the metadata (dropping it leaves the files in place).
 
 ```sql
 -- Managed table (no LOCATION clause → managed storage, Delta by default)
@@ -120,7 +120,7 @@ DROP VIEW IF EXISTS analytics.gold.customer_summary;
 
 > Dynamic views that restrict rows/columns by the querying user (`current_user()`,
 > `is_account_group_member()`) are an access-control pattern — see
-> [4-fine-grained-access.md](4-fine-grained-access.md).
+> 4-fine-grained-access.
 
 ## Comments (COMMENT ON)
 
@@ -134,7 +134,7 @@ COMMENT ON COLUMN analytics.gold.customers.email IS 'Primary contact email (PII)
 ## Tags (SET TAGS)
 
 Tags are key/value metadata used for discovery, cost attribution, and governed policies.
-Setting/removing tags requires `APPLY TAG` (see [1-access-control.md](1-access-control.md)).
+Setting/removing tags requires `APPLY TAG` (see 1-access-control).
 
 ```sql
 -- Object tags
@@ -188,14 +188,14 @@ databricks tables get analytics.gold.customers
 ## Best Practices
 
 1. **Default to managed tables** — UC handles storage, optimization, and cleanup; reach for external only when an external engine or pre-existing path requires it.
-2. **Comment everything** — catalogs, schemas, tables, and PII columns; ungoverned objects show up as gaps in [5-system-tables.md](5-system-tables.md) queries.
+2. **Comment everything** — catalogs, schemas, tables, and PII columns; ungoverned objects show up as gaps in 5-system-tables queries.
 3. **Tag for policy and cost** — `pii`, `domain`, `layer` tags drive discovery and (later) governed-tag policies.
 4. **Own with groups** — `ALTER … OWNER TO` a group, not a person.
 5. **`DROP … CASCADE` is destructive on managed objects** — it deletes data; double-check before running.
 
 ## Related
 
-- [1-access-control.md](1-access-control.md) — grants on the objects created here
-- [2-external-locations.md](2-external-locations.md) — where external tables live
-- [4-fine-grained-access.md](4-fine-grained-access.md) — row/column controls on these tables
+- 1-access-control — grants on the objects created here
+- 2-external-locations — where external tables live
+- 4-fine-grained-access — row/column controls on these tables
 - **databricks-metric-views** — metric view DDL · **databricks-iceberg** — Iceberg/Uniform DDL

@@ -1038,5 +1038,5 @@ Verify the grants landed:
 SHOW GRANTS `monitoring_team` ON SCHEMA system.access;
 ```
 
-> See [1-access-control.md](1-access-control.md) for the full privilege model and how
+> See 1-access-control for the full privilege model and how
 > `USE CATALOG` / `USE SCHEMA` / `SELECT` compose.

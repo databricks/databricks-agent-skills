@@ -1,6 +1,6 @@
 # Widget Specifications
 
-Core widget types for AI/BI dashboards. For advanced visualizations (area, scatter, choropleth map, combo), see [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md).
+Core widget types for AI/BI dashboards. For advanced visualizations (area, scatter, choropleth map, combo), see 2-advanced-widget-specifications.
 
 ## Widget Naming and Display
 
@@ -9,7 +9,7 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 - `frame.showTitle`: always set to `true` so users understand the widget
 - `frame.description` + `frame.showDescription: true`: optional subtext under the title (e.g., `"All-time; 0% before the 2025-06 launch"`) — useful for giving a KPI number context without cluttering the chart itself
 - `displayName`: use in encodings to label axes/values clearly (e.g., "Revenue ($)", "Growth Rate (%)")
-- `widget.queries[].name`: use `"main_query"` for chart/counter/table widgets. Filter widgets with multiple queries can use descriptive names (see [3-filters.md](3-filters.md))
+- `widget.queries[].name`: use `"main_query"` for chart/counter/table widgets. Filter widgets with multiple queries can use descriptive names (see 3-filters)
 
 **Always format values appropriately** - use `format` for currency, percentages, and large numbers (see [Axis Formatting](#axis-formatting)).
 
@@ -24,11 +24,11 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 | line | 3 | this file |
 | pie | 3 | this file |
 | symbol-map | 2 | this file |
-| area | 3 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
-| scatter | 3 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
-| combo | 1 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
-| choropleth-map | 1 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
-| filter-* | 2 | [3-filters.md](3-filters.md) |
+| area | 3 | 2-advanced-widget-specifications |
+| scatter | 3 | 2-advanced-widget-specifications |
+| combo | 1 | 2-advanced-widget-specifications |
+| choropleth-map | 1 | 2-advanced-widget-specifications |
+| filter-* | 2 | 3-filters |
 
 ---
 
@@ -310,7 +310,7 @@ Each column object supports format, conditional styling, links, and tooltips. Co
 
 Other display types: `"image"` (renders base64 strings as images), `"html"` (sanitized HTML), `"json"` (collapsible JSON tree), `"color-scale"` (continuous color gradient on numeric values without explicit thresholds).
 
-> Same `style.rules` and `link`/`tooltip` patterns work on **pivot** cells — see pivot in [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md).
+> Same `style.rules` and `link`/`tooltip` patterns work on **pivot** cells — see pivot in 2-advanced-widget-specifications.
 
 ---
 
@@ -324,7 +324,7 @@ Other display types: `"image"` (renders base64 strings as images), `"html"` (san
 
 > **Two recommended defaults for time-series charts:**
 > - **Mark meaningful events with an annotation.** A single `vertical-line` for a product launch, incident, holiday, or campaign turns a generic trend into a readable story. See [Annotations](#annotations-event-markers) below.
-> - **For trend lines on time-series data, consider `forecast-line` with `AI_FORECAST`** instead of a plain `line`. Projects future values + confidence bands and makes a dashboard noticeably more compelling for demos. See [forecast-line in 2-advanced-widget-specifications.md](2-advanced-widget-specifications.md#forecast-line-with-ai_forecast).
+> - **For trend lines on time-series data, consider `forecast-line` with `AI_FORECAST`** instead of a plain `line`. Projects future values + confidence bands and makes a dashboard noticeably more compelling for demos. See 2-advanced-widget-specifications#forecast-line-with-ai_forecast.
 
 **Multiple series - two approaches:**
 
@@ -398,7 +398,7 @@ Default behaviour: theme colors are assigned to categories in order. To pin spec
 
 Inside `mappings[].color`, use a **bare hex string** (`"#FF0000"`) — that's the form chart widgets honor. Palette-position references (`themeColorType` / `position`) and the wrapped `{"hex": "..."}` object form are silently dropped on `mappings[].color`, so semantic pins must always be bare hex.
 
-> For continuous color ramps on quantitative encodings, use `colorRamp` — see Symbol Map below, or [Heatmap](2-advanced-widget-specifications.md#heatmap) and [Choropleth Map](2-advanced-widget-specifications.md#choropleth-map) in advanced specs.
+> For continuous color ramps on quantitative encodings, use `colorRamp` — see Symbol Map below, or Heatmap (2-advanced-widget-specifications#heatmap) and Choropleth Map (2-advanced-widget-specifications#choropleth-map) in advanced specs.
 
 ### Annotations (event markers)
 
@@ -520,7 +520,7 @@ Add `format` to any encoding to display values appropriately:
 
 ## Dataset Parameters
 
-Use `:param` syntax in SQL for dynamic filtering. Parameters can be bound to filter widgets (see [3-filters.md](3-filters.md)):
+Use `:param` syntax in SQL for dynamic filtering. Parameters can be bound to filter widgets (see 3-filters):
 
 ```json
 {
@@ -536,7 +536,7 @@ Use `:param` syntax in SQL for dynamic filtering. Parameters can be bound to fil
 
 **Parameter types:**
 - Single value: `"dataType": "INTEGER"` / `"DECIMAL"` / `"STRING"`
-- Multi-select: `"complexType": "MULTI"` — binds as a SQL `ARRAY`, filter with `array_contains(:p, col)`, not `col IN (:p)`. Full pattern in [3-filters.md](3-filters.md#multi-select-parameters-multi).
+- Multi-select: `"complexType": "MULTI"` — binds as a SQL `ARRAY`, filter with `array_contains(:p, col)`, not `col IN (:p)`. Full pattern in 3-filters#multi-select-parameters-multi.
 - Range: `"dataType": "DATE", "complexType": "RANGE"` - use `:param.min` / `:param.max`
 
 ---

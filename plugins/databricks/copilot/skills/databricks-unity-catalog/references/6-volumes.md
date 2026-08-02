@@ -400,7 +400,7 @@ except Exception as e:
 External volumes need a **storage credential** and an **external location** before
 the volume itself can be created. Create them in order — credential first, then the
 external location backed by that credential, then the external volume on that location.
-See [2-external-locations.md](2-external-locations.md) for the full storage
+See 2-external-locations for the full storage
 credential / external location reference.
 
 ```python
@@ -439,5 +439,5 @@ Other common external-volume problems:
 
 > **Permissions cross-reference:** the `READ VOLUME` / `WRITE VOLUME` / `CREATE VOLUME`
 > grants shown above are part of the wider Unity Catalog privilege model — see
-> [1-access-control.md](1-access-control.md) for the full securable hierarchy,
+> 1-access-control for the full securable hierarchy,
 > privilege list, and ownership rules.
