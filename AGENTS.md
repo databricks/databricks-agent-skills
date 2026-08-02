@@ -45,7 +45,9 @@ gate.
 - Advisory, blocked, and rollup findings do not affect the exit status unless
   named explicitly in `--only`.
 - Run it from the repo root — it resolves the corpus relative to its own
-  path, so any cwd works, but the paths it prints are repo-relative.
+  path, so any cwd works, but the paths it prints are repo-relative. There is
+  no `--root` flag: to measure another commit, `git worktree add` it and run
+  *that tree's* copy of the script.
 - The counting conventions (token basis, the `../` matcher's ellipsis
   exclusion, code-fence exemption, TOC heuristic) live in the module
   docstring — that's the contract; changing one moves every number.
