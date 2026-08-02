@@ -146,4 +146,4 @@ For higher recall without tuning, use HNSW instead: `USING hnsw (embedding vecto
 ## Cross-references
 
 - For generating embeddings, see the `databricks-apps` skill's [model-serving.md](../../databricks-apps/references/appkit-model-serving.md) → Embeddings Pattern
-- For Lakebase connection patterns, see [connectivity.md](connectivity.md)
+- For Lakebase connection patterns, see connectivity

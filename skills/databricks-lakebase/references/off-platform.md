@@ -198,6 +198,6 @@ export default defineConfig({
 
 ## Cross-references
 
-- For on-platform connection patterns, see [connectivity.md](connectivity.md)
-- For vector similarity search with pgvector, see [pgvector.md](pgvector.md)
+- For on-platform connection patterns, see connectivity
+- For vector similarity search with pgvector, see pgvector
 - For AppKit-based Lakebase integration, see the `databricks-apps` skill's [lakebase.md](../../databricks-apps/references/appkit-lakebase.md)

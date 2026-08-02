@@ -10,7 +10,7 @@ Two options for writing streaming records into Lakebase Postgres:
 1. **Native `format("postgresql")` sink** — Public Preview. Workspace-managed authentication, built-in batching, automatic retries on transient JDBC errors, Unity Catalog `.toTable()` integration. The canonical choice when DBR 18.3+ and Public Preview features are acceptable.
 2. **Manual `foreach` sink** (a duck-typed Python class) — fallback for DBR <18.3, environments where Public Preview is unacceptable, customization the native sink doesn't offer (composing writes, conditional routing), or non-Lakebase targets. Also useful as a worked example of the `foreach` lifecycle for sinks to other systems (Redis, Cassandra, custom REST endpoints).
 
-For general Lakebase mechanics — projects, branches, sizing, the CU-to-connections cap, authentication methods, connection patterns from non-streaming clients — see the stable `databricks-lakebase` skill, specifically [connectivity.md](../databricks-lakebase/references/connectivity.md) and [computes-and-scaling.md](../databricks-lakebase/references/computes-and-scaling.md). For RTM cluster setup, see [real-time-mode.md](real-time-mode.md). This file covers only the sink-specific patterns.
+For general Lakebase mechanics — projects, branches, sizing, the CU-to-connections cap, authentication methods, connection patterns from non-streaming clients — see the stable `databricks-lakebase` skill, specifically [connectivity.md](../databricks-lakebase/references/connectivity.md) and [computes-and-scaling.md](../databricks-lakebase/references/computes-and-scaling.md). For RTM cluster setup, see real-time-mode. This file covers only the sink-specific patterns.
 
 ## Prerequisites
 
@@ -101,7 +101,7 @@ The sink **automatically retries transient JDBC errors — connection failures, 
 
 All Structured Streaming triggers are supported: `realTime`, `processingTime`, `availableNow`, `once`. Output modes: `update` and `append` (not `complete`) — and **`append` behaves identically to `update`** when the table has a primary key (both upsert via `INSERT … ON CONFLICT`); plain inserts only occur when there's no PK and no `upsertkey`.
 
-For RTM cluster setup (autoscaling/Photon/spot off, the enable conf, slot math), see [real-time-mode.md](real-time-mode.md). The native sink's compute floor (DBR 18.3+) is stricter than RTM's general floor; the intersection is DBR 18.3+ Classic compute.
+For RTM cluster setup (autoscaling/Photon/spot off, the enable conf, slot math), see real-time-mode. The native sink's compute floor (DBR 18.3+) is stricter than RTM's general floor; the intersection is DBR 18.3+ Classic compute.
 
 ## Option B: Manual `foreach` sink (fallback / customization)
 
@@ -245,7 +245,7 @@ stream = (
 )
 ```
 
-See [real-time-mode.md](real-time-mode.md) for the RTM cluster setup and the `outputMode("update")` requirement; see [kafka-streaming.md](kafka-streaming.md) for source-specific Kafka options.
+See real-time-mode for the RTM cluster setup and the `outputMode("update")` requirement; see kafka-streaming for source-specific Kafka options.
 
 ### Tuning `max_dwell_ms`
 
@@ -268,7 +268,7 @@ The effective Lakebase TX/s ceiling per partition is `1000 / max_dwell_ms`. With
 
 ## Delivery semantics
 
-Both sink options are **at-least-once** at the boundary — see "Delivery semantics" in [real-time-mode.md](real-time-mode.md) for why and when duplicates occur. The native sink retries transient JDBC errors automatically; the manual `foreach` sink raises by default (override pattern in [Reconnect instead of failing the query](#reconnect-instead-of-failing-the-query)).
+Both sink options are **at-least-once** at the boundary — see "Delivery semantics" in real-time-mode for why and when duplicates occur. The native sink retries transient JDBC errors automatically; the manual `foreach` sink raises by default (override pattern in [Reconnect instead of failing the query](#reconnect-instead-of-failing-the-query)).
 
 In both cases the upsert is idempotent — `INSERT … ON CONFLICT (id) DO UPDATE` produces the same final state regardless of how many times the same row arrives. If you customize the manual sink, **preserve idempotency**: keep the `ON CONFLICT` upsert (or use `MERGE`), never plain `INSERT`. If you swap in append-only inserts (event log style), include a deduplication key the consumer can use.
 
