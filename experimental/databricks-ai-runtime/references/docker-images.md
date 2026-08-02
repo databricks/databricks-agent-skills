@@ -17,6 +17,30 @@ Two paths:
 
 ---
 
+## Contents
+
+- [Option 1: Databricks base images](#option-1-databricks-base-images)
+  - [What's in all 4 variants](#whats-in-all-4-variants)
+  - [Deriving a PyTorch image](#deriving-a-pytorch-image)
+- [Option 2: From scratch](#option-2-from-scratch)
+  - [System setup](#system-setup)
+  - [AWS networking (EFA)](#aws-networking-efa)
+  - [Azure networking (InfiniBand)](#azure-networking-infiniband)
+  - [ML framework and code](#ml-framework-and-code)
+- [flash-attn and CXX11 ABI (the gotcha)](#flash-attn-and-cxx11-abi-the-gotcha)
+- [WORKDIR is not honored at runtime](#workdir-is-not-honored-at-runtime)
+- [Pre-build compatibility check](#pre-build-compatibility-check)
+  - [1. Host GPU driver](#1-host-gpu-driver)
+  - [2. CUDA toolkit vs driver](#2-cuda-toolkit-vs-driver)
+  - [3. PyTorch vs CUDA](#3-pytorch-vs-cuda)
+  - [4. NCCL](#4-nccl)
+  - [5. CXX11 ABI (CUDA extensions)](#5-cxx11-abi-cuda-extensions)
+  - [6. EFA / RDMA](#6-efa--rdma)
+  - [Summary table](#summary-table)
+- [Register and run](#register-and-run)
+
+---
+
 ## Option 1: Databricks base images
 
 Published on Docker Hub at

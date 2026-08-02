@@ -10,6 +10,23 @@ This is also the **manual fallback** for discovery when the Genie One skill
 can't pin down, and query generation — it has governed access to the org's semantic
 context that this manual path doesn't.
 
+## Contents
+
+- [Finding Tables by Keyword](#finding-tables-by-keyword)
+- [Identifier Names & Quoting — Read Before Writing Any Query](#identifier-names--quoting--read-before-writing-any-query)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Discover Schema](#discover-schema)
+- [Query](#query)
+- [Workflow: Complete Data Exploration](#workflow-complete-data-exploration)
+- [Claude Code-Specific Tips](#claude-code-specific-tips)
+- [Flags](#flags)
+- [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
+- [Related Commands](#related-commands)
+
+---
+
 ## Finding Tables by Keyword
 
 **⚠️ START HERE if you don't know which catalog/schema contains your data** (and

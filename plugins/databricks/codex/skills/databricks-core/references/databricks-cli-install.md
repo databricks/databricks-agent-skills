@@ -2,6 +2,23 @@
 
 Install or update the Databricks CLI on macOS, Windows, or Linux using doc-validated methods (Homebrew, WinGet, curl install script, manual download, or user directory install for non-sudo environments). Includes verification and common failure recovery.
 
+## Contents
+
+- [Sandboxed / IDE environments (Cursor, containers)](#sandboxed--ide-environments-cursor-containers)
+- [Preconditions (always do first)](#preconditions-always-do-first)
+- [Preferred installation paths (by OS)](#preferred-installation-paths-by-os)
+  - [macOS (preferred: Homebrew)](#macos-preferred-homebrew)
+  - [Linux (preferred: Homebrew if available)](#linux-preferred-homebrew-if-available)
+  - [Windows (preferred: WinGet)](#windows-preferred-winget)
+- [Manual install (all OSes): download from GitHub releases](#manual-install-all-oses-download-from-github-releases)
+- [Update / repair procedures](#update--repair-procedures)
+  - [Homebrew update (macOS/Linux)](#homebrew-update-macoslinux)
+  - [WinGet update (Windows)](#winget-update-windows)
+  - [curl update (all OSes)](#curl-update-all-oses)
+- [Common failures & fixes (agent playbook)](#common-failures--fixes-agent-playbook)
+
+---
+
 ## Sandboxed / IDE environments (Cursor, containers)
 
 CLI install commands often write to system directories outside the workspace (e.g. `/opt/homebrew/`, `/usr/local/bin/`) which are blocked in sandboxed environments.
