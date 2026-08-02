@@ -87,7 +87,7 @@ The `databricks experimental aitools tools` command group provides tools for dat
 
 ## Prerequisites
 
-1. **Authenticated Databricks CLI** - see [CLI Authentication Guide](databricks-cli-auth.md) for OAuth2 setup and profile configuration
+1. **Authenticated Databricks CLI** - see the CLI Authentication Guide (`references/databricks-cli-auth.md`) for OAuth2 setup and profile configuration
 2. **Access to Unity Catalog tables** with appropriate read permissions
 3. **SQL Warehouse** (for query command - auto-detected unless `DATABRICKS_WAREHOUSE_ID` is set)
 

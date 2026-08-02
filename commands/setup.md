@@ -13,7 +13,7 @@ wrapper around it.
 
 1. **CLI present?** `databricks --version`. If it's missing,
    follow the install steps in the databricks-core skill
-   (`databricks-cli-install.md`). In sandboxed environments (Cursor, containers),
+   (`references/databricks-cli-install.md`). In sandboxed environments (Cursor, containers),
    print the install command and ask the user to run it in their own terminal.
    Don't try to install into the sandbox.
 2. **Existing profiles?** `databricks auth profiles`. Show what's already

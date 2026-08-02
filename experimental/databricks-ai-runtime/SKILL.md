@@ -30,7 +30,7 @@ Submit with `air run --file workload.yaml -p <databricks_config_profile>`.
 
 Use a custom Docker image instead of `environment.version` when your workload needs specific system libraries, CUDA extensions (flash-attn, apex, custom kernels), or dependencies that don't fit `environment.dependencies`.
 
-**Read [docker-images.md](docker-images.md)** for step-by-step guidance on:
+**Read [docker-images.md](references/docker-images.md)** for step-by-step guidance on:
 
 - Using Databricks-provided base images
 - Dockerfile patterns

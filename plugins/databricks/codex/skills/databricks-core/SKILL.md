@@ -23,18 +23,18 @@ For **data discovery, exploration, and query generation** — finding tables,
 answering natural-language questions about the data, or generating SQL — use
 **databricks-data-discovery** (it asks Genie One first, then falls back to manual
 exploration). If it isn't installed, use the AI-tool commands below and
-[Manual Data Exploration](manual-data-exploration.md).
+[Manual Data Exploration](references/manual-data-exploration.md).
 
 ## Prerequisites
 
 1. **CLI installed**: Run `databricks --version` to check.
    - **If the CLI is missing or outdated (< v0.292.0): STOP. Do not proceed or work around a missing CLI.**
-   - **Read the [CLI Installation](databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
+   - **Read the [CLI Installation](references/databricks-cli-install.md) reference file and follow the instructions to guide the user through installation.**
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
    - **Exception:** If CLI installation is blocked (sandboxed containers, restricted environments), ask the user whether to fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the [Databricks REST API docs](https://docs.databricks.com/api/workspace/introduction).
 
 2. **Authenticated**: `databricks auth profiles`
-   - If not: see [CLI Authentication](databricks-cli-auth.md)
+   - If not: see [CLI Authentication](references/databricks-cli-auth.md)
 
 ## Profile Selection - CRITICAL
 
@@ -84,7 +84,7 @@ parse error.
 These commands are first-class for running known SQL and profiling — Genie isn't
 required for that. For natural-language data questions, locating data you can't
 pin down, or generating a query from a question, prefer the `databricks-data-discovery`
-skill (above) if it's installed. See [Manual Data Exploration](manual-data-exploration.md) for the
+skill (above) if it's installed. See [Manual Data Exploration](references/manual-data-exploration.md) for the
 full command surface, quoting rules, and troubleshooting.
 
 ## Quick Reference
@@ -138,7 +138,7 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 | Error | Solution |
 |-------|----------|
 | `cannot configure default credentials` | Use `--profile` flag or authenticate first |
-| `configuration does not support OAuth tokens` | The command requires OAuth (e.g., `databricks apps logs`). Re-authenticate with `databricks auth login --host <URL> --profile <PROFILE>`. See [CLI Authentication](databricks-cli-auth.md). |
+| `configuration does not support OAuth tokens` | The command requires OAuth (e.g., `databricks apps logs`). Re-authenticate with `databricks auth login --host <URL> --profile <PROFILE>`. See [CLI Authentication](references/databricks-cli-auth.md). |
 | `PERMISSION_DENIED` | Check workspace/UC permissions |
 | `RESOURCE_DOES_NOT_EXIST` | Verify resource name/id and profile |
 
@@ -146,13 +146,13 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 
 | Task | READ BEFORE proceeding |
 |------|------------------------|
-| First time setup | [CLI Installation](databricks-cli-install.md) |
-| Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
-| Exploring tables/schemas | [Manual Data Exploration](manual-data-exploration.md) (or `databricks-data-discovery` if installed) |
+| First time setup | [CLI Installation](references/databricks-cli-install.md) |
+| Auth issues / new workspace | [CLI Authentication](references/databricks-cli-auth.md) |
+| Exploring tables/schemas | [Manual Data Exploration](references/manual-data-exploration.md) (or `databricks-data-discovery` if installed) |
 | Deploying jobs/pipelines | Use `/databricks-dabs` |
 
 ## Reference Guides
 
-- [CLI Installation](databricks-cli-install.md)
-- [CLI Authentication](databricks-cli-auth.md)
-- [Manual Data Exploration](manual-data-exploration.md)
+- [CLI Installation](references/databricks-cli-install.md)
+- [CLI Authentication](references/databricks-cli-auth.md)
+- [Manual Data Exploration](references/manual-data-exploration.md)
