@@ -26,14 +26,22 @@ traversal check to `scripts/skillsgen/validators.py` matching the style of the
 existing `check_*` functions, so it cannot regress.
 
 ### SPEC-10b — bare-basename references
-**Count: 11 occurrences in `databricks-mlflow-evaluation`. Target 0.**
+**Count: 64 mentions across 2 skills. Target 0.**
 
-All 11 reference files are named in SKILL.md by basename (`GOTCHAS.md`,
-`CRITICAL-interfaces.md`, `patterns-scorers.md`, ...) while living under
-`references/`. Prefix all 11.
+Units: 64 counts *mentions*; 11 counts reference *files*. Both are correct
+measurements of the same defect at different granularity. `databricks-mlflow-evaluation`
+carries 61 mentions, `databricks-app-design` 3 — a second skill the original
+audit did not name.
 
-Byte-preserve the rest of that file. Its four numbered workflow tables are the
-best routing in the repo; only the paths are wrong.
+None are markdown links, so a `](...)`-only regex finds zero. Two exclusions are
+load-bearing: a basename in a link *label* routes correctly and counting labels
+inflates the class to 167; and a basename that resolves at the skill root is a
+different finding (NEW-C). Full derivation in the reconciliation section below.
+
+Byte-preserve the rest of `databricks-mlflow-evaluation/SKILL.md`. Its four
+numbered workflow tables are the best routing in the repo; only the paths are
+wrong.
+
 
 ### PD-5 — reference-to-reference links
 **Count: 17 skills. Target 0.**
