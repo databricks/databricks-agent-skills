@@ -361,8 +361,10 @@ in the rollup can find its rationale.
 - **`SPEC-10a-self-parent` — 3 occurrences in 1 skill.** `../SKILL.md` from a
   `references/` file names the skill's own parent, at
   `databricks-metric-views/references/metric-view-advisor.md:18`, `:28`, `:808`.
-  The path never leaves the skill directory, so no subset install can break it —
-  which is the sole rationale for the SPEC-10a class.
+  The path never leaves the skill directory, so no subset install can break it.
+  **The exemption is scoped to non-link mentions** — see the
+  self-parent-versus-link reconciliation below for why the link form of the
+  same path is still must-fix under `SPEC-10a-intra`.
 
 ## Withdrawn
 
@@ -428,9 +430,38 @@ The 13 outside link targets (11 plain prose, 2 inside link labels) once counted
 `references/metric-view-advisor.md:18`, `:28`, `:808`. Those 3 are now exempt
 under D8 and reported as `SPEC-10a-self-parent`, so **`SPEC-10a-prose` is 0**:
 `../SKILL.md` from a `references/` file names its own parent, the path never
-leaves the skill directory, and no subset install can break it — which is the
-sole rationale for the SPEC-10a class. The row stays must-fix at zero so a
-regression is caught.
+leaves the skill directory, and no subset install can break it. The row stays
+must-fix at zero so a regression is caught.
+
+**Self-parent exemption vs `SPEC-10a-intra` — the two rows both saw
+`../SKILL.md` and disagreed; here is why that is correct.** As first written,
+the exemption's rationale ("no subset install can break it") was called *the
+sole rationale for the SPEC-10a class*. Read literally that also exempts the 19
+`SPEC-10a-intra` links, which are the identical path from the identical kind of
+file — making one row advisory and another must-fix over the same string. The
+over-claim is in the word *sole*; the rows are distinguished by **form, not by
+path**, and there are two independent rationales:
+
+1. **Subset-install breakage.** Governs `SPEC-10a-cross` only. A path into a
+   sibling skill dangles by construction. `../SKILL.md` never leaves the skill
+   directory and is untouched by this rationale — which is what earns the
+   3 prose occurrences their exemption.
+2. **Dead routing.** Governs `SPEC-10a-intra`. A markdown link is an
+   instruction to *load*; `references/` is read only after `SKILL.md` has
+   already fired, so a link back to `SKILL.md` routes the agent at content
+   that is already resident. It is dead routing whether or not the path
+   resolves — and it cannot be repaired, because there is no `../`-free
+   markdown path from `references/x.md` to its own `SKILL.md`
+   (`](SKILL.md)` resolves to `references/SKILL.md` and dangles as NEW-A).
+   The only available fix is to drop the link and keep the name.
+
+A prose or backticked mention carries no load instruction — it is documentation
+*about* the skill's own layout — so rationale 2 does not reach it and the
+exemption stands. **The exemption is therefore scoped to non-link mentions**,
+which is exactly what the checker implements: `SPEC-10a-prose` exempts, and
+`SPEC-10a-intra` counts links. Both rows are now 0 in the corpus, so nothing
+turns on this today; it is recorded so a future reader does not "harmonise" the
+two rows and silently un-gate one of them.
 
 **SPEC-10b — spec 11 in one skill, corpus 64 across two; checker 64.** 11 is
 the count of reference *files*, not of mentions:

@@ -766,6 +766,24 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 
 Nothing goes into a diff its branch does not own.
 
+- **`specs/02` reconciliation landed on `ralph/spec-10a-remainder`, not
+  deferred.** The self-parent exemption claimed subset-install breakage was
+  "the sole rationale for the SPEC-10a class", which read literally also
+  exempts the 19 `SPEC-10a-intra` links — same path, same kind of file, one
+  row advisory and one must-fix. The reconciliation names the second,
+  independent rationale (a link is a load instruction and `references/` loads
+  only after `SKILL.md` has fired, so a link back to it is dead routing that
+  cannot be rewritten) and scopes the exemption to non-link mentions. Both
+  rows are 0, so nothing turned on it — recorded so a future reader does not
+  harmonise the rows and un-gate one.
+- **`SPEC-10a` regression guard in `scripts/skillsgen/validators.py` is NOT in
+  this branch.** `specs/02`'s SPEC-10a fix text ends "then add a traversal
+  check to `validators.py` so it cannot regress", but that is item 16 /
+  MNT-1b, a different finding class, and wiring it into `cli.py`'s `validate`
+  sequence early makes `validate` exit 1 for every other branch. It also has
+  to reimplement both exemptions (81 in-fence, 3 self-parent) or it reports
+  84 false positives on a clean corpus. Last sweep PR only.
+
 - **Observed while sweeping SPEC-10b, NOT a defect — do not "fix" it.** 56
   bold skill mentions across the corpus are written `**databricks-x**` where
   the majority house form is ``**`databricks-x`**`` (heaviest:
