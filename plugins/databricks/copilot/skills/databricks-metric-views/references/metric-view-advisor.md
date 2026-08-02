@@ -23,6 +23,36 @@ frameworks, creating regular UC tables/schemas, or MLflow/model tracking.
 > multi-source build flow and the YAML additions that flow needs. It deliberately
 > does not restate the baseline spec, so the two can't drift apart.
 
+## Contents
+
+- [Prerequisites & tooling](#prerequisites--tooling)
+- [How this advisor works](#how-this-advisor-works)
+  - [Information this advisor needs (and why)](#information-this-advisor-needs-and-why)
+- [CLI & API operations](#cli--api-operations)
+- [Workflow](#workflow)
+  - [Step 1 — Discover existing metric views (do this automatically)](#step-1--discover-existing-metric-views-do-this-automatically)
+  - [Step 2 — Analyze the inputs](#step-2--analyze-the-inputs)
+  - [Step 3 — Suggest metric views](#step-3--suggest-metric-views)
+  - [Step 4 — Create metric view definitions](#step-4--create-metric-view-definitions)
+  - [Step 5 — Materialization (optional — decide before deploy)](#step-5--materialization-optional--decide-before-deploy)
+  - [Step 6 — Deploy](#step-6--deploy)
+  - [Step 7 — Show sample queries](#step-7--show-sample-queries)
+  - [Next steps (suggestions)](#next-steps-suggestions)
+- [YAML reference — advisor additions](#yaml-reference--advisor-additions)
+  - [YAML formatting gotchas](#yaml-formatting-gotchas)
+  - [Source (expanded options)](#source-expanded-options)
+  - [Composability (recommended for complex measures)](#composability-recommended-for-complex-measures)
+  - [Additional measure rules](#additional-measure-rules)
+  - [Additional join rules](#additional-join-rules)
+  - [Semantic metadata (v1.1, DBR 17.3+)](#semantic-metadata-v11-dbr-173)
+  - [Level of Detail (LOD) expressions](#level-of-detail-lod-expressions)
+  - [Materialization — additional detail](#materialization--additional-detail)
+  - [Complete example](#complete-example)
+- [Important notes (advisor heuristics)](#important-notes-advisor-heuristics)
+- [Limitations](#limitations)
+
+---
+
 ## Prerequisites & tooling
 
 1. **The baseline spec** from the parent skill (`../SKILL.md`, patterns, yaml-reference) — read it for the YAML spec and patterns.

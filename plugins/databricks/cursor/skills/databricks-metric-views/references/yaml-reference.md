@@ -2,6 +2,28 @@
 
 Complete reference for the YAML specification used in Unity Catalog metric views.
 
+## Contents
+
+- [Top-Level Fields](#top-level-fields)
+- [Dimensions](#dimensions)
+  - [Dimension Rules](#dimension-rules)
+- [Measures](#measures)
+  - [Window Measures (Experimental)](#window-measures-experimental)
+  - [Measure Rules](#measure-rules)
+- [Joins](#joins)
+  - [Star Schema (Single Level)](#star-schema-single-level)
+  - [Star Schema with USING](#star-schema-with-using)
+  - [Snowflake Schema (Nested Joins, DBR 17.1+)](#snowflake-schema-nested-joins-dbr-171)
+  - [Join Rules](#join-rules)
+- [Filter](#filter)
+- [Materialization (Experimental)](#materialization-experimental)
+  - [Materialization Types](#materialization-types)
+  - [Materialization Requirements](#materialization-requirements)
+  - [Refresh Materialization](#refresh-materialization)
+- [Complete Example](#complete-example)
+
+---
+
 ## Top-Level Fields
 
 | Field | Required | Type | Description |

@@ -2,6 +2,37 @@
 
 Common patterns for creating and querying metric views.
 
+## Contents
+
+- [Pattern 1: Simple Metrics from a Single Table](#pattern-1-simple-metrics-from-a-single-table)
+  - [Create](#create)
+  - [Query](#query)
+  - [Genie-friendly variant (recommended for AI/BI)](#genie-friendly-variant-recommended-for-aibi)
+- [Pattern 2: Derived Dimensions with CASE](#pattern-2-derived-dimensions-with-case)
+- [Pattern 3: Ratio Measures](#pattern-3-ratio-measures)
+- [Pattern 4: Filtered Measures (FILTER clause)](#pattern-4-filtered-measures-filter-clause)
+  - [Query filtered measures](#query-filtered-measures)
+- [Pattern 5: Star Schema with Joins](#pattern-5-star-schema-with-joins)
+- [Pattern 6: Snowflake Schema (Nested Joins)](#pattern-6-snowflake-schema-nested-joins)
+  - [Query across hierarchy levels](#query-across-hierarchy-levels)
+- [Pattern 7: Materialized Metric View](#pattern-7-materialized-metric-view)
+- [Pattern 8: Using samples.tpch for Quick Demos](#pattern-8-using-samplestpch-for-quick-demos)
+  - [Demo queries](#demo-queries)
+- [Pattern 9: Window Measures (Experimental)](#pattern-9-window-measures-experimental)
+  - [Window Range Values](#window-range-values)
+  - [Trailing Window: 7-Day Distinct Customers](#trailing-window-7-day-distinct-customers)
+  - [Running Total (Cumulative)](#running-total-cumulative)
+  - [Period-Over-Period: Day-Over-Day Growth](#period-over-period-day-over-day-growth)
+  - [Year-to-Date (Composing Multiple Windows)](#year-to-date-composing-multiple-windows)
+  - [Semiadditive Measure: Bank Balance](#semiadditive-measure-bank-balance)
+  - [Query window measures](#query-window-measures)
+- [SQL Examples](#sql-examples)
+  - [Create with joins](#create-with-joins)
+  - [Alter to add a new measure](#alter-to-add-a-new-measure)
+  - [Query with filters](#query-with-filters)
+
+---
+
 ## Pattern 1: Simple Metrics from a Single Table
 
 The most basic pattern with direct column dimensions and standard aggregations.
