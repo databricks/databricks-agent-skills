@@ -160,7 +160,7 @@ against:**
 | SPEC-10a-cross | must-fix | **0 — DONE** (was 90) |
 | SPEC-10a-intra | must-fix | 19 (was 21; the PD-5b flatten cleared 2) |
 | SPEC-10a-prose | must-fix | 0 (the 3 moved to `SPEC-10a-self-parent`, `2b9807a`) |
-| SPEC-10b | must-fix | 64 |
+| SPEC-10b | must-fix | **0 — DONE** (was 64) |
 | NEW-A | must-fix | 0 |
 | NEW-C | must-fix | 4 |
 | PD-4a | must-fix | 3 |
@@ -178,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **227** (rollup/advisory not summed); resident set 2,975 stable /
+must-fix total **163** (rollup/advisory not summed); resident set 2,975 stable /
 3,199 all-in — unchanged by every sweep so far.
 
 ---
@@ -333,37 +333,29 @@ decide what to rewrite, so it needs the post-move paths to be correct.
 
 ---
 
-## 5. SPEC-10b — bare-basename references — 64 → 0
+## 5. SPEC-10b — bare-basename references — 64 → 0 — DONE
 
-- **Finding:** SPEC-10b
-- **Paths:** `skills/databricks-mlflow-evaluation/SKILL.md` (61 mentions of all
-  11 of its `references/` files) and **`skills/databricks-app-design/SKILL.md`
-  lines 27, 29, 30** (3 mentions: `dashboard-patterns.md`, `ibcs-notation.md`,
-  `appkit-cheatsheet.md`)
-- **Count:** **64 → 0** — 59 backticked + 2 bold-prose in mlflow-evaluation,
-  3 backticked in app-design
-- **Backpressure:**
-
-  ```sh
-  grep -oE '`[A-Za-z0-9._-]+\.md`' skills/databricks-mlflow-evaluation/SKILL.md \
-    | grep -vc 'references/'                                    # 59 -> 0
-  grep -cE '\*\*Read [A-Za-z0-9._-]+\.md\*\*' \
-    skills/databricks-mlflow-evaluation/SKILL.md                # 2  -> 0
-  grep -oE '`[A-Za-z0-9._-]+\.md`' skills/databricks-app-design/SKILL.md \
-    | grep -vc 'references/'                                    # 3  -> 0
-  ```
-
-  Canonical: `python3 scripts/audit_check.py --only SPEC-10b`.
-
-**Both `specs/02` and the previous plan are wrong on scale and scope.** The
-count of 11 is the number of *files*, not occurrences — there are **61**
-mentions in mlflow-evaluation alone, and the class extends to a **second
-skill** neither document names. Zero of the 64 are markdown links.
-
-**Byte-preserve the rest of `mlflow-evaluation/SKILL.md`** — its numbered
-workflow tables (52 of the 61 mentions sit in table cells) are the best routing
-in the repo; only the paths are wrong. Decide once and apply uniformly: keep as
-backticked text with the prefix, or promote to markdown links.
+- **Finding:** SPEC-10b — **DONE**, 64 → 0.
+- **Landed** on branch `ralph/spec-10b-basenames`, off `ralph/phase1-base`.
+- **Scope:** `skills/databricks-mlflow-evaluation/SKILL.md` 61 (59 backticked +
+  2 bold-prose at `:27`-`:28`), `skills/databricks-app-design/SKILL.md` 3
+  (backticked, `:27`, `:29`, `:30`). Zero were markdown links.
+- **Fix applied uniformly:** keep the existing shape, prefix the path —
+  `` `patterns-datasets.md` `` → `` `references/patterns-datasets.md` ``,
+  `**Read GOTCHAS.md**` → `**Read references/GOTCHAS.md**`. Links were NOT
+  promoted to markdown link syntax: 52 of the 61 sit in table cells whose
+  columns are the repo's best routing, and rewriting them would have churned
+  the tables for no gate.
+- **Byte-preservation held.** The diff is 61 + 3 changed lines, each a pure
+  prefix insertion; the eight numbered workflow tables are otherwise untouched.
+  `app-design` lines 14–16 already carried the prefix, so the fix made that
+  file internally consistent rather than introducing a new form.
+- **No product-name demotion** (the PD-5 sweep's failure mode): this class
+  substitutes in the opposite direction — filename → longer path — and all 64
+  labels named files, never things. Diff read line by line to confirm.
+- **Backpressure:** `audit_check.py --only SPEC-10b` → 0; unscoped run moved
+  exactly one row (64 → 0), must-fix total 227 → **163**; `skills.py validate`
+  → 0; 149 tests pass.
 
 ---
 
@@ -703,7 +695,7 @@ still constrain the order.
 | 2 | `ralph/spec-10a-cross` | 4 · SPEC-10a-cross + NEW-A | DONE (90 → 0) |
 | 3 | `ralph/spec-10a-remainder` | 7 · SPEC-10a-intra | 19 → 0 |
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | already 0 — regression guard only |
-| 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | 64 → 0 |
+| 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | DONE (64 → 0) |
 | 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | 12 links / 4 files → 0 |
 | 7 | `ralph/pd-5-pipelines` **done** | 3 · PD-5 (pipelines only) | 228 → 137; PD-4c 3 → 1 |
 | 7b | `ralph/pd-5-rest` **done** | 3 + 3a · PD-5 (14 skills), PD-5b | 137 → 0; 12 → 0; PD-4c 1 → 0 |
@@ -763,6 +755,14 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 ## Deferred to other branches
 
 Nothing goes into a diff its branch does not own.
+
+- **Observed while sweeping SPEC-10b, NOT a defect — do not "fix" it.** 56
+  bold skill mentions across the corpus are written `**databricks-x**` where
+  the majority house form is ``**`databricks-x`**`` (heaviest:
+  `databricks-lakeflow-connect` 11, `databricks-vector-search`,
+  `databricks-docs`). No spec rule governs backtick style on a skill name and
+  no checker row counts it. Recorded so a future loop recognises it as
+  pre-existing rather than damage from the SPEC-10a-cross sweep.
 
 - NEW-C → branch 6 (item 9).
 - `databricks-app-design`'s 3 bare basenames → branch 5 (item 5), not a new branch.
