@@ -4,6 +4,27 @@ Generate `.proto` schemas from Unity Catalog table definitions, compile language
 
 ---
 
+## Contents
+
+- [Why Protobuf?](#why-protobuf)
+- [Generate .proto from a UC Table](#generate-proto-from-a-uc-table)
+  - [Python](#python)
+  - [Java](#java)
+- [Compile Language Bindings](#compile-language-bindings)
+  - [Python](#python-1)
+  - [Java](#java-1)
+  - [Go](#go)
+  - [Rust](#rust)
+- [Delta-to-Protobuf Type Mappings](#delta-to-protobuf-type-mappings)
+- [Maximum Schema Size](#maximum-schema-size)
+- [Schema Evolution Workflow](#schema-evolution-workflow)
+- [Using the Descriptor in Code](#using-the-descriptor-in-code)
+  - [Python](#python-2)
+  - [Java](#java-2)
+  - [Go / Rust](#go--rust)
+
+---
+
 ## Why Protobuf?
 
 | Aspect | JSON | Protobuf |

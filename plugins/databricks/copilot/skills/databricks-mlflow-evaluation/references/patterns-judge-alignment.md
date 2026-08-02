@@ -6,6 +6,19 @@ Patterns for aligning LLM judges to domain expert preferences using MemAlign. An
 
 ---
 
+## Contents
+
+- [When to Use Judge Alignment](#when-to-use-judge-alignment)
+- [Pattern 1: Design and Register the Base Judge](#pattern-1-design-and-register-the-base-judge)
+- [Pattern 2: Run Evaluation and Tag Traces](#pattern-2-run-evaluation-and-tag-traces)
+- [Pattern 3: Build Eval Dataset and Create Labeling Session](#pattern-3-build-eval-dataset-and-create-labeling-session)
+- [Pattern 4: Align Judge with MemAlign (Recommended)](#pattern-4-align-judge-with-memalign-recommended)
+- [Pattern 5: Register the Aligned Judge](#pattern-5-register-the-aligned-judge)
+- [Pattern 6: Re-evaluate with Aligned Judge](#pattern-6-re-evaluate-with-aligned-judge)
+- [Using Aligned Judges Beyond Evaluation](#using-aligned-judges-beyond-evaluation)
+
+---
+
 ## When to Use Judge Alignment
 
 Align a judge when:

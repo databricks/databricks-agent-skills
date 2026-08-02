@@ -16,6 +16,20 @@
 
 ---
 
+## Contents
+
+- [Global Filters vs Page-Level Filters](#global-filters-vs-page-level-filters)
+- [Filter Widget Structure](#filter-widget-structure)
+- [Global Filter Example](#global-filter-example)
+- [Page-Level Filter Example](#page-level-filter-example)
+- [Date Range Filtering](#date-range-filtering)
+- [Multi-Dataset Filters](#multi-dataset-filters)
+- [Multi-Select Parameters (MULTI)](#multi-select-parameters-multi)
+- [Range Slider (numeric range filter)](#range-slider-numeric-range-filter)
+- [Filter Layout Guidelines](#filter-layout-guidelines)
+
+---
+
 ## Global Filters vs Page-Level Filters
 
 | Type | Placement | Scope | Use Case |

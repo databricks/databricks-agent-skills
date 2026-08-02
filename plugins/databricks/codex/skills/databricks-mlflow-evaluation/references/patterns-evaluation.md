@@ -4,6 +4,25 @@ Working patterns for running evaluations, comparing results, and iterating on qu
 
 ---
 
+## Contents
+
+- [Pattern 0: Local Agent Testing First (CRITICAL)](#pattern-0-local-agent-testing-first-critical)
+- [Pattern 1: Basic Evaluation Run](#pattern-1-basic-evaluation-run)
+- [Pattern 2: Evaluation with Pre-computed Outputs](#pattern-2-evaluation-with-pre-computed-outputs)
+- [Pattern 3: Evaluation with Ground Truth](#pattern-3-evaluation-with-ground-truth)
+- [Pattern 4: Named Evaluation Run for Comparison](#pattern-4-named-evaluation-run-for-comparison)
+- [Pattern 5: Analyze Evaluation Results](#pattern-5-analyze-evaluation-results)
+- [Pattern 6: Compare Two Evaluation Runs](#pattern-6-compare-two-evaluation-runs)
+- [Pattern 7: Find Regressions Between Versions](#pattern-7-find-regressions-between-versions)
+- [Pattern 8: Iterative Improvement Loop](#pattern-8-iterative-improvement-loop)
+- [Pattern 9: Evaluation from Production Traces](#pattern-9-evaluation-from-production-traces)
+- [Pattern 10: A/B Testing Two Prompts](#pattern-10-ab-testing-two-prompts)
+- [Pattern 11: Evaluation with Parallelization](#pattern-11-evaluation-with-parallelization)
+- [Pattern 12: Continuous Evaluation in CI/CD](#pattern-12-continuous-evaluation-in-cicd)
+- [Evaluation Best Practices](#evaluation-best-practices)
+
+---
+
 ## Pattern 0: Local Agent Testing First (CRITICAL)
 
 **Always test agents locally by importing them directly, NOT via model serving endpoints.**

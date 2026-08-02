@@ -5,6 +5,22 @@ hierarchy, the full privilege list, `GRANT`/`REVOKE`, ownership, and privilege i
 Volume-specific grants in 6-volumes and system-table grants in
 5-system-tables are special cases of the model described here.
 
+## Contents
+
+- [Securable Hierarchy](#securable-hierarchy)
+- [Privilege Reference](#privilege-reference)
+- [GRANT / REVOKE (SQL)](#grant--revoke-sql)
+- [Inspecting Grants — SHOW GRANTS](#inspecting-grants--show-grants)
+- [Ownership](#ownership)
+- [Privilege Inheritance](#privilege-inheritance)
+- [Python SDK (w.grants)](#python-sdk-wgrants)
+- [CLI (databricks grants)](#cli-databricks-grants)
+- [Troubleshooting / Common Issues](#troubleshooting--common-issues)
+- [Best Practices](#best-practices)
+- [Related](#related)
+
+---
+
 ## Securable Hierarchy
 
 Unity Catalog secures objects in a containment tree. A privilege granted on a parent can

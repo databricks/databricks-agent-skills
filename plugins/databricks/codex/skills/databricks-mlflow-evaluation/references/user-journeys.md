@@ -4,6 +4,47 @@ Step-by-step workflows for common evaluation scenarios.
 
 ---
 
+## Contents
+
+- [Journey 0: Strategy Alignment (ALWAYS START HERE)](#journey-0-strategy-alignment-always-start-here)
+  - [Step 1: Understand the Agent](#step-1-understand-the-agent)
+  - [Step 2: Align on What to Evaluate](#step-2-align-on-what-to-evaluate)
+  - [Step 3: Define User Scenarios (Evaluation Dataset)](#step-3-define-user-scenarios-evaluation-dataset)
+  - [Step 4: Establish Success Criteria](#step-4-establish-success-criteria)
+  - [Strategy Alignment Checklist](#strategy-alignment-checklist)
+- [Journey 3: "Something Broke" - Regression Detection](#journey-3-something-broke---regression-detection)
+  - [Steps](#steps)
+  - [Commands Used](#commands-used)
+  - [Success Indicators](#success-indicators)
+- [Journey 7: "My Multi-Agent is Slow" - Performance Optimization](#journey-7-my-multi-agent-is-slow---performance-optimization)
+  - [Steps](#steps-1)
+  - [Commands Used](#commands-used-1)
+  - [Success Indicators](#success-indicators-1)
+- [Journey 8: "Improve My Prompts" - Systematic Prompt Optimization](#journey-8-improve-my-prompts---systematic-prompt-optimization)
+  - [Steps](#steps-2)
+  - [Commands Used](#commands-used-2)
+  - [Success Indicators](#success-indicators-2)
+- [Journey 9: "Store Traces in Unity Catalog" - Trace Ingestion & Production Monitoring](#journey-9-store-traces-in-unity-catalog---trace-ingestion--production-monitoring)
+  - [Prerequisites](#prerequisites)
+  - [Steps](#steps-3)
+  - [Reference Files](#reference-files)
+  - [Success Indicators](#success-indicators-3)
+- [Journey 10: Domain Expert Optimization Loop](#journey-10-domain-expert-optimization-loop)
+  - [The Loop at a Glance](#the-loop-at-a-glance)
+  - [Why This Works](#why-this-works)
+  - [Steps](#steps-4)
+  - [Complete Loop Summary](#complete-loop-summary)
+  - [Automation](#automation)
+  - [Key Gotchas](#key-gotchas)
+  - [Reference Files](#reference-files-1)
+  - [Success Indicators](#success-indicators-4)
+- [Quick Reference](#quick-reference)
+  - [Which Journey Am I On?](#which-journey-am-i-on)
+  - [Common Tools Across Journeys](#common-tools-across-journeys)
+  - [Metric Targets](#metric-targets)
+
+---
+
 ## Journey 0: Strategy Alignment (ALWAYS START HERE)
 
 **Starting Point**: You need to evaluate an agent

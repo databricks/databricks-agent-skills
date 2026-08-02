@@ -6,6 +6,25 @@ Three deployment options: Databricks CLI (simplest), Asset Bundles (multi-enviro
 
 ---
 
+## Contents
+
+- [Option 1: Databricks CLI](#option-1-databricks-cli)
+  - [Step 1: Create app.yaml](#step-1-create-appyaml)
+  - [app.yaml Commands Per Framework](#appyaml-commands-per-framework)
+  - [Excluded directories](#excluded-directories)
+  - [Step 2: Create and Deploy](#step-2-create-and-deploy)
+  - [Redeployment](#redeployment)
+- [Option 2: Databricks Asset Bundles (DABs)](#option-2-databricks-asset-bundles-dabs)
+  - [Generate Bundle from Existing App](#generate-bundle-from-existing-app)
+  - [Deploy with Bundles](#deploy-with-bundles)
+- [Option 3: CLI Commands](#option-3-cli-commands)
+- [Post-Deployment](#post-deployment)
+  - [Check Logs](#check-logs)
+  - [Verify](#verify)
+  - [Configure Permissions](#configure-permissions)
+
+---
+
 ## Option 1: Databricks CLI
 
 **Best for**: quick deployments, single environment.

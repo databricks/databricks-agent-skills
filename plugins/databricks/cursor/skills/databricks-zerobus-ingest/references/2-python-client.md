@@ -4,6 +4,20 @@ Python SDK patterns for Zerobus Ingest: synchronous and asynchronous APIs, JSON 
 
 ---
 
+## Contents
+
+- [SDK Imports](#sdk-imports)
+- [JSON Ingestion (Quick Start)](#json-ingestion-quick-start)
+- [Protobuf Ingestion](#protobuf-ingestion)
+- [ACK Callback (Asynchronous Acknowledgment)](#ack-callback-asynchronous-acknowledgment)
+- [Reusable Client Class](#reusable-client-class)
+  - [Using the Client Class](#using-the-client-class)
+- [Async Python API](#async-python-api)
+- [Batch Pattern](#batch-pattern)
+- [Ingestion Method Comparison](#ingestion-method-comparison)
+
+---
+
 ## SDK Imports
 
 ```python

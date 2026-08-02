@@ -2,6 +2,19 @@
 
 Offset management and streaming implementation patterns for exactly-once semantics.
 
+## Contents
+
+- [Basic Offset Implementation](#basic-offset-implementation)
+- [Multi-Field Offset](#multi-field-offset)
+- [Stream Reader Implementation](#stream-reader-implementation)
+- [Watermarking Support](#watermarking-support)
+- [Stateful Streaming](#stateful-streaming)
+- [Exactly-Once Semantics](#exactly-once-semantics)
+- [Monitoring and Progress](#monitoring-and-progress)
+- [Best Practices](#best-practices)
+
+---
+
 ## Basic Offset Implementation
 
 Simple JSON-serializable offset:

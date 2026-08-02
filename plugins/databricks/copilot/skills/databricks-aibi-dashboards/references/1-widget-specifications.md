@@ -2,6 +2,34 @@
 
 Core widget types for AI/BI dashboards. For advanced visualizations (area, scatter, choropleth map, combo), see 2-advanced-widget-specifications.
 
+## Contents
+
+- [Widget Naming and Display](#widget-naming-and-display)
+- [Version Requirements](#version-requirements)
+- [Text (Headers/Descriptions)](#text-headersdescriptions)
+- [Counter (KPI)](#counter-kpi)
+  - [Counter Patterns](#counter-patterns)
+  - [Sparkline (period encoding)](#sparkline-period-encoding)
+  - [Value formatting](#value-formatting)
+  - [Counter comparison (delta vs previous period)](#counter-comparison-delta-vs-previous-period)
+  - [Counter format template (custom prefix/suffix text)](#counter-format-template-custom-prefixsuffix-text)
+- [Table](#table)
+  - [Column-level options](#column-level-options)
+- [Line / Bar Charts](#line--bar-charts)
+  - [Bar Chart Modes](#bar-chart-modes)
+  - [Horizontal Bar Chart](#horizontal-bar-chart)
+  - [Categorical sort with a custom order](#categorical-sort-with-a-custom-order)
+  - [Color Scale + per-value mappings](#color-scale--per-value-mappings)
+  - [Annotations (event markers)](#annotations-event-markers)
+- [Pie Chart](#pie-chart)
+- [Symbol Map (bubble map)](#symbol-map-bubble-map)
+- [Axis Formatting](#axis-formatting)
+- [Dataset Parameters](#dataset-parameters)
+- [Widget Field Expressions](#widget-field-expressions)
+- [Widget Query Filters](#widget-query-filters)
+
+---
+
 ## Widget Naming and Display
 
 - `widget.name`: alphanumeric + hyphens + underscores ONLY (max 60 characters)

@@ -4,6 +4,30 @@ ACK handling, retry and reconnection patterns, throughput limits, delivery seman
 
 ---
 
+## Contents
+
+- [Acknowledgment (ACK) Handling](#acknowledgment-ack-handling)
+  - [Strategies](#strategies)
+  - [Sync Block (Python)](#sync-block-python)
+  - [ACK Callback (Python)](#ack-callback-python)
+  - [Flush-Based](#flush-based)
+- [Retry and Reconnection](#retry-and-reconnection)
+  - [Pattern (Any Language)](#pattern-any-language)
+  - [Python Implementation](#python-implementation)
+  - [Key Points](#key-points)
+- [Delivery Semantics](#delivery-semantics)
+- [Throughput Limits](#throughput-limits)
+  - [Scaling Beyond One Stream](#scaling-beyond-one-stream)
+- [Regional Availability](#regional-availability)
+  - [AWS Supported Regions](#aws-supported-regions)
+  - [Azure Supported Regions](#azure-supported-regions)
+- [Durability and Availability](#durability-and-availability)
+- [Target Table Constraints](#target-table-constraints)
+- [Supported Data Types](#supported-data-types)
+- [Monitoring and Observability](#monitoring-and-observability)
+
+---
+
 ## Acknowledgment (ACK) Handling
 
 Every ingested record returns a durability acknowledgment. An ACK indicates that **all records up to that offset** have been durably written to the target Delta table.

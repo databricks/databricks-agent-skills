@@ -4,6 +4,21 @@ Lakehouse Sync continuously streams changes **from** Lakebase Postgres **into** 
 
 This is the reverse direction from synced tables (which go UC → Lakebase). No external compute, pipelines, or jobs are required — it is a native Lakebase feature.
 
+## Contents
+
+- [When to Use](#when-to-use)
+- [History Tables](#history-tables)
+- [Enablement](#enablement)
+- [Prerequisites](#prerequisites)
+- [Supported Data Types](#supported-data-types)
+- [Monitoring](#monitoring)
+- [Querying History Tables](#querying-history-tables)
+- [Schema Changes](#schema-changes)
+- [Limitations](#limitations)
+- [Cross-references](#cross-references)
+
+---
+
 ## When to Use
 
 - Analyze operational data (orders, user activity, support tickets) in the lakehouse

@@ -2,6 +2,40 @@
 
 Comprehensive reference for Unity Catalog system tables: lineage, audit, billing, compute, jobs, and metadata.
 
+## Contents
+
+- [Overview](#overview)
+- [Enable System Schemas](#enable-system-schemas)
+- [Access Schema (Audit & Lineage)](#access-schema-audit--lineage)
+  - [system.access.audit](#systemaccessaudit)
+  - [system.access.table_lineage](#systemaccesstable_lineage)
+  - [system.access.column_lineage](#systemaccesscolumn_lineage)
+- [Billing Schema](#billing-schema)
+  - [system.billing.usage](#systembillingusage)
+  - [system.billing.list_prices](#systembillinglist_prices)
+- [Compute Schema](#compute-schema)
+  - [system.compute.clusters](#systemcomputeclusters)
+  - [system.compute.warehouse_events](#systemcomputewarehouse_events)
+- [Lakeflow Schema (Jobs & Pipelines)](#lakeflow-schema-jobs--pipelines)
+  - [system.lakeflow.jobs](#systemlakeflowjobs)
+  - [system.lakeflow.job_run_timeline](#systemlakeflowjob_run_timeline)
+  - [system.lakeflow.pipeline_events](#systemlakeflowpipeline_events)
+- [Query Schema](#query-schema)
+  - [system.query.history](#systemqueryhistory)
+- [Information Schema](#information-schema)
+- [External Lineage](#external-lineage)
+- [Best Practices](#best-practices)
+  - [Query Performance](#query-performance)
+  - [Retention Periods](#retention-periods)
+  - [Access Control](#access-control)
+  - [Governance Tips](#governance-tips)
+- [Troubleshooting / Common Issues](#troubleshooting--common-issues)
+  - [(a) System schema is not enabled](#a-system-schema-is-not-enabled)
+  - [(b) Querying beyond the retention period](#b-querying-beyond-the-retention-period)
+  - [(c) Insufficient privileges on system.*](#c-insufficient-privileges-on-system)
+
+---
+
 ## Overview
 
 System tables are read-only tables in the `system` catalog providing operational data about your Databricks account.

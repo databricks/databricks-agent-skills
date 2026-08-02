@@ -2,6 +2,27 @@
 
 Common errors and fixes for AI/BI dashboards.
 
+## Contents
+
+- [Structural Errors (JSON Parse Failures)](#structural-errors-json-parse-failures)
+- [Widget shows "no selected fields to visualize"](#widget-shows-no-selected-fields-to-visualize)
+- [Widget shows "Invalid widget definition"](#widget-shows-invalid-widget-definition)
+- [Dashboard shows empty widgets](#dashboard-shows-empty-widgets)
+- [Layout has gaps](#layout-has-gaps)
+- [Filter shows "Invalid widget definition"](#filter-shows-invalid-widget-definition)
+- [Filter not affecting expected pages](#filter-not-affecting-expected-pages)
+- [Filter shows "UNRESOLVED_COLUMN" error for associative_filter_predicate_group](#filter-shows-unresolved_column-error-for-associative_filter_predicate_group)
+- [Text widget shows title and description on same line](#text-widget-shows-title-and-description-on-same-line)
+- [Chart unreadable (too many categories)](#chart-unreadable-too-many-categories)
+- [MEASURE() errors](#measure-errors)
+- [Forecast-line shows blank or partial line](#forecast-line-shows-blank-or-partial-line)
+- [Forecast-line dips right before the prediction starts](#forecast-line-dips-right-before-the-prediction-starts)
+- [Range-slider filter shows error or no min/max](#range-slider-filter-shows-error-or-no-minmax)
+- [Symbol-map shows no points](#symbol-map-shows-no-points)
+- [Annotations not appearing on chart](#annotations-not-appearing-on-chart)
+
+---
+
 ## Structural Errors (JSON Parse Failures)
 
 These errors occur when the JSON structure is wrong:

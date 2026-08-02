@@ -8,6 +8,18 @@ All frameworks below are **pre-installed** in the Databricks Apps runtime. This 
 
 ---
 
+## Contents
+
+- [FastAPI (default)](#fastapi-default)
+- [Flask](#flask)
+- [Dash](#dash)
+- [Streamlit](#streamlit)
+- [Gradio](#gradio)
+- [Reflex](#reflex)
+- [Common: All Frameworks](#common-all-frameworks)
+
+---
+
 ## FastAPI (default)
 
 **Best for**: Any Python backend by default — modern async APIs, auto-generated OpenAPI/Swagger docs, JSON-serving apps, high-performance backends. Pair naturally with a JS/HTML frontend or a JSON-consuming caller.

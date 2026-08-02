@@ -4,6 +4,43 @@ Working patterns for creating evaluation datasets and analyzing traces.
 
 ---
 
+## Contents
+
+- [Dataset Creation Patterns](#dataset-creation-patterns)
+  - [Pattern 1: Simple In-Memory Dataset](#pattern-1-simple-in-memory-dataset)
+  - [Pattern 2: Dataset with Expectations](#pattern-2-dataset-with-expectations)
+  - [Pattern 3: Dataset with Per-Row Guidelines](#pattern-3-dataset-with-per-row-guidelines)
+  - [Pattern 4: Dataset with Pre-computed Outputs](#pattern-4-dataset-with-pre-computed-outputs)
+  - [Pattern 5: MLflow-Managed Dataset (Persistent)](#pattern-5-mlflow-managed-dataset-persistent)
+  - [Pattern 6: Dataset from Production Traces](#pattern-6-dataset-from-production-traces)
+  - [Pattern 7: Dataset from Traces to MLflow Dataset](#pattern-7-dataset-from-traces-to-mlflow-dataset)
+- [Trace Analysis Patterns](#trace-analysis-patterns)
+  - [Pattern 8: Basic Trace Search](#pattern-8-basic-trace-search)
+  - [Pattern 9: Filter by Tags and Metadata](#pattern-9-filter-by-tags-and-metadata)
+  - [Pattern 10: Trace Analysis for Quality Issues](#pattern-10-trace-analysis-for-quality-issues)
+  - [Pattern 11: Extract Failing Cases for Regression Tests](#pattern-11-extract-failing-cases-for-regression-tests)
+  - [Pattern 12: Trace-Based Performance Profiling](#pattern-12-trace-based-performance-profiling)
+  - [Pattern 13: Build Diverse Evaluation Dataset](#pattern-13-build-diverse-evaluation-dataset)
+  - [Pattern 14: Daily Quality Report from Traces](#pattern-14-daily-quality-report-from-traces)
+- [Dataset Categories to Include](#dataset-categories-to-include)
+  - [1. Happy Path Cases](#1-happy-path-cases)
+  - [2. Edge Cases](#2-edge-cases)
+  - [3. Adversarial Cases](#3-adversarial-cases)
+  - [4. Out of Scope Cases](#4-out-of-scope-cases)
+  - [5. Multi-turn Context](#5-multi-turn-context)
+  - [6. Error Recovery](#6-error-recovery)
+- [Pattern 15: Dataset with Stage/Component Expectations](#pattern-15-dataset-with-stagecomponent-expectations)
+  - [Recommended Dataset Schema for Multi-Agent Evaluation](#recommended-dataset-schema-for-multi-agent-evaluation)
+- [Pattern 16: Building Datasets from Tagged Traces](#pattern-16-building-datasets-from-tagged-traces)
+  - [Step 1: Tag Traces During Analysis (MCP)](#step-1-tag-traces-during-analysis-mcp)
+  - [Step 2: Search Tagged Traces (Python SDK)](#step-2-search-tagged-traces-python-sdk)
+  - [Step 3: Convert to Evaluation Dataset](#step-3-convert-to-evaluation-dataset)
+- [Pattern 17: Dataset from Assessments](#pattern-17-dataset-from-assessments)
+  - [Using Logged Expectations as Ground Truth](#using-logged-expectations-as-ground-truth)
+  - [Building Regression Tests from Low-Score Traces](#building-regression-tests-from-low-score-traces)
+
+---
+
 ## Dataset Creation Patterns
 
 ### Pattern 1: Simple In-Memory Dataset

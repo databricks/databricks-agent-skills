@@ -12,6 +12,22 @@ See 3-iceberg-rest-catalog for IRC endpoint details.
 
 ---
 
+## Contents
+
+- [PyIceberg](#pyiceberg)
+  - [Installation](#installation)
+  - [Connect to Catalog](#connect-to-catalog)
+  - [Read Table](#read-table)
+  - [Append Data](#append-data)
+- [OSS Apache Spark](#oss-apache-spark)
+  - [Dependencies](#dependencies)
+  - [Spark Session Configuration](#spark-session-configuration)
+  - [Spark SQL](#spark-sql)
+- [Troubleshooting](#troubleshooting)
+- [Related](#related)
+
+---
+
 ## PyIceberg
 
 PyIceberg is a Python library for reading and writing Iceberg tables without Spark.

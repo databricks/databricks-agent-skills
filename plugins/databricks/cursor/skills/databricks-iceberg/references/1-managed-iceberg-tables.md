@@ -6,6 +6,26 @@ Managed Iceberg tables are native Apache Iceberg tables created and stored withi
 
 ---
 
+## Contents
+
+- [Creating Tables](#creating-tables)
+  - [Basic DDL](#basic-ddl)
+  - [Create Table As Select (CTAS)](#create-table-as-select-ctas)
+  - [Liquid Clustering](#liquid-clustering)
+- [DML Operations](#dml-operations)
+- [Time Travel](#time-travel)
+- [Predictive Optimization](#predictive-optimization)
+- [Iceberg v3 (Beta)](#iceberg-v3-beta)
+  - [Creating an Iceberg v3 Table](#creating-an-iceberg-v3-table)
+  - [Important Notes](#important-notes)
+  - [Upgrading an Existing Table to v3](#upgrading-an-existing-table-to-v3)
+- [Limitations](#limitations)
+- [Converting From Other Formats](#converting-from-other-formats)
+  - [Delta to Iceberg (via DEEP CLONE)](#delta-to-iceberg-via-deep-clone)
+  - [Foreign Iceberg to Managed Iceberg](#foreign-iceberg-to-managed-iceberg)
+
+---
+
 ## Creating Tables
 
 ### Basic DDL

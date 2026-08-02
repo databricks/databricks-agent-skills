@@ -4,6 +4,24 @@ How Unity Catalog governs access to **cloud storage**: storage credentials (the 
 identity UC assumes) and external locations (a credential bound to a path). External
 tables, external volumes, and external lineage all build on these two objects.
 
+## Contents
+
+- [The Two Objects](#the-two-objects)
+- [Create a Storage Credential](#create-a-storage-credential)
+  - [SQL](#sql)
+  - [Python SDK](#python-sdk)
+- [Create an External Location](#create-an-external-location)
+  - [SQL](#sql-1)
+  - [Python SDK](#python-sdk-1)
+- [Validate a Credential / Location](#validate-a-credential--location)
+- [What Builds on External Locations](#what-builds-on-external-locations)
+- [Granting Access to External Locations](#granting-access-to-external-locations)
+- [Troubleshooting / Common Issues](#troubleshooting--common-issues)
+- [Best Practices](#best-practices)
+- [Related](#related)
+
+---
+
 ## The Two Objects
 
 | Object | What it is | Backed by |

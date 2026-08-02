@@ -2,6 +2,20 @@
 
 Patterns for retries, circuit breakers, and graceful degradation.
 
+## Contents
+
+- [Exponential Backoff](#exponential-backoff)
+- [Retry with Throttling Respect](#retry-with-throttling-respect)
+- [Circuit Breaker](#circuit-breaker)
+- [Graceful Degradation](#graceful-degradation)
+- [Bulk Operation Error Handling](#bulk-operation-error-handling)
+- [Dead Letter Queue](#dead-letter-queue)
+- [Timeout Handling](#timeout-handling)
+- [Error Aggregation](#error-aggregation)
+- [Best Practices](#best-practices)
+
+---
+
 ## Exponential Backoff
 
 Retry with exponential backoff for transient failures:

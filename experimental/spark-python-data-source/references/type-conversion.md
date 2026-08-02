@@ -2,6 +2,19 @@
 
 Bidirectional mapping between Spark types and external system types.
 
+## Contents
+
+- [Spark to External System](#spark-to-external-system)
+- [External System to Spark](#external-system-to-spark)
+- [Cassandra-Specific Types](#cassandra-specific-types)
+- [Schema Inference](#schema-inference)
+- [External Type to Spark Type Mapping](#external-type-to-spark-type-mapping)
+- [JSON Encoding](#json-encoding)
+- [Complete Row Conversion](#complete-row-conversion)
+- [Validation](#validation)
+
+---
+
 ## Spark to External System
 
 Convert Spark/Python values to external system types:

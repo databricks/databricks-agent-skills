@@ -4,6 +4,25 @@ UniForm and Compatibility Mode make Delta tables readable as Iceberg by external
 
 ---
 
+## Contents
+
+- [External Iceberg Reads (fka UniForm) (GA)](#external-iceberg-reads-fka-uniform-ga)
+  - [Enabling UniForm on a New Table](#enabling-uniform-on-a-new-table)
+  - [Enabling UniForm on an Existing Table](#enabling-uniform-on-an-existing-table)
+  - [Requirements and Prerequisites](#requirements-and-prerequisites)
+  - [Async Metadata Generation](#async-metadata-generation)
+  - [Checking UniForm Status](#checking-uniform-status)
+  - [Disabling UniForm](#disabling-uniform)
+- [Compatibility Mode](#compatibility-mode)
+  - [Enabling Compatibility Mode](#enabling-compatibility-mode)
+  - [Considerations for Compatibility Mode](#considerations-for-compatibility-mode)
+  - [Refresh Mechanics](#refresh-mechanics)
+  - [Future Modes](#future-modes)
+- [Decision Table: Which Approach?](#decision-table-which-approach)
+  - [When to Choose Each](#when-to-choose-each)
+
+---
+
 ## External Iceberg Reads (fka UniForm) (GA)
 
 **Requirements**: Unity Catalog, DBR 14.3+, column mapping enabled, deletion vectors disabled, the Delta table must have a minReaderVersion >= 2 and minWriterVersion >= 7, both managed and external tables supported.

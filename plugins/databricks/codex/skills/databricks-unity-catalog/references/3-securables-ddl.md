@@ -10,6 +10,21 @@ sit on live in 2-external-locations.
 > **databricks-metric-views**; Managed Iceberg / Uniform tables → **databricks-iceberg**.
 > This file covers standard UC catalogs, schemas, Delta tables, and views.
 
+## Contents
+
+- [Catalogs](#catalogs)
+- [Schemas](#schemas)
+- [Tables — Managed vs External](#tables--managed-vs-external)
+  - [Alter tables](#alter-tables)
+- [Views](#views)
+- [Comments (COMMENT ON)](#comments-comment-on)
+- [Tags (SET TAGS)](#tags-set-tags)
+- [Python SDK & CLI](#python-sdk--cli)
+- [Best Practices](#best-practices)
+- [Related](#related)
+
+---
+
 ## Catalogs
 
 ```sql

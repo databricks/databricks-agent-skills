@@ -4,6 +4,29 @@ Complete setup guide for Zerobus Ingest: endpoint configuration, service princip
 
 ---
 
+## Contents
+
+- [1. Determine Your Server Endpoint](#1-determine-your-server-endpoint)
+- [2. Create the Target Table](#2-create-the-target-table)
+- [3. Create a Service Principal](#3-create-a-service-principal)
+  - [Via UI](#via-ui)
+  - [Via Databricks CLI](#via-databricks-cli)
+  - [Grant Table Permissions](#grant-table-permissions)
+- [4. Install the SDK](#4-install-the-sdk)
+  - [Python (3.9+)](#python-39)
+  - [Java (8+)](#java-8)
+  - [Go (1.21+)](#go-121)
+  - [TypeScript / Node.js (16+)](#typescript--nodejs-16)
+  - [Rust (1.70+)](#rust-170)
+- [5. Configure Environment Variables](#5-configure-environment-variables)
+- [6. Firewall Allowlisting](#6-firewall-allowlisting)
+- [Supported Regions](#supported-regions)
+  - [AWS](#aws)
+  - [Azure](#azure)
+- [Verification Checklist](#verification-checklist)
+
+---
+
 ## 1. Determine Your Server Endpoint
 
 The Zerobus server endpoint format depends on your cloud provider:

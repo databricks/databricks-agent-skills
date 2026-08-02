@@ -2,6 +2,19 @@
 
 Strategies for distributing reads across Spark executors for parallel processing.
 
+## Contents
+
+- [Time-Based Partitioning](#time-based-partitioning)
+  - [Fixed Duration Partitions](#fixed-duration-partitions)
+  - [Auto-Subdividing for Large Results](#auto-subdividing-for-large-results)
+- [Token-Range Partitioning](#token-range-partitioning)
+  - [Cassandra Token-Range Pattern](#cassandra-token-range-pattern)
+- [ID-Range Partitioning](#id-range-partitioning)
+- [Partition Count Guidelines](#partition-count-guidelines)
+- [Performance Considerations](#performance-considerations)
+
+---
+
 ## Time-Based Partitioning
 
 For APIs with temporal data or streaming sources.

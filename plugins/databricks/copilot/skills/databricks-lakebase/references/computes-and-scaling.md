@@ -1,5 +1,16 @@
 # Lakebase Computes and Scaling
 
+## Contents
+
+- [Compute Sizing](#compute-sizing)
+- [Endpoint Operations](#endpoint-operations)
+- [Autoscaling Configuration](#autoscaling-configuration)
+- [Scale-to-Zero](#scale-to-zero)
+- [High Availability](#high-availability)
+- [Sizing Guidance](#sizing-guidance)
+
+---
+
 ## Compute Sizing
 
 Each Compute Unit (CU) allocates ~2 GB of RAM.

@@ -2,6 +2,17 @@
 
 Use the pgvector extension in Lakebase for embedding-based similarity search (RAG, semantic search, recommendations).
 
+## Contents
+
+- [Extension Setup](#extension-setup)
+- [Table Schema](#table-schema)
+- [Vector Store Module](#vector-store-module)
+- [Distance Operators](#distance-operators)
+- [Indexing](#indexing)
+- [Cross-references](#cross-references)
+
+---
+
 ## Extension Setup
 
 ```bash

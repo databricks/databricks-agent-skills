@@ -4,6 +4,19 @@
 
 Connect to Lakebase from apps deployed outside Databricks App Platform (e.g. Vercel, AWS, Netlify, or any Node.js server).
 
+## Contents
+
+- [Recommended: @databricks/lakebase Package](#recommended-databrickslakebase-package)
+- [Environment Management](#environment-management)
+  - [Required Environment Variables](#required-environment-variables)
+  - [Authentication](#authentication)
+  - [.env.example Template](#envexample-template)
+  - [Optional: Zod Validation](#optional-zod-validation)
+- [Drizzle ORM Integration](#drizzle-orm-integration)
+- [Cross-references](#cross-references)
+
+---
+
 ## Recommended: `@databricks/lakebase` Package
 
 The simplest way to connect — a drop-in `pg.Pool` replacement with automatic OAuth token refresh.

@@ -2,6 +2,27 @@
 
 Multi-method authentication strategies with clear priority ordering.
 
+## Contents
+
+- [Priority-Based Authentication](#priority-based-authentication)
+- [Azure Authentication](#azure-authentication)
+  - [Unity Catalog Service Credential](#unity-catalog-service-credential)
+  - [Default Credential (Managed Identity)](#default-credential-managed-identity)
+  - [Service Principal](#service-principal)
+  - [Multi-Cloud Support](#multi-cloud-support)
+- [API Key Authentication](#api-key-authentication)
+  - [Header-Based](#header-based)
+  - [Query Parameter-Based](#query-parameter-based)
+- [Basic Authentication](#basic-authentication)
+- [OAuth2 Authentication](#oauth2-authentication)
+  - [Client Credentials Flow](#client-credentials-flow)
+- [Complete Authentication Factory](#complete-authentication-factory)
+- [Security Best Practices](#security-best-practices)
+  - [Never Log Sensitive Values](#never-log-sensitive-values)
+  - [Use Secrets Management](#use-secrets-management)
+
+---
+
 ## Priority-Based Authentication
 
 Support multiple authentication methods with fallback:

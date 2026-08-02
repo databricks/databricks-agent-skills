@@ -11,6 +11,22 @@ Lakebase synced tables sync data from Unity Catalog Delta tables into Lakebase a
 - Snapshot: ~2,000 rows/sec per CU
 - Each synced table uses up to 16 connections
 
+## Contents
+
+- [Sync Modes](#sync-modes)
+- [Prerequisites](#prerequisites)
+- [Creating Lakebase synced tables](#creating-lakebase-synced-tables)
+- [Example: Sync NYC Taxi Data to Lakebase](#example-sync-nyc-taxi-data-to-lakebase)
+- [App Access](#app-access)
+- [Data Type Mapping](#data-type-mapping)
+- [Capacity Planning](#capacity-planning)
+- [Lakehouse Sync (Beta)](#lakehouse-sync-beta)
+- [Use Cases](#use-cases)
+- [Best Practices](#best-practices)
+- [Constraints](#constraints)
+
+---
+
 ## Sync Modes
 
 | Mode | Description | CDF Required | Best For |

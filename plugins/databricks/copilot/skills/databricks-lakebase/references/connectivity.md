@@ -1,5 +1,25 @@
 # Lakebase Connectivity
 
+## Contents
+
+- [Authentication Methods](#authentication-methods)
+- [Connection Patterns (Python)](#connection-patterns-python)
+  - [Pattern 1: Direct Connection (Scripts/Notebooks)](#pattern-1-direct-connection-scriptsnotebooks)
+  - [Pattern 2: Connection Pool with Token Refresh (Production)](#pattern-2-connection-pool-with-token-refresh-production)
+  - [Pattern 3: Static URL (Local Development)](#pattern-3-static-url-local-development)
+  - [Pattern 4: Databricks App (Python)](#pattern-4-databricks-app-python)
+  - [Pattern 5: Off-Platform Apps (TypeScript/Node.js)](#pattern-5-off-platform-apps-typescriptnodejs)
+- [Best Practices](#best-practices)
+- [Data API](#data-api)
+  - [Enabling](#enabling)
+  - [Authentication](#authentication)
+  - [CRUD Operations](#crud-operations)
+  - [Row-Level Security (RLS)](#row-level-security-rls)
+  - [Configuration](#configuration)
+  - [Unsupported PostgREST Features](#unsupported-postgrest-features)
+
+---
+
 ## Authentication Methods
 
 | Method | Token Lifetime | Best For |

@@ -2,6 +2,33 @@
 
 Comprehensive reference for working with Unity Catalog Volumes: file operations, permissions, and best practices.
 
+## Contents
+
+- [Overview](#overview)
+- [Volume Path Format](#volume-path-format)
+- [CLI Commands](#cli-commands)
+- [Python SDK Examples](#python-sdk-examples)
+  - [Volume CRUD Operations](#volume-crud-operations)
+  - [File Operations](#file-operations)
+- [SQL Operations](#sql-operations)
+  - [Query Volume Metadata](#query-volume-metadata)
+  - [Read Files from Volumes](#read-files-from-volumes)
+  - [Write Files to Volumes](#write-files-to-volumes)
+- [Permissions](#permissions)
+  - [Required Permissions](#required-permissions)
+  - [Grant Permissions](#grant-permissions)
+  - [Python SDK Permissions](#python-sdk-permissions)
+- [Best Practices](#best-practices)
+  - [Organization](#organization)
+  - [Performance](#performance)
+  - [Security](#security)
+- [Troubleshooting](#troubleshooting)
+  - [Common Errors](#common-errors)
+  - [Debug Checklist](#debug-checklist)
+  - [External Volume Issues](#external-volume-issues)
+
+---
+
 ## Overview
 
 Volumes are a Unity Catalog capability for accessing, storing, and governing files. Unlike tables (structured data), volumes store unstructured or semi-structured files.

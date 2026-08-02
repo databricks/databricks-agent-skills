@@ -6,6 +6,20 @@ Lakebase provides low-latency transactional storage for Databricks Apps via a ma
 
 ---
 
+## Contents
+
+- [When to Use Lakebase](#when-to-use-lakebase)
+- [Setup](#setup)
+- [Connection Patterns](#connection-patterns)
+  - [psycopg2 (Synchronous)](#psycopg2-synchronous)
+  - [asyncpg (Asynchronous)](#asyncpg-asynchronous)
+  - [SQLAlchemy](#sqlalchemy)
+- [Streamlit with Lakebase](#streamlit-with-lakebase)
+- [Critical: requirements.txt](#critical-requirementstxt)
+- [Notes](#notes)
+
+---
+
 ## When to Use Lakebase
 
 | Use Case | Recommended Backend |

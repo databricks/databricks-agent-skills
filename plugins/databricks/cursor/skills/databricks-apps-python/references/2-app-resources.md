@@ -6,6 +6,18 @@ Databricks Apps integrate with platform resources via managed connections. Use r
 
 ---
 
+## Contents
+
+- [Supported Resource Types](#supported-resource-types)
+- [Configuring Resources in app.yaml](#configuring-resources-in-appyaml)
+- [Communication Strategies](#communication-strategies)
+  - [SQL Warehouse Pattern](#sql-warehouse-pattern)
+  - [Model Serving Pattern](#model-serving-pattern)
+  - [SDK Pattern](#sdk-pattern)
+- [Best Practices](#best-practices)
+
+---
+
 ## Supported Resource Types
 
 | Resource | Default Key | Permissions | Use Case |

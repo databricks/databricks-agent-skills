@@ -11,6 +11,20 @@ rows* and *what column values* that principal sees.
 > deterministic governance policy enforced by UC at query time for unauthorized users. Use
 > column masks for governance; use `ai_mask` for content redaction in a transform.
 
+## Contents
+
+- [The Three Mechanisms](#the-three-mechanisms)
+- [Identity Functions](#identity-functions)
+- [Row Filters](#row-filters)
+- [Column Masks](#column-masks)
+- [Dynamic Views](#dynamic-views)
+- [Choosing Between Them](#choosing-between-them)
+- [Troubleshooting / Common Issues](#troubleshooting--common-issues)
+- [Best Practices](#best-practices)
+- [Related](#related)
+
+---
+
 ## The Three Mechanisms
 
 | Mechanism | Granularity | How it attaches | Best for |

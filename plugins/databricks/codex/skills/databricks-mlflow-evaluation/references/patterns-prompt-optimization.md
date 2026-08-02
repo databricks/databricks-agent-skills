@@ -10,6 +10,15 @@ For the full end-to-end loop (evaluate, label, align, optimize, promote), see `u
 
 ---
 
+## Contents
+
+- [Pattern 1: Build Optimization Dataset (inputs + expectations required)](#pattern-1-build-optimization-dataset-inputs--expectations-required)
+- [Pattern 2: Run optimize_prompts() with GEPA](#pattern-2-run-optimize_prompts-with-gepa)
+- [Pattern 3: Register Optimized Prompt and Conditionally Promote](#pattern-3-register-optimized-prompt-and-conditionally-promote)
+- [Tips for Prompt Optimization](#tips-for-prompt-optimization)
+
+---
+
 ## Pattern 1: Build Optimization Dataset (inputs + expectations required)
 
 GEPA requires both `inputs` AND `expectations` in every record. This is different from the eval dataset which only needs `inputs`. The `expectations` field is what GEPA uses during reflection to reason about why the current prompt is underperforming.

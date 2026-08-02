@@ -2,6 +2,18 @@
 
 Observability, security, validation, and operational best practices.
 
+## Contents
+
+- [Observability and Metrics](#observability-and-metrics)
+- [Logging Best Practices](#logging-best-practices)
+- [Security Validation](#security-validation)
+- [Configuration Validation](#configuration-validation)
+- [Resource Cleanup](#resource-cleanup)
+- [Health Checks](#health-checks)
+- [Operational Best Practices](#operational-best-practices)
+
+---
+
 ## Observability and Metrics
 
 Track operation metrics for monitoring:

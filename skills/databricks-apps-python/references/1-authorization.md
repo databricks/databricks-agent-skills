@@ -6,6 +6,19 @@ Databricks Apps supports two complementary authorization models. Use one or both
 
 ---
 
+## Contents
+
+- [App Authorization (Service Principal)](#app-authorization-service-principal)
+- [User Authorization (On-Behalf-Of)](#user-authorization-on-behalf-of)
+  - [Retrieving the User Token Per Framework](#retrieving-the-user-token-per-framework)
+  - [Querying with User Token](#querying-with-user-token)
+- [Combining Both Models](#combining-both-models)
+- [OAuth Scopes](#oauth-scopes)
+- [When to Use Which](#when-to-use-which)
+- [Best Practices](#best-practices)
+
+---
+
 ## App Authorization (Service Principal)
 
 Each app gets a dedicated service principal. Databricks auto-injects credentials:

@@ -120,6 +120,12 @@ class YourStreamReader(YourReader, DataSourceStreamReader):
         pass
 ```
 
+## Contents
+
+- [Registration and Usage](#registration-and-usage)
+
+---
+
 ## Registration and Usage
 
 ```python

@@ -10,6 +10,22 @@ The Iceberg REST Catalog (IRC) is a REST API endpoint that lets external engines
 
 ---
 
+## Contents
+
+- [Prerequisites](#prerequisites)
+  - [1. Enable External Data Access](#1-enable-external-data-access)
+  - [2. Network Access to the IRC Endpoint](#2-network-access-to-the-irc-endpoint)
+  - [3. Grant EXTERNAL USE SCHEMA](#3-grant-external-use-schema)
+- [Authentication](#authentication)
+  - [Personal Access Token (PAT)](#personal-access-token-pat)
+  - [OAuth (M2M)](#oauth-m2m)
+- [Read/Write Capability Matrix](#readwrite-capability-matrix)
+- [Credential Vending](#credential-vending)
+- [Common Configuration Reference](#common-configuration-reference)
+- [Related](#related)
+
+---
+
 ## Prerequisites
 
 ### 1. Enable External Data Access

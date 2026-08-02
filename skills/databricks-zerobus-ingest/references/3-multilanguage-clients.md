@@ -4,6 +4,28 @@ Zerobus Ingest SDK examples for Java, Go, TypeScript/Node.js, and Rust. All lang
 
 ---
 
+## Contents
+
+- [Java (8+)](#java-8)
+  - [Installation](#installation)
+  - [Protobuf Flow (Recommended)](#protobuf-flow-recommended)
+  - [Proto Generation for Java](#proto-generation-for-java)
+- [Go (1.21+)](#go-121)
+  - [Installation](#installation-1)
+  - [JSON Flow](#json-flow)
+  - [Protobuf Flow](#protobuf-flow)
+- [TypeScript / Node.js (16+)](#typescript--nodejs-16)
+  - [Installation](#installation-2)
+  - [JSON Flow](#json-flow-1)
+  - [With Error Handling](#with-error-handling)
+- [Rust (1.70+)](#rust-170)
+  - [Installation](#installation-3)
+  - [JSON Flow](#json-flow-2)
+  - [Protobuf Flow](#protobuf-flow-1)
+- [Language Comparison](#language-comparison)
+
+---
+
 ## Java (8+)
 
 ### Installation

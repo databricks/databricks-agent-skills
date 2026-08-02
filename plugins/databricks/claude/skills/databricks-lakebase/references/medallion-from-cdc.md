@@ -2,6 +2,22 @@
 
 Build Silver and Gold analytics layers from Lakehouse Sync CDC history tables using Lakeflow Declarative Pipelines.
 
+## Contents
+
+- [When to Use](#when-to-use)
+- [Layer Mapping](#layer-mapping)
+- [1. Scaffold a Pipeline Project](#1-scaffold-a-pipeline-project)
+- [2. Configure Pipeline Catalog and Schema](#2-configure-pipeline-catalog-and-schema)
+- [3. Silver Layer: Current State from CDC](#3-silver-layer-current-state-from-cdc)
+- [4. Gold Layer: Business Aggregations](#4-gold-layer-business-aggregations)
+- [5. Data Quality Expectations](#5-data-quality-expectations)
+- [6. Deploy and Run](#6-deploy-and-run)
+- [7. Schedule Ongoing Refreshes](#7-schedule-ongoing-refreshes)
+- [Troubleshooting](#troubleshooting)
+- [Cross-references](#cross-references)
+
+---
+
 ## When to Use
 
 - You have Lakehouse Sync CDC history tables (`lb_<table>_history`) in Unity Catalog

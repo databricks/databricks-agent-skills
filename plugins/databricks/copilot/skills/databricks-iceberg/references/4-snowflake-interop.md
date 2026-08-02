@@ -6,6 +6,26 @@ Databricks and Snowflake can share Iceberg data bidirectionally. This file cover
 
 ---
 
+## Contents
+
+- [Direction 1: Snowflake Reading Databricks](#direction-1-snowflake-reading-databricks)
+  - [Step 1: Create a Catalog Integration in Snowflake](#step-1-create-a-catalog-integration-in-snowflake)
+  - [Step 2: External Volume (Azure/GCS Only)](#step-2-external-volume-azuregcs-only)
+  - [Step 3: Expose Tables in Snowflake](#step-3-expose-tables-in-snowflake)
+  - [Key Gotchas](#key-gotchas)
+- [Direction 2: Databricks Reading Snowflake](#direction-2-databricks-reading-snowflake)
+  - [Step 1: Find Snowflake External Volume Path](#step-1-find-snowflake-external-volume-path)
+  - [Step 2: Create a Storage Credential](#step-2-create-a-storage-credential)
+  - [Step 3: Create an External Location](#step-3-create-an-external-location)
+  - [Step 4: Create a Snowflake Connection](#step-4-create-a-snowflake-connection)
+  - [Step 5: Create a Foreign Catalog](#step-5-create-a-foreign-catalog)
+  - [Step 6: Refresh, Verify, and Query](#step-6-refresh-verify-and-query)
+  - [Compute Cost Matrix](#compute-cost-matrix)
+- [Full AWS Example: Snowflake Reading Databricks](#full-aws-example-snowflake-reading-databricks)
+- [Related](#related)
+
+---
+
 ## Direction 1: Snowflake Reading Databricks
 
 Snowflake can read Databricks-managed Iceberg tables (managed Iceberg + UniForm + Compatibility Mode) through a **Catalog Integration** that connects to the Databricks Iceberg REST Catalog (IRC).

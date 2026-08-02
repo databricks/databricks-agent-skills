@@ -2,6 +2,32 @@
 
 Comprehensive reference for Data Profiling: create quality monitors on Unity Catalog tables to track data profiles, detect drift, and monitor ML model performance.
 
+## Contents
+
+- [Overview](#overview)
+  - [Requirements](#requirements)
+- [Profile Types](#profile-types)
+  - [Granularities (for TimeSeries and InferenceLog)](#granularities-for-timeseries-and-inferencelog)
+- [CLI & SQL Commands](#cli--sql-commands)
+  - [Create a Monitor (SQL)](#create-a-monitor-sql)
+  - [Get Monitor Status (SQL)](#get-monitor-status-sql)
+  - [Trigger a Refresh (SQL)](#trigger-a-refresh-sql)
+  - [Delete a Monitor (SQL)](#delete-a-monitor-sql)
+  - [Execute via CLI](#execute-via-cli)
+- [Python SDK Examples](#python-sdk-examples)
+  - [Create Snapshot Monitor](#create-snapshot-monitor)
+  - [Create TimeSeries Monitor](#create-timeseries-monitor)
+  - [Create InferenceLog Monitor](#create-inferencelog-monitor)
+  - [Schedule a Monitor](#schedule-a-monitor)
+  - [Get, Refresh, and Delete](#get-refresh-and-delete)
+- [Anomaly Detection](#anomaly-detection)
+- [Output Tables](#output-tables)
+  - [Query Output Tables](#query-output-tables)
+- [Common Issues](#common-issues)
+- [Resources](#resources)
+
+---
+
 ## Overview
 
 Data profiling automatically computes statistical profiles and drift metrics for tables over time. When you create a monitor, Databricks generates two output Delta tables (profile metrics + drift metrics) and an optional dashboard.

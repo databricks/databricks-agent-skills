@@ -4,6 +4,24 @@ Advanced visualization types for AI/BI dashboards. For core widgets (text, count
 
 ---
 
+## Contents
+
+- [Area Chart](#area-chart)
+- [Scatter Plot / Bubble Chart](#scatter-plot--bubble-chart)
+- [Combo Chart (Bar + Line)](#combo-chart-bar--line)
+- [Choropleth Map](#choropleth-map)
+- [Forecast Line (with AI_FORECAST)](#forecast-line-with-ai_forecast)
+- [Pivot](#pivot)
+- [Histogram](#histogram)
+- [Sankey](#sankey)
+- [Heatmap](#heatmap)
+- [Funnel](#funnel)
+- [Box](#box)
+- [Waterfall](#waterfall)
+- [Other (less common)](#other-less-common)
+
+---
+
 ## Area Chart
 
 - `version`: **3**

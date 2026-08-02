@@ -11,6 +11,17 @@ A working dashboard JSON that exercises the new feature set:
 
 **Adapt this to the user's actual data and story** — the structure and feature mix is what to copy, not the column names.
 
+## Contents
+
+- [Key Patterns (read first)](#key-patterns-read-first)
+  - [Page types](#page-types)
+  - [Widget versions used in this example](#widget-versions-used-in-this-example)
+  - [Layout (12-col grid)](#layout-12-col-grid)
+- [Full Dashboard: Support Operations](#full-dashboard-support-operations)
+- [What each widget demonstrates](#what-each-widget-demonstrates)
+
+---
+
 ## Key Patterns (read first)
 
 ### Page types
