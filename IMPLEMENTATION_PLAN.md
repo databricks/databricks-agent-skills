@@ -141,7 +141,7 @@ against:**
 | ID | Severity | Count |
 |---|---|---|
 | PD-6 | must-fix | 125 |
-| PD-5 | must-fix | 228 |
+| PD-5 | must-fix | 137 (was 228; pipelines swept) |
 | PD-5b | must-fix | 12 |
 | SPEC-10a-cross | must-fix | 90 |
 | SPEC-10a-intra | must-fix | 21 |
@@ -150,7 +150,7 @@ against:**
 | NEW-A | must-fix | 6 |
 | NEW-C | must-fix | 4 |
 | PD-4a | must-fix | 3 |
-| PD-4c | must-fix | 3 |
+| PD-4c | must-fix | 1 (was 3; pipelines' 2 cleared by the PD-5 sweep) |
 | PD-1 | must-fix | 3 |
 | PD-2 | must-fix | 3 |
 | DESC-1 | must-fix | 6 |
@@ -193,11 +193,18 @@ Split into ≥3 commits by skill so a 125-file diff stays cherry-pickable.
 
 ---
 
-## 3. PD-5 — reference-to-reference links — 228 → 0
+## 3. PD-5 — reference-to-reference links — 228 → 137 (pipelines done)
+
+> **`skills/databricks-pipelines` is swept — 91 → 0** (`4fcb43e`, branch
+> `ralph/pd-5-pipelines`). Repo-wide PD-5 is now **137** across 14 skills.
+> It also cleared the skill's 2 PD-4c orphans (repo-wide PD-4c 3 → 1), because
+> `python-basics.md` and `sql-basics.md` were reachable only via a second hop
+> — the PD-5 defect and the orphan were the same defect. See "Sweep recipe"
+> below before doing the next skill.
 
 - **Finding:** PD-5
-- **Paths:** 228 links, 69 source files, **15 skills**.
-  `skills/databricks-pipelines` **91** (own commit),
+- **Paths:** 137 links remaining, **14 skills**.
+  ~~`skills/databricks-pipelines` 91~~ **done**,
   `skills/databricks-unity-catalog` 29, `skills/databricks-aibi-dashboards` 19,
   `skills/databricks-apps` 19,
   `skills/databricks-spark-structured-streaming` 15,
@@ -222,6 +229,37 @@ invisible to a partial read (`head -100`).
 `spark-structured-streaming/references/{lakebase-sink-python,real-time-mode}.md`).
 The old plan's claim that unity-catalog is a conflict site is wrong — it shares
 zero files with the traversal classes.
+
+### Sweep recipe (validated on databricks-pipelines, 91 links)
+
+1. **Substitution:** replace `[label](target.md#anchor)` with the plain text
+   `target#anchor` — basename minus `.md`, anchor kept. Dropping the anchor
+   loses navigation; keeping the label loses the pointer when the label is a
+   format name (`[JSON](options-json.md)` → `options-json` reads correctly,
+   `JSON` does not).
+2. **Skip fenced code.** The checker exempts it (D1) and the fenced paths are
+   working examples. A fence-blind regex corrupts them silently.
+3. **`.md` in reference-file prose is safe** — `check_spec_10b` scans
+   `SKILL.md` only, so stripping to a bare basename there cannot raise
+   SPEC-10b. Dropping the extension anyway costs nothing and survives a
+   future widening of that check.
+4. **Then route from SKILL.md.** Compare `references/*.md` against SKILL.md
+   text; every file the sweep un-links needs a direct link *with a stated read
+   condition*. In pipelines this was 2 of 33 files, and both were PD-4c
+   orphans — expect the two findings to overlap wherever a reference was only
+   reachable by a second hop.
+5. **Read the diff.** The mechanical pass turned "use [Real-Time Mode](…)"
+   into "use real-time-mode", demoting a product name to a filename
+   (`streaming-patterns.md:94`). Substitution is safe; prose is not.
+
+**Bundle:** any `skills/**` content change staleness `plugins/**` (a generated
+copy), so `skills.py validate` and `test_repo_bundle_is_canonical` fail until
+`scripts/skills.py generate` runs. GEN-1 forbids the branch touching
+`plugins/**`, so the two cannot both be satisfied in one commit. Resolution
+used here, matching upstream (`50ccd08`, `76d4fdc`): **content commit first,
+then a separate `chore: self-heal bundle from source`** (96 files = 24 × 4
+providers for a 24-file content change). Do not fold the bundle into the
+content commit — it buries the reviewable diff 5:1.
 
 ### 3a. PD-5b — flatten `references/appkit/` — 12 files → 0 nested
 
@@ -656,7 +694,8 @@ intra ∩ PD-6 = 13; cross ∩ intra = 3.
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | 3 → 0 |
 | 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | 64 → 0 |
 | 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | 12 links / 4 files → 0 |
-| 7 | `ralph/pd-5-flatten` | 3 + 3a · PD-5, PD-5b | 228 → 0; 12 → 0 |
+| 7 | `ralph/pd-5-pipelines` **done** | 3 · PD-5 (pipelines only) | 228 → 137; PD-4c 3 → 1 |
+| 7b | `ralph/pd-5-flatten` | 3 + 3a · PD-5 (14 skills), PD-5b | 137 → 0; 12 → 0 |
 | 8 | `ralph/pd-4c-orphans` | 14 · PD-4c | 3 → 0 |
 | 9 | `ralph/pd-6-toc` | 2 · PD-6 (≥3 commits) | 125 → 0 |
 | 10 | `ralph/pd-1-ceilings` | 11 · PD-1/2/3 (1 commit each) | 4 → 0 |
@@ -719,6 +758,12 @@ Nothing goes into a diff its branch does not own.
 - `experimental/databricks-ai-runtime/SKILL.md:33` → branch 6 with the other 11.
 - `databricks-jobs` / `databricks-python-sdk` frontmatter-vs-body version
   contradictions → branch 15; they are fixable without the blocked global value.
+- **Stale row in the count table above:** `SPEC-10a-prose` reads 3, but the
+  checker reports **0** since `2b9807a` exempted self-parent `../SKILL.md`
+  under D8 (the 3 moved to the advisory `SPEC-10a-self-parent` row).
+  `specs/02-audit-findings.md` was corrected in `bc9ddb7`; this file was not.
+  Noticed while sweeping PD-5, not touched — it belongs to whichever branch
+  owns SPEC-10a.
 
 ---
 
