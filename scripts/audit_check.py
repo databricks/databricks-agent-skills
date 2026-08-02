@@ -215,7 +215,8 @@ def _scan_traversals(repo_root: Path) -> dict[str, list[str]]:
     """
     names = skill_names(repo_root)
     found: dict[str, list[str]] = {
-        "cross": [], "intra": [], "prose": [], "dangling": [], "fence": []
+        "cross": [], "intra": [], "prose": [], "dangling": [], "fence": [],
+        "self_parent": []
     }
 
     for skill_dir in iter_all_skill_dirs(repo_root):
@@ -259,6 +260,15 @@ def _scan_traversals(repo_root: Path) -> dict[str, list[str]]:
                 for match in _PROSE_TRAVERSAL_RE.finditer(line):
                     if any(s <= match.start() < e for s, e in link_spans):
                         continue
+                    # D8: `../SKILL.md` from a references/ file names its own
+                    # parent. The path never leaves the skill directory, so no
+                    # subset install can break it -- the sole rationale for the
+                    # SPEC-10a class. Reported for context, never a defect.
+                    if link_target(match.group(0)).lstrip("`") == "../SKILL.md":
+                        found["self_parent"].append(
+                            f"{where}:{lineno}: self-parent '../SKILL.md' (exempt)"
+                        )
+                        continue
                     found["prose"].append(
                         f"{where}:{lineno}: '../' path in prose -> {match.group(0)}"
                     )
@@ -279,6 +289,11 @@ def check_spec_10a_intra(repo_root: Path) -> list[str]:
 def check_spec_10a_prose(repo_root: Path) -> list[str]:
     """`../<path>.md` written in prose rather than as a link."""
     return _scan_traversals(repo_root)["prose"]
+
+
+def check_spec_10a_self_parent(repo_root: Path) -> list[str]:
+    """`../SKILL.md` naming the skill's own parent. Exempt under D8."""
+    return _scan_traversals(repo_root)["self_parent"]
 
 
 def check_spec_10a_fence(repo_root: Path) -> list[str]:
@@ -790,6 +805,8 @@ FINDINGS: tuple[tuple[str, str, str, object], ...] = (
     ("COMPAT-1", BLOCKED, "compatibility pin shapes beyond one", check_compat_1),
     ("SPEC-10a-fence", ADVISORY, "in-fence '../' (exempt, context only)",
      check_spec_10a_fence),
+    ("SPEC-10a-self-parent", ADVISORY, "self-parent '../SKILL.md' (exempt)",
+     check_spec_10a_self_parent),
     ("NEW-B", ADVISORY, "dangling link with an unknowable target", check_new_b),
     ("PD-8", ADVISORY, "SKILL.md with no gotchas section", check_pd_8),
     ("MNT-6", ADVISORY, "bundled scripts/ with no stated intent", check_mnt_6),
