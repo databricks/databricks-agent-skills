@@ -42,4 +42,4 @@ Generic file options: `ignoreCorruptFiles`, `ignoreMissingFiles`, `modifiedAfter
 
 ## Format-specific options
 
-See [JSON](options-json.md), [CSV](options-csv.md), [Parquet](options-parquet.md), [Avro](options-avro.md), [ORC](options-orc.md), [XML](options-xml.md), [Text](options-text.md).
+See options-json, options-csv, options-parquet, options-avro, options-orc, options-xml, options-text.

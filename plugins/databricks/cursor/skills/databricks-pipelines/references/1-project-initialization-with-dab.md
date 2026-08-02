@@ -5,7 +5,7 @@ Two DAB-based workflows for creating Spark Declarative Pipelines:
 - **Workflow A**: Standalone new project (the pipeline *is* the project).
 - **Workflow B**: Adding a pipeline to an existing bundle (the pipeline is part of a larger app + jobs + dashboards).
 
-For prototyping without a bundle, see [2-rapid-iteration-with-cli.md](2-rapid-iteration-with-cli.md).
+For prototyping without a bundle, see 2-rapid-iteration-with-cli.
 
 ---
 
@@ -236,7 +236,7 @@ databricks pipelines get <pipeline_id> --profile <profile>
 databricks pipelines get-update <pipeline_id> <update_id> --profile <profile>
 ```
 
-For the rationale on polling the update (not the pipeline) and the FAILED-extraction `jq` pattern, see [2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update](2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update). It applies to bundle runs too.
+For the rationale on polling the update (not the pipeline) and the FAILED-extraction `jq` pattern, see 2-rapid-iteration-with-cli#step-4-start-an-update-and-poll-that-update. It applies to bundle runs too.
 
 ### Refresh modes
 
@@ -253,7 +253,7 @@ Edit `.sql` / `.py` files under `src/`, then re-run `databricks bundle deploy` +
 
 If the user already has `bronze/`, `silver/`, `gold/` folders without a bundle, migrate to Workflow A by wrapping them in a `databricks.yml` and a pipeline resource pointing at the existing folders via a `glob`. No file moves required — the medallion folders work as-is under `transformations/**`.
 
-For detailed pipeline configuration options (development mode, continuous, custom event log, notifications, Python deps, classic clusters), see [pipeline-configuration.md](pipeline-configuration.md).
+For detailed pipeline configuration options (development mode, continuous, custom event log, notifications, Python deps, classic clusters), see pipeline-configuration.
 
 ---
 

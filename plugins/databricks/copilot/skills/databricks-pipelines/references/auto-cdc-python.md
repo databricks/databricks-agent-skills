@@ -6,7 +6,7 @@ Use streaming when CDC events arrive continuously (transaction logs, Kafka, Delt
 
 Legacy aliases `dp.apply_changes()` / `dp.apply_changes_from_snapshot()` still parse but should be migrated (see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate)).
 
-For querying SCD Type 2 history tables, see [scd-2-querying.md](scd-2-querying.md).
+For querying SCD Type 2 history tables, see scd-2-querying.
 
 ## `dp.create_auto_cdc_flow(...)`
 

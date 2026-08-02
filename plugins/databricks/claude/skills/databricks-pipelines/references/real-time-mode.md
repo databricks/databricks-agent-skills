@@ -6,7 +6,7 @@ This file is SDP-specific. For standalone Structured Streaming RTM (`writeStream
 
 ## When to reach for RTM
 
-RTM pipelines run **continuously** (`continuous: true`) — the compute never scales to zero. That makes RTM materially more expensive than a triggered pipeline. Reach for it only for **operational use cases** with a real sub-second/low-hundreds-of-ms SLA (fraud scoring, live alerting, personalization). For demos, prototypes, or other use cases that tolerate seconds-to-minutes latency, use a normal triggered pipeline instead. Validate with the user before recommending RTM, and confirm they accept always-on compute. (This is the sanctioned exception to the general "avoid `continuous: true`" guidance in [pipeline-configuration.md](pipeline-configuration.md).)
+RTM pipelines run **continuously** (`continuous: true`) — the compute never scales to zero. That makes RTM materially more expensive than a triggered pipeline. Reach for it only for **operational use cases** with a real sub-second/low-hundreds-of-ms SLA (fraud scoring, live alerting, personalization). For demos, prototypes, or other use cases that tolerate seconds-to-minutes latency, use a normal triggered pipeline instead. Validate with the user before recommending RTM, and confirm they accept always-on compute. (This is the sanctioned exception to the general "avoid `continuous: true`" guidance in pipeline-configuration.)
 
 ## SDP-on-RTM vs standalone RTM
 
@@ -108,7 +108,7 @@ def enriched_events_flow():
 
 ## `pipelines.trigger.interval` — checkpoint cadence, not batch size
 
-In RTM the batch is long-running and records are processed as they arrive; `pipelines.trigger.interval` (default `"5 minutes"`) governs **how often state and source offsets are checkpointed**, not how often results appear. This is a different meaning from the same key on a normal continuous pipeline (where it's a coarse trigger like `"1 hour"` — see [pipeline-configuration.md](pipeline-configuration.md)). Keep it at minutes; shorter intervals add checkpoint overhead, longer ones increase replay-on-restart.
+In RTM the batch is long-running and records are processed as they arrive; `pipelines.trigger.interval` (default `"5 minutes"`) governs **how often state and source offsets are checkpointed**, not how often results appear. This is a different meaning from the same key on a normal continuous pipeline (where it's a coarse trigger like `"1 hour"` — see pipeline-configuration). Keep it at minutes; shorter intervals add checkpoint overhead, longer ones increase replay-on-restart.
 
 ## Compute
 
@@ -147,7 +147,7 @@ RTM emits per-batch latency percentiles (`processingLatencyMs`, `sourceQueuingLa
 
 ## Related references
 
-- [sink-python.md](sink-python.md) — general SDP sinks (`dp.create_sink`, Delta/Kafka, `@dp.append_flow`).
-- [kafka.md](kafka.md) — Kafka / Event Hubs source options.
-- [streaming-patterns.md](streaming-patterns.md) — dedup, windowing, late data for non-RTM streaming.
+- sink-python — general SDP sinks (`dp.create_sink`, Delta/Kafka, `@dp.append_flow`).
+- kafka — Kafka / Event Hubs source options.
+- streaming-patterns — dedup, windowing, late data for non-RTM streaming.
 - [../databricks-spark-structured-streaming/references/real-time-mode.md](../../databricks-spark-structured-streaming/references/real-time-mode.md) — standalone RTM: cluster setup, slot math, full error-class catalog, observability internals.

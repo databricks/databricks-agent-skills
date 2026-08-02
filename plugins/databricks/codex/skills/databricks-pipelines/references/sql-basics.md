@@ -2,19 +2,19 @@
 
 ## Core statements
 
-- `CREATE OR REFRESH STREAMING TABLE` — continuous incremental processing. See [streaming-table-sql.md](streaming-table-sql.md).
-- `CREATE OR REFRESH MATERIALIZED VIEW` — batch table. See [materialized-view-sql.md](materialized-view-sql.md).
-- `CREATE TEMPORARY VIEW` — pipeline-scoped view. See [temporary-view-sql.md](temporary-view-sql.md).
-- `CREATE VIEW` — UC-published view. See [view-sql.md](view-sql.md).
-- `AUTO CDC INTO` (inside `CREATE FLOW`) — CDC. See [auto-cdc-sql.md](auto-cdc-sql.md).
-- `CREATE FLOW ... AS INSERT INTO [ONCE] target_table` — append / backfill flows. See [streaming-table-sql.md](streaming-table-sql.md).
+- `CREATE OR REFRESH STREAMING TABLE` — continuous incremental processing. See streaming-table-sql.
+- `CREATE OR REFRESH MATERIALIZED VIEW` — batch table. See materialized-view-sql.
+- `CREATE TEMPORARY VIEW` — pipeline-scoped view. See temporary-view-sql.
+- `CREATE VIEW` — UC-published view. See view-sql.
+- `AUTO CDC INTO` (inside `CREATE FLOW`) — CDC. See auto-cdc-sql.
+- `CREATE FLOW ... AS INSERT INTO [ONCE] target_table` — append / backfill flows. See streaming-table-sql.
 
 ## Source functions (streaming)
 
 Used as `FROM STREAM read_*(...)` inside a streaming table:
 
-- `read_files(path, format => '...')` — Auto Loader. See [auto-loader-sql.md](auto-loader-sql.md).
-- `read_kafka(bootstrapServers => '...', subscribe => '...')` — Kafka. Also covers Event Hubs via Kafka protocol. See [kafka.md](kafka.md).
+- `read_files(path, format => '...')` — Auto Loader. See auto-loader-sql.
+- `read_kafka(bootstrapServers => '...', subscribe => '...')` — Kafka. Also covers Event Hubs via Kafka protocol. See kafka.
 - `read_kinesis(streamName => '...', region => '...')` — AWS Kinesis.
 - `read_pubsub(subscriptionId => '...', topicId => '...')` — GCP Pub/Sub.
 - `read_pulsar(serviceUrl => '...', topics => '...')` — Apache Pulsar.
@@ -24,7 +24,7 @@ Used as `FROM STREAM read_*(...)` inside a streaming table:
 - ✅ Prefer `CREATE OR REFRESH` over bare `CREATE` for SDP datasets (idiomatic convention; both parse).
 - ✅ Use `FROM STREAM(table)` (function form with parens) for table sources in streaming tables; `FROM STREAM read_files(...)` (no extra parens) for function sources.
 - ❌ Never use the `LIVE.` prefix when reading sibling datasets — deprecated, errors in modern pipelines.
-- ❌ Never `CREATE LIVE TABLE` / `CREATE STREAMING LIVE TABLE` / `CREATE TEMPORARY LIVE VIEW` — all legacy. (Exception: `CREATE LIVE VIEW` is retained for the edge case of expectations on a temp view — see [temporary-view-sql.md#using-expectations-with-temporary-views](temporary-view-sql.md#using-expectations-with-temporary-views).)
+- ❌ Never `CREATE LIVE TABLE` / `CREATE STREAMING LIVE TABLE` / `CREATE TEMPORARY LIVE VIEW` — all legacy. (Exception: `CREATE LIVE VIEW` is retained for the edge case of expectations on a temp view — see temporary-view-sql#using-expectations-with-temporary-views.)
 - ❌ Never `CREATE OR REPLACE STREAMING TABLE` — that's standard SQL, not SDP. Use `CREATE OR REFRESH`.
 - ❌ `PIVOT` clause is unsupported.
 

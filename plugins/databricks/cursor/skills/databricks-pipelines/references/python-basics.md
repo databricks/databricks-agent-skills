@@ -7,18 +7,18 @@
 
 ## Core decorators
 
-- `@dp.materialized_view()` — batch table. See [materialized-view-python.md](materialized-view-python.md).
-- `@dp.table()` — streaming table when the function returns a streaming DataFrame. (Returns-batch-DataFrame is legacy DLT shape — use `@dp.materialized_view` instead.) See [streaming-table-python.md](streaming-table-python.md).
-- `@dp.temporary_view()` — pipeline-scoped view. See [temporary-view-python.md](temporary-view-python.md).
-- `@dp.expect*()` — quality constraints. See [expectations-python.md](expectations-python.md).
-- `@dp.append_flow(target=..., once=...)` — fan multiple sources into one target. See [streaming-table-python.md](streaming-table-python.md).
-- `@dp.foreach_batch_sink()` — custom per-batch Python sink (Public Preview). See [foreach-batch-sink-python.md](foreach-batch-sink-python.md).
+- `@dp.materialized_view()` — batch table. See materialized-view-python.
+- `@dp.table()` — streaming table when the function returns a streaming DataFrame. (Returns-batch-DataFrame is legacy DLT shape — use `@dp.materialized_view` instead.) See streaming-table-python.
+- `@dp.temporary_view()` — pipeline-scoped view. See temporary-view-python.
+- `@dp.expect*()` — quality constraints. See expectations-python.
+- `@dp.append_flow(target=..., once=...)` — fan multiple sources into one target. See streaming-table-python.
+- `@dp.foreach_batch_sink()` — custom per-batch Python sink (Public Preview). See foreach-batch-sink-python.
 
 ## Core functions
 
-- `dp.create_streaming_table()` — empty target for `@dp.append_flow` / `dp.create_auto_cdc_flow`. See [streaming-table-python.md](streaming-table-python.md).
-- `dp.create_auto_cdc_flow()` / `dp.create_auto_cdc_from_snapshot_flow()` — CDC. See [auto-cdc-python.md](auto-cdc-python.md).
-- `dp.create_sink()` — external Delta / Kafka / Event Hubs sinks. See [sink-python.md](sink-python.md).
+- `dp.create_streaming_table()` — empty target for `@dp.append_flow` / `dp.create_auto_cdc_flow`. See streaming-table-python.
+- `dp.create_auto_cdc_flow()` / `dp.create_auto_cdc_from_snapshot_flow()` — CDC. See auto-cdc-python.
+- `dp.create_sink()` — external Delta / Kafka / Event Hubs sinks. See sink-python.
 
 ## Reading datasets
 

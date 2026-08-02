@@ -2,7 +2,7 @@
 
 `CREATE VIEW` publishes a virtual table to Unity Catalog. Unlike `CREATE TEMPORARY VIEW` (pipeline-private), persistent views are accessible outside the pipeline and persist in the catalog. The query runs on access — no data is stored.
 
-For pipeline-private views, use `CREATE TEMPORARY VIEW` ([temporary-view-sql.md](temporary-view-sql.md)). For materialized output, use `CREATE OR REFRESH MATERIALIZED VIEW` ([materialized-view-sql.md](materialized-view-sql.md)).
+For pipeline-private views, use `CREATE TEMPORARY VIEW` (temporary-view-sql). For materialized output, use `CREATE OR REFRESH MATERIALIZED VIEW` (materialized-view-sql).
 
 ## Syntax
 

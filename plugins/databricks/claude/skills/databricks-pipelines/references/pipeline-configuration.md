@@ -29,7 +29,7 @@ databricks pipelines create --json '{
 
 Per-field rationale:
 
-- **`continuous: false`** — triggered runs. `true` auto-restarts failed updates forever (`cause: RETRY_ON_FAILURE`), burning cost and trapping polling loops. Only `true` when the user explicitly asks for always-on streaming. (Real-Time Mode is the one sanctioned always-on case — it *requires* `continuous: true`; see [real-time-mode.md](real-time-mode.md).)
+- **`continuous: false`** — triggered runs. `true` auto-restarts failed updates forever (`cause: RETRY_ON_FAILURE`), burning cost and trapping polling loops. Only `true` when the user explicitly asks for always-on streaming. (Real-Time Mode is the one sanctioned always-on case — it *requires* `continuous: true`; see real-time-mode.)
 - **`development: true`** — faster startup, relaxed validation, no retry-on-failure. Required for any edit/re-run loop.
 - **`pipelines.numUpdateRetryAttempts: "0"` + `maxFlowRetryAttempts: "0"`** — belt-and-suspenders against retries. Even with `development`, some configs still retry. Drop for prod.
 - **`channel: "PREVIEW"`** — latest features. `"CURRENT"` (default) for production stability.
@@ -130,7 +130,7 @@ All values must be strings.
 |-----|-------------|
 | `spark.sql.shuffle.partitions` | Number of shuffle partitions. `"auto"` recommended. |
 | `pipelines.numRetries` | Retries on transient failures. |
-| `pipelines.trigger.interval` | Trigger interval for continuous pipelines (e.g. `"1 hour"`). In a Real-Time Mode flow this same key instead sets the long-running batch's checkpoint cadence (e.g. `"5 minutes"`), not a trigger frequency — see [real-time-mode.md](real-time-mode.md). |
+| `pipelines.trigger.interval` | Trigger interval for continuous pipelines (e.g. `"1 hour"`). In a Real-Time Mode flow this same key instead sets the long-running batch's checkpoint cadence (e.g. `"5 minutes"`), not a trigger frequency — see real-time-mode. |
 | `spark.databricks.delta.preview.enabled` | Enable Delta preview features (`"true"`). |
 
 Any key here is also accessible from pipeline code via `spark.conf.get("key")` — use this to parameterize transformations.
@@ -278,7 +278,7 @@ databricks pipelines update <pipeline_id> --json '{
 }'
 ```
 
-Then trigger a new run with `databricks pipelines start-update <pipeline_id> [--full-refresh]`. See [2-rapid-iteration-with-cli.md](2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update) for the polling pattern — never poll top-level `pipelines get` state for run completion.
+Then trigger a new run with `databricks pipelines start-update <pipeline_id> [--full-refresh]`. See 2-rapid-iteration-with-cli#step-4-start-an-update-and-poll-that-update for the polling pattern — never poll top-level `pipelines get` state for run completion.
 
 ---
 

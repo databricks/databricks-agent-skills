@@ -1,6 +1,6 @@
 # Streaming Tables (Python)
 
-Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch with `spark.read`), see [materialized-view-python.md](materialized-view-python.md).
+Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch with `spark.read`), see materialized-view-python.
 
 ## `@dp.table()` — streaming or batch depending on return type
 

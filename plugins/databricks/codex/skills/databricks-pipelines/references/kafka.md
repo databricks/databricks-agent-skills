@@ -112,12 +112,12 @@ Read with `spark.conf.get("kafka_brokers")` (Python) or `${kafka_brokers}` (SQL)
 
 ## Writing to Kafka (sinks)
 
-Sinks are Python-only. Create a sink with `format="kafka"` and write via `@dp.append_flow`. The `value` column is mandatory — use `to_json(struct(*))` to serialize the row. See [sink-python.md](sink-python.md).
+Sinks are Python-only. Create a sink with `format="kafka"` and write via `@dp.append_flow`. The `value` column is mandatory — use `to_json(struct(*))` to serialize the row. See sink-python.
 
 ## Best Practices
 
 1. Cast `value` to `STRING` / `BINARY` and parse with `from_json` / `from_avro` against an explicit schema.
-2. Add `_ingested_at` — see [streaming-patterns.md#monitoring-lag](streaming-patterns.md#monitoring-lag).
+2. Add `_ingested_at` — see streaming-patterns#monitoring-lag.
 3. Tune `maxOffsetsPerTrigger` if downstream operations bottleneck.
 4. Don't set `failOnDataLoss = false` unless you accept retention-window gaps.
 
@@ -127,6 +127,6 @@ Sinks are Python-only. Create a sink with `format="kafka"` and write via `@dp.ap
 |-------|-----|
 | `Unable to find Kafka source` | Confirm `format("kafka")` / `read_kafka`; default runtimes have Kafka client libs. |
 | `Connection refused` / SSL handshake | Verify `bootstrapServers` reachability and `kafka.security.protocol`. |
-| `from_json` returns NULL | Schema mismatch — quarantine on `data IS NULL` (see [rescue-data quarantine](streaming-patterns.md#rescue-data-quarantine)). |
-| Growing consumer lag | Downstream bottleneck — see [streaming-patterns.md#monitoring-lag](streaming-patterns.md#monitoring-lag); tune cluster size / `maxOffsetsPerTrigger`. |
+| `from_json` returns NULL | Schema mismatch — quarantine on `data IS NULL` (see streaming-patterns#rescue-data-quarantine). |
+| Growing consumer lag | Downstream bottleneck — see streaming-patterns#monitoring-lag; tune cluster size / `maxOffsetsPerTrigger`. |
 | `failOnDataLoss` error after a pause | Kafka retention expired the offset checkpoint. Full refresh, or start from `earliest`. |

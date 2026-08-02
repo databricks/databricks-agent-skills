@@ -2,7 +2,7 @@
 
 How to read SCD Type 2 history tables produced by Auto CDC: current-state views, point-in-time queries, change analysis, and joining facts with historical dimensions. SQL is shown as canonical; Python translates via `spark.read.table(...).filter(F.col("__END_AT").isNull())` etc.
 
-For the CDC flow that *writes* these tables, see [auto-cdc-python.md](auto-cdc-python.md) / [auto-cdc-sql.md](auto-cdc-sql.md).
+For the CDC flow that *writes* these tables, see auto-cdc-python / auto-cdc-sql.
 
 ## Temporal Columns
 
@@ -121,7 +121,7 @@ FROM products_history
 GROUP BY product_id;
 ```
 
-**Cluster the history table on lookup key + time**: `CLUSTER BY (product_id, __START_AT)`. Accelerates both entity lookups and point-in-time scans. See [performance.md#cluster-key-selection-by-layer](performance.md#cluster-key-selection-by-layer).
+**Cluster the history table on lookup key + time**: `CLUSTER BY (product_id, __START_AT)`. Accelerates both entity lookups and point-in-time scans. See performance#cluster-key-selection-by-layer.
 
 ## Best Practices
 

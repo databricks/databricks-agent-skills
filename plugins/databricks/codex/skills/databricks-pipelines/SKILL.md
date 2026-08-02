@@ -246,6 +246,12 @@ Picking the right run command depends on the workflow chosen above.
 
 ## Reference Index
 
+Language primers — read the one matching the pipeline's language before writing
+source, when you need the decorator/statement surface in one place:
+
+- [python-basics.md](references/python-basics.md) — Read when authoring a Python pipeline: the modern `dp` decorator and function surface (`@dp.materialized_view`, `@dp.table`, `@dp.append_flow`, `dp.create_auto_cdc_flow`, `dp.create_sink`) and which reference covers each.
+- [sql-basics.md](references/sql-basics.md) — Read when authoring a SQL pipeline: the `CREATE OR REFRESH` statement surface, `read_files` / `read_kafka` sources, and the legacy `LIVE` syntax to avoid.
+
 Project & lifecycle:
 
 - [1-project-initialization-with-dab.md](references/1-project-initialization-with-dab.md) — Workflows A and B.

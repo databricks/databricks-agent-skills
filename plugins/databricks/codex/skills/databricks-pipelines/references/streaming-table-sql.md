@@ -1,6 +1,6 @@
 # Streaming Tables (SQL)
 
-Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch), see [materialized-view-sql.md](materialized-view-sql.md).
+Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch), see materialized-view-sql.
 
 ## Syntax
 
@@ -24,7 +24,7 @@ Key clause notes:
 - `CLUSTER BY (...)` — Liquid Clustering, mutually exclusive with `PARTITIONED BY`. Always prefer.
 - `MASK catalog.schema.mask_fn USING COLUMNS (other_col)` — UC column masking (Public Preview).
 - `WITH ROW FILTER func ON (col, ...)` — UC row filter (Public Preview). `func` must be a UC SQL UDF returning BOOLEAN; rows are dropped when it returns FALSE/NULL. Forces full refresh of downstream MVs. Cannot define the UDF inside the pipeline.
-- `CONSTRAINT ... EXPECT (...)` — see [expectations-sql.md](expectations-sql.md).
+- `CONSTRAINT ... EXPECT (...)` — see expectations-sql.
 - Table-level constraints (primary key, foreign key) are **informational only** — not enforced. Useful as query-optimizer hints and documentation.
 
 ## `STREAM(...)` source
@@ -40,7 +40,7 @@ CREATE OR REFRESH STREAMING TABLE events_stream
 AS SELECT * FROM STREAM(source_catalog.schema.events);
 ```
 
-**Multi-source — empty `CREATE OR REFRESH STREAMING TABLE` + `CREATE FLOW`s**: required to fan multiple sources into one table, or to use `AUTO CDC INTO` (see [auto-cdc-sql.md](auto-cdc-sql.md)).
+**Multi-source — empty `CREATE OR REFRESH STREAMING TABLE` + `CREATE FLOW`s**: required to fan multiple sources into one table, or to use `AUTO CDC INTO` (see auto-cdc-sql).
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE all_events (

@@ -2,9 +2,9 @@
 
 Sinks write pipeline output to non-pipeline-managed targets: Kafka / Event Hubs topics, externally-managed Delta tables, or volumes. Python-only. Streaming queries only. Only compatible with `@dp.append_flow()`.
 
-For per-batch custom Python logic (merge/upsert, multi-destination), see [foreach-batch-sink-python.md](foreach-batch-sink-python.md).
+For per-batch custom Python logic (merge/upsert, multi-destination), see foreach-batch-sink-python.
 
-**Real-Time Mode:** in an RTM pipeline a sink is targeted by `@dp.update_flow` (not `@dp.append_flow`), and only `format="kafka"` is usable — Delta is not an RTM sink. See [real-time-mode.md](real-time-mode.md).
+**Real-Time Mode:** in an RTM pipeline a sink is targeted by `@dp.update_flow` (not `@dp.append_flow`), and only `format="kafka"` is usable — Delta is not an RTM sink. See real-time-mode.
 
 ## `dp.create_sink(...)`
 
