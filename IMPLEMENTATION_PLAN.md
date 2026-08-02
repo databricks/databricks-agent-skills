@@ -4,10 +4,10 @@ Corpus: 32 skill dirs (30 `skills/`, 2 `experimental/`), 204 `.md` files, 311
 files total. Measured at HEAD `50ccd08` + working tree.
 
 **Two of three goals are already green.** `python3 scripts/skills.py validate`
-exits 0; `python3 -m unittest discover -s tests -p '*_test.py'` runs 118 tests,
-all pass. The job is to keep both green while driving `scripts/audit_check.py`
-— **which does not exist** (verified: `scripts/` holds only `bump_version.py`,
-`skills.py`, `skillsgen/`) — to zero must-fix.
+exits 0; `python3 -m unittest discover -s tests -p '*_test.py'` runs **143**
+tests (118 pre-existing + 25 new in `tests/audit_check_test.py`), all pass.
+`scripts/audit_check.py` now exists and reproduces every number in this plan;
+the job is to keep both green while driving it to zero must-fix.
 
 **Sort key:** non-zero count, largest blast radius first (occurrences × skills
 touched); within a class, heaviest skill first. Dependency order differs from
@@ -86,6 +86,24 @@ and block their classes.
   file under `references/` to another `.md` resolving inside the same
   `references/` tree, excluding self-links and fenced blocks" → **228 links
   across 15 skills, 69 source files**.
+- **D10 — PD-6 counts root-level reference files.** 125 = 121 under
+  `references/` + the 4 root-level files (all >100 lines, no TOC). Corpus
+  totals 168 + 4 = 172 files, 133 + 4 = 137 over 100 lines. Excluding them is
+  the exact blind spot NEW-C describes.
+- **D11 — SPEC-10a-cross counts links, not `../` occurrences.** 90 links =
+  111 occurrences; a `../../` target matches twice. The 21 gap is exactly
+  15 × `../../` + 2 × `../../skills/` + 2 × `../../../`.
+- **D12 — SPEC-10b excludes link labels and root-resolving basenames.** A
+  basename inside a markdown link *label* is display text and routes
+  correctly (`[1-widget-specifications.md#counter](references/1-widget-specifications.md#counter)`);
+  counting labels inflates the class from 64 to 167. A basename resolving at
+  the skill root is NEW-C, not SPEC-10b, or the two classes each report the
+  other's work as outstanding.
+- **D13 — PD-8 excludes "Troubleshooting".** 30 lacking is with
+  `gotcha|pitfall|common trap`; admitting `troubleshoot` credits 5 more
+  skills (core, genie-agents, lakebase, model-serving,
+  unstructured-pdf-generation) and gives 25. Only `ml-training` and
+  `pipelines` carry a real gotchas section.
 
 **Checker house style — the old plan had this backwards.** `scripts/skills.py`
 is a façade; the CLI lives in `scripts/skillsgen/cli.py:main()` (argparse,
@@ -99,35 +117,54 @@ hard constraint** — "the protected CI runner has no pypi"
 
 ---
 
-## 1. MNT-1a — author `scripts/audit_check.py` — BLOCKS EVERYTHING
+## 1. MNT-1a — audit gate — DONE
 
 - **Finding:** MNT-1a
-- **Path:** `scripts/audit_check.py` (new); tests in `tests/audit_check_test.py` (new)
-- **Count:** 0 checkers → **target 1 gate covering all 32 skills**
-- **Backpressure:** `python3 scripts/audit_check.py` runs and its per-class
-  totals equal **this plan's** numbers (not `specs/02`'s, wherever they
-  differ); then `python3 scripts/skills.py validate; echo $?` → `0` and
-  `python3 -m unittest discover -s tests -p '*_test.py'` → 118 pass.
+- **Delivered:** `scripts/audit_check.py` (stdlib-only, no `raise`/`assert`,
+  house `check_*(repo_root) -> list[str]` style, reuses
+  `iter_all_skill_dirs`) and `tests/audit_check_test.py` (25 fixture-based
+  tests that pin the *conventions*, not the corpus counts, so they stay
+  green as findings are swept).
+- **Usage:** `python3 scripts/audit_check.py [--only ID[,ID...]] [--details]`.
+  Exit 0 when every selected must-fix finding is at zero; advisory/blocked/
+  rollup findings gate the exit status only when named explicitly in
+  `--only`; unknown ID exits 2. Verified: a corpus with the finding at zero
+  exits 0.
+- **Not wired** into `scripts/skills.py validate` — that stays item 16
+  (MNT-1b), for the last sweep PR.
+- **Landed** on branch `feature/claude-skill-agent-loop` (not the planned
+  `ralph/audit-check-bootstrap` — the loop pushes this branch).
 
-Implements the D-definitions above plus, per `specs/01`: frontmatter limits;
-body `< 500` lines and `< 5,000` tokens; traversal classes; reference-to-
-reference; orphans; link form; TOC over 100 lines; description when-clause.
-Emit a per-skill table plus a rollup keyed by finding ID. Support
-`--only <ID>` so every item below has a one-command gate — note there is **no
-existing optional-flag precedent** in this repo's scripts, so `--only` is new
-surface; match `cli.py`'s argparse style.
+**Per-finding count table — the live baseline every future loop measures
+against:**
 
-**Six rules are already at zero** and ship as regression guards, not fixes:
-`name` charset / ≤64 / equals dirname / no `anthropic`|`claude` (0 violations);
-`description` 1–1024 (0; range 122–845); no XML in any frontmatter value (0 —
-the only `<` in any frontmatter is `<10K rows` in
-`databricks-synthetic-data-gen`); `compatibility` ≤500 (0; max 154);
-`metadata` string→string (0).
+| ID | Severity | Count |
+|---|---|---|
+| PD-6 | must-fix | 125 |
+| PD-5 | must-fix | 228 |
+| PD-5b | must-fix | 12 |
+| SPEC-10a-cross | must-fix | 90 |
+| SPEC-10a-intra | must-fix | 21 |
+| SPEC-10a-prose | must-fix | 3 |
+| SPEC-10b | must-fix | 64 |
+| NEW-A | must-fix | 6 |
+| NEW-C | must-fix | 4 |
+| PD-4a | must-fix | 3 |
+| PD-4c | must-fix | 3 |
+| PD-1 | must-fix | 3 |
+| PD-2 | must-fix | 3 |
+| DESC-1 | must-fix | 6 |
+| PD-3 | rollup | 4 |
+| PD-4b | blocked | 19 |
+| TOK-5 | blocked | 21 |
+| COMPAT-1 | blocked | 7 |
+| SPEC-10a-fence | advisory | 81 |
+| NEW-B | advisory | 1 |
+| PD-8 | advisory | 30 |
+| MNT-6 | advisory | 1 |
 
-**Do NOT** wire anything into `scripts/skillsgen/validators.py` yet. The house
-test pattern is `self.assertEqual(skills.check_x(_REPO), [])` — 9 such
-assertions exist. Adding one before its class is at zero turns 118 green tests
-red. Tracked as item 16.
+must-fix total 571 (rollup/advisory not summed); resident set 2,975 stable /
+3,199 all-in.
 
 ---
 
@@ -385,7 +422,8 @@ SKILL.md link targets.
 
 ## 10. Compatibility pin — 4 pins + 3 absent + 1 other-CLI → 1 — BLOCKED
 
-- **Finding:** Compatibility pin inconsistency
+- **Finding:** Compatibility pin inconsistency — the checker assigns this
+  finding the ID **COMPAT-1** (the plan and `specs/02` name it in prose only)
 - **Paths:** frontmatter across 28 skills, plus **7 skills hardcoding a CLI
   version in the body**: `skills/databricks-core/SKILL.md:31`,
   `skills/databricks-agent-bricks/SKILL.md:60`,
@@ -393,14 +431,17 @@ SKILL.md link targets.
   `skills/databricks-jobs/SKILL.md:44`,
   `skills/databricks-lakebase/SKILL.md:346`,
   `skills/databricks-lakeflow-connect/SKILL.md:96`,
-  `skills/databricks-python-sdk/SKILL.md:89`,
+  `skills/databricks-python-sdk/SKILL.md:24`,
   `skills/databricks-unity-catalog/SKILL.md:17`
 - **Count:** `>= v1.0.0` (20), `>= v0.294.0` (5), `>= v0.292.0` (2),
   `>= v1.9.0` (1); **3 with no `compatibility`** (`databricks-app-design`,
   `databricks-dabs`, `databricks-vector-search`); **1 pinning a different CLI**
   (`experimental/databricks-ai-runtime` → `databricks-air`, legitimately
   different). **6 distinct CLI version literals** once bodies are counted →
-  target 1, or per-skill values individually justified
+  target 1, or per-skill values individually justified. **COMPAT-1 totals
+  7:** 5 excess shapes (6 distinct — 4 CLI pins + `databricks-air` +
+  "(absent)" — minus the target of 1) plus 2 body-vs-frontmatter
+  contradictions (`databricks-jobs`, `databricks-python-sdk`)
 - **Backpressure:** `grep -h '^compatibility:' skills/*/SKILL.md
   experimental/*/SKILL.md | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -u | wc -l`
   → 1, and `python3 scripts/skills.py validate; echo $?` → 0
@@ -410,9 +451,12 @@ Plan it, then stop. Derive from one constant in `scripts/skillsgen/`.
 
 **Two skills contradict themselves** (new, beyond `specs/02`):
 `databricks-jobs` pins `>= v1.0.0` in frontmatter but says `>= v0.288.0` at
-line 44; `databricks-python-sdk` pins `>= v1.0.0` but says `>= 0.278.0` at line
-89. Those two are internally inconsistent regardless of which global value wins,
-and can be fixed independently of the blocked decision.
+line 44; `databricks-python-sdk` pins `>= v1.0.0` in frontmatter but states
+`>= 0.278.0` in the body at **both** `SKILL.md:24` and `:89` — the checker
+flags line 24 only, because line 89 ("# Check version (should be >=
+0.278.0)") does not name the CLI. Those two are internally inconsistent
+regardless of which global value wins, and can be fixed independently of the
+blocked decision.
 
 ---
 
@@ -581,11 +625,18 @@ false must-fixes.
 - **Finding:** PD-8 / MNT-6
 - **Paths:** PD-8 — **30** SKILL.md files lack a gotchas-style heading (only
   `skills/databricks-ml-training` and `skills/databricks-pipelines` have one;
-  `specs/02` says 29). MNT-6 — `skills/databricks-synthetic-data-gen/scripts/generate_synthetic_data.py`
-  and `skills/databricks-unstructured-pdf-generation/scripts/pdf_generator.py`;
-  confirmed these are the only two skills bundling `scripts/`, and neither
-  SKILL.md states run-vs-read intent
-- **Count:** 30 → 0; 2 → 0
+  `specs/02` says 29). MNT-6 —
+  `skills/databricks-synthetic-data-gen/scripts/generate_synthetic_data.py`;
+  confirmed these two skills are the only ones bundling `scripts/`, but only
+  this one's SKILL.md fails to state run-vs-read intent
+- **Count:** 30 → 0; **1** → 0 (not 2 —
+  `skills/databricks-unstructured-pdf-generation/scripts/pdf_generator.py`
+  DOES state run intent: `SKILL.md:17` names the script, `:43` gives the
+  literal `python <SKILL_ROOT>/scripts/pdf_generator.py convert ...`
+  invocation, `:124` a manifest row, `:126` a recreate-if-absent fallback.
+  Only `databricks-synthetic-data-gen` lacks intent, and its
+  `generate_synthetic_data.py` is referenced nowhere in the skill at all —
+  an orphan script, arguably a different defect.)
 - **Backpressure:** not a must-fix gate — do not let it block the definition of
   done. `python3 scripts/audit_check.py --only PD-8,MNT-6` reported as advisory.
 
@@ -599,7 +650,7 @@ intra ∩ PD-6 = 13; cross ∩ intra = 3.
 
 | Step | Branch | Item | Count → target |
 |---|---|---|---|
-| 1 | `ralph/audit-check-bootstrap` | 1 · MNT-1a | 0 → 1 gate |
+| 1 | `feature/claude-skill-agent-loop` | 1 · MNT-1a | DONE |
 | 2 | `ralph/spec-10a-cross` | 4 · SPEC-10a-cross + NEW-A | 90 → 0 |
 | 3 | `ralph/spec-10a-intra` | 7 · SPEC-10a-intra | 21 → 0 |
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | 3 → 0 |
@@ -625,7 +676,7 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 
 1. `python3 scripts/audit_check.py --only <ID>` → 0
 2. `python3 scripts/skills.py validate; echo $?` → 0
-3. `python3 -m unittest discover -s tests -p '*_test.py'` → 118 pass
+3. `python3 -m unittest discover -s tests -p '*_test.py'` → 143 pass
 4. `git status` clean under `plugins/`, `manifest.json`, `*/marketplace.json`
    (generated — regenerate with `scripts/skills.py generate`, never hand-edit)
 5. Single concern; commit message names the finding ID and the before→after count
@@ -637,10 +688,13 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 | Finding | `specs/02` claims | Measured | Nature |
 |---|---|---|---|
 | SPEC-10a | 19 skills, 128 occ | cross **90**/20 · intra **21**/9 · prose **13**/6 (only **3** are defects) · fence **81**/5 (**0** defects) | audit conflated 4 classes and counted links only; missed `databricks-jobs` (64 in-fence, largest holder, unlisted) |
+| SPEC-10a-cross occ (D11) | — | 90 links = **111** occurrences | `../../` matches twice; 21-occurrence gap = 15 × `../../` + 2 × `../../skills/` + 2 × `../../../`; new |
 | SPEC-10a ellipsis | — | naive `\.\./` = 240 vs **226** real | **14 false positives** from `.../` truncation markers; new |
 | SPEC-10b | 11 | **64 mentions across 2 skills** — 59 backticked + 2 bold-prose in `mlflow-evaluation`, **3 in `databricks-app-design`** | 11 is the file count, not occurrences; second skill unlisted; `](` regex finds 0 |
+| SPEC-10b labels (D12) | — | 64 excludes link labels; counting labels inflates to **167** | a basename in a link *label* is display text, not a defect; basenames resolving at the skill root are NEW-C, not SPEC-10b; new |
 | PD-5 | 17 skills, pipelines 103 | **228** links / **15** skills / 69 files, pipelines **91** | both totals and per-skill differ |
 | PD-6 | ~120 / 25 skills | **125** of 137 / **26** skills | heuristic-stable (123–125); 12 files already have TOCs |
+| PD-6 root files (D10) | — | 125 = 121 under `references/` + 4 root-level | excluding root-level files is NEW-C's exact blind spot; new |
 | PD-1/2/3 | 839/15,683 etc. | **exact match** under D6 | no drift once `round(chars/4)` is used |
 | PD-4a | 2 | **3** | third in `experimental/spark-python-data-source:145` |
 | PD-4b | 26 `parent: databricks-core` | **25**; 1 `parent: databricks-apps`; 6 unparented; **19** children unmentioned | parent graph incomplete |
@@ -650,6 +704,7 @@ parallel. Steps 13–15 are unblocked only by a maintainer decision.
 | Compat pins | 4 values | 4 + **3 absent** + **1 `databricks-air`**; **6** distinct literals incl. bodies | audit undercounted shapes; `jobs` and `python-sdk` contradict their own frontmatter |
 | Resident set | 2,975 / 3,199 | **2,975 / 3,199** | exact — but only with YAML `\"` unescaped |
 | PD-8 gotchas | 29 skills | **30** | only `ml-training` and `pipelines` have one |
+| PD-8 "Troubleshooting" (D13) | — | 30 strict vs **25** admitting `troubleshoot` | 5 more skills credited: core, genie-agents, lakebase, model-serving, unstructured-pdf-generation; new |
 | MNT-8 versions | 21 at `0.1.0` | **24** at `0.1.0`; `databricks-dabs` has **no `metadata`** | audit undercounted |
 | Dangling links | not measured | **7 total corpus-wide** (6 NEW-A + 1 NEW-B) | new |
 
@@ -723,6 +778,9 @@ Upstream cannot merge PRs directly; these need a decision, not a diff.
 - **MNT-7b** — `.gen.json` pins
   `source_commit: 70f06e3196ff3b0a6807a8796f5c8c95efc05ce5`, not an object in
   this repo's history. *Policy: provenance from the internal repo.*
+- **TOK-5 / MNT-6 reconciliation** — now recorded in
+  `specs/02-audit-findings.md` (a Reconciliation section is being appended
+  there in parallel); see that spec for detail, not duplicated here.
 
 ## Confirmed NOT defects — do not plan a fix
 

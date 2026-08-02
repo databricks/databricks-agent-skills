@@ -29,3 +29,29 @@ first:
   `plugins/databricks/` bundle — a generated copy of the source). CI re-renders
   them and fails on any drift, including a bundle that does not match a fresh
   build. Edit the source and run `scripts/skills.py generate`.
+
+## Auditing skill content
+
+`scripts/skills.py validate` checks the plugin plumbing only — nothing in it
+looks at skill content. `python3 scripts/audit_check.py` is the content-side
+gate.
+
+- `python3 scripts/audit_check.py` — every finding, rollup table with a count
+  per finding ID. Exits 1 while any must-fix finding is above zero.
+- `python3 scripts/audit_check.py --only <ID>[,<ID>...]` — the per-finding
+  backpressure gate; exits 0 when the selected findings are at zero. Add
+  `--details` to list every violation plus a per-skill breakdown. An unknown
+  ID exits 2 and prints the known IDs.
+- Advisory, blocked, and rollup findings do not affect the exit status unless
+  named explicitly in `--only`.
+- Run it from the repo root — it resolves the corpus relative to its own
+  path, so any cwd works, but the paths it prints are repo-relative.
+- The counting conventions (token basis, the `../` matcher's ellipsis
+  exclusion, code-fence exemption, TOC heuristic) live in the module
+  docstring — that's the contract; changing one moves every number.
+- Tests: `tests/audit_check_test.py`, run via
+  `python3 -m unittest discover -s tests -p '*_test.py'`. They pin the
+  conventions against fixtures, not the corpus's current counts, so they stay
+  green as findings are swept.
+- Quote the glob in raw grep cross-checks — an unquoted `--include=*.md`
+  aborts under zsh.
