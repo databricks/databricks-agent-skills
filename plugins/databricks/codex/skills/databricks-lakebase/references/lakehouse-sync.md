@@ -150,5 +150,5 @@ COMMIT;
 
 ## Cross-references
 
-- For building Silver/Gold layers from CDC history tables, see [medallion-from-cdc.md](medallion-from-cdc.md)
-- For syncing in the reverse direction (UC → Lakebase), see [synced-tables.md](synced-tables.md)
+- For building Silver/Gold layers from CDC history tables, see medallion-from-cdc
+- For syncing in the reverse direction (UC → Lakebase), see synced-tables

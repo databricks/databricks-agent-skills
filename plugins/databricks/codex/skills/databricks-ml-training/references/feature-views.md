@@ -6,7 +6,7 @@
 >
 > Docs: [Feature Views](https://docs.databricks.com/aws/en/machine-learning/feature-store/declarative-apis) · [Materialize Feature Views](https://docs.databricks.com/aws/en/machine-learning/feature-store/materialized-features)
 
-A **Feature View** declares *what* a feature is — "7-day rolling average of `amount` per `user_id`" — and lets Databricks compute it point-in-time for training, materialize it to Delta (offline) and/or Lakebase (online), and keep it fresh. Batch (Delta) and streaming (Kafka) sources use the same `Feature` object and the same `fe.create_training_set(features=...)` → `fe.log_model(training_set=...)` → `fe.score_batch()` path as the standard API in [feature-store.md](feature-store.md).
+A **Feature View** declares *what* a feature is — "7-day rolling average of `amount` per `user_id`" — and lets Databricks compute it point-in-time for training, materialize it to Delta (offline) and/or Lakebase (online), and keep it fresh. Batch (Delta) and streaming (Kafka) sources use the same `Feature` object and the same `fe.create_training_set(features=...)` → `fe.log_model(training_set=...)` → `fe.score_batch()` path as the standard API in feature-store.
 
 > **Naming.** A Feature View's materialized output is a **Materialized Feature** (offline and/or online tables). The Python API has no `FeatureView` class: you work with `Feature` objects and `FeatureEngineeringClient`. (If you used the beta API, see [Migrating from the beta API](#migrating-from-the-beta-api--feature-views).)
 
@@ -28,7 +28,7 @@ Across 5 features × 3 time windows × 2 entity types = 30 near-identical blocks
 - Features that must stay identical offline (training) AND online (serving)
 - Real-time features off an event stream (Kafka) — see [Streaming features](#streaming-features)
 
-**Use the standard `FeatureLookup` API ([feature-store.md](feature-store.md)) instead when:**
+**Use the standard `FeatureLookup` API (feature-store) instead when:**
 - Your features are already-computed columns you just want to look up
 - You need non-aggregation transforms beyond row-wise SQL (`transformation_sql` is row-wise only; cross-row aggregation must go through an `AggregationFunction`)
 
@@ -172,7 +172,7 @@ training_set = fe.create_training_set(
 training_df = training_set.load_df()
 ```
 
-Train and log exactly like the standard API — `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see [feature-store.md](feature-store.md#3-train-and-register-with-feature-lineage)). Lineage and feature resolution at `score_batch()` come for free.
+Train and log exactly like the standard API — `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see feature-store#3-train-and-register-with-feature-lineage). Lineage and feature resolution at `score_batch()` come for free.
 
 ### 4. Materialize with `materialize_features()`
 
@@ -210,7 +210,7 @@ fe.materialize_features(
 )
 ```
 
-> The online store is a Databricks Online Feature Store (Lakebase) instance. Create it once with `fe.create_online_store(name=ONLINE_STORE, capacity="CU_1")` — see [feature-store.md](feature-store.md#5-online-store-real-time-feature-serving). Its **name must be DNS-compliant** (lowercase alphanumeric + hyphens, **no underscores**), which is why `ONLINE_STORE` is kept separate from `PROJECT`.
+> The online store is a Databricks Online Feature Store (Lakebase) instance. Create it once with `fe.create_online_store(name=ONLINE_STORE, capacity="CU_1")` — see feature-store#5-online-store-real-time-feature-serving. Its **name must be DNS-compliant** (lowercase alphanumeric + hyphens, **no underscores**), which is why `ONLINE_STORE` is kept separate from `PROJECT`.
 
 ---
 
@@ -334,10 +334,10 @@ training_set = fe.create_training_set(
 training_df = training_set.load_df()
 ```
 
-Train and log identically to batch: `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see [feature-store.md](feature-store.md#3-train-and-register-with-feature-lineage)). Lineage and feature resolution at `score_batch()` and serving come for free.
+Train and log identically to batch: `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see feature-store#3-train-and-register-with-feature-lineage). Lineage and feature resolution at `score_batch()` and serving come for free.
 
 **Watch for:**
-- **`features=[Feature, ...]`, not `feature_lookups=[FeatureLookup, ...]`.** The Feature Views signature differs from the standard `FeatureLookup` API in [feature-store.md](feature-store.md).
+- **`features=[Feature, ...]`, not `feature_lookups=[FeatureLookup, ...]`.** The Feature Views signature differs from the standard `FeatureLookup` API in feature-store.
 - **The `label` column must not exist in the stream's ingestion table**, or it collides on the join.
 - **Entity and timeseries column names must match the feature definitions and be globally unique** across all sources in the training set. **[Verified 0.16.0]** Streaming features declare `entity=["value.user_id"]` / `timeseries_column="value.event_time"` (dotted source paths), but the **labeled DataFrame uses leaf names** (`user_id`, `event_time`), e.g. `spark.table(ingest).selectExpr("value.user_id AS user_id", "value.event_time AS event_time", ...)`. Leaf names give a correct point-in-time join and matching feature columns; dotted names in the labeled df are wrong.
 - **[Verified 0.16.0] During stream startup the ingestion table is registered in UC before its Delta path is materialized.** A `spark.table(<ingest>).count()`, or even `spark.catalog.tableExists(<ingest>)`, issued in that window throws `[DELTA_PATH_DOES_NOT_EXIST] ... doesn't exist, or is not a Delta table`. When polling for the ingestion table to fill, wrap the read in `try/except` and treat any exception as "not ready yet"; do not gate on `tableExists`.

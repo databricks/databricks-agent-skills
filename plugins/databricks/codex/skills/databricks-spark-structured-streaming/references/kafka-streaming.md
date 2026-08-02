@@ -150,7 +150,7 @@ df_bronze.writeStream \
 
 ### Pattern 3: Real-Time Mode (Sub-Second Latency)
 
-RTM is GA and is the default for any kafka→kafka pipeline with sub-second SLAs. DBR 16.4 LTS minimum, DBR 18.1+ recommended. Full setup, slot math, supported operations, and error classes in [real-time-mode.md](real-time-mode.md).
+RTM is GA and is the default for any kafka→kafka pipeline with sub-second SLAs. DBR 16.4 LTS minimum, DBR 18.1+ recommended. Full setup, slot math, supported operations, and error classes in real-time-mode.
 
 ```python
 query = (enriched_df
@@ -240,7 +240,7 @@ parsed_df.writeStream \
     .start()
 ```
 
-**RTM-compatible alternative for sub-second routing:** run one RTM query per output topic, each with its own filter and Kafka sink. Costs more cluster slots (one set of source partitions per query) but stays in RTM. See [multi-sink-writes.md](multi-sink-writes.md) for the multi-sink trade-offs.
+**RTM-compatible alternative for sub-second routing:** run one RTM query per output topic, each with its own filter and Kafka sink. Costs more cluster slots (one set of source partitions per query) but stays in RTM. See multi-sink-writes for the multi-sink trade-offs.
 
 ### Pattern 6: Schema Validation with DLQ
 
@@ -426,7 +426,7 @@ for stream in spark.streams.active:
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | **No data being read** | `startingOffsets` default is "latest" | Use "earliest" for existing data |
-| **High latency** | Micro-batch overhead | Use RTM (`trigger(realTime="5 minutes")`) — see [real-time-mode.md](real-time-mode.md) |
+| **High latency** | Micro-batch overhead | Use RTM (`trigger(realTime="5 minutes")`) — see real-time-mode |
 | **Consumer lag** | Processing < Input rate | Scale cluster; reduce maxOffsetsPerTrigger |
 | **Duplicate messages** | Exactly-once not configured | Enable idempotent producer (acks=all) |
 | **Falling behind** | Processing < Input rate | Increase cluster size |

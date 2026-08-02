@@ -77,7 +77,7 @@ fe.create_table(
 )
 ```
 
-For **rolling/window features that require point-in-time lookups**, include a timestamp key. First compute the rolling features per `(user_id, ts)` — this snippet uses hand-written Spark windows for illustration; for a declarative alternative, see [`references/feature-views.md`](feature-views.md):
+For **rolling/window features that require point-in-time lookups**, include a timestamp key. First compute the rolling features per `(user_id, ts)` — this snippet uses hand-written Spark windows for illustration; for a declarative alternative, see feature-views:
 
 ```python
 from pyspark.sql import Window, functions as F
@@ -291,7 +291,7 @@ fe.publish_table(
 | **Model Serving Endpoint** | Model deployed in Databricks; endpoint auto-looks up features | `client.create_endpoint(entity_name=FULL_NAME, ...)` → `client.predict(inputs={"dataframe_records": [{"entity_id": 1}]})` — no feature join code needed in the caller |
 
 For full endpoint creation code, see [SKILL.md](../SKILL.md#real-time-serving-when-required).  
-For the Feature Serving Endpoint API details, see [feature-views.md](feature-views.md#feature-serving-endpoint).
+For the Feature Serving Endpoint API details, see feature-views#feature-serving-endpoint.
 
 ---
 

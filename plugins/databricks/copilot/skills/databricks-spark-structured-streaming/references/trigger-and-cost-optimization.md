@@ -63,7 +63,7 @@ df.writeStream \
 
 ### Real-Time Mode (RTM)
 
-Sub-second end-to-end latency (as low as 5 ms). Cluster requirements, slot math, supported sources/sinks, observability, error classes — see [real-time-mode.md](real-time-mode.md).
+Sub-second end-to-end latency (as low as 5 ms). Cluster requirements, slot math, supported sources/sinks, observability, error classes — see real-time-mode.
 
 ```python
 # "5 minutes" is the long-running batch duration; PySpark requires it explicitly.
@@ -81,7 +81,7 @@ Sub-second end-to-end latency (as low as 5 ms). Cluster requirements, slot math,
 | 15-60 minutes | availableNow (scheduled) | $ | Batch-style SLA |
 | > 1 hour | availableNow (scheduled) | $ | ETL pipelines |
 
-**Default choice for demos and prototypes:** prefer `availableNow` unless the user has explicitly asked for continuous or sub-second processing. RTM keeps a Classic cluster running 24/7 (see [Real-Time Mode](real-time-mode.md) for why), which is easy to spin up and forget about. `availableNow` runs on demand and terminates — the safe default when latency isn't a first-order concern.
+**Default choice for demos and prototypes:** prefer `availableNow` unless the user has explicitly asked for continuous or sub-second processing. RTM keeps a Classic cluster running 24/7 (see real-time-mode for why), which is easy to spin up and forget about. `availableNow` runs on demand and terminates — the safe default when latency isn't a first-order concern.
 
 ## Trigger Interval Calculation
 
@@ -280,7 +280,7 @@ def start_all_streams():
 
 ### Pattern 3: RTM for Sub-Second Latency
 
-Use RTM for real-time requirements. See [real-time-mode.md](real-time-mode.md) for the deep treatment.
+Use RTM for real-time requirements. See real-time-mode for the deep treatment.
 
 ```python
 # Real-Time Mode — sub-second E2E latency (as low as 5 ms)
@@ -296,7 +296,7 @@ df.writeStream \
 
 ## Real-Time Mode (RTM) Configuration
 
-Cluster setup, Spark conf, supported operations, sources/sinks, slot math, observability — all in [real-time-mode.md](real-time-mode.md). This file covers only the cost-vs-trigger trade-off; RTM's cost shape is "continuous cluster with Photon disabled."
+Cluster setup, Spark conf, supported operations, sources/sinks, slot math, observability — all in real-time-mode. This file covers only the cost-vs-trigger trade-off; RTM's cost shape is "continuous cluster with Photon disabled."
 
 ## Performance Considerations
 
@@ -405,7 +405,7 @@ writer.trigger(availableNow=True).start()  # Schedule: Every 15 minutes
 | **High latency** | Trigger interval too long | Decrease trigger interval or use RTM |
 | **High cost** | Continuous processing | Use scheduled (availableNow) |
 | **Batch duration > trigger** | Processing too slow | Optimize processing or increase trigger |
-| **RTM not working** | Cluster misconfigured | Verify: DBR 16.4 LTS+ (18.1+ recommended), Classic compute, autoscaling/Photon/spot OFF, `spark.databricks.streaming.realTimeMode.enabled = true`. See [real-time-mode.md](real-time-mode.md). |
+| **RTM not working** | Cluster misconfigured | Verify: DBR 16.4 LTS+ (18.1+ recommended), Classic compute, autoscaling/Photon/spot OFF, `spark.databricks.streaming.realTimeMode.enabled = true`. See real-time-mode. |
 
 ## Quick Wins
 

@@ -83,7 +83,7 @@ AS $$
 $$
 ```
 
-Apply this metadata-rich shape to any pattern below. See [`metric-view-advisor.md`](metric-view-advisor.md) → *Semantic metadata* for field limits and tips.
+Apply this metadata-rich shape to any pattern below. See metric-view-advisor → *Semantic metadata* for field limits and tips.
 
 ## Pattern 2: Derived Dimensions with CASE
 

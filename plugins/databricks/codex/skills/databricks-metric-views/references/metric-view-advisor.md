@@ -16,8 +16,8 @@ frameworks, creating regular UC tables/schemas, or MLflow/model tracking.
 
 > **The baseline metric-view spec lives in this skill, not here.** The parent
 > `databricks-metric-views` skill (`../SKILL.md`) and its references —
-> [`patterns.md`](patterns.md) (the pattern library) and
-> [`yaml-reference.md`](yaml-reference.md) (top-level fields, dimensions, measures,
+> patterns (the pattern library) and
+> yaml-reference (top-level fields, dimensions, measures,
 > window measures, joins, filter, materialization) — are the spec authority. **Read
 > them first.** This file documents only the *advisor-specific* material: the
 > multi-source build flow and the YAML additions that flow needs. It deliberately
@@ -25,7 +25,7 @@ frameworks, creating regular UC tables/schemas, or MLflow/model tracking.
 
 ## Prerequisites & tooling
 
-1. **The baseline spec** from the parent skill (`../SKILL.md`, [`patterns.md`](patterns.md), [`yaml-reference.md`](yaml-reference.md)) — read it for the YAML spec and patterns.
+1. **The baseline spec** from the parent skill (`../SKILL.md`, patterns, yaml-reference) — read it for the YAML spec and patterns.
 2. A working **Databricks CLI (>= v1.0.0)** authenticated to a workspace profile. All operations run through the CLI; the commands and fetch/parse details are in [CLI & API operations](#cli--api-operations) below. Auth, profiles, and warehouse selection are covered by the **`databricks-core`** skill.
 
 > **If the host agent has native asset readers** (a `readAssetById`-style tool), it may use them — but **verify the result is non-empty** and fall back to the CLI fetches below if it isn't. A native reader often returns an empty *published* serialization (`datasets: []`); empty ≠ no data.
@@ -124,7 +124,7 @@ WHERE table_schema = '<target_schema>' AND table_type = 'METRIC_VIEW'
 
 ### Step 2 — Analyze the inputs
 
-For **each** selected input source, run its handler below, then **merge** findings into a single combined analysis. The baseline YAML spec and the pattern library live in the parent skill ([`patterns.md`](patterns.md), [`yaml-reference.md`](yaml-reference.md)); the advisor's YAML additions are in [YAML reference — advisor additions](#yaml-reference--advisor-additions) at the end of this file.
+For **each** selected input source, run its handler below, then **merge** findings into a single combined analysis. The baseline YAML spec and the pattern library live in the parent skill (patterns, yaml-reference); the advisor's YAML additions are in [YAML reference — advisor additions](#yaml-reference--advisor-additions) at the end of this file.
 
 > **Metadata priority (applies everywhere):** existing descriptions are authoritative — never invent when one exists. Order: Genie column descriptions → UC column comments → KPI-file names → dashboard labels → inferred from names. Put the richest description in `comment`, a business label in `display_name`, and every other name/alias in `synonyms`. **Never discard metadata** — it all lands in one of those three fields (this is what makes the views Genie-friendly).
 
@@ -445,7 +445,7 @@ AS $$
 $$
 ```
 
-**YAML rules to follow** — the parent skill's [`yaml-reference.md`](yaml-reference.md) holds the full spec (dimension/measure rules, joins), and the authoring pitfalls — backtick-quoting `MEASURE()` names with spaces, the snowflake full dot-chain (`customer.nation.n_name`), `format` blocks needing a valid `type`, and `DATEDIFF()` instead of date subtraction — are the single source of truth in the [gotchas table](#yaml-formatting-gotchas). The advisor's design heuristics on top of the spec:
+**YAML rules to follow** — the parent skill's yaml-reference holds the full spec (dimension/measure rules, joins), and the authoring pitfalls — backtick-quoting `MEASURE()` names with spaces, the snowflake full dot-chain (`customer.nation.n_name`), `format` blocks needing a valid `type`, and `DATEDIFF()` instead of date subtraction — are the single source of truth in the [gotchas table](#yaml-formatting-gotchas). The advisor's design heuristics on top of the spec:
 - `version: 1.1` (the advisor's templates use 1.1 — see the parent skill for the `version`/DBR requirements).
 - Add `comment`/`display_name`/`synonyms` to the dimensions and measures that business/NL users will reference, for Genie discoverability (`synonyms`/`display_name`/`format` require DBR 17.3+).
 - **Use composability** — define atomic measures first (SUM, COUNT, AVG), then build complex measures referencing them via `MEASURE()`.
@@ -475,7 +475,7 @@ If they decline, go to Step 6. If they want it, configure it — gather these to
 - **Type** per view — Aggregated (pick dimension/measure combos), Unaggregated (full data model), or Both. For Aggregated/Both, suggest the most likely dimension/measure combinations based on what appeared most across input sources.
 - **Refresh schedule** — e.g. `every 1 hour` / `every 6 hours` / `every 24 hours` / custom. If table properties revealed a `refresh_frequency`, note that a faster schedule won't yield fresher data.
 
-Then **update definitions** with the `materialization:` block (see [Materialization — additional detail](#materialization--additional-detail) below and the **Materialized Metric View** pattern in [`patterns.md`](patterns.md)), update the saved SQL files, and re-display the final YAML.
+Then **update definitions** with the `materialization:` block (see [Materialization — additional detail](#materialization--additional-detail) below and the **Materialized Metric View** pattern in patterns), update the saved SQL files, and re-display the final YAML.
 
 ### Step 6 — Deploy
 
@@ -538,7 +538,7 @@ For each created metric view, generate 3-5 sample queries demonstrating: basic a
 
 ## YAML reference — advisor additions
 
-> The baseline YAML specification lives in the parent skill's [`yaml-reference.md`](yaml-reference.md) (Top-Level Fields, Dimensions, Measures, Window Measures, Joins, Filter, baseline Materialization). This section documents only what the advisor needs *beyond* the parent spec.
+> The baseline YAML specification lives in the parent skill's yaml-reference (Top-Level Fields, Dimensions, Measures, Window Measures, Joins, Filter, baseline Materialization). This section documents only what the advisor needs *beyond* the parent spec.
 
 ### YAML formatting gotchas
 
@@ -589,7 +589,7 @@ $$
 
 ### Composability (recommended for complex measures)
 
-**Define atomic measures first** (`SUM`, `COUNT`, `AVG`, plus `FILTER`ed variants), then build composed measures that reference them via `MEASURE()` — ratios and rates stay safe to re-aggregate at any dimension grain. The atomic→composed shape is shown in the *Good measures* table in [Step 2](#step-2--analyze-the-inputs); backtick-quote measure names with spaces (see the [Gotchas](#yaml-formatting-gotchas) table). The parent skill's *Measure Rules* in [`yaml-reference.md`](yaml-reference.md) cover the mechanics. Metric views can also serve as the `source` for other metric views (layered composition).
+**Define atomic measures first** (`SUM`, `COUNT`, `AVG`, plus `FILTER`ed variants), then build composed measures that reference them via `MEASURE()` — ratios and rates stay safe to re-aggregate at any dimension grain. The atomic→composed shape is shown in the *Good measures* table in [Step 2](#step-2--analyze-the-inputs); backtick-quote measure names with spaces (see the [Gotchas](#yaml-formatting-gotchas) table). The parent skill's *Measure Rules* in yaml-reference cover the mechanics. Metric views can also serve as the `source` for other metric views (layered composition).
 
 ### Additional measure rules
 
@@ -755,7 +755,7 @@ The parent spec covers the baseline `materialization:` block, the type table, th
 
 ### Complete example
 
-The parent skill's [`patterns.md`](patterns.md) shows each piece on its own — **Pattern 5** (star joins), **Pattern 6** (snowflake nested joins with the full dot-chain), **Pattern 7** (the `materialization:` block). The advisor-specific bit is combining all three in one definition (note the dot-chain `customer.region.name`, not `region.name`):
+The parent skill's pattern library (patterns) shows each piece on its own — **Pattern 5** (star joins), **Pattern 6** (snowflake nested joins with the full dot-chain), **Pattern 7** (the `materialization:` block). The advisor-specific bit is combining all three in one definition (note the dot-chain `customer.region.name`, not `region.name`):
 
 ```sql
 CREATE OR REPLACE VIEW catalog.schema.sales_metrics
@@ -805,7 +805,7 @@ $$
 
 ## Important notes (advisor heuristics)
 
-> **The baseline spec lives in the parent `databricks-metric-views` skill** (`../SKILL.md`, [`yaml-reference.md`](yaml-reference.md)) — YAML versions and DBR requirements, query rules (`MEASURE()` + `GROUP BY`, no `SELECT *`, `MEASURE()` without `OVER`), join structure/cardinality/semantics, window-measure requirements, and materialization. **Follow the spec there.** This advisor deliberately does **not** restate the spec, so the two can't drift apart; the notes below are advisor-specific guidance only.
+> **The baseline spec lives in the parent `databricks-metric-views` skill** (`../SKILL.md`, yaml-reference) — YAML versions and DBR requirements, query rules (`MEASURE()` + `GROUP BY`, no `SELECT *`, `MEASURE()` without `OVER`), join structure/cardinality/semantics, window-measure requirements, and materialization. **Follow the spec there.** This advisor deliberately does **not** restate the spec, so the two can't drift apart; the notes below are advisor-specific guidance only.
 
 - Add `comment`, `display_name`, and `synonyms` to the dimensions and measures that business/NL users will reference — they power Genie's natural-language understanding (the advisor's core value-add). `synonyms`/`display_name`/`format` require DBR 17.3+.
 - Prefer fewer, richer metric views over many narrow ones.

@@ -139,5 +139,5 @@ Deploy: `databricks bundle deploy -t dev --profile <PROFILE>`
 
 ## Cross-references
 
-- For Lakehouse Sync setup, see [lakehouse-sync.md](lakehouse-sync.md)
-- For synced tables (UC → Lakebase direction), see [synced-tables.md](synced-tables.md)
+- For Lakehouse Sync setup, see lakehouse-sync
+- For synced tables (UC → Lakebase direction), see synced-tables

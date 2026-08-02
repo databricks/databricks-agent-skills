@@ -79,7 +79,7 @@ If `maxPartitions` is unset, the source partition count equals the Kafka topic's
 
 **File-based sources (Auto Loader, direct file reads, Delta) are NOT supported in RTM.** They belong to micro-batch streaming. If your data lives in files and you need sub-second latency, ingest into Kafka / Event Hubs first.
 
-For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-python.md). That file covers both the native `format("postgresql")` sink (Public Preview, preferred when available) and a manual `foreach` sink as a fallback (which also serves as a worked example of the per-partition `foreach` lifecycle for sinks to non-Lakebase targets like Redis or Cassandra).
+For writing into Lakebase Postgres, see lakebase-sink-python. That file covers both the native `format("postgresql")` sink (Public Preview, preferred when available) and a manual `foreach` sink as a fallback (which also serves as a worked example of the per-partition `foreach` lifecycle for sinks to non-Lakebase targets like Redis or Cassandra).
 
 ## Supported operations
 
@@ -128,7 +128,7 @@ spark.conf.set("spark.sql.streaming.realTimeMode.controlMessage.enabled", "true"
 
 State format v4 is what enables non-blocking iteration over both sides — required because RTM continuously processes records and can't sit idle waiting on either side. The non-blocking-iteration requirement also surfaces as `STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_POLLING_REQUIRED` when a source can't satisfy it.
 
-For broadcast stream-static joins (the long-standing RTM-compatible enrichment pattern, available on all RTM DBRs), see [stream-static-joins.md](stream-static-joins.md) — wrap the static side in `broadcast()`.
+For broadcast stream-static joins (the long-standing RTM-compatible enrichment pattern, available on all RTM DBRs), see stream-static-joins — wrap the static side in `broadcast()`.
 
 ## `transformWithState` behavior change
 
