@@ -154,7 +154,7 @@ against:**
 
 | ID | Severity | Count |
 |---|---|---|
-| PD-6 | must-fix | 121 (was 125; the NEW-C branch shipped 4 TOCs) |
+| PD-6 | must-fix | 121 — **the last open must-fix class** |
 | PD-5 | must-fix | **0 — DONE** (was 228) |
 | PD-5b | must-fix | **0 — DONE** (was 12) |
 | SPEC-10a-cross | must-fix | **0 — DONE** (was 90) |
@@ -165,10 +165,10 @@ against:**
 | NEW-C | must-fix | **0 — DONE** (was 4) |
 | PD-4a | must-fix | **0 — DONE** (was 3) |
 | PD-4c | must-fix | **0 — DONE** (was 3; the PD-5 sweep cleared all 3) |
-| PD-1 | must-fix | 3 |
-| PD-2 | must-fix | 3 |
+| PD-1 | must-fix | **0 — DONE** (was 3) |
+| PD-2 | must-fix | **0 — DONE** (was 3) |
 | DESC-1 | must-fix | **0 — DONE** (was 6) |
-| PD-3 | rollup | 4 |
+| PD-3 | rollup | **0 — DONE** (was 4) |
 | PD-4b | blocked | 19 |
 | TOK-5 | blocked | 21 |
 | COMPAT-1 | blocked | 7 |
@@ -178,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **127** (rollup/advisory not summed); resident set **3,347 stable /
+must-fix total **121** (rollup/advisory not summed); resident set **3,347 stable /
 3,571 all-in** (was 2,975 / 3,199; the DESC-1 rewrite added 372 tokens).
 
 ---
@@ -510,30 +510,50 @@ blocked decision.
 
 ---
 
-## 11. PD-1 / PD-2 / PD-3 — SKILL.md ceiling breaches — 4 → 0
+## 11. PD-1 / PD-2 / PD-3 — SKILL.md ceiling breaches — 4 → 0 — DONE
 
-- **Finding:** PD-1 / PD-2 / PD-3
-- **Count:** 4 skills over a ceiling → **0**
-- **Backpressure:** `python3 scripts/audit_check.py --only PD-1,PD-2,PD-3` → 0,
-  plus a per-skill character-total delta ≤2% printed by the checker
+- **Finding:** PD-1 3 → 0, PD-2 3 → 0, PD-3 rollup 4 → 0.
+- **Landed** on branch `ralph/pd-1-ceilings`, off `ralph/desc-1-triggers`, in
+  two commits: the split, then the four TOCs that finish the new files.
 
-| Path | Lines | Tokens | Breach | Split |
-|---|---|---|---|---|
-| `skills/databricks-serverless-migration/SKILL.md` | 839 | 15,683 | both | "Quick Fixes Reference" → `references/quick-fixes.md`; Step 2 notebook transcripts → `references/analysis-output-examples.md` |
-| `skills/databricks-python-sdk/SKILL.md` | 625 | 4,470 | LINES only | split by SDK object family (clusters, jobs, unity catalog, serving) |
-| `skills/databricks-aibi-dashboards/SKILL.md` | 525 | 8,147 | both | widget-spec detail into existing `references/` |
-| `skills/databricks-pipelines/SKILL.md` | 258 | 8,404 | TOKENS only | decision tree + Common Traps → `references/` |
+  | Skill | before | after |
+  |---|---|---|
+  | `databricks-serverless-migration` | 839 L / 15,683 T | 262 L / 4,553 T |
+  | `databricks-python-sdk` | 625 L / 4,451 T | 325 L / 2,494 T |
+  | `databricks-aibi-dashboards` | 525 L / 8,105 T | 311 L / 4,734 T |
+  | `databricks-pipelines` | 264 L / 8,561 T | 197 L / 4,495 T |
 
-These are `specs/02`'s figures reproduced **exactly** under D6 — the previous
-plan's competing numbers (838/15,784 · 613/4,458 · 516/8,175 · 257/8,517) were
-a measurement error, not convention drift. `databricks-pipelines` passes lines
-and fails tokens: mean line 130 chars. Both ceilings bind independently.
-Closest non-breaching skill is `skills/databricks-apps` at 4,946 tokens — a
-54-token margin, so any content moved *into* it will breach.
-
-**Move content verbatim.** Do not summarise. Leave routing pointers with load
-conditions. One commit per skill, heaviest first. **Depends on items 2 and 3** —
-new reference files must ship with TOCs and without second hops.
+- **Content moved verbatim**, extracted by line range and written unmodified;
+  new references get an H1 and a one-line read condition, nothing else.
+- **Three resident anchors shaped where the cuts fell** — this is the reusable
+  lesson, because none of them is visible to a checker:
+  - `pipelines` `### Legacy DLT Syntax` is the target of four
+    `` `SKILL.md` § "Legacy DLT Syntax" `` pointers created by the
+    SPEC-10a-intra sweep. The API block was cut *around* it.
+  - `pipelines` `## Common Traps` is one of only two real gotchas sections in
+    the repo; moving it would have raised advisory PD-8 from 30 to 31.
+  - `aibi-dashboards` `## Widget Index` is the target of
+    `references/4-examples.md:28`.
+- **Three regressions the branch created and fixed in the same commit:**
+  PD-5 0 → 82 and NEW-A 0 → 82 (the same 82 links — moved content carried
+  `references/x.md` targets that became second hops *and* dangled once the
+  content sat inside `references/`), and PD-4c 0 → 9 (the moved API tables
+  **were** the routing for nine per-(feature, language) references). The PD-5
+  fix followed the recorded sweep recipe exactly; the PD-4c fix replaced the
+  now-dead `[API Reference tables above](#api-reference)` pointer with a direct
+  listing carrying read conditions.
+- **Per-skill character parity, measured on the split commit alone** as
+  required, before any TOC added characters: +0.58% / +1.52% / +0.76% /
+  −0.06%. All within 2%.
+- **PD-6 nets to zero over the branch:** 121 → 125 on the split (four new files
+  over 100 lines), 125 → 121 on the TOC commit. Fully attributable.
+- **One structural change to moved content, declared:**
+  `analysis-output-examples.md` had a single heading plus eight standalone bold
+  `**Category X**` labels, so no TOC was derivable. The eight were promoted to
+  H3 — markup only, every word byte-identical.
+- **Backpressure:** `audit_check.py --only PD-1,PD-2` → 0; must-fix 127 → **121**;
+  PD-1/PD-2/PD-3 the only rows that moved across the branch; `skills.py
+  validate` → 0; 149 tests pass.
 
 ---
 
@@ -720,7 +740,7 @@ still constrain the order.
 | 7b | `ralph/pd-5-rest` **done** | 3 + 3a · PD-5 (14 skills), PD-5b | 137 → 0; 12 → 0; PD-4c 1 → 0 |
 | 8 | ~~`ralph/pd-4c-orphans`~~ **absorbed by 7 + 7b** | 14 · PD-4c | 3 → 0, done |
 | 9 | `ralph/pd-6-toc` | 2 · PD-6 (≥3 commits) | 125 → 0 |
-| 10 | `ralph/pd-1-ceilings` | 11 · PD-1/2/3 (1 commit each) | 4 → 0 |
+| 10 | `ralph/pd-1-ceilings` | 11 · PD-1/2/3 | DONE (4 → 0) |
 | 11 | `ralph/pd-4-routing` | 13 · PD-4a | DONE (3 → 0) |
 | 12 | `ralph/desc-1-triggers` | 12 · DESC-1/3 | DONE (6 → 0) |
 | 13 | `ralph/tok-5-preview` | 6 · TOK-5 — **BLOCKED on D5** | 21 → 0 |
