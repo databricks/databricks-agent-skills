@@ -67,6 +67,18 @@ gate.
   bundle copies per file. `manifest.json` only changes when a file is added,
   removed, or renamed.
 
+- **A sweep that creates, moves, or lengthens a reference file regresses other
+  rows.** `--only <ID>` cannot see it; always finish with the unscoped run.
+  Observed: moving content into `references/` turns its `references/x.md` links
+  into second hops (**PD-5** *and* **NEW-A**, same links counted twice) and
+  orphans whatever that content was routing (**PD-4c**); adding a TOC whose
+  label repeats a heading's `(Beta)` / `(Public Preview)` raises blocked
+  **TOK-5**. Fix these in the commit that caused them.
+- **The TOC heuristic is a placement rule, not just a detector.** `## Contents`
+  must fall in the first 60 lines. Inserting it before the first section
+  heading puts it outside that window when a file opens with a long code block
+  — the file then still counts as TOC-less and takes a second TOC on the next
+  pass.
 - The counting conventions (token basis, the `../` matcher's ellipsis
   exclusion, code-fence exemption, TOC heuristic) live in the module
   docstring — that's the contract; changing one moves every number.
