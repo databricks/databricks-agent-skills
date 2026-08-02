@@ -47,10 +47,10 @@ The llms.txt file is organized by category:
 
 ## Example: Complementing Other Skills
 
-**Scenario:** User wants to create a Delta Live Tables pipeline
+**Scenario:** User wants to create a Lakeflow Spark Declarative Pipelines pipeline
 
 1. Load `databricks-pipelines` skill for workflow patterns
-2. Use this skill to fetch docs if you need clarification on specific DLT features
+2. Use this skill to fetch docs if you need clarification on specific pipeline features
 3. Use `databricks pipelines create` CLI command to create the pipeline
 
 **Scenario:** User asks about an unfamiliar Databricks feature
@@ -62,7 +62,7 @@ The llms.txt file is organized by category:
 ## Related Skills
 
 - **`databricks-python-sdk`** - SDK patterns for programmatic Databricks access
-- **databricks-pipelines** - DLT / Lakeflow pipeline workflows
+- **databricks-pipelines** - Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables / DLT) workflows
 - **`databricks-unity-catalog`** - Governance and catalog management
 - **databricks-model-serving** - Serving endpoints and model deployment
 - **`databricks-mlflow-evaluation`** - MLflow 3 GenAI evaluation workflows
