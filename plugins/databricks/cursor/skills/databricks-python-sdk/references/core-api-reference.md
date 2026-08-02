@@ -3,6 +3,24 @@
 Call shapes for each Databricks SDK object family. Read this when you need the
 exact method, arguments, or return type for a specific API.
 
+## Contents
+
+  - [Clusters API](#clusters-api)
+  - [Jobs API](#jobs-api)
+  - [SQL Statement Execution](#sql-statement-execution)
+  - [SQL Warehouses](#sql-warehouses)
+  - [Unity Catalog - Tables](#unity-catalog---tables)
+  - [Unity Catalog - Catalogs & Schemas](#unity-catalog---catalogs--schemas)
+  - [Volumes](#volumes)
+  - [Files API](#files-api)
+  - [Serving Endpoints (Model Serving)](#serving-endpoints-model-serving)
+  - [Vector Search](#vector-search)
+  - [Pipelines (Delta Live Tables)](#pipelines-delta-live-tables)
+  - [Secrets](#secrets)
+  - [DBUtils](#dbutils)
+
+---
+
 ## Core API Reference
 
 ### Clusters API

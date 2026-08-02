@@ -2,6 +2,20 @@
 
 Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-magic lint, the full finding catalogue by category, and the deployment-blocker table. Read this while writing or reviewing a scan report.
 
+## Contents
+
+  - [Post-rewrite lint: Cell-magic boundary check (A1)](#post-rewrite-lint-cell-magic-boundary-check-a1)
+- [Category A: Unsupported APIs](#category-a-unsupported-apis)
+- [Category B: Data Access](#category-b-data-access)
+- [Category C: Streaming](#category-c-streaming)
+- [Category D: Configuration](#category-d-configuration)
+- [Category E: Libraries](#category-e-libraries)
+- [Category F: Networking](#category-f-networking)
+- [Category G: Sizing & Debugging](#category-g-sizing--debugging)
+- [Category H: Job-level config (dbt_task, SDP, multi-source, deploy preconditions)](#category-h-job-level-config-dbt_task-sdp-multi-source-deploy-preconditions)
+
+---
+
 #### Post-rewrite lint: Cell-magic boundary check (A1)
 
 **HIGH IMPACT.** Before declaring a migrated notebook ready, run this lint pass on every output cell. Caused 3/7 demos to fail in the dbdemos E2E sweep (hls-readmission, fsi-fraud, retail-c360).
@@ -36,7 +50,7 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 # MAGIC %run ./00-global-setup-v2
 ```
 
-**Category A: Unsupported APIs**
+### Category A: Unsupported APIs
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
@@ -72,7 +86,7 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 | `mlflow.<flavor>.log_model(...)` without `signature=` kwarg, with `mlflow.set_registry_uri("databricks-uc")` in scope (M3) | Blocker | UC requires a model signature on every registered model. Without `signature=`, `log_model` raises `MlflowException: Model signature is required for registering a model to Unity Catalog`. Infer from a sample: `signature = infer_signature(X_sample, model.predict(X_sample))` then pass as `signature=signature` to `log_model`. See mlflow-uc-patterns. |
 | Binary-classifier prediction column written as `float64` (`Double`) when downstream Delta table expects `Integer` (M4) | Blocker on first write | sklearn binary classifiers (e.g. the AutoML → sklearn rewrite from A3) emit `predict()` results as `float64`. Writing to a Delta table whose `prediction` column is `IntegerType` fails with `DELTA_FAILED_TO_MERGE_FIELDS: prediction (Double) vs prediction (Integer)`. Cast before writing: `df.withColumn("prediction", col("prediction").cast("integer"))`. See mlflow-uc-patterns. |
 
-**Category B: Data Access**
+### Category B: Data Access
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
@@ -87,7 +101,7 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 | Bare `catalog = "<value>"` / `schema = "<value>"` assignment in `config.py`, `config/__init__.py`, `_config*.py`, or any Python file referenced via `%run` (B1) | Blocker | Catalog rewrite must scan **all** config files, not just notebook bodies that contain `spark.table(...)`. Replace literals like `"main"`, `"main__build"`, `"hive_metastore"` with the user's target catalog (typically `home_<user>`). Post-rewrite, grep the entire migrated tree for residual literal catalog refs. |
 | `spark.sql("CREATE CATALOG IF NOT EXISTS ...")` (B2) | Blocker | Privilege check fires before `IF NOT EXISTS` short-circuits, so non-admin users hit `PERMISSION_DENIED: User does not have CREATE CATALOG on Metastore` even when the catalog already exists. Guard with `SHOW CATALOGS LIKE '...'` probe first; only emit `CREATE CATALOG` if the probe returns empty. **Apply recursively across the entire migrated tree, including `_resources/00-global-setup-v2.py` and `config*` files.** Same pattern applies to `CREATE SCHEMA IF NOT EXISTS` and `CREATE VOLUME IF NOT EXISTS` in catalogs the user doesn't own. |
 
-**Category C: Streaming**
+### Category C: Streaming
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
@@ -97,7 +111,7 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 | Kafka source | Info | Works with AvailableNow; use `maxOffsetsPerTrigger` to control batch size |
 | Auto Loader | Info | Works; use `cloudFiles.maxFilesPerTrigger` (note the `cloudFiles.` prefix) |
 
-**Category D: Configuration**
+### Category D: Configuration
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
@@ -112,7 +126,7 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 | Explicit executor count/memory configs | Info | Remove — serverless auto-scales and auto-tunes |
 | Retired Foundation Model endpoint references, e.g., `databricks-meta-llama-3-1-405b-instruct` and similar (D1) | Blocker | Detect by **content scan across every migrated file** (not by filename pattern). Common refs in `ai_query(endpoint => '...')`, `ChatDatabricks(endpoint=...)`, model-serving config, and Genie/AI-Functions SQL. Replace with the current default `databricks-meta-llama-3-3-70b-instruct`. Verify the replacement endpoint exists in the target workspace before final deploy. |
 
-**Category E: Libraries**
+### Category E: Libraries
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
@@ -125,21 +139,21 @@ Worked output of the Step 2 serverless-readiness scan: the post-rewrite cell-mag
 | AutoML-trained model loaded via `mlflow.pyfunc.spark_udf(..., env_manager='local')` inside an SDP `.py` library file (E1) | Blocker | The SDP serverless image does not ship `databricks-automl-runtime`; cloudpickle.load raises `ModuleNotFoundError: No module named 'databricks.automl_runtime'`. Auto-emit `%pip install -q databricks-automl-runtime` as the first non-comment line of the SDP `.py` library file. `%pip install` is supported in SDP `.py` library files and runs once per update before SQL flows are planned. Same fix works for non-SDP notebooks loading AutoML-trained models. |
 | AutoML → sklearn rewrite (A3) with pre-existing model-serving endpoint (E2) | Blocker on first redeploy | The rewrite changes model signature (e.g., drops `id` from inputs). A pre-existing endpoint pinned to the old AutoML signature fails create/update with HTTP 400 `Failed to enforce schema of data ... Model is missing inputs ['id']`. In the downstream serving notebook for the **migrated test endpoint** (not a live production endpoint serving real traffic), flip `force_update = False` → `force_update = True` so the endpoint re-binds to the current `prod` (or `Champion`) alias. Before flipping, confirm the endpoint name matches the migrated copy. |
 
-**Category F: Networking**
+### Category F: Networking
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
 | VPC peering configuration | Blocker | Create NCCs, get stable IPs, allowlist on resource firewalls. S3 same-region access works without changes. |
 | Direct S3/ADLS access without UC | Warning | Use UC external locations |
 
-**Category G: Sizing & Debugging**
+### Category G: Sizing & Debugging
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
 | Large driver memory configs | Info | Serverless REPL default is 8GB (high-memory option for 16GB+ via Environments) |
 | Spark UI references | Info | Use Query Profile instead: click "See performance" under cell output |
 
-**Category H: Job-level config (dbt_task, SDP, multi-source, deploy preconditions)**
+### Category H: Job-level config (dbt_task, SDP, multi-source, deploy preconditions)
 
 These checks operate on the job/pipeline spec JSON and on deploy preconditions, not on notebook bodies. Apply them alongside the per-notebook checks in Categories A–G.
 

@@ -2,6 +2,21 @@
 
 Concrete rewrites for the patterns a serverless-readiness scan flags. Read this when a scan has named a pattern and you need the code change.
 
+## Contents
+
+  - [Replace DBFS paths with UC Volumes](#replace-dbfs-paths-with-uc-volumes)
+  - [Replace RDD operations with DataFrames](#replace-rdd-operations-with-dataframes)
+  - [Fix streaming triggers](#fix-streaming-triggers)
+  - [Remove caching](#remove-caching)
+  - [Other quick fixes](#other-quick-fixes)
+  - [Detect serverless at runtime](#detect-serverless-at-runtime)
+  - [Transform job config from classic to serverless](#transform-job-config-from-classic-to-serverless)
+  - [Job Definition Migration](#job-definition-migration)
+  - [Parameterize catalogs for testing](#parameterize-catalogs-for-testing)
+  - [Debug failed serverless runs](#debug-failed-serverless-runs)
+
+---
+
 ## Quick Fixes Reference
 
 ### Replace DBFS paths with UC Volumes

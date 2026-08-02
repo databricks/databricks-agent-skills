@@ -4,6 +4,17 @@ Dataset architecture, widget field expressions, Spark SQL patterns, the
 12-column layout grid, cardinality limits, and the pre-ship quality checklist.
 Read this while writing the dashboard JSON, not before.
 
+## Contents
+
+  - [1) DATASET ARCHITECTURE](#1-dataset-architecture)
+  - [2) WIDGET FIELD EXPRESSIONS](#2-widget-field-expressions)
+  - [3) SPARK SQL PATTERNS](#3-spark-sql-patterns)
+  - [4) LAYOUT (12-Column Grid, NO GAPS)](#4-layout-12-column-grid-no-gaps)
+  - [5) CARDINALITY & READABILITY (CRITICAL)](#5-cardinality--readability-critical)
+  - [6) QUALITY CHECKLIST](#6-quality-checklist)
+
+---
+
 ### 1) DATASET ARCHITECTURE
 
 - **Fewer datasets is better — aim for one dataset that backs as many widgets as possible.** Clicking a value on a chart (e.g., a bar, a slice) acts as a filter on **that dataset**, and every other widget sharing the same dataset re-renders with the click applied. Splitting widgets across many narrow datasets breaks this cross-filtering and forces users to set explicit filter widgets for what should "just work". Prefer one wide dataset per domain (orders, cases, customers); only split when a widget genuinely needs different grain, pre-aggregation, or a parameter the others can't tolerate.
