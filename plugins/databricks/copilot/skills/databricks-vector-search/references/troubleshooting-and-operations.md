@@ -2,6 +2,26 @@
 
 Operational guidance for monitoring, cost optimization, capacity planning, and migration of Databricks Vector Search resources.
 
+## Contents
+
+- [Monitoring Endpoint Status](#monitoring-endpoint-status)
+  - [Endpoint fields](#endpoint-fields)
+  - [Example](#example)
+- [Monitoring Index Status](#monitoring-index-status)
+  - [Index fields](#index-fields)
+  - [Example](#example-1)
+- [Pipeline Type Trade-offs](#pipeline-type-trade-offs)
+  - [Triggering a sync](#triggering-a-sync)
+- [Cost Optimization](#cost-optimization)
+  - [Endpoint type selection](#endpoint-type-selection)
+  - [Reducing storage costs](#reducing-storage-costs)
+- [Capacity Planning](#capacity-planning)
+- [Migration Patterns](#migration-patterns)
+  - [Changing endpoint type](#changing-endpoint-type)
+- [Expanded Troubleshooting](#expanded-troubleshooting)
+
+---
+
 ## Monitoring Endpoint Status
 
 Use `databricks vector-search-endpoints get-endpoint ENDPOINT_NAME` (CLI) or `w.vector_search_endpoints.get_endpoint()` (SDK) to check endpoint health.

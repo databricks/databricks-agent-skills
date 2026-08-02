@@ -1,5 +1,25 @@
 # Write Declarative Automation Bundles
 
+## Contents
+
+- [Bundle Structure](#bundle-structure)
+- [Main Configuration (databricks.yml)](#main-configuration-databricksyml)
+- [Path Resolution](#path-resolution)
+- [Dashboard Resources](#dashboard-resources)
+- [Jobs Resources](#jobs-resources)
+  - [Job Resource (Shared Classic Cluster)](#job-resource-shared-classic-cluster)
+- [Registered Model Resources](#registered-model-resources)
+- [Volume Resources](#volume-resources)
+- [Apps Resources](#apps-resources)
+  - [Generate from Existing App (Recommended)](#generate-from-existing-app-recommended)
+  - [Manual Configuration](#manual-configuration)
+- [Generate Configuration for Existing Resources](#generate-configuration-for-existing-resources)
+- [Other Resources](#other-resources)
+- [Substitutions](#substitutions)
+- [Key Principles](#key-principles)
+
+---
+
 ## Bundle Structure
 
 ```

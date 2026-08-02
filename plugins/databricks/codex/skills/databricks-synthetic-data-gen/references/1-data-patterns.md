@@ -4,6 +4,21 @@ Creating realistic synthetic data that tells a story.
 
 > **Note:** This guide provides principles and simplified examples. Actual implementations should be more sophisticated — use domain-specific distributions, realistic business rules, and correlations that reflect the user's actual use case. Ask clarifying questions to understand the business context before generating.
 
+## Contents
+
+- [Core Principles](#core-principles)
+  - [1. Data Must Be Interesting](#1-data-must-be-interesting)
+  - [2. Non-Uniform Distributions](#2-non-uniform-distributions)
+  - [3. Row Coherence](#3-row-coherence)
+  - [4. The 80/20 Rule](#4-the-8020-rule)
+  - [5. Time-Based Patterns](#5-time-based-patterns)
+  - [6. ML-Ready Data](#6-ml-ready-data)
+- [Referential Integrity](#referential-integrity)
+- [Data Volume](#data-volume)
+- [Remember](#remember)
+
+---
+
 ## Core Principles
 
 ### 1. Data Must Be Interesting

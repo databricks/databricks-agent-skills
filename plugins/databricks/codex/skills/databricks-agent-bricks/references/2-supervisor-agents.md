@@ -2,6 +2,16 @@
 
 For commands, see `SKILL.md`. All operations use the native `databricks supervisor-agents` CLI (Beta, requires CLI ≥ v1.0.0).
 
+## Contents
+
+- [Unity Catalog Functions](#unity-catalog-functions)
+- [External MCP Servers](#external-mcp-servers)
+- [Writing Good Descriptions](#writing-good-descriptions)
+- [Adding Examples](#adding-examples)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Unity Catalog Functions
 
 Call registered UC functions from the Supervisor Agent.

@@ -8,6 +8,26 @@ Complete mapping of API operations to documentation URLs.
 
 ---
 
+## Contents
+
+- [Clusters API](#clusters-api)
+- [Jobs API](#jobs-api)
+- [SQL Warehouses API](#sql-warehouses-api)
+- [Statement Execution API](#statement-execution-api)
+- [Tables API (Unity Catalog)](#tables-api-unity-catalog)
+- [Catalogs API](#catalogs-api)
+- [Schemas API](#schemas-api)
+- [Volumes API](#volumes-api)
+- [Files API](#files-api)
+- [Serving Endpoints API](#serving-endpoints-api)
+- [Vector Search Indexes API](#vector-search-indexes-api)
+- [Pipelines API (Delta Live Tables)](#pipelines-api-delta-live-tables)
+- [Secrets API](#secrets-api)
+- [DBUtils](#dbutils)
+- [Account-Level APIs](#account-level-apis)
+
+---
+
 ## Clusters API
 **Doc:** /workspace/compute/clusters.html
 

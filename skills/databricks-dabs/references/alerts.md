@@ -1,5 +1,17 @@
 # SQL Alerts Resources for DABs
 
+## Contents
+
+- [Critical: Schema Validation First](#critical-schema-validation-first)
+- [Common Schema Mistakes](#common-schema-mistakes)
+  - [WRONG — These fields don't exist:](#wrong--these-fields-dont-exist)
+  - [CORRECT — Alerts v2 API structure:](#correct--alerts-v2-api-structure)
+- [Alert Trigger Logic](#alert-trigger-logic)
+- [Complete Alert Resource](#complete-alert-resource)
+- [Reference](#reference)
+
+---
+
 ## Critical: Schema Validation First
 
 **ALWAYS start by inspecting the schema:**

@@ -13,6 +13,19 @@ For event-driven push (the source pushes to you instead of you pulling) the rele
 
 ---
 
+## Contents
+
+- [Decision table](#decision-table)
+- [Lakeflow Connect vs Auto Loader](#lakeflow-connect-vs-auto-loader)
+- [Lakeflow Connect vs Lakehouse Federation](#lakeflow-connect-vs-lakehouse-federation)
+- [Lakeflow Connect vs Delta Sharing](#lakeflow-connect-vs-delta-sharing)
+- [Lakeflow Connect vs Zerobus Ingest](#lakeflow-connect-vs-zerobus-ingest)
+- [Cost considerations](#cost-considerations)
+- [When Lakeflow Connect doesn't fit yet](#when-lakeflow-connect-doesnt-fit-yet)
+- [Resources](#resources)
+
+---
+
 ## Decision table
 
 Pick the row that matches your source type and constraint.

@@ -2,6 +2,26 @@
 
 **Use when:** You have an existing running cluster and need to preserve state across multiple tool calls, or need Scala/R support.
 
+## Contents
+
+- [When to Choose Interactive Cluster](#when-to-choose-interactive-cluster)
+- [Trade-offs](#trade-offs)
+- [Critical: Never Start a Cluster Without Asking](#critical-never-start-a-cluster-without-asking)
+- [Code Execution Flow (1.2 commands API)](#code-execution-flow-12-commands-api)
+  - [1. Create a context](#1-create-a-context)
+  - [2. Submit a command](#2-submit-a-command)
+  - [3. Poll status and fetch results](#3-poll-status-and-fetch-results)
+  - [4. Follow-up commands reuse the context](#4-follow-up-commands-reuse-the-context)
+  - [5. (Optional) Destroy the context](#5-optional-destroy-the-context)
+- [Language Support](#language-support)
+- [Installing Libraries](#installing-libraries)
+- [Managing Clusters](#managing-clusters)
+  - [Create with a full spec](#create-with-a-full-spec)
+- [Common Issues](#common-issues)
+- [When NOT to Use](#when-not-to-use)
+
+---
+
 ## When to Choose Interactive Cluster
 
 - Multiple sequential commands where variables must persist

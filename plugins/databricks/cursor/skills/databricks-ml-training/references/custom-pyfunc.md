@@ -4,6 +4,13 @@ When sklearn / XGBoost autolog isn't enough: custom preprocessing not captured b
 
 Same UC registry + serving story as classical ML — only the *logging* step changes.
 
+## Contents
+
+- [End-to-end example: file-based pyfunc with preprocessing + sub-model](#end-to-end-example-file-based-pyfunc-with-preprocessing--sub-model)
+- [Consume](#consume)
+
+---
+
 ## End-to-end example: file-based pyfunc with preprocessing + sub-model
 
 Project layout:

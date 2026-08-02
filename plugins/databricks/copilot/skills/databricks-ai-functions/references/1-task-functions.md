@@ -4,6 +4,23 @@ Deep reference for each task-specific function: full options, schemas, and non-t
 
 ---
 
+## Contents
+
+- [ai_analyze_sentiment](#ai_analyze_sentiment)
+- [ai_classify](#ai_classify)
+- [ai_extract](#ai_extract)
+  - [Version 2.1: citations and confidence scores](#version-21-citations-and-confidence-scores)
+- [ai_fix_grammar](#ai_fix_grammar)
+- [ai_gen](#ai_gen)
+- [ai_mask](#ai_mask)
+- [ai_similarity](#ai_similarity)
+- [ai_summarize](#ai_summarize)
+- [ai_translate](#ai_translate)
+- [ai_parse_document](#ai_parse_document)
+- [ai_prep_search](#ai_prep_search)
+
+---
+
 ## `ai_analyze_sentiment`
 
 Returns one of: `positive`, `negative`, `neutral`, `mixed`, or `NULL`.

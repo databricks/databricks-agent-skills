@@ -1,5 +1,20 @@
 # Feature Engineering (Feature Store)
 
+## Contents
+
+- [Why use Feature Engineering?](#why-use-feature-engineering)
+- [Setup](#setup)
+- [1. Create and populate feature tables](#1-create-and-populate-feature-tables)
+- [2. Build a training set with FeatureLookup](#2-build-a-training-set-with-featurelookup)
+  - [Simple lookup (no point-in-time)](#simple-lookup-no-point-in-time)
+  - [Point-in-time lookup (rolling/window features)](#point-in-time-lookup-rollingwindow-features)
+- [3. Train and register with feature lineage](#3-train-and-register-with-feature-lineage)
+- [4. Batch scoring with score_batch()](#4-batch-scoring-with-score_batch)
+- [5. Online store (real-time feature serving)](#5-online-store-real-time-feature-serving)
+- [Gotchas](#gotchas)
+
+---
+
 ## Why use Feature Engineering?
 
 **The problem it solves — training-serving skew.** When your training pipeline computes features one way and your serving pipeline computes them differently, models degrade silently in production. Feature Engineering enforces one canonical definition per feature: the same `FeatureLookup` that builds your training dataset also resolves features at `score_batch()` and inside serving endpoints — guaranteed to be identical.

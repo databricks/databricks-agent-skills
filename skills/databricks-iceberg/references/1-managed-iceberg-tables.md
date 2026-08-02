@@ -15,7 +15,7 @@ Managed Iceberg tables are native Apache Iceberg tables created and stored withi
 - [DML Operations](#dml-operations)
 - [Time Travel](#time-travel)
 - [Predictive Optimization](#predictive-optimization)
-- [Iceberg v3 (Beta)](#iceberg-v3-beta)
+- [Iceberg v3](#iceberg-v3-beta)
   - [Creating an Iceberg v3 Table](#creating-an-iceberg-v3-table)
   - [Important Notes](#important-notes)
   - [Upgrading an Existing Table to v3](#upgrading-an-existing-table-to-v3)

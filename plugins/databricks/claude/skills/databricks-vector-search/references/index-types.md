@@ -1,5 +1,29 @@
 # Vector Search Index Types
 
+## Contents
+
+- [Comparison Matrix](#comparison-matrix)
+- [Delta Sync with Managed Embeddings](#delta-sync-with-managed-embeddings)
+  - [Requirements](#requirements)
+  - [Create Index](#create-index)
+  - [Pipeline Types](#pipeline-types)
+  - [Source Table Example](#source-table-example)
+- [Delta Sync with Self-Managed Embeddings](#delta-sync-with-self-managed-embeddings)
+  - [Requirements](#requirements-1)
+  - [Create Index](#create-index-1)
+  - [Compute Embeddings](#compute-embeddings)
+  - [Source Table Example](#source-table-example-1)
+- [Direct Access Index](#direct-access-index)
+  - [Requirements](#requirements-2)
+  - [Create Index](#create-index-2)
+  - [Upsert Data](#upsert-data)
+  - [Delete Data](#delete-data)
+  - [Attach Embedding Model (Optional)](#attach-embedding-model-optional)
+- [Choosing the Right Type](#choosing-the-right-type)
+- [Endpoint Selection](#endpoint-selection)
+
+---
+
 ## Comparison Matrix
 
 | Feature | Delta Sync (Managed) | Delta Sync (Self-Managed) | Direct Access |

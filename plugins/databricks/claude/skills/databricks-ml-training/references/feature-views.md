@@ -10,6 +10,30 @@ A **Feature View** declares *what* a feature is — "7-day rolling average of `a
 
 > **Naming.** A Feature View's materialized output is a **Materialized Feature** (offline and/or online tables). The Python API has no `FeatureView` class: you work with `Feature` objects and `FeatureEngineeringClient`. (If you used the beta API, see [Migrating from the beta API](#migrating-from-the-beta-api--feature-views).)
 
+## Contents
+
+- [Why use Feature Views?](#why-use-feature-views)
+- [Setup](#setup)
+  - [Aggregation operators](#aggregation-operators)
+  - [Window types](#window-types)
+- [Batch features](#batch-features)
+  - [1. Define the source](#1-define-the-source)
+  - [2. Declare features — two equivalent patterns](#2-declare-features--two-equivalent-patterns)
+  - [3. Training set (point-in-time correct automatically)](#3-training-set-point-in-time-correct-automatically)
+  - [4. Materialize with materialize_features()](#4-materialize-with-materialize_features)
+- [Streaming features](#streaming-features)
+  - [1. Register the Kafka source as a governed Stream](#1-register-the-kafka-source-as-a-governed-stream)
+  - [2. Declare streaming features](#2-declare-streaming-features)
+  - [3. Materialize (online only, StreamingMode)](#3-materialize-online-only-streamingmode)
+  - [4. Build a training set (point-in-time from the ingestion table)](#4-build-a-training-set-point-in-time-from-the-ingestion-table)
+  - [Where do the historic events live?](#where-do-the-historic-events-live)
+- [Feature Serving Endpoint](#feature-serving-endpoint)
+- [Migrating from the beta API → Feature Views](#migrating-from-the-beta-api--feature-views)
+  - [Migration gotchas](#migration-gotchas)
+- [Feature View gotchas](#feature-view-gotchas)
+
+---
+
 ## Why use Feature Views?
 
 **The problem it solves — rolling feature boilerplate.** Writing Spark window functions for temporal features is verbose and brittle:

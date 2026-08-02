@@ -20,7 +20,7 @@ Lakebase synced tables sync data from Unity Catalog Delta tables into Lakebase a
 - [App Access](#app-access)
 - [Data Type Mapping](#data-type-mapping)
 - [Capacity Planning](#capacity-planning)
-- [Lakehouse Sync (Beta)](#lakehouse-sync-beta)
+- [Lakehouse Sync](#lakehouse-sync-beta)
 - [Use Cases](#use-cases)
 - [Best Practices](#best-practices)
 - [Constraints](#constraints)

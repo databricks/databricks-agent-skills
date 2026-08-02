@@ -2,6 +2,25 @@
 
 Build a complete Retrieval-Augmented Generation pipeline: prepare documents, create a vector index, query it, and wire it into an agent.
 
+## Contents
+
+- [CLI Commands Used](#cli-commands-used)
+- [Step 1: Prepare Source Table](#step-1-prepare-source-table)
+- [Step 2: Create Vector Search Endpoint](#step-2-create-vector-search-endpoint)
+- [Step 3: Create Delta Sync Index](#step-3-create-delta-sync-index)
+- [Step 4: Sync and Verify](#step-4-sync-and-verify)
+- [Step 5: Query the Index](#step-5-query-the-index)
+  - [With Filters](#with-filters)
+  - [Hybrid Search (Vector + Keyword)](#hybrid-search-vector--keyword)
+- [Step 6: Use in an Agent](#step-6-use-in-an-agent)
+  - [As a Tool in a ChatAgent](#as-a-tool-in-a-chatagent)
+- [Updating the Index](#updating-the-index)
+  - [Add New Documents](#add-new-documents)
+  - [Delete Documents](#delete-documents)
+- [Common Issues](#common-issues)
+
+---
+
 ## CLI Commands Used
 
 | Command | Step |

@@ -2,6 +2,22 @@
 
 **Use when:** Running intensive Python code remotely (ML training, heavy processing) that doesn't need Spark, or when code shouldn't depend on the local machine staying connected.
 
+## Contents
+
+- [When to Choose Serverless Job](#when-to-choose-serverless-job)
+- [Trade-offs](#trade-offs)
+- [Pure CLI flow](#pure-cli-flow)
+  - [1. Upload the local file as a workspace notebook](#1-upload-the-local-file-as-a-workspace-notebook)
+  - [2. Submit the run](#2-submit-the-run)
+  - [3. Check status](#3-check-status)
+  - [4. Fetch the output / error](#4-fetch-the-output--error)
+  - [5. (Optional) Delete the temp notebook](#5-optional-delete-the-temp-notebook)
+- [Output handling in the notebook](#output-handling-in-the-notebook)
+- [Common Issues](#common-issues)
+- [When NOT to Use](#when-not-to-use)
+
+---
+
 ## When to Choose Serverless Job
 
 - ML model training (runs independently of local machine)

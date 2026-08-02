@@ -2,6 +2,31 @@
 
 ---
 
+## Contents
+
+- [Part 1: Geospatial SQL](#part-1-geospatial-sql)
+  - [Geospatial Data Types](#geospatial-data-types)
+  - [Supported Geometry Subtypes](#supported-geometry-subtypes)
+  - [Format Support](#format-support)
+  - [H3 Geospatial Functions](#h3-geospatial-functions)
+  - [ST Geospatial Functions](#st-geospatial-functions)
+  - [Combining H3 and ST Functions](#combining-h3-and-st-functions)
+  - [Spatial Join Performance](#spatial-join-performance)
+- [Part 2: Collations](#part-2-collations)
+  - [Collation Types](#collation-types)
+  - [Collation Syntax](#collation-syntax)
+  - [Collation Modifiers (DBR 16.2+)](#collation-modifiers-dbr-162)
+  - [Locale Examples](#locale-examples)
+  - [Collation Precedence](#collation-precedence)
+  - [Setting Collations at Different Levels](#setting-collations-at-different-levels)
+  - [Collation Inheritance Hierarchy](#collation-inheritance-hierarchy)
+  - [Collation-Aware String Functions](#collation-aware-string-functions)
+  - [Utility Functions](#utility-functions)
+  - [Practical Collation Examples](#practical-collation-examples)
+  - [Limitations and Notes](#limitations-and-notes)
+
+---
+
 ## Part 1: Geospatial SQL
 
 Databricks SQL provides comprehensive geospatial support through two function families: **H3 functions** for hexagonal grid indexing and **ST functions** for standard spatial operations. Together they enable high-performance geospatial analytics at scale.

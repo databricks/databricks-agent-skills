@@ -2,6 +2,30 @@
 
 Common issues and solutions for synthetic data generation.
 
+## Contents
+
+- [Environment Issues](#environment-issues)
+  - [ModuleNotFoundError: faker (or other library)](#modulenotfounderror-faker-or-other-library)
+  - [serverless_compute_id error](#serverless_compute_id-error)
+- [Execution Issues](#execution-issues)
+  - [CRITICAL: cache() and persist() NOT supported on serverless](#critical-cache-and-persist-not-supported-on-serverless)
+  - [Serverless job fails to start](#serverless-job-fails-to-start)
+  - [Classic cluster startup slow (3-8 minutes)](#classic-cluster-startup-slow-3-8-minutes)
+  - ["Either base environment or version must be provided"](#either-base-environment-or-version-must-be-provided)
+- [Data Generation Issues](#data-generation-issues)
+  - [AttributeError: 'function' object has no attribute 'partitionBy'](#attributeerror-function-object-has-no-attribute-partitionby)
+  - [Faker UDF is slow](#faker-udf-is-slow)
+  - [Out of memory with large data](#out-of-memory-with-large-data)
+  - [Context corrupted on classic cluster](#context-corrupted-on-classic-cluster)
+  - [Referential integrity violations](#referential-integrity-violations)
+- [Data Quality Issues](#data-quality-issues)
+  - [Uniform distributions (unrealistic)](#uniform-distributions-unrealistic)
+  - [Missing time-based patterns](#missing-time-based-patterns)
+  - [Incoherent row attributes](#incoherent-row-attributes)
+- [Validation Steps](#validation-steps)
+
+---
+
 ## Environment Issues
 
 ### ModuleNotFoundError: faker (or other library)

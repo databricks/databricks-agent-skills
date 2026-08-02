@@ -4,6 +4,17 @@ SQL Server (cloud and on-prem) is the GA database connector. Postgres CDC, MySQL
 
 ---
 
+## Contents
+
+- [The gateway pattern](#the-gateway-pattern)
+- [SQL Server: change tracking vs CDC](#sql-server-change-tracking-vs-cdc)
+- [SQL Server cloud setup](#sql-server-cloud-setup)
+- [SQL Server on-prem](#sql-server-on-prem)
+- [Database-specific gotchas](#database-specific-gotchas)
+- [Public Preview database connectors (brief)](#public-preview-database-connectors-brief)
+
+---
+
 ## The gateway pattern
 
 Database connectors are **not** pure serverless. They split into two pipelines:

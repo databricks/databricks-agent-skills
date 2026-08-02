@@ -2,6 +2,15 @@
 
 These patterns are for apps deployed **outside** Databricks Apps (e.g., Vercel, AWS, standalone Node.js servers) using direct AI SDK v6 integration with Databricks AI Gateway. For AppKit-based apps, use the **`databricks-apps`** skill's built-in serving plugin instead.
 
+## Contents
+
+- [AI SDK v6 Streaming Pattern](#ai-sdk-v6-streaming-pattern)
+- [Streaming Client Pattern (AI SDK v6)](#streaming-client-pattern-ai-sdk-v6)
+- [Embeddings Pattern](#embeddings-pattern)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## AI SDK v6 Streaming Pattern
 
 Use this pattern for streaming AI chat with Databricks AI Gateway and Vercel AI SDK v6 in off-platform apps.

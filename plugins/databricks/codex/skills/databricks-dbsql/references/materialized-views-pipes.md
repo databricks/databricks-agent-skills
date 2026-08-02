@@ -1,5 +1,36 @@
 # Materialized Views, Temporary Tables/Views, and Pipe Syntax
 
+## Contents
+
+- [1. Materialized Views in Databricks SQL](#1-materialized-views-in-databricks-sql)
+  - [Overview](#overview)
+  - [Requirements](#requirements)
+  - [CREATE MATERIALIZED VIEW Syntax](#create-materialized-view-syntax)
+  - [Basic Examples](#basic-examples)
+  - [Refresh Options](#refresh-options)
+  - [Managing Schedules After Creation](#managing-schedules-after-creation)
+  - [Incremental vs Full Refresh](#incremental-vs-full-refresh)
+  - [Timeout Configuration](#timeout-configuration)
+  - [Monitoring](#monitoring)
+  - [Key Limitations](#key-limitations)
+  - [DBSQL Materialized Views vs Pipeline (SDP/DLT) Materialized Views](#dbsql-materialized-views-vs-pipeline-sdpdlt-materialized-views)
+  - [Best Practices](#best-practices)
+- [2. Temporary Tables and Temporary Views](#2-temporary-tables-and-temporary-views)
+  - [Temporary Tables](#temporary-tables)
+  - [Temporary Views](#temporary-views)
+  - [Temporary Tables vs Temporary Views](#temporary-tables-vs-temporary-views)
+  - [Temporary Metric Views (Added September 2025)](#temporary-metric-views-added-september-2025)
+- [3. SQL Pipe Syntax](#3-sql-pipe-syntax)
+  - [Overview](#overview-1)
+  - [Basic Syntax](#basic-syntax)
+  - [All Available Pipe Operators](#all-available-pipe-operators)
+  - [Practical Examples](#practical-examples)
+  - [Pipe Syntax vs Traditional SQL](#pipe-syntax-vs-traditional-sql)
+  - [When to Use Pipe Syntax](#when-to-use-pipe-syntax)
+  - [Performance Considerations](#performance-considerations)
+
+---
+
 ## 1. Materialized Views in Databricks SQL
 
 ### Overview

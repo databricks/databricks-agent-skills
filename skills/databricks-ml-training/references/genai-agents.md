@@ -2,6 +2,20 @@
 
 Edge case. **For most demos, use the `databricks-agent-bricks` skill** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
 
+## Contents
+
+- [What ResponsesAgent is](#what-responsesagent-is)
+- [Full example: LangGraph agent with UC Function + Vector Search tools](#full-example-langgraph-agent-with-uc-function--vector-search-tools)
+  - [CRITICAL: output items must use helper methods](#critical-output-items-must-use-helper-methods)
+- [Log + register](#log--register)
+  - [Resources that need passthrough auth](#resources-that-need-passthrough-auth)
+- [Deploy (async job, ~15 min)](#deploy-async-job-15-min)
+- [Query](#query)
+- [Iteration](#iteration)
+- [Packages](#packages)
+
+---
+
 ## What ResponsesAgent is
 
 MLflow 3's standardized agent interface. OpenAI-compatible request/response (`{input: [{role, content}]}` → `{output: [...]}`). Supports streaming. Logs with `python_model="agent.py"` (file-based) and deploys via `databricks.agents.deploy()` to a serving endpoint with built-in tracing and eval hooks.

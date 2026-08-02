@@ -4,6 +4,42 @@ Comprehensive reference for data modeling patterns, DBSQL performance optimizati
 
 ---
 
+## Contents
+
+- [Data Modeling Best Practices](#data-modeling-best-practices)
+  - [Star Schema vs Denormalization in the Lakehouse](#star-schema-vs-denormalization-in-the-lakehouse)
+  - [When to Normalize vs Denormalize](#when-to-normalize-vs-denormalize)
+  - [Kimball-Style Modeling in Databricks](#kimball-style-modeling-in-databricks)
+  - [Fact Table Patterns](#fact-table-patterns)
+  - [Dimension Table Patterns](#dimension-table-patterns)
+  - [Slowly Changing Dimensions (SCD) Patterns](#slowly-changing-dimensions-scd-patterns)
+  - [Partitioning Strategies](#partitioning-strategies)
+  - [Liquid Clustering vs Traditional Partitioning](#liquid-clustering-vs-traditional-partitioning)
+  - [Z-Ordering Considerations](#z-ordering-considerations)
+- [DBSQL Performance](#dbsql-performance)
+  - [Query Optimization Tips](#query-optimization-tips)
+  - [Warehouse Sizing Guidance](#warehouse-sizing-guidance)
+  - [Caching Strategies](#caching-strategies)
+  - [Photon Engine Benefits](#photon-engine-benefits)
+  - [Recent Performance Improvements (2025)](#recent-performance-improvements-2025)
+  - [Cost Optimization Patterns](#cost-optimization-patterns)
+- [Delta Lake Optimization for DBSQL](#delta-lake-optimization-for-dbsql)
+  - [OPTIMIZE, VACUUM, and ANALYZE](#optimize-vacuum-and-analyze)
+  - [File Size and Compaction](#file-size-and-compaction)
+  - [Table Properties for Performance](#table-properties-for-performance)
+- [Unity Catalog Integration Patterns](#unity-catalog-integration-patterns)
+  - [Organization Best Practices](#organization-best-practices)
+  - [Governance Features for Data Modeling](#governance-features-for-data-modeling)
+  - [Entity Relationship Visualization](#entity-relationship-visualization)
+- [Monitoring and Observability](#monitoring-and-observability)
+- [Common Anti-Patterns to Avoid](#common-anti-patterns-to-avoid)
+  - [Data Modeling Anti-Patterns](#data-modeling-anti-patterns)
+  - [Query and Performance Anti-Patterns](#query-and-performance-anti-patterns)
+  - [Operational Anti-Patterns](#operational-anti-patterns)
+- [Quick Reference: SQL Patterns for AI Agents](#quick-reference-sql-patterns-for-ai-agents)
+
+---
+
 ## Data Modeling Best Practices
 
 ### Star Schema vs Denormalization in the Lakehouse

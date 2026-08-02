@@ -2,6 +2,23 @@
 
 Databricks Vector Search supports three search modes: **ANN** (semantic, default), **HYBRID** (semantic + keyword), and **FULL_TEXT** (keyword only, beta). ANN and HYBRID work with Delta Sync and Direct Access indexes.
 
+## Contents
+
+- [Semantic Search (ANN)](#semantic-search-ann)
+  - [When to use](#when-to-use)
+  - [Example](#example)
+- [Hybrid Search](#hybrid-search)
+  - [When to use](#when-to-use-1)
+  - [Example](#example-1)
+- [Decision Guide](#decision-guide)
+- [Combining Search Modes with Filters](#combining-search-modes-with-filters)
+  - [Standard endpoint with hybrid search](#standard-endpoint-with-hybrid-search)
+  - [Storage-Optimized endpoint with hybrid search](#storage-optimized-endpoint-with-hybrid-search)
+- [Using with Pre-Computed Embeddings](#using-with-pre-computed-embeddings)
+- [Parameter Reference](#parameter-reference)
+
+---
+
 ## Semantic Search (ANN)
 
 ANN (Approximate Nearest Neighbor) is the default search mode. It finds documents by vector similarity — matching the *meaning* of your query against stored embeddings.

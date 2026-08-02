@@ -4,6 +4,20 @@ The six GA SaaS connectors (Salesforce, Workday Reports, ServiceNow, Google Anal
 
 ---
 
+## Contents
+
+- [The unified SaaS pattern](#the-unified-saas-pattern)
+- [Salesforce](#salesforce)
+- [Workday Reports (RaaS)](#workday-reports-raas)
+- [ServiceNow](#servicenow)
+- [Google Analytics 4](#google-analytics-4)
+- [HubSpot](#hubspot)
+- [Confluence](#confluence)
+- [DAB pattern for SaaS connectors](#dab-pattern-for-saas-connectors)
+- [Common SaaS gotchas](#common-saas-gotchas)
+
+---
+
 ## The unified SaaS pattern
 
 Three steps for every SaaS connector:

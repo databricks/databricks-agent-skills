@@ -2,6 +2,15 @@
 
 Full skeleton for a Python data source covering all four modes: batch read, batch write, stream read, stream write. Adapt to your needs — most connectors only implement a subset.
 
+## Contents
+
+- [Registration and Usage](#registration-and-usage)
+
+The template below is a single fenced block covering all four modes in
+order: batch read, batch write, stream read, stream write.
+
+---
+
 ```python
 from pyspark.sql.datasource import (
     DataSource, DataSourceReader, DataSourceWriter,
@@ -119,12 +128,6 @@ class YourStreamReader(YourReader, DataSourceStreamReader):
     def commit(self, end):
         pass
 ```
-
-## Contents
-
-- [Registration and Usage](#registration-and-usage)
-
----
 
 ## Registration and Usage
 
