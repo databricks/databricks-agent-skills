@@ -121,7 +121,7 @@ For complete DABs guidance, use the **databricks-dabs** skill.
 
 ## Option 3: CLI Commands
 
-For CLI-based app lifecycle management, see [6-cli-approach.md](6-cli-approach.md).
+For CLI-based app lifecycle management, see 6-cli-approach.
 
 ---
 

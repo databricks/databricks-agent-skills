@@ -103,5 +103,5 @@ Benefits:
 
 ## Related
 
-- [4-snowflake-interop.md](4-snowflake-interop.md) — Snowflake reading Databricks via catalog integration (uses IRC)
-- [5-external-engine-interop.md](5-external-engine-interop.md) — Per-engine connection configs: PyIceberg, OSS Spark, EMR, Flink, Kafka Connect, DuckDB, Trino
+- 4-snowflake-interop — Snowflake reading Databricks via catalog integration (uses IRC)
+- 5-external-engine-interop — Per-engine connection configs: PyIceberg, OSS Spark, EMR, Flink, Kafka Connect, DuckDB, Trino

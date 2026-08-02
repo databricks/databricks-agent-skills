@@ -108,7 +108,7 @@ for cluster in w.clusters.list():
     print(f"{cluster.cluster_name}: {cluster.state}")
 ```
 
-For Lakebase patterns, see [5-lakebase.md](5-lakebase.md).
+For Lakebase patterns, see 5-lakebase.
 
 ---
 

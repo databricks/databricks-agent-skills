@@ -254,5 +254,5 @@ class State(rx.State):
 - Add only additional packages your app needs to `requirements.txt`
 - SDK `Config()` auto-detects credentials from injected environment variables
 - Apps must bind to `DATABRICKS_APP_PORT` env var (defaults to 8000). Streamlit is auto-configured by the runtime; for other frameworks, read the env var in code or hardcode 8000 in `app.yaml` command. **Never use 8080**
-- For framework-specific deployment commands, see [4-deployment.md](4-deployment.md)
-- For authorization integration, see [1-authorization.md](1-authorization.md)
+- For framework-specific deployment commands, see 4-deployment
+- For authorization integration, see 1-authorization

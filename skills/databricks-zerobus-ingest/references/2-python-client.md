@@ -61,7 +61,7 @@ finally:
 
 ## Protobuf Ingestion
 
-For type-safe production workloads, use Protobuf. First generate and compile your `.proto` (see [4-protobuf-schema.md](4-protobuf-schema.md)), then:
+For type-safe production workloads, use Protobuf. First generate and compile your `.proto` (see 4-protobuf-schema), then:
 
 ```python
 import os

@@ -95,10 +95,10 @@ Max output size is 5 MB. Larger results should be written to a Volume/object sto
 
 ## When NOT to Use
 
-Switch to **[Databricks Connect](1-databricks-connect.md)** when:
+Switch to **Databricks Connect** (1-databricks-connect) when:
 - Iterating on Spark code and want instant feedback
 - Need local debugging with breakpoints
 
-Switch to **[Interactive Cluster](3-interactive-cluster.md)** when:
+Switch to **Interactive Cluster** (3-interactive-cluster) when:
 - Need state across multiple tool calls
 - Need Scala or R support

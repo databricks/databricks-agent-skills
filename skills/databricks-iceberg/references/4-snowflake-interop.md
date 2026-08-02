@@ -346,4 +346,4 @@ ORDER BY order_date DESC;
 
 ## Related
 
-- [3-iceberg-rest-catalog.md](3-iceberg-rest-catalog.md) — IRC endpoint details and authentication
+- 3-iceberg-rest-catalog — IRC endpoint details and authentication

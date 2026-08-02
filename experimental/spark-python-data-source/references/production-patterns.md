@@ -194,7 +194,7 @@ class SecureDataSource:
             )
 ```
 
-For credential sanitization in logs and secrets management, see [authentication-patterns.md](authentication-patterns.md) — the "Security Best Practices" and "Use Secrets Management" sections.
+For credential sanitization in logs and secrets management, see authentication-patterns — the "Security Best Practices" and "Use Secrets Management" sections.
 
 ## Configuration Validation
 
