@@ -47,6 +47,11 @@ here; changing one changes every number below):
 - **D3 — reference-to-reference** is a markdown link from a file under
   `references/` to another `.md` resolving inside the same `references/` tree,
   excluding self-links and fenced blocks.
+- **D14 — GEN-1 counts staleness, not edits.** The one row that leaves skill
+  content: a generated file counts when it differs from a fresh
+  `scripts/skills.py generate`, never merely because the branch touched it.
+  Counting edits would contradict `skills.py validate`, which fails on exactly
+  the opposite condition, and no commit could satisfy both.
 """
 
 import argparse
@@ -58,11 +63,21 @@ from pathlib import Path
 # sys.path, so `import skillsgen` would fail. Same guard as scripts/skills.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from skillsgen.bundle import check_generated_bundle  # noqa: E402
+from skillsgen.common import META_FILE, load_meta  # noqa: E402
 from skillsgen.discovery import (  # noqa: E402  (path guard must run first)
+    check_codex_metadata,
     extract_description_from_skill,
     iter_all_skill_dirs,
     iter_skill_dirs,
 )
+from skillsgen.hooks import check_generated_hooks  # noqa: E402
+from skillsgen.manifest import (  # noqa: E402
+    generate_manifest,
+    serialize_manifest,
+)
+from skillsgen.plugins import check_generated_plugins  # noqa: E402
+from skillsgen.routing import check_generated_routing  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -775,6 +790,77 @@ def check_mnt_6(repo_root: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# GEN-1 — generated artifacts out of date with their source
+# ---------------------------------------------------------------------------
+# `plugins/**`, `manifest.json`, `rules/`, `hooks/*.json`, and each skill's
+# `agents/` + `assets/` are generated from `metaplugin/plugin.meta.json` and the
+# skill sources by `scripts/skills.py generate`. Hand edits get silently
+# overwritten, and mirroring a skills/ change into all four platform trees by
+# hand inflates a diff ~5x.
+#
+# The gate is freshness, not untouchedness. An earlier form of this check failed
+# on *any* diff under those paths, which put it in direct conflict with
+# `scripts/skills.py validate` — that one fails when the same paths are STALE.
+# No single commit could satisfy both, so every content sweep had to be split
+# into a sweep commit (clean here, stale there) and a self-heal commit (clean
+# there, dirty here). Asking "does this tree match a fresh build?" instead lets
+# one commit pass both gates, and still fails a hand edit: to pass, the edit has
+# to be byte-identical to what the generator writes.
+#
+# It reuses the generator's own drift checks rather than re-deriving them, in
+# `generate_all`'s order, so GEN-1 and `skills.py validate` can never disagree
+# about what "generated" means.
+
+
+def _check_manifest_freshness(repo_root: Path) -> list[str]:
+    """manifest.json vs a fresh build, in the generator's canonical form.
+
+    `skills.py validate` reports this by printing both documents; here it is one
+    violation, because the unit is files out of date, not lines that differ.
+    """
+    path = repo_root / "manifest.json"
+    if not path.exists():
+        return ["manifest.json: missing (generate writes it from skills/)"]
+    if read_text(path) != serialize_manifest(generate_manifest(repo_root)):
+        return [
+            "manifest.json: out of date with skills/ (generate rewrites it, but "
+            "only `git add` puts it in the commit)"
+        ]
+    return []
+
+
+def check_gen_1(repo_root: Path) -> list[str]:
+    """Generated files that differ from what `skills.py generate` would write.
+
+    The unit is **files out of date**. Zero means the working tree is a fresh
+    build of its own source, which is exactly the state `skills.py validate`
+    requires — so a regeneration commit is clean here, and a commit that edits
+    `skills/` without regenerating is not.
+
+    One limit: the *content* of a hand-authored `agents/openai.yaml` is never
+    judged, because the generator synthesises that file only when it is absent
+    and otherwise preserves it — an edited one is what a fresh build produces.
+    Editing it still counts until the bundled copy is regenerated to match.
+    """
+    try:
+        meta = load_meta(repo_root)
+    except (OSError, ValueError) as exc:
+        # ValueError covers json.JSONDecodeError. Nothing downstream can be
+        # checked without the source of truth, so report it as the one defect.
+        return [f"{META_FILE}: unreadable, so no generated artifact can be "
+                f"checked against it ({exc})"]
+
+    return [
+        *check_codex_metadata(repo_root),
+        *check_generated_plugins(repo_root, meta),
+        *check_generated_routing(repo_root, meta),
+        *check_generated_hooks(repo_root, meta),
+        *_check_manifest_freshness(repo_root),
+        *check_generated_bundle(repo_root, meta),
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Registry + CLI
 # ---------------------------------------------------------------------------
 
@@ -801,6 +887,8 @@ FINDINGS: tuple[tuple[str, str, str, object], ...] = (
     ("PD-2", MUST_FIX, "SKILL.md over 5,000 tokens", check_pd_2),
     ("PD-3", ROLLUP, "skills over either ceiling (PD-1 u PD-2)", check_pd_3),
     ("DESC-1", MUST_FIX, "descriptions without trigger conditions", check_desc_1),
+    ("GEN-1", MUST_FIX, "generated files out of date with their source",
+     check_gen_1),
     ("TOK-5", BLOCKED, "uncontained preview/beta markers (strict)", check_tok_5),
     ("COMPAT-1", BLOCKED, "compatibility pin shapes beyond one", check_compat_1),
     ("SPEC-10a-fence", ADVISORY, "in-fence '../' (exempt, context only)",
@@ -916,53 +1004,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# --- Generated-artifact guard -------------------------------------------------
-# plugins/**, manifest.json, rules/, hooks/, */agents/openai.yaml and */assets/
-# are generated from metaplugin/plugin.meta.json by scripts/skills.py generate.
-# Hand edits get silently overwritten, and mirroring a skills/ change into all
-# four platform trees inflates a diff ~5x. Prose guardrails did not hold this;
-# backpressure does.
-
-import re as _re
-import subprocess as _sp
-
-_GENERATED = (
-    _re.compile(r"^plugins/"),
-    _re.compile(r"^manifest\.json$"),
-    _re.compile(r"^rules/"),
-    _re.compile(r"^hooks/.*\.json$"),
-    _re.compile(r"^(skills|experimental)/[^/]+/agents/"),
-    _re.compile(r"^(skills|experimental)/[^/]+/assets/"),
-)
-
-
-def check_generated_artifacts(base: str = "upstream/main") -> int:
-    """Fail if the working branch touches generated output. Returns violation count."""
-    try:
-        merge_base = _sp.run(
-            ["git", "merge-base", "HEAD", base],
-            capture_output=True, text=True, check=True,
-        ).stdout.strip()
-        changed = _sp.run(
-            ["git", "diff", "--name-only", merge_base],
-            capture_output=True, text=True, check=True,
-        ).stdout.split()
-    except (_sp.CalledProcessError, FileNotFoundError) as exc:
-        raise RuntimeError(
-            f"GEN-1: cannot diff against {base} to check generated artifacts: {exc}"
-        ) from exc
-
-    hits = [p for p in changed if any(rx.match(p) for rx in _GENERATED)]
-    if hits:
-        shown = "\n  ".join(hits[:15])
-        more = f"\n  ... and {len(hits) - 15} more" if len(hits) > 15 else ""
-        raise RuntimeError(
-            f"GEN-1 (must-fix): {len(hits)} generated artifacts modified.\n"
-            f"  {shown}{more}\n"
-            f"  Source of truth is metaplugin/plugin.meta.json.\n"
-            f"  Fix: git checkout {base} -- plugins/ && "
-            f"python3 scripts/skills.py generate"
-        )
-    return 0

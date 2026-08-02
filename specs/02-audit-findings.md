@@ -109,6 +109,9 @@ commit), `databricks-unity-catalog` (29), `databricks-aibi-dashboards` (19),
 Fix: strip inter-reference links to plain names; ensure every reference is
 linked directly from its SKILL.md with a load condition.
 
+Clearing `PD-5` also clears all 3 `PD-4c` orphans — the second clause of that
+fix *is* the PD-4c fix. See PD-4c.
+
 ### PD-5b — nested `references/` subdirectory
 **Count (`PD-5b`): 12 files in 1 skill. Target 0.**
 
@@ -181,6 +184,16 @@ commit message.
 - `databricks-lakebase/references/medallion-from-cdc.md`
 - `databricks-pipelines/references/python-basics.md`
 - `databricks-pipelines/references/sql-basics.md`
+
+**Not an independent class — a consequence of `PD-5`.** All three cleared inside
+the PD-5 sweeps, with no PD-4c pass of their own. Each was reachable only
+through a second hop, and a reference reachable only that way is an orphan
+whether or not an orphan checker notices — this row happens to, because it is
+rooted at SKILL.md. PD-5's fix already ends "ensure every reference is linked
+directly from its SKILL.md with a load condition" — that clause *is* this fix,
+which is why the sweep that strips the hop must re-route the file in the same
+commit. The row stays, because it is what catches a *new* orphan; the branch
+does not — **`ralph/pd-4c-orphans` is retired.**
 
 ### DESC-1 / DESC-3 — descriptions without trigger conditions
 **Count (`DESC-1`): 6 descriptions across 6 skills. Target 0.**

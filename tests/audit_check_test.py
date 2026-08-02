@@ -206,6 +206,67 @@ class CompatTest(unittest.TestCase):
         )
 
 
+class GeneratedFreshnessTest(FixtureTest):
+    """D14 — GEN-1 counts staleness against a fresh build, never edits.
+
+    The fixtures use `manifest.json` because it is the one generated artifact
+    that builds from `skills/` alone; the rest need `metaplugin/`, and the
+    delegation test below covers those.
+    """
+
+    def _fresh_manifest(self) -> None:
+        self.repo.skill("databricks-demo", "body\n", "description: Use when demoing.\n")
+        (self.repo.root / "manifest.json").write_text(
+            audit.serialize_manifest(audit.generate_manifest(self.repo.root))
+        )
+
+    def test_a_freshly_generated_artifact_is_clean(self):
+        # The case the old edit-based guard got backwards: a regeneration commit
+        # rewrites this file, and rewriting it is what makes it correct.
+        self._fresh_manifest()
+        self.assertEqual(audit._check_manifest_freshness(self.repo.root), [])
+
+    def test_a_hand_edit_is_one_violation(self):
+        self._fresh_manifest()
+        path = self.repo.root / "manifest.json"
+        path.write_text(path.read_text().replace('"version": "2"', '"version": "3"'))
+        self.assertEqual(len(audit._check_manifest_freshness(self.repo.root)), 1)
+
+    def test_source_moving_without_a_regenerate_is_one_violation(self):
+        self._fresh_manifest()
+        self.repo.skill("databricks-other", "body\n", "description: Use when other.\n")
+        self.assertEqual(len(audit._check_manifest_freshness(self.repo.root)), 1)
+
+    def test_a_missing_artifact_is_one_violation(self):
+        self.repo.skill("databricks-demo", "body\n", "description: Use when demoing.\n")
+        self.assertEqual(len(audit._check_manifest_freshness(self.repo.root)), 1)
+
+    def test_unreadable_source_of_truth_reports_rather_than_raises(self):
+        # House rule: every check_* returns list[str]. A fixture root has no
+        # metaplugin/, and that has to read as one defect, not a traceback.
+        violations = audit.check_gen_1(self.repo.root)
+        self.assertEqual(len(violations), 1)
+        self.assertIn(audit.META_FILE, violations[0])
+
+
+class GenOneDelegationTest(unittest.TestCase):
+    """GEN-1 and `skills.py validate` cannot disagree about what "generated" means."""
+
+    def test_gen_1_is_exactly_the_generators_own_drift_checks(self):
+        meta = audit.load_meta(_REPO)
+        self.assertEqual(
+            audit.check_gen_1(_REPO),
+            [
+                *audit.check_codex_metadata(_REPO),
+                *audit.check_generated_plugins(_REPO, meta),
+                *audit.check_generated_routing(_REPO, meta),
+                *audit.check_generated_hooks(_REPO, meta),
+                *audit._check_manifest_freshness(_REPO),
+                *audit.check_generated_bundle(_REPO, meta),
+            ],
+        )
+
+
 class RegistryTest(unittest.TestCase):
     """Every registered finding runs against the real corpus."""
 

@@ -29,6 +29,10 @@ first:
   `plugins/databricks/` bundle — a generated copy of the source). CI re-renders
   them and fails on any drift, including a bundle that does not match a fresh
   build. Edit the source and run `scripts/skills.py generate`.
+- **`manifest.json` is generated alongside `plugins/` and has to be staged with
+  it.** `generate` writes it, but only `git add` puts it in the commit, and CI
+  validates the commit — so a green `validate` in the working tree is not a
+  green commit. `git add -A` after every `generate`.
 
 ## Auditing skill content
 
@@ -44,6 +48,15 @@ gate.
   ID exits 2 and prints the known IDs.
 - Advisory, blocked, and rollup findings do not affect the exit status unless
   named explicitly in `--only`.
+- `--only GEN-1` is the one row that is not skill content: generated artifacts
+  against a fresh `skills.py generate`. It measures staleness, not edits, so it
+  agrees with `skills.py validate` — regenerate and stage in the same commit as
+  the sweep, and both stay green.
+- **Substituting a plain name for a link is not mechanical.** Check whether the
+  label named the *file* or named a *thing*: the second demotes a product name
+  to a filename. Ten across four sites in the PD-5 sweep, every one caught by
+  reading the diff — no gate counts them. Fix shape: keep the name,
+  parenthesise the pointer.
 - Run it from the repo root — it resolves the corpus relative to its own
   path, so any cwd works, but the paths it prints are repo-relative. There is
   no `--root` flag: to measure another commit, `git worktree add` it and run
