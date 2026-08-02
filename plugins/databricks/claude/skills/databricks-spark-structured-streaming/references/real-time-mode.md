@@ -11,6 +11,28 @@ RTM is a Structured Streaming execution mode that processes records continuously
 
 For broader streaming topics (checkpoints, watermarks, micro-batch tuning), see the other references in this skill. This file covers only what is RTM-specific.
 
+## Contents
+
+- [Cluster setup](#cluster-setup)
+- [Trigger and output mode](#trigger-and-output-mode)
+- [Slot math](#slot-math)
+- [Supported sources and sinks](#supported-sources-and-sinks)
+- [Supported operations](#supported-operations)
+  - [Stateless (lower cost, lower latency)](#stateless-lower-cost-lower-latency)
+  - [Stateful (higher cost, requires more slots)](#stateful-higher-cost-requires-more-slots)
+  - [Not supported in RTM](#not-supported-in-rtm)
+- [Stream-stream inner join (DBR 18+)](#stream-stream-inner-join-dbr-18)
+- [transformWithState behavior change](#transformwithstate-behavior-change)
+- [Verifying and observing RTM](#verifying-and-observing-rtm)
+  - [Confirm the query is actually in RTM](#confirm-the-query-is-actually-in-rtm)
+  - [Built-in latency metrics](#built-in-latency-metrics)
+  - [Diagnose-by-metric](#diagnose-by-metric)
+- [Delivery semantics](#delivery-semantics)
+- [Common errors](#common-errors)
+- [Worker memory and GC](#worker-memory-and-gc)
+
+---
+
 ## Cluster setup
 
 RTM has hard cluster requirements. Get any of these wrong and the stream either won't start or won't be low-latency.

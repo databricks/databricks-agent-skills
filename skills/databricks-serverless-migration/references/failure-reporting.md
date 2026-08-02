@@ -2,6 +2,18 @@
 
 Reference for the Failure Reporting Protocol in `SKILL.md`. Read this when migration could not complete and you need to file a GitHub issue with anonymized context.
 
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [Redaction checklist (apply before writing the JSON)](#redaction-checklist-apply-before-writing-the-json)
+- [Building the pre-filled GitHub issue URL](#building-the-pre-filled-github-issue-url)
+  - [Title format](#title-format)
+  - [Body skeleton](#body-skeleton)
+  - [URL-encoding](#url-encoding)
+  - [Worked example](#worked-example)
+
+---
+
 ## Why this exists
 
 The skill detects ~40 patterns across 7 categories today. Every new pattern in the wild that the skill doesn't recognize, every fix that didn't work, every Cat 3 blocker surfaced late — these are the inputs that close detection gaps. Reports are opt-in and never auto-submitted; the user owns the data.

@@ -7,6 +7,40 @@ description: Configure watermarks and manage state stores for Spark Structured S
 
 Configure watermarks to handle late-arriving data and manage state stores for stateful streaming operations. Watermarks control state cleanup, while state stores handle the storage and retrieval of stateful data.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Watermark Configuration](#watermark-configuration)
+  - [How Watermarks Work](#how-watermarks-work)
+  - [Watermark Duration Selection](#watermark-duration-selection)
+  - [Watermark and State Size](#watermark-and-state-size)
+- [State Store Configuration](#state-store-configuration)
+  - [Enable RocksDB](#enable-rocksdb)
+  - [State Store Configuration](#state-store-configuration-1)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Basic Stateful Operation with Watermark](#pattern-1-basic-stateful-operation-with-watermark)
+  - [Pattern 2: Join-Specific Watermark Tuning](#pattern-2-join-specific-watermark-tuning)
+  - [Pattern 3: Windowed Aggregations with Watermark](#pattern-3-windowed-aggregations-with-watermark)
+  - [Pattern 4: Monitor State Partition Balance](#pattern-4-monitor-state-partition-balance)
+  - [Pattern 5: Monitor State Growth](#pattern-5-monitor-state-growth)
+- [State Size Control](#state-size-control)
+  - [Use Watermarks](#use-watermarks)
+  - [Reduce Key Cardinality](#reduce-key-cardinality)
+- [Monitoring](#monitoring)
+  - [Programmatic State Monitoring](#programmatic-state-monitoring)
+  - [Track Late Data Rates](#track-late-data-rates)
+- [Late Data Classification](#late-data-classification)
+- [Common Issues](#common-issues)
+- [State Store Recovery](#state-store-recovery)
+- [Production Best Practices](#production-best-practices)
+  - [Always Use Watermarks for Stateful Operations](#always-use-watermarks-for-stateful-operations)
+  - [Watermark Selection](#watermark-selection)
+  - [Use RocksDB for Large State](#use-rocksdb-for-large-state)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

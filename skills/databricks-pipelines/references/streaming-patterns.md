@@ -6,6 +6,28 @@ For stream-to-stream joins as a perf-framed topic, see performance#join-optimiza
 
 ---
 
+## Contents
+
+- [Deduplication](#deduplication)
+  - [By key (keep first)](#by-key-keep-first)
+  - [Within a time window (tolerates late arrivals)](#within-a-time-window-tolerates-late-arrivals)
+  - [When to use Auto CDC instead](#when-to-use-auto-cdc-instead)
+- [Windowed Aggregations](#windowed-aggregations)
+  - [Tumbling windows (non-overlapping, fixed size)](#tumbling-windows-non-overlapping-fixed-size)
+  - [Session windows (inactivity-bounded)](#session-windows-inactivity-bounded)
+  - [Window-size guidance](#window-size-guidance)
+- [Late-Arriving Data](#late-arriving-data)
+- [Rescue-Data Quarantine](#rescue-data-quarantine)
+- [Stream-to-Stream Joins](#stream-to-stream-joins)
+- [Incremental Aggregations (Running Totals)](#incremental-aggregations-running-totals)
+- [Anomaly Detection](#anomaly-detection)
+  - [Rolling z-score outlier flag](#rolling-z-score-outlier-flag)
+- [Monitoring Lag](#monitoring-lag)
+- [Best Practices](#best-practices)
+- [Common Issues](#common-issues)
+
+---
+
 ## Deduplication
 
 Apply at the bronze → silver transition. Bronze accepts duplicates, silver is clean.

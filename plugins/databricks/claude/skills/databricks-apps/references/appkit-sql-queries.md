@@ -8,6 +8,22 @@
 - App Kit automatically executes queries against configured Databricks warehouse
 - Benefits: Built-in caching, proper connection pooling, better performance
 
+## Contents
+
+- [Type Generation](#type-generation)
+- [Query Schemas (Optional)](#query-schemas-optional)
+- [SQL Type Handling (Critical)](#sql-type-handling-critical)
+- [Available sql.* Helpers](#available-sql-helpers)
+- [Databricks SQL Dialect](#databricks-sql-dialect)
+- [Before Running npm run typegen](#before-running-npm-run-typegen)
+- [Query Parameterization](#query-parameterization)
+  - [SQL Parameter Syntax](#sql-parameter-syntax)
+  - [Frontend Parameter Passing](#frontend-parameter-passing)
+  - [Date Parameters](#date-parameters)
+  - [Optional Date Parameters - Use Sentinel Dates](#optional-date-parameters---use-sentinel-dates)
+
+---
+
 ## Type Generation
 
 For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`

@@ -4,6 +4,26 @@ JSON field reference for `databricks pipelines create --json '{...}'` and `datab
 
 Defaults to **serverless + Unity Catalog**. Don't set `serverless: false` unless the user explicitly needs R, Spark RDD APIs, or JAR / Maven libraries.
 
+## Contents
+
+- [Canonical Create (dev / iteration defaults)](#canonical-create-dev--iteration-defaults)
+- [Top-Level Fields](#top-level-fields)
+- [clusters[] — Classic Cluster Config](#clusters--classic-cluster-config)
+- [event_log — Custom Event Log Table](#event_log--custom-event-log-table)
+- [notifications[] — Alerts](#notifications--alerts)
+- [configuration — Spark / Pipeline Config](#configuration--spark--pipeline-config)
+- [run_as — Execution Identity](#run_as--execution-identity)
+- [restart_window — Continuous-Pipeline Restart Window](#restart_window--continuous-pipeline-restart-window)
+- [filters — Path Filtering](#filters--path-filtering)
+- [environment — Serverless Python Deps](#environment--serverless-python-deps)
+- [deployment — Deployment Method](#deployment--deployment-method)
+- [Variant Snippets](#variant-snippets)
+- [Updating an Existing Pipeline](#updating-an-existing-pipeline)
+- [Multi-Schema Patterns](#multi-schema-patterns)
+- [Platform Constraints](#platform-constraints)
+
+---
+
 ## Canonical Create (dev / iteration defaults)
 
 For dev, demo, and iteration work, always pass these fields:

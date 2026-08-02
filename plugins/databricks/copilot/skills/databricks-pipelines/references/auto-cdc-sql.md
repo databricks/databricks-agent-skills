@@ -4,6 +4,20 @@
 
 > SQL only supports CDC from streaming sources (`AUTO CDC INTO`). For periodic-snapshot CDC, use Python's `dp.create_auto_cdc_from_snapshot_flow()` — see auto-cdc-python.
 
+## Contents
+
+- [Syntax](#syntax)
+- [Patterns](#patterns)
+  - [Basic (SCD Type 1, default)](#basic-scd-type-1-default)
+  - [Pre-filter via temporary view (when the source needs transformation)](#pre-filter-via-temporary-view-when-the-source-needs-transformation)
+  - [Explicit deletes + ignore NULL updates](#explicit-deletes--ignore-null-updates)
+  - [SCD Type 2 (full history)](#scd-type-2-full-history)
+  - [Selective columns](#selective-columns)
+  - [Multi-column sequencing](#multi-column-sequencing)
+  - [TRUNCATE support (SCD Type 1 only)](#truncate-support-scd-type-1-only)
+
+---
+
 ## Syntax
 
 ```sql

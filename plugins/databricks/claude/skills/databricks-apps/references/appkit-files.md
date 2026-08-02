@@ -4,6 +4,26 @@
 
 Use the `files()` plugin when your app needs to **browse, upload, download, or manage files** in Databricks Unity Catalog Volumes. For analytics dashboards reading from a SQL warehouse, use `config/queries/` instead. For persistent CRUD storage, use Lakebase.
 
+## Contents
+
+- [When to Use Files vs Other Patterns](#when-to-use-files-vs-other-patterns)
+- [Scaffolding](#scaffolding)
+- [Plugin Setup](#plugin-setup)
+  - [Configuration Overrides](#configuration-overrides)
+- [Permission Model](#permission-model)
+- [Access Policies](#access-policies)
+- [Server-Side API (Programmatic)](#server-side-api-programmatic)
+- [HTTP Routes](#http-routes)
+- [Frontend Components](#frontend-components)
+  - [File Browser Example](#file-browser-example)
+  - [Upload Pattern](#upload-pattern)
+  - [Delete Pattern](#delete-pattern)
+  - [Create Directory Pattern](#create-directory-pattern)
+- [Resource Requirements](#resource-requirements)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## When to Use Files vs Other Patterns
 
 | Pattern           | Use Case                                    | Data Source              |

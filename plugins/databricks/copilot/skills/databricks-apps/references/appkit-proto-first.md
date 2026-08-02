@@ -10,6 +10,31 @@ Schema-first approach for AppKit apps using protobuf data contracts. Define cont
 
 Define protobuf data contracts FIRST, then derive everything else (TypeScript types, Lakebase DDL, Volume paths, API shapes) from those contracts.
 
+## Contents
+
+- [When to Use](#when-to-use)
+- [Core Principle](#core-principle)
+- [Phase 1: Decompose into Modules](#phase-1-decompose-into-modules)
+  - [Decomposition Rules](#decomposition-rules)
+  - [Output: Module Map](#output-module-map)
+- [Phase 2: Define Proto Contracts](#phase-2-define-proto-contracts)
+  - [Directory Structure](#directory-structure)
+  - [Proto Style Rules](#proto-style-rules)
+  - [Files Plugin Boundary (storage.proto)](#files-plugin-boundary-storageproto)
+  - [Lakebase Plugin Boundary (database.proto)](#lakebase-plugin-boundary-databaseproto)
+  - [Jobs Boundary (compute.proto)](#jobs-boundary-computeproto)
+- [Phase 3: Generate Types and DDL](#phase-3-generate-types-and-ddl)
+  - [3a. Buf configuration](#3a-buf-configuration)
+  - [3b. Generate TypeScript types](#3b-generate-typescript-types)
+  - [3c. Generate Lakebase DDL](#3c-generate-lakebase-ddl)
+  - [3d. Validate](#3d-validate)
+- [Phase 4: Implement Against Contracts](#phase-4-implement-against-contracts)
+- [Validation Checklist](#validation-checklist)
+- [Common Traps](#common-traps)
+- [References](#references)
+
+---
+
 ## When to Use
 
 | Scenario | Use this skill |

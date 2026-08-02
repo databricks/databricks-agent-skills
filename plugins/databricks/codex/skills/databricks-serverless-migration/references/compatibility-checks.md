@@ -2,6 +2,24 @@
 
 Complete pattern detection table for serverless compute compatibility scanning. Each entry includes the detection pattern, severity, fix summary, and a link to authoritative documentation.
 
+## Contents
+
+- [How to Use This Reference](#how-to-use-this-reference)
+- [Category A: Unsupported APIs](#category-a-unsupported-apis)
+  - [RDD and SparkContext Operations](#rdd-and-sparkcontext-operations)
+  - [SparkContext Methods](#sparkcontext-methods)
+  - [Caching Operations](#caching-operations)
+  - [Language Restrictions](#language-restrictions)
+- [Category B: Data Access](#category-b-data-access)
+- [Category C: Streaming](#category-c-streaming)
+- [Category D: Configuration](#category-d-configuration)
+- [Category E: Libraries](#category-e-libraries)
+- [Category F: Networking](#category-f-networking)
+- [Category G: Sizing and Debugging](#category-g-sizing-and-debugging)
+- [Comprehensive Regex for Quick Scan](#comprehensive-regex-for-quick-scan)
+
+---
+
 ## How to Use This Reference
 
 Scan user code for the regex/grep patterns below. When a match is found, report the severity and provide the fix. Patterns are grouped by category matching the SKILL.md analysis categories (A through G).

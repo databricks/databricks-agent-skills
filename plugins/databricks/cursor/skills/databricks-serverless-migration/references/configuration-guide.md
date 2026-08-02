@@ -2,6 +2,24 @@
 
 Supported Spark configurations, environment setup, budget policies, and performance mode selection for serverless compute.
 
+## Contents
+
+- [Supported Spark Configurations](#supported-spark-configurations)
+- [Common Unsupported Configurations and What to Do](#common-unsupported-configurations-and-what-to-do)
+- [Environment Setup](#environment-setup)
+- [Budget Policies](#budget-policies)
+- [Performance Mode Selection](#performance-mode-selection)
+- [Serverless Compute Defaults](#serverless-compute-defaults)
+- [Job Configuration Transformation](#job-configuration-transformation)
+- [Job Definition Migration (Complete Example)](#job-definition-migration-complete-example)
+- [Environment Version Mapping](#environment-version-mapping)
+- [Catalog Parameterization](#catalog-parameterization)
+- [Test Data Setup Pattern](#test-data-setup-pattern)
+- [Debugging Failed Serverless Runs](#debugging-failed-serverless-runs)
+- [Documentation](#documentation)
+
+---
+
 ## Supported Spark Configurations
 
 Serverless compute supports only 6 Spark configurations. All other configurations are auto-tuned and cannot be overridden.

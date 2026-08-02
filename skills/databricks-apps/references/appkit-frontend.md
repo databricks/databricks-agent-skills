@@ -2,6 +2,21 @@
 
 **For full component API**: run `npx @databricks/appkit docs` and navigate to the component you need.
 
+## Contents
+
+- [Common Anti-Patterns](#common-anti-patterns)
+- [Chart Data Modes](#chart-data-modes)
+- [Chart Props Quick Reference](#chart-props-quick-reference)
+- [DataTable](#datatable)
+- [Available Components (Quick Reference)](#available-components-quick-reference)
+  - [Data Components (@databricks/appkit-ui/react)](#data-components-databricksappkit-uireact)
+  - [UI Components (@databricks/appkit-ui/react)](#ui-components-databricksappkit-uireact)
+- [Layout Structure](#layout-structure)
+- [Component Organization](#component-organization)
+- [Gotchas](#gotchas)
+
+---
+
 ## Common Anti-Patterns
 
 These mistakes appear frequently — check the official docs for actual prop names:

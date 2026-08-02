@@ -7,6 +7,28 @@ description: Select and tune triggers for Spark Structured Streaming to balance 
 
 Select and tune triggers to balance latency requirements with cost. Optimize streaming job costs through trigger tuning, cluster right-sizing, multi-stream clusters, storage optimization, and scheduled execution patterns.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Trigger Types](#trigger-types)
+- [Trigger Selection Guide](#trigger-selection-guide)
+- [Trigger Interval Calculation](#trigger-interval-calculation)
+- [Cost Optimization Strategies](#cost-optimization-strategies)
+- [Cost Formula](#cost-formula)
+- [Common Patterns](#common-patterns)
+- [Real-Time Mode (RTM) Configuration](#real-time-mode-rtm-configuration)
+- [Performance Considerations](#performance-considerations)
+- [Cost Monitoring](#cost-monitoring)
+- [Latency vs Cost Trade-offs](#latency-vs-cost-trade-offs)
+- [Common Issues](#common-issues)
+- [Quick Wins](#quick-wins)
+- [Trade-offs](#trade-offs)
+- [Production Best Practices](#production-best-practices)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

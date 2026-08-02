@@ -7,6 +7,30 @@ description: Write a single Spark stream to multiple Delta tables or Kafka topic
 
 Write a single streaming source to multiple Delta tables or Kafka topics efficiently using ForEachBatch. Read once, write many - avoiding reprocessing the source multiple times.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [One Source, One Checkpoint](#one-source-one-checkpoint)
+  - [Transactional Guarantees](#transactional-guarantees)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Bronze-Silver-Gold Medallion Architecture](#pattern-1-bronze-silver-gold-medallion-architecture)
+  - [Pattern 2: Conditional Routing](#pattern-2-conditional-routing)
+  - [Pattern 3: Parallel Fan-Out](#pattern-3-parallel-fan-out)
+  - [Pattern 4: Materialized Views](#pattern-4-materialized-views)
+  - [Pattern 5: Error Handling with Dead Letter Queue](#pattern-5-error-handling-with-dead-letter-queue)
+- [Performance Optimization](#performance-optimization)
+  - [Minimize Recomputation](#minimize-recomputation)
+  - [Parallel Writes](#parallel-writes)
+- [Common Issues](#common-issues)
+- [Production Best Practices](#production-best-practices)
+  - [Idempotent Writes](#idempotent-writes)
+  - [Keep Batch Processing Fast](#keep-batch-processing-fast)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

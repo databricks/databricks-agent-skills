@@ -6,6 +6,18 @@ Use the `jobs()` plugin when your app needs to **trigger or monitor pre-existing
 
 The plugin is **resource-scoped**: only jobs declared via config or discovered from `DATABRICKS_JOB_*` env vars are accessible. It is not a generic Jobs SDK wrapper — to author or schedule jobs, use the `databricks-jobs` (Lakeflow) skill instead. See appkit-overview for the cross-plugin data-pattern selector.
 
+## Contents
+
+- [Scaffolding](#scaffolding)
+- [Plugin Setup](#plugin-setup)
+- [Server-Side API (Programmatic)](#server-side-api-programmatic)
+  - [Execution context](#execution-context)
+- [HTTP Endpoints](#http-endpoints)
+- [Resource Requirements](#resource-requirements)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Scaffolding
 
 ```bash

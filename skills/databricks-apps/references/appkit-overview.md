@@ -2,6 +2,23 @@
 
 AppKit is the recommended way to build Databricks Apps - provides type-safe SQL queries, React components, and seamless deployment.
 
+## Contents
+
+- [Choose Your Data Pattern FIRST](#choose-your-data-pattern-first)
+- [Workflow](#workflow)
+- [Data Discovery (Before Writing SQL)](#data-discovery-before-writing-sql)
+- [Pre-Implementation Checklist](#pre-implementation-checklist)
+- [Post-Implementation Checklist](#post-implementation-checklist)
+- [Project Structure](#project-structure)
+- [Type Safety](#type-safety)
+- [Adding Visualizations](#adding-visualizations)
+- [AppKit Official Documentation](#appkit-official-documentation)
+- [References](#references)
+- [Critical Rules](#critical-rules)
+- [Decision Tree](#decision-tree)
+
+---
+
 ## Choose Your Data Pattern FIRST
 
 Before scaffolding, decide which data pattern the app needs:

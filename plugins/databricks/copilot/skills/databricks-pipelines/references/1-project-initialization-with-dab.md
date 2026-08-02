@@ -9,6 +9,32 @@ For prototyping without a bundle, see 2-rapid-iteration-with-cli.
 
 ---
 
+## Contents
+
+- [Workflow A: Standalone Bundle (pipelines init)](#workflow-a-standalone-bundle-pipelines-init)
+  - [Non-interactive (recommended for agents)](#non-interactive-recommended-for-agents)
+  - [Interactive](#interactive)
+  - [Alternative: databricks bundle init lakeflow-pipelines](#alternative-databricks-bundle-init-lakeflow-pipelines)
+  - [Generated structure](#generated-structure)
+  - [Customize and deploy](#customize-and-deploy)
+  - [databricks.yml essentials](#databricksyml-essentials)
+  - [Pipeline resource (resources/<name>.pipeline.yml)](#pipeline-resource-resourcesnamepipelineyml)
+  - [Scheduling Pipelines](#scheduling-pipelines)
+  - [Python project dependencies](#python-project-dependencies)
+  - [Multi-environment workflow](#multi-environment-workflow)
+- [Workflow B: Pipeline in Existing Bundle](#workflow-b-pipeline-in-existing-bundle)
+  - [Step 1: Add a pipeline resource file](#step-1-add-a-pipeline-resource-file)
+  - [Step 2: Add source files](#step-2-add-source-files)
+  - [Step 3: Deploy](#step-3-deploy)
+- [Running a Pipeline (Workflow A / B)](#running-a-pipeline-workflow-a--b)
+  - [Development workflow](#development-workflow)
+  - [Refresh modes](#refresh-modes)
+  - [Editing pipeline code](#editing-pipeline-code)
+- [Migrating from a Manual Folder Structure](#migrating-from-a-manual-folder-structure)
+- [Common Initialization Issues](#common-initialization-issues)
+
+---
+
 ## Workflow A: Standalone Bundle (`pipelines init`)
 
 Use when the user wants a new project where the pipeline *is* the project (no existing `databricks.yml`).

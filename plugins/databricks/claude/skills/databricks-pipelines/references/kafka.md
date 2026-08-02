@@ -4,6 +4,20 @@ Ingest from Apache Kafka into a streaming table. Same shape works for Azure Even
 
 For Kinesis, Pub/Sub, and Pulsar, use the analogous `read_kinesis` / `read_pubsub` / `read_pulsar` SQL functions or `spark.readStream.format("kinesis|pubsub|pulsar")` — same overall shape as below.
 
+## Contents
+
+- [Basic Read](#basic-read)
+  - [Common options](#common-options)
+- [Parse JSON Payloads](#parse-json-payloads)
+- [Authentication](#authentication)
+- [Event Hubs (via Kafka protocol)](#event-hubs-via-kafka-protocol)
+- [Pipeline Configuration](#pipeline-configuration)
+- [Writing to Kafka (sinks)](#writing-to-kafka-sinks)
+- [Best Practices](#best-practices)
+- [Common Issues](#common-issues)
+
+---
+
 ## Basic Read
 
 Kafka returns rows with binary `key` and `value` columns plus `topic`, `partition`, `offset`, `timestamp`. Cast to `STRING`/`BINARY` and parse downstream — don't carry raw bytes.

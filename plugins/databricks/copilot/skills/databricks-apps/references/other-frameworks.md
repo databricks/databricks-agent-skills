@@ -4,6 +4,32 @@ Setup guide for non-AppKit apps: Streamlit, FastAPI, Flask, Gradio, Dash, Django
 
 For universal platform rules (permissions, deployment, timeouts, resource injection), see platform-guide.
 
+## Contents
+
+- [1. Port & Host Configuration](#1-port--host-configuration)
+  - [Framework-Specific Port Configuration](#framework-specific-port-configuration)
+- [2. app.yaml vs databricks.yml](#2-appyaml-vs-databricksyml)
+  - [app.yaml — Runtime Configuration](#appyaml--runtime-configuration)
+  - [databricks.yml — Bundle/Deployment Configuration](#databricksyml--bundledeployment-configuration)
+  - [Critical Rules](#critical-rules)
+- [3. Using OBO in Non-AppKit Apps](#3-using-obo-in-non-appkit-apps)
+- [4. Framework-Specific Timeout Gotchas](#4-framework-specific-timeout-gotchas)
+- [5. Common Errors (Non-AppKit Specific)](#5-common-errors-non-appkit-specific)
+- [6. Dependency Management](#6-dependency-management)
+  - [Python](#python)
+  - [Node.js](#nodejs)
+- [7. Networking & CORS](#7-networking--cors)
+  - [CORS](#cors)
+  - [Private Link / Hardened Environments](#private-link--hardened-environments)
+  - [Egress Restrictions](#egress-restrictions)
+- [8. Streamlit-Specific Gotchas](#8-streamlit-specific-gotchas)
+  - [Required Environment Variables](#required-environment-variables)
+  - [OBO Token Staleness](#obo-token-staleness)
+  - [Connection Exhaustion (Hangs After Initial Queries)](#connection-exhaustion-hangs-after-initial-queries)
+  - [Transient 502s During Startup](#transient-502s-during-startup)
+
+---
+
 ## 1. Port & Host Configuration
 
 **The #1 cause of 502 Bad Gateway errors.**

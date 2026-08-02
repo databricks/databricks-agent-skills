@@ -4,6 +4,27 @@ Liquid Clustering, state management for streaming, join strategy, query optimiza
 
 ---
 
+## Contents
+
+- [Liquid Clustering](#liquid-clustering)
+  - [Cluster key data types](#cluster-key-data-types)
+  - [Cluster key selection by layer](#cluster-key-selection-by-layer)
+  - [Migrating from PARTITION BY + ZORDER](#migrating-from-partition-by--zorder)
+- [Table Properties](#table-properties)
+- [Materialized View Refresh](#materialized-view-refresh)
+  - [Incremental refresh](#incremental-refresh)
+- [State Management for Streaming](#state-management-for-streaming)
+- [Join Optimization](#join-optimization)
+  - [Stream-to-static (efficient)](#stream-to-static-efficient)
+  - [Stream-to-stream (stateful, time-bounded)](#stream-to-stream-stateful-time-bounded)
+- [Query Optimization](#query-optimization)
+- [Pre-Aggregation](#pre-aggregation)
+- [Compute Configuration](#compute-configuration)
+- [Monitoring Freshness](#monitoring-freshness)
+- [Common Issues](#common-issues)
+
+---
+
 ## Liquid Clustering
 
 **Recommended** for data layout. Replaces `PARTITION BY` + `ZORDER`. Adaptive, multi-dimensional, self-optimizing — no manual `OPTIMIZE` needed.

@@ -7,6 +7,31 @@ description: Comprehensive guide to Delta MERGE operations in streaming includin
 
 Comprehensive guide to Delta MERGE operations: performance optimization, parallel merges to multiple tables, and modern Delta features (Liquid Clustering + Deletion Vectors + Row-Level Concurrency).
 
+## Contents
+
+- [Quick Start](#quick-start)
+  - [Basic MERGE with Optimization](#basic-merge-with-optimization)
+  - [Parallel MERGE to Multiple Tables](#parallel-merge-to-multiple-tables)
+- [Core Concepts](#core-concepts)
+  - [Liquid Clustering + DV + RLC](#liquid-clustering--dv--rlc)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Basic MERGE with Optimization](#pattern-1-basic-merge-with-optimization)
+  - [Pattern 2: Parallel MERGE to Multiple Tables](#pattern-2-parallel-merge-to-multiple-tables)
+  - [Pattern 3: MERGE with Partition Pruning](#pattern-3-merge-with-partition-pruning)
+  - [Pattern 4: CDC Multi-Target with Parallel MERGE](#pattern-4-cdc-multi-target-with-parallel-merge)
+- [Performance Optimization](#performance-optimization)
+  - [Enable Liquid Clustering + DV + RLC](#enable-liquid-clustering--dv--rlc)
+  - [Z-Ordering on Merge Key](#z-ordering-on-merge-key)
+  - [File Size Tuning](#file-size-tuning)
+  - [Optimal Thread Count](#optimal-thread-count)
+- [Monitoring](#monitoring)
+  - [Track Merge Performance](#track-merge-performance)
+- [Common Issues](#common-issues)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ### Basic MERGE with Optimization

@@ -2,6 +2,28 @@
 
 Concrete proto↔plugin mappings for the three core AppKit plugins.
 
+## Contents
+
+- [Files Plugin Contract](#files-plugin-contract)
+  - [Boundary: What the files plugin owns](#boundary-what-the-files-plugin-owns)
+  - [Proto → Plugin Method Mapping](#proto--plugin-method-mapping)
+  - [Volume Path Convention (from VolumeLayout proto)](#volume-path-convention-from-volumelayout-proto)
+  - [Config ↔ Proto Mapping](#config--proto-mapping)
+- [Lakebase Plugin Contract](#lakebase-plugin-contract)
+  - [Boundary: What the lakebase plugin owns](#boundary-what-the-lakebase-plugin-owns)
+  - [Proto → Table Mapping](#proto--table-mapping)
+  - [Proto → DDL Type Mapping](#proto--ddl-type-mapping)
+  - [Migration Convention](#migration-convention)
+  - [Config ↔ Proto Mapping](#config--proto-mapping-1)
+- [Jobs / Compute Contract](#jobs--compute-contract)
+  - [Boundary: What the jobs module owns](#boundary-what-the-jobs-module-owns)
+  - [Proto → Jobs SDK Mapping](#proto--jobs-sdk-mapping)
+  - [Task Parameter Convention](#task-parameter-convention)
+  - [Task Output Convention](#task-output-convention)
+  - [Jobs API Patterns](#jobs-api-patterns)
+
+---
+
 ## Files Plugin Contract
 
 **Plugin manifest**: `files/manifest.json`

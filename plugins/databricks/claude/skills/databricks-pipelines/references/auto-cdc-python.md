@@ -8,6 +8,20 @@ Legacy aliases `dp.apply_changes()` / `dp.apply_changes_from_snapshot()` still p
 
 For querying SCD Type 2 history tables, see scd-2-querying.
 
+## Contents
+
+- [dp.create_auto_cdc_flow(...)](#dpcreate_auto_cdc_flow)
+- [dp.create_auto_cdc_from_snapshot_flow(...)](#dpcreate_auto_cdc_from_snapshot_flow)
+- [Patterns](#patterns)
+  - [Basic (SCD Type 1)](#basic-scd-type-1)
+  - [With pre-filtering via temp view](#with-pre-filtering-via-temp-view)
+  - [Explicit deletes + truncates + ignore-null](#explicit-deletes--truncates--ignore-null)
+  - [SCD Type 2 with selective history tracking](#scd-type-2-with-selective-history-tracking)
+  - [Snapshot-based (table source)](#snapshot-based-table-source)
+- [Key rules](#key-rules)
+
+---
+
 ## `dp.create_auto_cdc_flow(...)`
 
 Call at top level — does NOT return a value.

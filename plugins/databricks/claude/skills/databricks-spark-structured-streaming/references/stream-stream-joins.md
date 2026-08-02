@@ -7,6 +7,42 @@ description: Join two streaming sources in real-time with event-time semantics, 
 
 Join two streaming sources in real-time to correlate events that arrive at different times and speeds. Stream-stream joins require watermarks to manage state and handle late-arriving data.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [Why Stream-Stream Joins Need Watermarks](#why-stream-stream-joins-need-watermarks)
+  - [Join Types and Behavior](#join-types-and-behavior)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Order-Payment Matching](#pattern-1-order-payment-matching)
+  - [Pattern 2: Click-Conversion Attribution](#pattern-2-click-conversion-attribution)
+  - [Pattern 3: Sessionization Across Streams](#pattern-3-sessionization-across-streams)
+  - [Pattern 4: Late Data Handling with Dead Letter Queue](#pattern-4-late-data-handling-with-dead-letter-queue)
+- [State Management](#state-management)
+  - [Configure RocksDB for Large State](#configure-rocksdb-for-large-state)
+  - [Monitor State Size](#monitor-state-size)
+  - [Control State Growth](#control-state-growth)
+- [Watermark Configuration](#watermark-configuration)
+  - [Choosing Watermark Duration](#choosing-watermark-duration)
+  - [Multiple Watermarks](#multiple-watermarks)
+- [Production Best Practices](#production-best-practices)
+  - [Idempotent Writes](#idempotent-writes)
+  - [Multi-Stream Joins (3+ Streams)](#multi-stream-joins-3-streams)
+  - [Performance Tuning](#performance-tuning)
+- [Monitoring](#monitoring)
+  - [Key Metrics](#key-metrics)
+  - [Spark UI Checks](#spark-ui-checks)
+- [Common Issues](#common-issues)
+- [Production Checklist](#production-checklist)
+- [Expert Tips](#expert-tips)
+  - [Event Time vs Processing Time](#event-time-vs-processing-time)
+  - [Watermark Semantics Deep Dive](#watermark-semantics-deep-dive)
+  - [State Store Backend Selection](#state-store-backend-selection)
+  - [Join Condition Best Practices](#join-condition-best-practices)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

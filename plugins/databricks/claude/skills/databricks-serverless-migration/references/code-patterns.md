@@ -2,6 +2,24 @@
 
 Complete before/after code examples for every migration pattern from classic compute to serverless compute.
 
+## Contents
+
+- [RDD to DataFrame](#rdd-to-dataframe)
+- [%run Inlining](#run-inlining)
+- [DBFS to Volumes](#dbfs-to-volumes)
+- [SparkContext to SparkSession](#sparkcontext-to-sparksession)
+- [Cache/Persist to Remove or Materialize](#cachepersist-to-remove-or-materialize)
+- [HMS to Unity Catalog](#hms-to-unity-catalog)
+- [Init Scripts to Environments](#init-scripts-to-environments)
+- [Custom JDBC to Alternatives](#custom-jdbc-to-alternatives)
+- [Query Profile (Spark UI Replacement)](#query-profile-spark-ui-replacement)
+- [Global Temporary View to Session-Scoped Temporary View](#global-temporary-view-to-session-scoped-temporary-view)
+- [os.environ Restrictions](#osenviron-restrictions)
+- [Hive Variable Substitution to SQL Session Variables](#hive-variable-substitution-to-sql-session-variables)
+- [Documentation](#documentation)
+
+---
+
 ## RDD to DataFrame
 
 All RDD APIs and `sc.*` methods are not supported on serverless (which uses the Spark Connect architecture). Replace with DataFrame operations.

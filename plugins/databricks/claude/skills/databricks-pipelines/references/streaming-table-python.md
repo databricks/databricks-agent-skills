@@ -2,6 +2,23 @@
 
 Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch with `spark.read`), see materialized-view-python.
 
+## Contents
+
+- [@dp.table() — streaming or batch depending on return type](#dptable--streaming-or-batch-depending-on-return-type)
+- [dp.create_streaming_table() — empty target for flows](#dpcreate_streaming_table--empty-target-for-flows)
+- [@dp.append_flow() — fan multiple sources into one table](#dpappend_flow--fan-multiple-sources-into-one-table)
+- [Single source vs multi-source](#single-source-vs-multi-source)
+- [Common Patterns](#common-patterns)
+  - [Auto Loader + filter](#auto-loader--filter)
+  - [Multi-source append](#multi-source-append)
+  - [Backfill + live stream into the same table](#backfill--live-stream-into-the-same-table)
+  - [Row filter for data security](#row-filter-for-data-security)
+  - [Stream-static join (enrich with dimension)](#stream-static-join-enrich-with-dimension)
+  - [Reading from a streaming table that has updates/deletes](#reading-from-a-streaming-table-that-has-updatesdeletes)
+- [Key rules](#key-rules)
+
+---
+
 ## `@dp.table()` — streaming or batch depending on return type
 
 ```python

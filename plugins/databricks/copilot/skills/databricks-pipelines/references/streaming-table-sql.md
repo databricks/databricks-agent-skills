@@ -2,6 +2,23 @@
 
 Streaming tables enable incremental processing of continuously arriving data. For materialized views (batch), see materialized-view-sql.
 
+## Contents
+
+- [Syntax](#syntax)
+- [STREAM(...) source](#stream-source)
+- [Single source vs multi-source](#single-source-vs-multi-source)
+- [CREATE FLOW syntax](#create-flow-syntax)
+- [Common Patterns](#common-patterns)
+  - [Auto Loader + filter (single source)](#auto-loader--filter-single-source)
+  - [Row filter for data security](#row-filter-for-data-security)
+  - [Private staging table](#private-staging-table)
+  - [Backfill + live stream into the same table](#backfill--live-stream-into-the-same-table)
+  - [Stream-static join (enrich with dimension)](#stream-static-join-enrich-with-dimension)
+  - [Reading from a streaming table that has updates/deletes](#reading-from-a-streaming-table-that-has-updatesdeletes)
+- [Key rules](#key-rules)
+
+---
+
 ## Syntax
 
 ```sql

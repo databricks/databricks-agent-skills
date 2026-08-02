@@ -13,6 +13,19 @@ Six related patterns:
 
 ---
 
+## Contents
+
+- [A3: AutoML to inline scikit-learn Pipeline](#a3-automl-to-inline-scikit-learn-pipeline)
+- [A4: mlflow 2.19.0 pyfunc.spark_udf closure bug on Spark Connect](#a4-mlflow-2190-pyfuncspark_udf-closure-bug-on-spark-connect)
+- [M1: Drop registered_model_name= from log_model under UC](#m1-drop-registered_model_name-from-log_model-under-uc)
+- [M2: Replace .latest_versions access with search_model_versions + sort+index](#m2-replace-latest_versions-access-with-search_model_versions--sortindex)
+- [M3: Pass signature= to log_model under UC (required, not optional)](#m3-pass-signature-to-log_model-under-uc-required-not-optional)
+- [P2: Sklearn prediction-column dtype alignment for binary classifiers](#p2-sklearn-prediction-column-dtype-alignment-for-binary-classifiers)
+- [Combined rewrite checklist (A3 + M1 + M2 + P2 together)](#combined-rewrite-checklist-a3--m1--m2--p2-together)
+- [Documentation](#documentation)
+
+---
+
 ## A3: AutoML to inline scikit-learn Pipeline
 
 **Problem**: `from databricks import automl` raises `ImportError` on serverless. The dbdemos fallback `DBDemos.create_mockup_automl_run` hits `TypeError: Object of type PlanMetrics is not JSON serializable` on Spark Connect.

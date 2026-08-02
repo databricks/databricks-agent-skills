@@ -4,6 +4,22 @@ RTM runs an SDP flow on a continuous engine instead of micro-batches, targeting 
 
 This file is SDP-specific. For standalone Structured Streaming RTM (`writeStream…trigger(realTime=…)` on classic compute) — including the shared error classes, cluster prohibitions, and observability internals — see the `databricks-spark-structured-streaming` skill's RTM reference.
 
+## Contents
+
+- [When to reach for RTM](#when-to-reach-for-rtm)
+- [SDP-on-RTM vs standalone RTM](#sdp-on-rtm-vs-standalone-rtm)
+- [Enabling RTM](#enabling-rtm)
+- [The dp.create_sink + @dp.update_flow pattern](#the-dpcreate_sink--dpupdate_flow-pattern)
+- [pipelines.trigger.interval — checkpoint cadence, not batch size](#pipelinestriggerinterval--checkpoint-cadence-not-batch-size)
+- [Compute](#compute)
+- [Sources, sinks, and operators](#sources-sinks-and-operators)
+- [One real-time flow per pipeline](#one-real-time-flow-per-pipeline)
+- [Lakebase as a serving layer](#lakebase-as-a-serving-layer)
+- [Observability and tuning](#observability-and-tuning)
+- [Related references](#related-references)
+
+---
+
 ## When to reach for RTM
 
 RTM pipelines run **continuously** (`continuous: true`) — the compute never scales to zero. That makes RTM materially more expensive than a triggered pipeline. Reach for it only for **operational use cases** with a real sub-second/low-hundreds-of-ms SLA (fraud scoring, live alerting, personalization). For demos, prototypes, or other use cases that tolerate seconds-to-minutes latency, use a normal triggered pipeline instead. Validate with the user before recommending RTM, and confirm they accept always-on compute. (This is the sanctioned exception to the general "avoid `continuous: true`" guidance in pipeline-configuration.)

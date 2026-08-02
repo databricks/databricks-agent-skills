@@ -6,6 +6,22 @@ Use the `databricks pipelines` CLI to create, run, and iterate on a pipeline **w
 
 ---
 
+## Contents
+
+- [Step 1: Write pipeline files locally](#step-1-write-pipeline-files-locally)
+- [Step 2: Upload to the workspace](#step-2-upload-to-the-workspace)
+- [Step 3: Create the pipeline](#step-3-create-the-pipeline)
+- [Step 4: Start an update and poll *that update*](#step-4-start-an-update-and-poll-that-update)
+- [Step 5: Edit → re-upload → restart](#step-5-edit--re-upload--restart)
+- [Step 6: Validate output data](#step-6-validate-output-data)
+- [Quick reference: CLI commands](#quick-reference-cli-commands)
+  - [Pipeline lifecycle](#pipeline-lifecycle)
+  - [Run management](#run-management)
+  - [Supporting commands](#supporting-commands)
+- [Python SDK alternative](#python-sdk-alternative)
+
+---
+
 ## Step 1: Write pipeline files locally
 
 `.sql` or `.py` files in a folder. See python-basics or sql-basics for syntax.

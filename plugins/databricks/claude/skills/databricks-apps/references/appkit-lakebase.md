@@ -2,6 +2,25 @@
 
 Use Lakebase when your app needs **persistent read/write storage** — forms, CRUD operations, user-generated data. For analytics dashboards reading from a SQL warehouse, use `config/queries/` instead.
 
+## Contents
+
+- [When to Use Lakebase vs Analytics](#when-to-use-lakebase-vs-analytics)
+- [Scaffolding](#scaffolding)
+- [Adding Lakebase to an Existing App](#adding-lakebase-to-an-existing-app)
+- [Project Structure (after databricks apps init --features lakebase)](#project-structure-after-databricks-apps-init---features-lakebase)
+- [Lakebase Plugin API](#lakebase-plugin-api)
+- [Environment Variables (auto-set when deployed with database resource)](#environment-variables-auto-set-when-deployed-with-database-resource)
+- [CRUD Routes Pattern](#crud-routes-pattern)
+- [Schema Initialization](#schema-initialization)
+- [ORM Integration (Optional)](#orm-integration-optional)
+- [Chat Persistence Pattern](#chat-persistence-pattern)
+- [Reading from Lakebase synced tables](#reading-from-lakebase-synced-tables)
+- [Key Differences from Analytics Pattern](#key-differences-from-analytics-pattern)
+- [Local Development](#local-development)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## When to Use Lakebase vs Analytics
 
 | Pattern | Use Case | Data Source |

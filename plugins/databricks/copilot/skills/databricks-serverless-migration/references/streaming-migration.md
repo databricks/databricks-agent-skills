@@ -2,6 +2,29 @@
 
 Complete guide for migrating streaming workloads from classic compute to serverless compute.
 
+## Contents
+
+- [Trigger Support Matrix](#trigger-support-matrix)
+- [Migration Hierarchy](#migration-hierarchy)
+  - [When to Use Each Approach](#when-to-use-each-approach)
+- [Fixing the Default Trigger (Most Common Issue)](#fixing-the-default-trigger-most-common-issue)
+- [OOM Prevention](#oom-prevention)
+  - [Delta / Parquet Sources](#delta--parquet-sources)
+  - [Auto Loader (cloudFiles)](#auto-loader-cloudfiles)
+  - [Kafka Sources](#kafka-sources)
+  - [Kinesis Sources](#kinesis-sources)
+- [Multi-Stream Patterns](#multi-stream-patterns)
+- [forEachBatch Pattern](#foreachbatch-pattern)
+- [Migrating to Spark Declarative Pipelines (SDP)](#migrating-to-spark-declarative-pipelines-sdp)
+  - [Before: ProcessingTime Streaming Job](#before-processingtime-streaming-job)
+  - [After: SDP Pipeline](#after-sdp-pipeline)
+  - [SDP Advantages for Streaming](#sdp-advantages-for-streaming)
+- [Jobs Continuous Schedule + AvailableNow](#jobs-continuous-schedule--availablenow)
+- [Continuous Streaming Disambiguation](#continuous-streaming-disambiguation)
+- [Documentation](#documentation)
+
+---
+
 ## Trigger Support Matrix
 
 | Trigger Type | Serverless Support | Migration Action |

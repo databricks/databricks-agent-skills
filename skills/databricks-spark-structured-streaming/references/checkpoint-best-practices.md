@@ -7,6 +7,37 @@ description: Configure and manage checkpoint locations for reliable Spark Struct
 
 Configure checkpoint locations for reliable streaming with exactly-once semantics. Checkpoints track progress and enable fault tolerance.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Checkpoint Storage](#checkpoint-storage)
+  - [Use Persistent Storage](#use-persistent-storage)
+  - [Target-Tied Organization](#target-tied-organization)
+  - [Unique Checkpoint Per Stream](#unique-checkpoint-per-stream)
+- [Checkpoint Structure](#checkpoint-structure)
+  - [Folder Contents](#folder-contents)
+  - [Stateless vs Stateful](#stateless-vs-stateful)
+- [Reading Checkpoint Contents](#reading-checkpoint-contents)
+  - [Read Offset Files](#read-offset-files)
+  - [Read State Store](#read-state-store)
+- [Recovery Scenarios](#recovery-scenarios)
+  - [Lost Checkpoint](#lost-checkpoint)
+  - [Corrupted Checkpoint](#corrupted-checkpoint)
+  - [Crash During Batch](#crash-during-batch)
+- [Monitoring](#monitoring)
+  - [Checkpoint Size](#checkpoint-size)
+  - [State Store Growth](#state-store-growth)
+  - [Offset vs Commit Sync](#offset-vs-commit-sync)
+- [Common Issues](#common-issues)
+- [Production Best Practices](#production-best-practices)
+  - [Checkpoint Location Pattern](#checkpoint-location-pattern)
+  - [Backup Strategy](#backup-strategy)
+  - [Migration](#migration)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

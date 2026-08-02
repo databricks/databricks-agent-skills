@@ -4,6 +4,23 @@ Universal platform rules that apply to ALL Databricks Apps regardless of framewo
 
 For non-AppKit framework-specific setup (port config, app.yaml, Streamlit gotchas), see other-frameworks.
 
+## Contents
+
+- [Service Principal Permissions](#service-principal-permissions)
+  - [How Permissions Work](#how-permissions-work)
+  - [Default Permissions by Resource Type](#default-permissions-by-resource-type)
+  - [⚠️ CRITICAL AGENT BEHAVIOR](#-critical-agent-behavior)
+- [Resource Types & Injection](#resource-types--injection)
+- [Authentication: OBO vs Service Principal](#authentication-obo-vs-service-principal)
+- [Deployment Workflow](#deployment-workflow)
+  - [Updating an app's resources/config: use apps create-update](#updating-an-apps-resourcesconfig-use-apps-create-update)
+- [Runtime Environment](#runtime-environment)
+- [Compute & Limits](#compute--limits)
+- [HTTP Proxy & Streaming](#http-proxy--streaming)
+- [Common Errors](#common-errors)
+
+---
+
 ## Service Principal Permissions
 
 **The #1 cause of runtime crashes after deployment.**

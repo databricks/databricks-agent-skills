@@ -9,6 +9,23 @@ If 80%+ of the pipeline is SQL-expressible (filters, aggregations, joins, CDC, A
 
 ---
 
+## Contents
+
+- [Migration Path 1: DLT Python → SDP Python](#migration-path-1-dlt-python--sdp-python)
+  - [Mapping](#mapping)
+  - [Behavioral changes to watch for in CDC](#behavioral-changes-to-watch-for-in-cdc)
+- [Migration Path 2: DLT Python → SDP SQL](#migration-path-2-dlt-python--sdp-sql)
+  - [Streaming table with Auto Loader](#streaming-table-with-auto-loader)
+  - [Filter / cast / select](#filter--cast--select)
+  - [SCD Type 2](#scd-type-2)
+  - [Expectations](#expectations)
+  - [UDFs](#udfs)
+- [Migration Order (by layer)](#migration-order-by-layer)
+- [Common Issues](#common-issues)
+- [Related](#related)
+
+---
+
 ## Migration Path 1: DLT Python → SDP Python
 
 ### Mapping

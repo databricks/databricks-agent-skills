@@ -7,6 +7,42 @@ description: Enrich streaming data with Delta dimension tables in real-time. Use
 
 Enrich streaming data with slowly-changing reference data stored in Delta tables. Stream-static joins are stateless and automatically refresh dimension data each microbatch.
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [Why Delta Tables Matter](#why-delta-tables-matter)
+  - [Join Types and Production Use](#join-types-and-production-use)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Basic Device Enrichment](#pattern-1-basic-device-enrichment)
+  - [Pattern 2: Multi-Table Enrichment](#pattern-2-multi-table-enrichment)
+  - [Pattern 3: Broadcast Hash Join Optimization](#pattern-3-broadcast-hash-join-optimization)
+  - [Pattern 4: Audit Dimension Freshness](#pattern-4-audit-dimension-freshness)
+  - [Pattern 5: Time-Travel Dimension Lookup](#pattern-5-time-travel-dimension-lookup)
+  - [Pattern 6: Backfill Missing Dimensions](#pattern-6-backfill-missing-dimensions)
+  - [Pattern 7: Dimension Change Detection](#pattern-7-dimension-change-detection)
+- [Performance Optimization](#performance-optimization)
+  - [Checklist](#checklist)
+  - [Configuration](#configuration)
+  - [Reduce Dimension Size](#reduce-dimension-size)
+- [Monitoring](#monitoring)
+  - [Key Metrics](#key-metrics)
+  - [Programmatic Monitoring](#programmatic-monitoring)
+  - [Spark UI Checks](#spark-ui-checks)
+- [Common Issues](#common-issues)
+- [Production Best Practices](#production-best-practices)
+  - [Always Use Left Join](#always-use-left-join)
+  - [Handle Null Dimensions](#handle-null-dimensions)
+  - [Idempotent Writes](#idempotent-writes)
+- [Production Checklist](#production-checklist)
+- [Expert Tips](#expert-tips)
+  - [Delta Version Checking](#delta-version-checking)
+  - [Broadcast Join Verification](#broadcast-join-verification)
+  - [Dimension Table Optimization](#dimension-table-optimization)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ```python

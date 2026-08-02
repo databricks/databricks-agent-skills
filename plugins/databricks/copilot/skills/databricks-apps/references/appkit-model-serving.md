@@ -2,6 +2,19 @@
 
 Use Model Serving when your app needs **AI features** — chat, inference, embeddings, or predictions from a Databricks Model Serving endpoint. For analytics dashboards, use `config/queries/` instead. For persistent storage, use Lakebase.
 
+## Contents
+
+- [When to Use](#when-to-use)
+- [Scaffolding](#scaffolding)
+- [Adding Model Serving to an Existing App](#adding-model-serving-to-an-existing-app)
+- [Serving Plugin API](#serving-plugin-api)
+- [Named Endpoints](#named-endpoints)
+- [HTTP Endpoints](#http-endpoints)
+- [Frontend](#frontend)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## When to Use
 
 | Pattern | Use Case | Data Source |

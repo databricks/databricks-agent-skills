@@ -7,6 +7,32 @@ description: Comprehensive Kafka streaming patterns including Kafka-to-Delta ing
 
 Comprehensive guide to Kafka streaming with Spark Structured Streaming: ingestion to Delta, Kafka-to-Kafka pipelines, and Real-Time Mode for sub-second latency.
 
+## Contents
+
+- [Quick Start](#quick-start)
+  - [Kafka to Delta](#kafka-to-delta)
+  - [Kafka to Kafka](#kafka-to-kafka)
+- [Common Patterns](#common-patterns)
+  - [Pattern 1: Bronze Layer Ingestion (Kafka to Delta)](#pattern-1-bronze-layer-ingestion-kafka-to-delta)
+  - [Pattern 2: Scheduled Streaming (Cost-Optimized)](#pattern-2-scheduled-streaming-cost-optimized)
+  - [Pattern 3: Real-Time Mode (Sub-Second Latency)](#pattern-3-real-time-mode-sub-second-latency)
+  - [Pattern 4: Event Enrichment (Kafka to Kafka with Delta)](#pattern-4-event-enrichment-kafka-to-kafka-with-delta)
+  - [Pattern 5: Multi-Topic Routing](#pattern-5-multi-topic-routing)
+  - [Pattern 6: Schema Validation with DLQ](#pattern-6-schema-validation-with-dlq)
+- [Configuration](#configuration)
+  - [Consumer Options (Reading from Kafka)](#consumer-options-reading-from-kafka)
+  - [Producer Options (Writing to Kafka)](#producer-options-writing-to-kafka)
+  - [Security (SASL/SSL)](#security-saslssl)
+- [Performance Tuning](#performance-tuning)
+- [Monitoring](#monitoring)
+  - [Key Metrics](#key-metrics)
+  - [Spark UI Checks](#spark-ui-checks)
+- [Common Issues](#common-issues)
+- [Production Checklist](#production-checklist)
+- [Related Skills](#related-skills)
+
+---
+
 ## Quick Start
 
 ### Kafka to Delta

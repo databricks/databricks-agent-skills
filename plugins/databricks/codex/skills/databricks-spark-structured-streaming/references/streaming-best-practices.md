@@ -6,6 +6,44 @@ tags: ["spark-streaming", "best-practices", "production", "performance", "expert
 
 # Streaming Best Practices Expert Pack
 
+## Contents
+
+- [Overview](#overview)
+- [Beginner Checklist](#beginner-checklist)
+  - [1. Always Set a Trigger Interval](#1-always-set-a-trigger-interval)
+  - [2. Use Auto Loader Notification Mode](#2-use-auto-loader-notification-mode)
+  - [3. Disable S3 Versioning](#3-disable-s3-versioning)
+  - [4. Co-Locate Compute and Storage](#4-co-locate-compute-and-storage)
+  - [5. Use ADLS Gen2 on Azure](#5-use-adls-gen2-on-azure)
+  - [6. Partition Strategy](#6-partition-strategy)
+  - [7. Name Your Streaming Query](#7-name-your-streaming-query)
+  - [8. One Checkpoint Per Stream](#8-one-checkpoint-per-stream)
+  - [9. Don't Multiplex Streams](#9-dont-multiplex-streams)
+  - [10. Optimal Partition Size](#10-optimal-partition-size)
+  - [11. Prefer Broadcast Hash Join](#11-prefer-broadcast-hash-join)
+- [Stopping a streaming query](#stopping-a-streaming-query)
+  - [Unbounded runs — block the driver](#unbounded-runs--block-the-driver)
+  - [Bounded runs — timeout + stop](#bounded-runs--timeout--stop)
+  - [Stopping from another cell or process](#stopping-from-another-cell-or-process)
+  - [Orphan streams on shared clusters](#orphan-streams-on-shared-clusters)
+- [Advanced Checklist](#advanced-checklist)
+  - [12. Checkpoint Naming Convention](#12-checkpoint-naming-convention)
+  - [13. Minimize Shuffle Spill](#13-minimize-shuffle-spill)
+  - [14. Use RocksDB for Stateful Operations](#14-use-rocksdb-for-stateful-operations)
+  - [15. Event Hubs via Kafka Connector](#15-event-hubs-via-kafka-connector)
+  - [16. Watermark for State Cleanup](#16-watermark-for-state-cleanup)
+  - [17. Deduplication at Scale](#17-deduplication-at-scale)
+  - [18. Azure Instance Family Selection](#18-azure-instance-family-selection)
+  - [19. Shuffle Partitions](#19-shuffle-partitions)
+- [Quick Reference](#quick-reference)
+  - [Trigger Selection](#trigger-selection)
+  - [Cluster Sizing](#cluster-sizing)
+- [Monitoring Checklist](#monitoring-checklist)
+- [Common Mistakes](#common-mistakes)
+- [Related Skills](#related-skills)
+
+---
+
 ## Overview
 
 A comprehensive checklist distilled from production experience. These practices should hold true in almost all scenarios.

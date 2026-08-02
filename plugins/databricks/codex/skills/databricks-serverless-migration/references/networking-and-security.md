@@ -2,6 +2,30 @@
 
 Guide for migrating networking and security configurations from classic compute to serverless compute.
 
+## Contents
+
+- [Overview](#overview)
+- [VPC Peering to NCCs](#vpc-peering-to-nccs)
+  - [Why the Change](#why-the-change)
+  - [Migration Steps](#migration-steps)
+  - [NCC Limits](#ncc-limits)
+- [Private Link Setup](#private-link-setup)
+  - [AWS Private Link](#aws-private-link)
+  - [Azure Private Link](#azure-private-link)
+  - [Supported Private Link Targets](#supported-private-link-targets)
+- [Stable IPs and Firewall Rules](#stable-ips-and-firewall-rules)
+  - [Pattern: Database Firewall](#pattern-database-firewall)
+  - [Pattern: Storage Account Firewall (Azure)](#pattern-storage-account-firewall-azure)
+  - [Pattern: Same-Region Cloud Storage](#pattern-same-region-cloud-storage)
+- [S3 and ADLS Access via UC External Locations](#s3-and-adls-access-via-uc-external-locations)
+  - [Replacing IAM Instance Profiles (AWS)](#replacing-iam-instance-profiles-aws)
+  - [Replacing Azure Service Principals / Managed Identity](#replacing-azure-service-principals--managed-identity)
+- [Replacing Hadoop Configuration Credentials](#replacing-hadoop-configuration-credentials)
+- [Network Configuration Checklist](#network-configuration-checklist)
+- [Documentation](#documentation)
+
+---
+
 ## Overview
 
 Serverless compute uses a Databricks-managed VPC/VNet, so classic networking patterns like VPC peering and instance profiles do not apply. The key changes:

@@ -4,6 +4,29 @@ Deep reference for migrating a **compiled Scala JAR** (`SPARK_JAR_TASK`) from cl
 
 Serverless runs JARs on a Spark Connect kernel with a **fixed classpath**: **Scala 2.13.16, JDK 17, Databricks Connect 17.3.1** (environment version 4). Migration is about making the JAR match that classpath instead of bundling its own conflicting copies.
 
+## Contents
+
+- [When the parent skill delegates here](#when-the-parent-skill-delegates-here)
+- [The four failure modes (every failure mode we've seen across JAR migrations to date)](#the-four-failure-modes-every-failure-mode-weve-seen-across-jar-migrations-to-date)
+- [Narrate the migration as you go](#narrate-the-migration-as-you-go)
+- [Step 1 — Analyze the build statically (do not wait for a failed run)](#step-1--analyze-the-build-statically-do-not-wait-for-a-failed-run)
+- [Step 2 — Apply the fixes (sbt)](#step-2--apply-the-fixes-sbt)
+- [Step 3 — Verify before deploying (do not skip)](#step-3--verify-before-deploying-do-not-skip)
+- [Step 4 — Deploy and confirm](#step-4--deploy-and-confirm)
+  - [Deploy with a bundle (durable default)](#deploy-with-a-bundle-durable-default)
+  - [Quick inner-loop check (fast path)](#quick-inner-loop-check-fast-path)
+  - [Job config — attach the JAR to the serverless environment](#job-config--attach-the-jar-to-the-serverless-environment)
+  - [Production rigor — follow the parent skill, with one JAR prerequisite](#production-rigor--follow-the-parent-skill-with-one-jar-prerequisite)
+- [Kernel classpath — serverless environment version 4](#kernel-classpath--serverless-environment-version-4)
+  - [A. High-collision application libraries (the usual offenders)](#a-high-collision-application-libraries-the-usual-offenders)
+  - [B. Spark / Databricks Connect — never bundle, mark Provided](#b-spark--databricks-connect--never-bundle-mark-provided)
+  - [C. Scala toolchain — must match exactly (mark Provided / let sbt manage)](#c-scala-toolchain--must-match-exactly-mark-provided--let-sbt-manage)
+  - [D. Google / transitive infra (collide only if your JAR pulls them)](#d-google--transitive-infra-collide-only-if-your-jar-pulls-them)
+  - [E. Kernel / REPL internals — rarely bundled by app JARs, but conflict if present](#e-kernel--repl-internals--rarely-bundled-by-app-jars-but-conflict-if-present)
+- [Output the skill should produce](#output-the-skill-should-produce)
+
+---
+
 ## When the parent skill delegates here
 
 Route into this flow when any of these are true:

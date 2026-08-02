@@ -4,6 +4,23 @@ How to read SCD Type 2 history tables produced by Auto CDC: current-state views,
 
 For the CDC flow that *writes* these tables, see auto-cdc-python / auto-cdc-sql.
 
+## Contents
+
+- [Temporal Columns](#temporal-columns)
+- [Current State](#current-state)
+- [Point-in-Time Queries](#point-in-time-queries)
+- [Change Analysis](#change-analysis)
+  - [All versions of one entity](#all-versions-of-one-entity)
+  - [Changes within a period (excluding the original version per entity)](#changes-within-a-period-excluding-the-original-version-per-entity)
+- [Joining Facts with Historical Dimensions](#joining-facts-with-historical-dimensions)
+  - [As-of-transaction-time (canonical for revenue-correct gold)](#as-of-transaction-time-canonical-for-revenue-correct-gold)
+  - [With the current dimension (ignore history)](#with-the-current-dimension-ignore-history)
+- [Optimization](#optimization)
+- [Best Practices](#best-practices)
+- [Common Issues](#common-issues)
+
+---
+
 ## Temporal Columns
 
 SCD Type 2 tables (from `stored_as_scd_type=2` / `STORED AS SCD TYPE 2`) include two system columns:

@@ -2,6 +2,22 @@
 
 Use Genie when your app needs a **natural language query interface** over Unity Catalog tables. For analytics dashboards, use `config/queries/` instead. For persistent storage, use Lakebase.
 
+## Contents
+
+- [When to Use](#when-to-use)
+- [Architecture](#architecture)
+- [Genie Space Creation](#genie-space-creation)
+- [Scaffolding a New Genie App](#scaffolding-a-new-genie-app)
+- [Adding Genie to an Existing App](#adding-genie-to-an-existing-app)
+- [Multi-Space Deployment](#multi-space-deployment)
+- [Frontend](#frontend)
+- [HTTP Endpoints](#http-endpoints)
+  - [SSE Event Types](#sse-event-types)
+  - [Attachment Types](#attachment-types)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## When to Use
 
 | Pattern | Use Case | Data Source |

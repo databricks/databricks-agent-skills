@@ -12,6 +12,30 @@ Two options for writing streaming records into Lakebase Postgres:
 
 For general Lakebase mechanics — projects, branches, sizing, the CU-to-connections cap, authentication methods, connection patterns from non-streaming clients — see the stable `databricks-lakebase` skill, specifically its connectivity and computes-and-scaling references. For RTM cluster setup, see real-time-mode. This file covers only the sink-specific patterns.
 
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Target table](#target-table)
+- [Option A: Native Lakebase sink (preferred when available)](#option-a-native-lakebase-sink-preferred-when-available)
+  - [Unity Catalog form (simplest)](#unity-catalog-form-simplest)
+  - [Explicit endpoint form (non-UC tables)](#explicit-endpoint-form-non-uc-tables)
+  - [Options](#options)
+  - [Connection behavior](#connection-behavior)
+  - [Triggers and output modes](#triggers-and-output-modes)
+- [Option B: Manual foreach sink (fallback / customization)](#option-b-manual-foreach-sink-fallback--customization)
+  - [Two non-obvious rules (manual sink only)](#two-non-obvious-rules-manual-sink-only)
+  - [The LakebaseSink class](#the-lakebasesink-class)
+  - [Wiring into a stream](#wiring-into-a-stream)
+  - [Tuning max_dwell_ms](#tuning-max_dwell_ms)
+- [Delivery semantics](#delivery-semantics)
+- [Connection budget](#connection-budget)
+- [Performance & longevity](#performance--longevity)
+  - [Dead-tuple bloat on hot-key upserts](#dead-tuple-bloat-on-hot-key-upserts)
+  - [Do NOT put Change Data Feed on a high-churn upsert table](#do-not-put-change-data-feed-on-a-high-churn-upsert-table)
+  - [Reconnect instead of failing the query](#reconnect-instead-of-failing-the-query)
+
+---
+
 ## Prerequisites
 
 - A Lakebase Autoscaling project, branch, and endpoint. Default database is `databricks_postgres`.

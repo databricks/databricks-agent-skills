@@ -14,6 +14,18 @@ Use custom endpoints ONLY for:
 - **File processing**: Uploads, processing, transformations (when not covered by the Files plugin)
 - **Custom computations**: Operations requiring TypeScript/Node.js logic
 
+## Contents
+
+- [Before Adding Endpoints](#before-adding-endpoints)
+  - [1. Check AppKit Version](#1-check-appkit-version)
+  - [2. Review Available Plugins](#2-review-available-plugins)
+  - [3. Check Existing Routes](#3-check-existing-routes)
+- [Server-side Pattern](#server-side-pattern)
+- [Client-side Pattern](#client-side-pattern)
+- [Decision Tree for Data Operations](#decision-tree-for-data-operations)
+
+---
+
 ## Before Adding Endpoints
 
 **ALWAYS complete these checks before registering routes:**

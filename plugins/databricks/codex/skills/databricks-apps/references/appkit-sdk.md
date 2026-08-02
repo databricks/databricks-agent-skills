@@ -1,5 +1,17 @@
 # Databricks App Kit SDK
 
+## Contents
+
+- [TypeScript Import Rules](#typescript-import-rules)
+- [Server Setup](#server-setup)
+- [useAnalyticsQuery Hook](#useanalyticsquery-hook)
+  - [⚠️ Memoize Parameters to Prevent Infinite Loops](#-memoize-parameters-to-prevent-infinite-loops)
+  - [Conditional Queries](#conditional-queries)
+  - [Type Inference](#type-inference)
+  - [Basic Usage](#basic-usage)
+
+---
+
 ## TypeScript Import Rules
 
 This template uses strict TypeScript settings with `verbatimModuleSyntax: true`. **Always use `import type` for type-only imports**.
