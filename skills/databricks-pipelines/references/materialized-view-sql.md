@@ -1,6 +1,6 @@
 # Materialized Views (SQL)
 
-Batch processing with full refresh or incremental computation. For streaming tables (incremental streaming), see [streaming-table-sql.md](streaming-table-sql.md).
+Batch processing with full refresh or incremental computation. For streaming tables (incremental streaming), see streaming-table-sql.
 
 ## Syntax
 
@@ -18,7 +18,7 @@ CREATE OR REFRESH [PRIVATE] MATERIALIZED VIEW view_name
   AS query
 ```
 
-Clause notes (same semantics as streaming tables — see [streaming-table-sql.md](streaming-table-sql.md) for the detailed treatment of `PRIVATE`, `MASK`, `WITH ROW FILTER`, and informational table constraints):
+Clause notes (same semantics as streaming tables — see streaming-table-sql for the detailed treatment of `PRIVATE`, `MASK`, `WITH ROW FILTER`, and informational table constraints):
 
 - `query` must NOT use `STREAM(...)` — MVs are batch. Streaming reads belong in a streaming table.
 - PRIMARY KEY requires explicit `NOT NULL`.

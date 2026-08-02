@@ -2,7 +2,7 @@
 
 Data-quality constraints inside `CREATE OR REFRESH STREAMING TABLE` / `MATERIALIZED VIEW` / `CREATE LIVE VIEW`. Each constraint is a SQL Boolean expression evaluated per row; the action on violation is `(default)` warn, `DROP ROW`, or `FAIL UPDATE`.
 
-> `CREATE TEMPORARY VIEW` does NOT support `CONSTRAINT` clauses. Use `CREATE LIVE VIEW` for the edge case of "temporary view with expectations" — see [temporary-view-sql.md#using-expectations-with-temporary-views](temporary-view-sql.md#using-expectations-with-temporary-views).
+> `CREATE TEMPORARY VIEW` does NOT support `CONSTRAINT` clauses. Use `CREATE LIVE VIEW` for the edge case of "temporary view with expectations" — see temporary-view-sql#using-expectations-with-temporary-views.
 
 ## Syntax
 

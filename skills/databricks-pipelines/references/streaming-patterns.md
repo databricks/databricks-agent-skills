@@ -2,7 +2,7 @@
 
 Patterns for streaming pipelines: deduplication, windowed aggregations, late-arriving data, rescue-data quarantine, monitoring lag, anomaly detection. SQL is shown as canonical; Python equivalents use `@dp.table` + `spark.readStream.table(...)` with the obvious DataFrame translation.
 
-For stream-to-stream joins as a perf-framed topic, see [performance.md](performance.md#join-optimization). For Auto Loader, see [auto-loader-python.md](auto-loader-python.md) / [auto-loader-sql.md](auto-loader-sql.md). For Kafka ingestion, see [kafka.md](kafka.md).
+For stream-to-stream joins as a perf-framed topic, see performance#join-optimization. For Auto Loader, see auto-loader-python / auto-loader-sql. For Kafka ingestion, see kafka.
 
 ---
 
@@ -41,7 +41,7 @@ Same `GROUP BY` shape generalises to composite-key dedup (just add the key colum
 
 ### When to use Auto CDC instead
 
-For dedup with sequenced updates (most-recent-wins, deletes, late corrections), use Auto CDC with SCD Type 1 — see [auto-cdc-python.md](auto-cdc-python.md) / [auto-cdc-sql.md](auto-cdc-sql.md). Manual `ROW_NUMBER` / `GROUP BY` dedup is for append-only streams without semantic updates.
+For dedup with sequenced updates (most-recent-wins, deletes, late corrections), use Auto CDC with SCD Type 1 — see auto-cdc-python / auto-cdc-sql. Manual `ROW_NUMBER` / `GROUP BY` dedup is for append-only streams without semantic updates.
 
 ---
 
@@ -91,7 +91,7 @@ Python: `F.session_window("event_timestamp", "30 minutes")`.
 | 15–60 minutes | Operational dashboards |
 | 1–24 hours | Analytical reports |
 
-Larger windows = less state pressure but stale results. Pick the smallest window that meets the freshness SLO. For genuine sub-second operational latency, use [Real-Time Mode](real-time-mode.md).
+Larger windows = less state pressure but stale results. Pick the smallest window that meets the freshness SLO. For genuine sub-second operational latency, use Real-Time Mode — see real-time-mode.
 
 ---
 
@@ -159,13 +159,13 @@ INNER JOIN STREAM(bronze_payments) p
 
 Python equivalent: same join with the time-bound predicate as `(p.payment_timestamp >= o.order_timestamp) & (p.payment_timestamp <= o.order_timestamp + F.expr("INTERVAL 1 HOUR"))`.
 
-For stream-to-static (broadcast small dimensions) and perf-tuning, see [performance.md](performance.md#join-optimization).
+For stream-to-static (broadcast small dimensions) and perf-tuning, see performance#join-optimization.
 
 ---
 
 ## Incremental Aggregations (Running Totals)
 
-Streaming `GROUP BY` without windows yields cumulative aggregates per group. Watch state size — see [performance.md](performance.md#state-management-for-streaming).
+Streaming `GROUP BY` without windows yields cumulative aggregates per group. Watch state size — see performance#state-management-for-streaming.
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE silver_customer_running_totals AS
@@ -227,9 +227,9 @@ GROUP BY window(kafka_timestamp, '1 minute');
 
 1. **Use event time, not processing time**, for aggregation keys.
 2. **Deduplicate at silver**, not bronze. Bronze is append-only, silver is clean.
-3. **Bound state**: time windows, lower cardinality, materialize intermediates — see [performance.md](performance.md#state-management-for-streaming).
+3. **Bound state**: time windows, lower cardinality, materialize intermediates — see performance#state-management-for-streaming.
 4. **Quarantine, don't drop silently** — route bad rows to a side table for observability.
-5. **Use Auto CDC for sequenced updates** instead of building dedup with `ROW_NUMBER` — see [auto-cdc-python.md](auto-cdc-python.md) / [auto-cdc-sql.md](auto-cdc-sql.md).
+5. **Use Auto CDC for sequenced updates** instead of building dedup with `ROW_NUMBER` — see auto-cdc-python / auto-cdc-sql.
 
 ---
 

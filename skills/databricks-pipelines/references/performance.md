@@ -207,7 +207,7 @@ Querying `orders_monthly` is far cheaper than re-aggregating the underlying tabl
 | Cost | Pay-per-use | Pay for cluster time |
 | Best for | Variable / dev / test / most prod | Steady long-running workloads with special requirements |
 
-**Default to serverless.** Switch to classic only when R, Spark RDD APIs, JAR/Maven libraries, or other serverless-incompatible features are required — see [pipeline-configuration.md](pipeline-configuration.md#serverless-limitations-force-classic-clusters).
+**Default to serverless.** Switch to classic only when R, Spark RDD APIs, JAR/Maven libraries, or other serverless-incompatible features are required — see pipeline-configuration#serverless-limitations-force-classic-clusters.
 
 ---
 

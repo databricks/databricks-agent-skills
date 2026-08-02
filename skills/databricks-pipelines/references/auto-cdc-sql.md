@@ -2,7 +2,7 @@
 
 `AUTO CDC INTO` processes CDC events from a streaming source into a target streaming table. SCD Type 1 (latest) or Type 2 (history). The target must be pre-created.
 
-> SQL only supports CDC from streaming sources (`AUTO CDC INTO`). For periodic-snapshot CDC, use Python's `dp.create_auto_cdc_from_snapshot_flow()` — see [auto-cdc-python.md](auto-cdc-python.md).
+> SQL only supports CDC from streaming sources (`AUTO CDC INTO`). For periodic-snapshot CDC, use Python's `dp.create_auto_cdc_from_snapshot_flow()` — see auto-cdc-python.
 
 ## Syntax
 
@@ -32,7 +32,7 @@ Clause notes:
 - `STORED AS SCD TYPE 2` adds `__START_AT` and `__END_AT` system columns to the target. If you supply an explicit target schema, include them with the same type as `SEQUENCE BY`.
 - `TRACK HISTORY ON cols` — Type 2 only; only listed columns trigger new history rows. Others get in-place Type-1 updates.
 
-For querying Type 2 history tables, see [scd-2-querying.md](scd-2-querying.md).
+For querying Type 2 history tables, see scd-2-querying.
 
 ## Patterns
 

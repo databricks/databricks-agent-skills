@@ -1,6 +1,6 @@
 # Materialized Views (Python)
 
-Batch processing with full refresh or incremental computation. For streaming tables, see [streaming-table-python.md](streaming-table-python.md). For the incremental-refresh operation-support table, see [materialized-view-sql.md](materialized-view-sql.md#incremental-refresh).
+Batch processing with full refresh or incremental computation. For streaming tables, see streaming-table-python. For the incremental-refresh operation-support table, see materialized-view-sql#incremental-refresh.
 
 ## `@dp.materialized_view()` — preferred
 
@@ -24,11 +24,11 @@ def my_mv():
 
 `@dp.table()` with a batch DataFrame return type also creates a materialized view (legacy DLT shape), but `@dp.materialized_view()` is the recommended decorator. Use `@dp.table` only for streaming tables now.
 
-For the detailed semantics of `row_filter` (UC SQL UDF returning BOOLEAN; forces full refresh of downstream MVs; cannot define the UDF inside the pipeline), see [streaming-table-python.md](streaming-table-python.md).
+For the detailed semantics of `row_filter` (UC SQL UDF returning BOOLEAN; forces full refresh of downstream MVs; cannot define the UDF inside the pipeline), see streaming-table-python.
 
 ## Incremental refresh
 
-Requires **serverless** + Delta row tracking on source tables (`delta.enableRowTracking = true`). Falls back to full recompute otherwise. For the supported-operations matrix, see [materialized-view-sql.md](materialized-view-sql.md#incremental-refresh) — same support applies to the Python DataFrame equivalents.
+Requires **serverless** + Delta row tracking on source tables (`delta.enableRowTracking = true`). Falls back to full recompute otherwise. For the supported-operations matrix, see materialized-view-sql#incremental-refresh — same support applies to the Python DataFrame equivalents.
 
 For exactly-once semantics (Kafka, Auto Loader), use a streaming table instead.
 

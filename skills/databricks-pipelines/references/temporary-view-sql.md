@@ -35,7 +35,7 @@ CREATE LIVE VIEW view_name (
 ) AS query
 ```
 
-See [expectations-sql.md](expectations-sql.md) for the full constraint semantics. Otherwise, prefer attaching the constraint to a downstream streaming table or MV.
+See expectations-sql for the full constraint semantics. Otherwise, prefer attaching the constraint to a downstream streaming table or MV.
 
 ## Key rules
 
@@ -43,4 +43,4 @@ See [expectations-sql.md](expectations-sql.md) for the full constraint semantics
 - Pipeline-scoped — not published to UC, gone after pipeline run.
 - Reference downstream as `FROM view_name` (batch) or `FROM STREAM(view_name)` (streaming).
 - Temp view name shadows a same-named catalog object inside the pipeline.
-- For UC-published views, use `CREATE VIEW` ([view-sql.md](view-sql.md)).
+- For UC-published views, use `CREATE VIEW` (view-sql).

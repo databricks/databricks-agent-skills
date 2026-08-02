@@ -22,7 +22,7 @@ def my_table():
 - `cloudFiles.inferColumnTypes` — enable type inference (default: all-string for JSON/CSV/XML).
 - `cloudFiles.schemaHints` — partial typing, e.g. `"id INT, amount DECIMAL(10,2)"`.
 - `cloudFiles.schemaEvolutionMode` — how to handle new columns (`addNewColumns`, `rescue`, `failOnNewColumns`, `none`).
-- Quarantine malformed rows via the rescued-data pattern in [streaming-patterns.md#rescue-data-quarantine](streaming-patterns.md#rescue-data-quarantine).
+- Quarantine malformed rows via the rescued-data pattern in streaming-patterns#rescue-data-quarantine.
 
 ## Common format-agnostic options
 
@@ -60,4 +60,4 @@ All clouds accept `databricks.serviceCredential` to reference a UC service crede
 
 ## Format-specific options
 
-See [JSON](options-json.md), [CSV](options-csv.md), [Parquet](options-parquet.md), [Avro](options-avro.md), [ORC](options-orc.md), [XML](options-xml.md), [Text](options-text.md).
+See options-json, options-csv, options-parquet, options-avro, options-orc, options-xml, options-text.

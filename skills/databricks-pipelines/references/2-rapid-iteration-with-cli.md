@@ -1,6 +1,6 @@
 # Rapid Iteration with CLI (no DAB)
 
-Use the `databricks pipelines` CLI to create, run, and iterate on a pipeline **without managing a bundle**. Fastest path for prototyping. Production-bound work belongs in a bundle — see [1-project-initialization-with-dab.md](1-project-initialization-with-dab.md).
+Use the `databricks pipelines` CLI to create, run, and iterate on a pipeline **without managing a bundle**. Fastest path for prototyping. Production-bound work belongs in a bundle — see 1-project-initialization-with-dab.
 
 **Default to serverless.** Only use classic clusters if the user explicitly requires R, Spark RDD APIs, or JAR libraries.
 
@@ -8,7 +8,7 @@ Use the `databricks pipelines` CLI to create, run, and iterate on a pipeline **w
 
 ## Step 1: Write pipeline files locally
 
-`.sql` or `.py` files in a folder. See [python-basics.md](python-basics.md) or [sql-basics.md](sql-basics.md) for syntax.
+`.sql` or `.py` files in a folder. See python-basics or sql-basics for syntax.
 
 ## Step 2: Upload to the workspace
 
@@ -37,7 +37,7 @@ databricks pipelines create --json '{
 }'
 ```
 
-These flags are the canonical dev/iteration defaults — fail fast. **Tuned for demo / iteration.** For production pipelines, drop `"development"` and the two `pipelines.*RetryAttempts` overrides so the platform's retry defaults (5 / 2) can absorb transient infra failures. Per-field rationale in [pipeline-configuration.md#canonical-create-dev--iteration-defaults](pipeline-configuration.md#canonical-create-dev--iteration-defaults).
+These flags are the canonical dev/iteration defaults — fail fast. **Tuned for demo / iteration.** For production pipelines, drop `"development"` and the two `pipelines.*RetryAttempts` overrides so the platform's retry defaults (5 / 2) can absorb transient infra failures. Per-field rationale in pipeline-configuration#canonical-create-dev--iteration-defaults.
 
 `libraries`: use `"glob"` for a directory (recommended for medallion folders), `"file"` for a single `.sql`/`.py` (folder paths fail with `Paths must end with .py or .sql`), or enumerated `"file"` entries when ordering matters. `"notebook"` is deprecated — never use.
 
