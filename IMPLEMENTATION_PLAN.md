@@ -154,7 +154,7 @@ against:**
 
 | ID | Severity | Count |
 |---|---|---|
-| PD-6 | must-fix | 125 |
+| PD-6 | must-fix | 121 (was 125; the NEW-C branch shipped 4 TOCs) |
 | PD-5 | must-fix | **0 — DONE** (was 228) |
 | PD-5b | must-fix | **0 — DONE** (was 12) |
 | SPEC-10a-cross | must-fix | **0 — DONE** (was 90) |
@@ -162,7 +162,7 @@ against:**
 | SPEC-10a-prose | must-fix | 0 (the 3 moved to `SPEC-10a-self-parent`, `2b9807a`) |
 | SPEC-10b | must-fix | **0 — DONE** (was 64) |
 | NEW-A | must-fix | 0 |
-| NEW-C | must-fix | 4 |
+| NEW-C | must-fix | **0 — DONE** (was 4) |
 | PD-4a | must-fix | **0 — DONE** (was 3) |
 | PD-4c | must-fix | **0 — DONE** (was 3; the PD-5 sweep cleared all 3) |
 | PD-1 | must-fix | 3 |
@@ -178,7 +178,7 @@ against:**
 | PD-8 | advisory | 30 |
 | MNT-6 | advisory | 1 |
 
-must-fix total **141** (rollup/advisory not summed); resident set 2,975 stable /
+must-fix total **133** (rollup/advisory not summed); resident set 2,975 stable /
 3,199 all-in — unchanged by every sweep so far.
 
 ---
@@ -436,36 +436,37 @@ call, filed below. Do not guess parents.
 
 ---
 
-## 9. `[SEV]` NEW-C — reference files at the skill root — 4 files / 12 links → 0
+## 9. NEW-C — reference files at the skill root — 4 files / 12 links → 0 — DONE
 
-- **Finding:** NEW-C (not in `specs/02`)
-- **Paths:** `skills/databricks-core/{databricks-cli-auth,databricks-cli-install,manual-data-exploration}.md`
-  and `experimental/databricks-ai-runtime/docker-images.md`
-- **Count:** 4 files, **12** bare-basename links → 0.
-  `skills/databricks-core/SKILL.md` lines 26, 32, 37, 87, 141, 149, 150, 151,
-  156, 157, 158 (**11**) plus
-  `experimental/databricks-ai-runtime/SKILL.md:33` (**1** — missed by the
-  previous plan, which said 11).
-- **Backpressure:** `ls skills/databricks-core/*.md experimental/databricks-ai-runtime/*.md
-  | grep -vc SKILL.md` → 0; then `python3 scripts/skills.py generate` and
-  `python3 scripts/skills.py validate; echo $?` → 0 with a clean `git status`
-
-They resolve on disk, so nothing is user-visibly broken — but they violate
-`specs/01`'s link rule ("a bare basename is a defect even when the file
-resolves by luck") **and** every `references/`-scoped check skips them
-silently: no TOC check, no orphan check, no one-level-deep check. Three of the
-four sit in the repo's entry-point skill.
-
-**`scripts/skills.py generate` IS required — now verified, not assumed.**
-`manifest.json` enumerates per-file paths per skill via `iter_skill_files()` /
-`rglob` (`scripts/skillsgen/manifest.py`), listing these four basenames
-directly; `plugins/databricks/{claude,codex,copilot,cursor}/skills/...` is a
-recursive byte-for-byte mirror (`scripts/skillsgen/bundle.py`). Both go stale
-on the move and `validate` **does** catch it (manifest content mismatch +
-missing/orphan bundle files). The four `marketplace.json` catalogs and
-`agents/openai.yaml` reference skill **directories** only and are unaffected.
-The 12 markdown links are a manual fix — no generator or validator parses
-SKILL.md link targets.
+- **Finding:** NEW-C — **DONE**, 4 → 0.
+- **Landed** on branch `ralph/new-c-root-refs`, off `ralph/pd-4-routing`, in
+  two commits: the move, then the four TOCs that finish the moved files.
+- **Moved:** `databricks-core/{databricks-cli-auth,databricks-cli-install,
+  manual-data-exploration}.md` and
+  `experimental/databricks-ai-runtime/docker-images.md` → each skill's new
+  `references/` directory (neither skill had one).
+- **12 inbound links** re-prefixed, exactly as this plan predicted: 11 in
+  `databricks-core/SKILL.md`, 1 in `databricks-ai-runtime/SKILL.md:33`.
+- **Two pointers outside the skills tree** also had to move, neither of which
+  the plan had recorded:
+  - `commands/setup.md:16` — hand-written command source (the rendered copies
+    under `plugins/*/commands/` follow from `generate`).
+  - `references/manual-data-exploration.md:90` linked `databricks-cli-auth.md`.
+    Root-to-root before the move, **reference-to-reference after it** — this
+    branch would have regressed PD-5 from 0 to 1. Fixed in the same commit
+    under the house PD-5 shape (keep the name, parenthesise the pointer). The
+    label named a thing, so "CLI Authentication Guide" survives.
+- **PD-6 accounting.** The move was **population-neutral** — PD-6 held at 125,
+  because D10 already counts root-level reference files; that is the whole
+  point of D10. The general expectation that a relocating branch pushes PD-6 up
+  then back down does **not** apply to NEW-C. The TOC commit then took PD-6
+  **125 → 121**, exactly the four files this branch moved.
+- **Anchors verified.** All 57 generated anchor links resolve against a
+  GitHub-style derivation of the real headings; fenced blocks were masked first
+  so a `# comment` inside a bash fence could not become a phantom entry.
+- **Backpressure:** `audit_check.py --only NEW-C` → 0; must-fix 141 → **133**;
+  `skills.py validate` → 0; `manifest.json` changed (paths moved) and is staged
+  with the bundle; 149 tests pass.
 
 ---
 
@@ -710,7 +711,7 @@ still constrain the order.
 | 3 | `ralph/spec-10a-remainder` | 7 · SPEC-10a-intra | DONE (19 → 0) |
 | 4 | `ralph/spec-10a-prose` | 15 · SPEC-10a-prose | already 0 — regression guard only |
 | 5 | `ralph/spec-10b-basenames` | 5 · SPEC-10b | DONE (64 → 0) |
-| 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | 12 links / 4 files → 0 |
+| 6 | `ralph/new-c-root-refs` | 9 · NEW-C (+ `generate`) | DONE (4 → 0) |
 | 7 | `ralph/pd-5-pipelines` **done** | 3 · PD-5 (pipelines only) | 228 → 137; PD-4c 3 → 1 |
 | 7b | `ralph/pd-5-rest` **done** | 3 + 3a · PD-5 (14 skills), PD-5b | 137 → 0; 12 → 0; PD-4c 1 → 0 |
 | 8 | ~~`ralph/pd-4c-orphans`~~ **absorbed by 7 + 7b** | 14 · PD-4c | 3 → 0, done |
