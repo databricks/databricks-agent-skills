@@ -63,20 +63,8 @@ User request → What kind of output?
 
 ## Common Issues
 
-Error → cause/fix mappings agents hit constantly. For DAB-bundle vs CLI-iteration deploy issues, see the workflow-specific reference files.
-
-| Error / symptom | Cause / fix |
-|-----------------|-------------|
-| Rejection of `CREATE OR REPLACE STREAMING TABLE` / `MATERIALIZED VIEW` | `CREATE OR REPLACE` is standard SQL, NOT SDP. Use `CREATE OR REFRESH STREAMING TABLE` / `CREATE OR REFRESH MATERIALIZED VIEW`. |
-| CLI errors on `databricks fs ls /Volumes/...` | The `dbfs:` prefix is required even for UC Volume paths: `databricks fs ls dbfs:/Volumes/<catalog>/<schema>/<volume>/<path>`. |
-| `DELTA_CLUSTERING_COLUMNS_DATATYPE_NOT_SUPPORTED` at first write | A `CLUSTER BY` column is BOOLEAN / ARRAY / MAP / STRUCT / BINARY. SDP doesn't pre-validate — verify with `DESCRIBE` before submitting. Cluster keys must be numeric / string / date / timestamp. Full type rules in [references/performance.md](references/performance.md#cluster-key-data-types). |
-| `Cannot create streaming table from batch query` | In a streaming-table query you wrote `FROM read_files(...)` (batch). Use `FROM STREAM read_files(...)` so Auto Loader kicks in. |
-| `Column not found` at ingest time | `schemaHints` don't match the actual file schema. `DESCRIBE` a sample file and align the hints. |
-| Streaming reads fail with parser error | Use `FROM STREAM read_files(...)` for file ingestion and `FROM stream(table)` (or `FROM STREAM table_name` — legacy DLT, prefer function form) for table-to-table streams. Don't mix. |
-| Pipeline stuck `INITIALIZING` for serverless | Normal — first run takes a few minutes for cold start. Don't kill it. |
-| Materialized View doesn't incrementally refresh | Automatic incremental refresh for aggregations requires **serverless** + Delta row tracking on the source (`delta.enableRowTracking = true`). Without both, falls back to full recompute. Mention the serverless requirement when the user asks about incremental refresh. |
-| SCD2 query returns nothing / "column not found" on `START_AT` | Lakeflow uses `__START_AT` / `__END_AT` (double underscore). Current rows: `WHERE __END_AT IS NULL`. |
-| `error.exceptions[0].message` missing from your events output | Your `jq` is reading `.message` (which is just "Update X is FAILED"). Read `error.exceptions[0].message` for the real cause — see [2-rapid-iteration-with-cli.md](references/2-rapid-iteration-with-cli.md#step-4-start-an-update-and-poll-that-update). |
+Read [Common Issues](references/common-issues.md) when a pipeline fails and
+the error is not self-explanatory — it maps symptom to fix.
 
 ## Publishing Modes
 
@@ -96,76 +84,10 @@ Some features sit on top of others — read both:
 - **Auto Loader** / **Auto CDC** / **Sinks** target a streaming table → also read [streaming-table-python.md](references/streaming-table-python.md) / [streaming-table-sql.md](references/streaming-table-sql.md).
 - **Expectations** attach to a dataset → also read the dataset definition file (streaming-table / materialized-view / temporary-view).
 
-### Dataset Definition APIs
-
-| Feature                    | Description                                                      | Python                            | SQL                                         | Skill (Py)                                              | Skill (SQL)                                       |
-| -------------------------- | ---------------------------------------------------------------- | --------------------------------- | ------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
-| Streaming Table            | Continuous incremental processing, exactly-once, append-only.    | `@dp.table()` returning streaming DF | `CREATE OR REFRESH STREAMING TABLE`         | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
-| Materialized View          | Physically stored query result, incrementally refreshed.         | `@dp.materialized_view()`         | `CREATE OR REFRESH MATERIALIZED VIEW`       | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Temporary View             | Pipeline-private, not persisted to Unity Catalog.                | `@dp.temporary_view()`            | `CREATE TEMPORARY VIEW`                     | [temporary-view-python](references/temporary-view-python.md) | [temporary-view-sql](references/temporary-view-sql.md) |
-| Persistent View (UC)       | Published to UC; query runs on access (no storage).              | N/A — SQL only                    | `CREATE VIEW`                               | —                                                       | [view-sql](references/view-sql.md)                |
-| Streaming Table (explicit) | Empty target, populated by separate flows (Append Flow, AUTO CDC). | `dp.create_streaming_table()`     | `CREATE OR REFRESH STREAMING TABLE` (no AS) | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
-
-### Flow and Sink APIs
-
-| Feature                      | Description                                                      | Python                       | SQL                                    | Skill (Py)                                                  | Skill (SQL)                                       |
-| ---------------------------- | ---------------------------------------------------------------- | ---------------------------- | -------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------- |
-| Append Flow                  | Fan-in: multiple sources → one streaming table. Use instead of UNION. | `@dp.append_flow()`     | `CREATE FLOW ... INSERT INTO`          | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
-| Backfill Flow                | One-time historical load + ongoing live stream into same table. | `@dp.append_flow(once=True)` | `CREATE FLOW ... INSERT INTO ... ONCE` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
-| Sink (Delta/Kafka/EH/custom) | Write streaming output to external Delta / Kafka / Event Hubs.   | `dp.create_sink()`           | N/A — Python only                      | [sink-python](references/sink-python.md)                    | —                                                 |
-| ForEachBatch Sink            | Custom per-batch Python logic (merge/upsert, multi-destination). Public Preview. | `@dp.foreach_batch_sink()` | N/A — Python only         | [foreach-batch-sink-python](references/foreach-batch-sink-python.md) | —                                       |
-| RTM update flow              | Real-Time Mode: route a flow to a sink with sub-second latency. Public Preview. | `@dp.update_flow(target=...)` | N/A — Python only          | [real-time-mode](references/real-time-mode.md)              | —                                                 |
-
-### CDC APIs
-
-| Feature                      | Description                                                          | Python                                      | SQL                             | Skill (Py)                                | Skill (SQL)                          |
-| ---------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------------------------------ |
-| Auto CDC (streaming source)  | SCD Type 1 (overwrite) or Type 2 (history) from a CDC feed.          | `dp.create_auto_cdc_flow()`                 | `AUTO CDC INTO ... FROM STREAM` | [auto-cdc-python](references/auto-cdc-python.md) | [auto-cdc-sql](references/auto-cdc-sql.md) |
-| Auto CDC (periodic snapshot) | Compare consecutive full snapshots to detect changes.                | `dp.create_auto_cdc_from_snapshot_flow()`   | N/A — Python only               | [auto-cdc-python](references/auto-cdc-python.md) | —                                    |
-
-For querying SCD Type 2 history tables (`__START_AT` / `__END_AT`, point-in-time, joining facts with historical dimensions), see [scd-2-querying.md](references/scd-2-querying.md).
-
-### Data Quality APIs
-
-| Feature            | Description                                | Python                       | SQL                                                    | Skill (Py)                                            | Skill (SQL)                                     |
-| ------------------ | ------------------------------------------ | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------- |
-| Expect (warn)      | Log violations, keep all rows.             | `@dp.expect()`               | `CONSTRAINT ... EXPECT (...)`                          | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-| Expect or drop     | Drop violating rows.                       | `@dp.expect_or_drop()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION DROP ROW`    | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-| Expect or fail     | Fail the pipeline on first violation.      | `@dp.expect_or_fail()`       | `CONSTRAINT ... EXPECT (...) ON VIOLATION FAIL UPDATE` | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-| Expect all (warn)  | Multiple constraints at once, warn only.   | `@dp.expect_all({})`         | Multiple `CONSTRAINT` clauses                          | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-| Expect all or drop | Multiple constraints, drop on violation.   | `@dp.expect_all_or_drop({})` | Multiple constraints with `DROP ROW`                   | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-| Expect all or fail | Multiple constraints, fail on violation.   | `@dp.expect_all_or_fail({})` | Multiple constraints with `FAIL UPDATE`                | [expectations-python](references/expectations-python.md) | [expectations-sql](references/expectations-sql.md) |
-
-### Reading Data APIs
-
-| Feature                           | Description                                            | Python                                         | SQL                                              | Skill (Py)                                              | Skill (SQL)                                       |
-| --------------------------------- | ------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------- |
-| Batch read (pipeline dataset)     | Read a sibling table as a static DataFrame.            | `spark.read.table("name")`                     | `SELECT ... FROM name`                           | —                                                       | —                                                 |
-| Streaming read (pipeline dataset) | Read a sibling table as a streaming DataFrame.         | `spark.readStream.table("name")`               | `SELECT ... FROM STREAM(name)`                   | —                                                       | —                                                 |
-| Auto Loader (cloud files)         | Incrementally ingest new files from cloud storage.     | `spark.readStream.format("cloudFiles")`        | `STREAM read_files(...)`                         | [auto-loader-python](references/auto-loader-python.md)  | [auto-loader-sql](references/auto-loader-sql.md)  |
-| Kafka source                      | Streaming read from Kafka topic.                       | `spark.readStream.format("kafka")`             | `STREAM read_kafka(...)`                         | [kafka](references/kafka.md)                            | [kafka](references/kafka.md)                      |
-| Kinesis source                    | Streaming read from AWS Kinesis.                       | `spark.readStream.format("kinesis")`           | `STREAM read_kinesis(...)`                       | —                                                       | —                                                 |
-| Pub/Sub source                    | Streaming read from GCP Pub/Sub.                       | `spark.readStream.format("pubsub")`            | `STREAM read_pubsub(...)`                        | —                                                       | —                                                 |
-| Pulsar source                     | Streaming read from Apache Pulsar.                     | `spark.readStream.format("pulsar")`            | `STREAM read_pulsar(...)`                        | —                                                       | —                                                 |
-| Event Hubs source                 | Streaming read from Azure Event Hubs (Kafka protocol). | `spark.readStream.format("kafka")` + EH config | `STREAM read_kafka(...)` + EH config             | [kafka](references/kafka.md)                            | [kafka](references/kafka.md)                      |
-| JDBC / Lakehouse Federation       | Batch read from external systems via federation.       | `spark.read.format("postgresql")` etc.         | Direct table ref via federation catalog          | —                                                       | —                                                 |
-| Custom data source                | User-defined Python data source.                       | `spark.read[Stream].format("custom")`          | N/A — Python only                                | —                                                       | —                                                 |
-| Static file read (batch)          | One-shot load of files (no incremental tracking).      | `spark.read.format("json"\|"csv"\|...).load()` | `read_files(...)` (no STREAM)                    | —                                                       | —                                                 |
-| Skip upstream change commits      | Ignore CDC commits on the upstream table.              | `.option("skipChangeCommits", "true")`         | `read_stream("name", skipChangeCommits => true)` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
-
-### Table/Schema Feature APIs
-
-| Feature                      | Description                                                   | Python                                                | SQL                                     | Skill (Py)                                              | Skill (SQL)                                       |
-| ---------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
-| Liquid clustering            | Adaptive multi-column data layout; replaces PARTITION + Z-ORDER. Prefer Auto clustering when possible | `cluster_by=[...]`                                 | `CLUSTER BY (col1, col2)`               | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Auto liquid clustering       | Databricks picks clustering keys from query patterns.         | `cluster_by_auto=True`                                | `CLUSTER BY AUTO`                       | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Partition columns            | Legacy fixed partitioning. Prefer Liquid Clustering.          | `partition_cols=[...]`                                | `PARTITIONED BY (col1, col2)`           | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Table properties             | Delta table properties (auto-optimize, CDF, retention).       | `table_properties={...}`                              | `TBLPROPERTIES (...)`                   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Explicit schema              | Declare column types up front (vs inferred).                  | `schema="col1 TYPE, ..."`                             | `(col1 TYPE, ...) AS`                   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Generated columns            | Columns computed from other columns at write time.            | `schema="..., col TYPE GENERATED ALWAYS AS (expr)"`   | `col TYPE GENERATED ALWAYS AS (expr)`   | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Row filter (Public Preview)  | UC fine-grained access: filter rows by a function.            | `row_filter="ROW FILTER fn ON (col)"`                 | `WITH ROW FILTER fn ON (col)`           | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Column mask (Public Preview) | UC fine-grained access: mask a column with a function.        | `schema="..., col TYPE MASK fn USING COLUMNS (col2)"` | `col TYPE MASK fn USING COLUMNS (col2)` | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
-| Private dataset              | Materialized intermediate not published to UC.                | `private=True`                                        | `CREATE PRIVATE ...`                    | [materialized-view-python](references/materialized-view-python.md) | [materialized-view-sql](references/materialized-view-sql.md) |
+Read [API Reference](references/api-reference.md) for the full signatures:
+dataset definition, flow and sink, CDC, data quality, reading data, and
+table/schema feature APIs. The legacy-syntax mapping stays below because
+recognising it is a precondition for every edit, not a lookup.
 
 ### Legacy DLT Syntax — always migrate
 
@@ -269,4 +191,14 @@ Cross-cutting patterns:
 
 Auto Loader format-specific options: [JSON](references/options-json.md) · [CSV](references/options-csv.md) · [XML](references/options-xml.md) · [Parquet](references/options-parquet.md) · [Avro](references/options-avro.md) · [Text](references/options-text.md) · [ORC](references/options-orc.md).
 
-Dataset, flow, CDC, expectation, Auto Loader, and sink references are listed per (feature, language) in the [API Reference tables above](#api-reference).
+Per (feature, language) — read the one matching the dataset you are defining:
+
+- [materialized-view-python.md](references/materialized-view-python.md) · [materialized-view-sql.md](references/materialized-view-sql.md) — Read when defining a materialized view.
+- [streaming-table-python.md](references/streaming-table-python.md) · [streaming-table-sql.md](references/streaming-table-sql.md) — Read when defining a streaming table.
+- [temporary-view-python.md](references/temporary-view-python.md) · [temporary-view-sql.md](references/temporary-view-sql.md) · [view-sql.md](references/view-sql.md) — Read when defining a view.
+- [auto-loader-python.md](references/auto-loader-python.md) · [auto-loader-sql.md](references/auto-loader-sql.md) — Read when ingesting files with Auto Loader (`read_files` / `cloud_files`).
+- [auto-cdc-python.md](references/auto-cdc-python.md) · [auto-cdc-sql.md](references/auto-cdc-sql.md) — Read when applying CDC (`create_auto_cdc_flow`, SCD 1/2).
+- [expectations-python.md](references/expectations-python.md) · [expectations-sql.md](references/expectations-sql.md) — Read when adding data-quality expectations.
+- [sink-python.md](references/sink-python.md) · [foreach-batch-sink-python.md](references/foreach-batch-sink-python.md) — Read when writing to an external sink (Delta, Kafka, or arbitrary per-batch).
+
+Full signatures and options for all of the above are in [API Reference](references/api-reference.md).

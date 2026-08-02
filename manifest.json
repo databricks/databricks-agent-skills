@@ -51,7 +51,9 @@
         "references/2-advanced-widget-specifications.md",
         "references/3-filters.md",
         "references/4-examples.md",
-        "references/5-troubleshooting.md"
+        "references/5-troubleshooting.md",
+        "references/6-theme-and-color.md",
+        "references/7-implementation-guidelines.md"
       ],
       "repo_dir": "skills",
       "version": "0.2.1"
@@ -347,10 +349,12 @@
         "assets/databricks.svg",
         "references/1-project-initialization-with-dab.md",
         "references/2-rapid-iteration-with-cli.md",
+        "references/api-reference.md",
         "references/auto-cdc-python.md",
         "references/auto-cdc-sql.md",
         "references/auto-loader-python.md",
         "references/auto-loader-sql.md",
+        "references/common-issues.md",
         "references/dlt-migration.md",
         "references/expectations-python.md",
         "references/expectations-sql.md",
@@ -394,6 +398,7 @@
         "examples/3-sql-and-warehouses.py",
         "examples/4-unity-catalog.py",
         "examples/5-serving-and-vector-search.py",
+        "references/core-api-reference.md",
         "references/doc-index.md"
       ],
       "repo_dir": "skills",
@@ -406,6 +411,7 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
+        "references/analysis-output-examples.md",
         "references/code-patterns.md",
         "references/compatibility-checks.md",
         "references/configuration-guide.md",
@@ -415,7 +421,9 @@
         "references/mlflow-uc-patterns.md",
         "references/multi-source-enumeration.md",
         "references/networking-and-security.md",
-        "references/streaming-migration.md"
+        "references/quick-fixes.md",
+        "references/streaming-migration.md",
+        "references/testing-strategy.md"
       ],
       "repo_dir": "skills",
       "version": "0.1.0"
