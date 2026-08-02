@@ -8,7 +8,7 @@ This file covers connecting external engines to Databricks via the Iceberg REST 
 - PAT or OAuth (service principal) credentials for authentication with the required permissions.
 - **Network access**: The client must reach the Databricks workspace on HTTPS (port 443). If workspace **IP access lists** are enabled, add the client's egress CIDR to the allowlist — this is a common setup issue that blocks connectivity even when credentials and grants are correct.
 
-See [3-iceberg-rest-catalog.md](3-iceberg-rest-catalog.md) for IRC endpoint details.
+See 3-iceberg-rest-catalog for IRC endpoint details.
 
 ---
 
@@ -202,5 +202,5 @@ INSERT INTO uc.<schema>.<table> VALUES (1, 'foo', 10);
 
 ## Related
 
-- [3-iceberg-rest-catalog.md](3-iceberg-rest-catalog.md) — IRC endpoint details, auth, credential vending
-- [4-snowflake-interop.md](4-snowflake-interop.md) — Snowflake-specific integration
+- 3-iceberg-rest-catalog — IRC endpoint details, auth, credential vending
+- 4-snowflake-interop — Snowflake-specific integration

@@ -19,7 +19,7 @@ Maven:
 
 ### Protobuf Flow (Recommended)
 
-Java uses Protobuf by default. Generate and compile your `.proto` first (see [4-protobuf-schema.md](4-protobuf-schema.md)).
+Java uses Protobuf by default. Generate and compile your `.proto` first (see 4-protobuf-schema).
 
 ```java
 import com.databricks.zerobus.*;

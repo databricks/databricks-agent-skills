@@ -57,11 +57,11 @@ df.write.mode('overwrite').saveAsTable("catalog.schema.table")
 
 ## When NOT to Use
 
-Switch to **[Serverless Job](2-serverless-job.md)** when:
+Switch to **Serverless Job** (2-serverless-job) when:
 - one-off execution
 - Heavy ML training that shouldn't depend on local machine staying connected
 - Non-Spark Python code (pure sklearn, pytorch, etc.)
 
-Switch to **[Interactive Cluster](3-interactive-cluster.md)** when:
+Switch to **Interactive Cluster** (3-interactive-cluster) when:
 - Need state across multiple separate tool calls
 - Need Scala or R support

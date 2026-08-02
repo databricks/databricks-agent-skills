@@ -209,10 +209,10 @@ databricks clusters spark-versions   | jq '.versions[] | {key, name}'
 
 ## When NOT to Use
 
-Switch to **[Databricks Connect](1-databricks-connect.md)** when:
+Switch to **Databricks Connect** (1-databricks-connect) when:
 - Developing Spark code with local debugging
 - Want instant iteration without cluster concerns
 
-Switch to **[Serverless Job](2-serverless-job.md)** when:
+Switch to **Serverless Job** (2-serverless-job) when:
 - No cluster running and user doesn't want to wait
 - One-off execution without state needs

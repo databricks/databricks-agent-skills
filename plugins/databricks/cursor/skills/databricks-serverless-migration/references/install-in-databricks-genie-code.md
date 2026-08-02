@@ -71,7 +71,7 @@ Inside Genie Code on serverless compute, those commands will fail with `databric
 Other notes:
 
 - **Genie Code's underlying model is not publicly specified** and may not be Claude. The skill is authored against Claude Code defaults; behavior parity is not guaranteed. Smoke-test on a non-critical workload first.
-- **Skills are knowledge + scripts, not arbitrary tools.** Genie Code skills can't make network calls outside the workspace boundary. The skill's GitHub-issue-filing flow ([Failure Reporting](failure-reporting.md)) still works because it generates a URL the user clicks rather than auto-submitting.
+- **Skills are knowledge + scripts, not arbitrary tools.** Genie Code skills can't make network calls outside the workspace boundary. The skill's GitHub-issue-filing flow (failure-reporting) still works because it generates a URL the user clicks rather than auto-submitting.
 - **File-edit sandboxing**: Genie Code can write files in the workspace, so the migration outputs (migrated notebooks, updated job JSON, env spec YAML) land where you expect.
 
 ## Pointers and follow-ups

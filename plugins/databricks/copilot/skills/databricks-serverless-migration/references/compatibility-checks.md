@@ -96,7 +96,7 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 
 | Pattern | Grep/Regex | Severity | Fix | Docs |
 |---------|-----------|----------|-----|------|
-| Unsupported Spark configs | `spark\.conf\.set\(` with non-supported config key | Warning | Remove — only 6 configs are supported (see [Configuration Guide](configuration-guide.md)) | [Spark Configs](https://docs.databricks.com/en/spark/conf#serverless) |
+| Unsupported Spark configs | `spark\.conf\.set\(` with non-supported config key | Warning | Remove — only 6 configs are supported (see configuration-guide) | [Spark Configs](https://docs.databricks.com/en/spark/conf#serverless) |
 | Init scripts (cluster/job config) | `init_scripts` in cluster/job config JSON | Blocker | Extract pip packages to Environment `dependencies`; flag OS-level packages without pip equivalents as serverless-incompatible | [Dependencies](https://docs.databricks.com/en/compute/serverless/dependencies) |
 | Init scripts (bash) | `#!/bin/bash` scripts with `pip install` or `apt install` | Blocker | Convert `pip install` to Environment dependencies; convert `apt install` to pip equivalents where possible | [Dependencies](https://docs.databricks.com/en/compute/serverless/dependencies) |
 | `%run` with relative paths | `%run\s+\.\/` or `%run\s+\.\.\/` | Warning | Relative `%run` paths may not resolve in serverless job tasks. Inline the notebook (<500 lines) or use `dbutils.notebook.run("<absolute_workspace_path>", timeout)` | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |

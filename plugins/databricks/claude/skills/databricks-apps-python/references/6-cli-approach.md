@@ -92,4 +92,4 @@ databricks apps logs my-dashboard
 
 - Add resources (SQL warehouse, Lakebase, etc.) via the Databricks Apps UI after creating the app
 - CLI uses your configured profile's credentials — ensure you have access to required resources
-- For DABs deployment, see [4-deployment.md](4-deployment.md)
+- For DABs deployment, see 4-deployment
