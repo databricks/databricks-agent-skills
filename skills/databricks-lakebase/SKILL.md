@@ -160,13 +160,15 @@ Branches require an expiration policy: `"no_expiry": true` for permanent, or `"t
 | Feature development | 1--7 days (`"ttl": "604800s"`) |
 | Long-term testing | Up to 30 days (`"ttl": "2592000s"`) |
 
-**Point-in-time branching:** Create from a past state (within restore window) for recovery. Run `databricks postgres create-branch -h` for time specification fields.
+**Point-in-time branching:** Create from a past state (within restore window) for recovery. The time specification fields live inside the `--json` spec (`spec.source_branch_time`, `spec.source_branch_lsn`), not as top-level `create-branch` flags.
 
-**Reset:** Replaces branch data with latest from parent. Local changes are lost. Root branches and branches with children cannot be reset.
+**Reset:** Replaces branch data and schema with the latest from its parent. Local changes are lost. Root branches and branches with children cannot be reset; protected branches (`spec.is_protected`) cannot be reset either.
 
-```bash
-databricks postgres reset-branch projects/<PROJECT_ID>/branches/<BRANCH_ID> --profile <PROFILE>
-```
+**Reset is UI-only — there is no `databricks postgres reset-branch` CLI command and no API/SDK method for it.** In the Lakebase App, go to the project's **Branches** page, click the menu next to the branch, and select **Reset from parent**.
+
+CLI workarounds:
+- **Delete + recreate:** `delete-branch`, then `create-branch` with `spec.source_branch` set to the parent (unprotect via `update-branch` first if protected).
+- **Point-in-time:** `create-branch` with `spec.source_branch_time` or `spec.source_branch_lsn`. Timestamp-based *reset* is not supported; use PITR branching instead.
 
 **Delete:** Protected branches must be unprotected first (`update-branch` to set `spec.is_protected` to `false`). Cannot delete branches with children. **Never delete the `production` branch.**
 
