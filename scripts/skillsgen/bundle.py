@@ -28,6 +28,7 @@ from pathlib import Path
 
 from skillsgen.commands import render_command_files
 from skillsgen.common import BUNDLE_DIR, _serialize_plugin_json
+from skillsgen.discovery import is_publishable_path
 from skillsgen.plugins import (
     _GENERATED_README,
     build_claude_plugin,
@@ -56,12 +57,8 @@ def _provider_specs() -> dict:
 
 
 def _is_noise(rel_parts: tuple) -> bool:
-    """Files that must never ship (mirrors discovery.iter_skill_files)."""
-    if any(part.startswith(".") for part in rel_parts):
-        return True
-    if "__pycache__" in rel_parts:
-        return True
-    return any(part.endswith(".pyc") for part in rel_parts)
+    """Return whether a source path must not ship."""
+    return not is_publishable_path(rel_parts)
 
 
 def _iter_copy(repo_root: Path, src_dir: str):

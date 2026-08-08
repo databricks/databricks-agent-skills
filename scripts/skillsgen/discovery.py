@@ -19,6 +19,26 @@ SHARED_ASSETS = [
 STABLE_REPO_DIR = "skills"
 EXPERIMENTAL_REPO_DIR = "experimental"
 
+UNPUBLISHED_FILENAMES = frozenset(
+    {
+        "BUILD",
+        "BUILD.bazel",
+        "METADATA",
+        "OWNERS",
+    }
+)
+
+
+def is_publishable_path(relative_parts: tuple[str, ...]) -> bool:
+    """Return whether a source path may appear in a published artifact."""
+    if any(part.startswith(".") for part in relative_parts):
+        return False
+    if "__pycache__" in relative_parts:
+        return False
+    if any(part.endswith(".pyc") for part in relative_parts):
+        return False
+    return not any(part in UNPUBLISHED_FILENAMES for part in relative_parts)
+
 
 def iter_skill_dirs(repo_root: Path, parent: str = STABLE_REPO_DIR):
     """Yield skill directories under `parent` that contain SKILL.md."""
@@ -68,21 +88,16 @@ def extract_version_from_skill(skill_path: Path) -> str:
 
 
 def iter_skill_files(skill_path: Path):
-    """Yield tracked files in a skill directory, skipping VCS-ignored noise.
+    """Yield files in a skill directory that may be published.
 
-    Filters out dot-prefixed paths (.DS_Store, .git, etc.), __pycache__
-    directories, and *.pyc files so manifest output stays reproducible
-    across machines.
+    This applies the same governance and generated-file exclusions as bundle
+    generation so the manifest and provider artifacts cannot diverge.
     """
     for file_path in skill_path.rglob("*"):
         if not file_path.is_file():
             continue
         rel_parts = file_path.relative_to(skill_path).parts
-        if any(part.startswith(".") for part in rel_parts):
-            continue
-        if "__pycache__" in rel_parts:
-            continue
-        if file_path.suffix == ".pyc":
+        if not is_publishable_path(rel_parts):
             continue
         yield file_path
 

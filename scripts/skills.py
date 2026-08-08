@@ -30,6 +30,8 @@ from skillsgen.discovery import (
     SHARED_ASSETS,
     STABLE_REPO_DIR,
     EXPERIMENTAL_REPO_DIR,
+    UNPUBLISHED_FILENAMES,
+    is_publishable_path,
     iter_skill_dirs,
     iter_experimental_skill_dirs,
     extract_version_from_skill,

@@ -396,7 +396,7 @@ class BundleTest(unittest.TestCase):
             self.assertTrue((cph / "hooks.json").exists())
             self.assertFalse((cph / "hooks" / "hooks.json").exists())
 
-    def test_bundle_skips_vcs_noise(self):
+    def test_bundle_skips_unpublished_files(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             for dd in self._SRC_DIRS:
@@ -405,10 +405,14 @@ class BundleTest(unittest.TestCase):
             noise.mkdir(parents=True, exist_ok=True)
             (noise / "x.pyc").write_text("x")
             (root / "skills" / "databricks-core" / ".DS_Store").write_text("x")
+            for filename in skills.UNPUBLISHED_FILENAMES:
+                (root / "skills" / "databricks-core" / filename).write_text("x")
             skills.generate_bundle(root, self.meta)
             seeded = root / "plugins/databricks/claude/skills/databricks-core"
             self.assertFalse((seeded / ".DS_Store").exists())
             self.assertFalse((seeded / "__pycache__").exists())
+            for filename in skills.UNPUBLISHED_FILENAMES:
+                self.assertFalse((seeded / filename).exists())
 
 
 class ScopedSourcesTest(unittest.TestCase):
@@ -512,6 +516,22 @@ class GenerateAllTest(unittest.TestCase):
             )
             skills.generate_all(root, version_override="9.9.9")
             self.assertEqual(skills.check_codex_metadata(root), [])
+
+    def test_generate_all_excludes_unpublished_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            core = root / "skills/databricks-core"
+            for filename in skills.UNPUBLISHED_FILENAMES:
+                (core / filename).write_text("universe-only")
+
+            result = skills.generate_all(root, version_override="9.9.9")
+
+            core_manifest = result["manifest"]["skills"]["databricks-core"]
+            manifest_files = set(core_manifest["files"])
+            self.assertTrue(manifest_files.isdisjoint(skills.UNPUBLISHED_FILENAMES))
+            bundled_core = root / "plugins/databricks/claude/skills/databricks-core"
+            for filename in skills.UNPUBLISHED_FILENAMES:
+                self.assertFalse((bundled_core / filename).exists())
 
 
 if __name__ == "__main__":
