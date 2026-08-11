@@ -51,7 +51,8 @@
         "references/2-advanced-widget-specifications.md",
         "references/3-filters.md",
         "references/4-examples.md",
-        "references/5-troubleshooting.md"
+        "references/5-troubleshooting.md",
+        "references/6-custom-visualizations.md"
       ],
       "repo_dir": "skills",
       "version": "0.2.1"

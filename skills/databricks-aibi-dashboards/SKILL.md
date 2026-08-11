@@ -58,6 +58,7 @@ A dashboard should be showing something relevant for a human, typically some KPI
 | `waterfall` | **1** | [2-advanced-widget-specifications.md#waterfall](references/2-advanced-widget-specifications.md#waterfall) |
 | `filter-single-select`, `filter-multi-select`, `filter-date-range-picker` | **2** | [3-filters.md#filter-widget-structure](references/3-filters.md#filter-widget-structure) |
 | `range-slider` | **2** | [3-filters.md#range-slider-numeric-range-filter](references/3-filters.md#range-slider-numeric-range-filter) |
+| `custom-vega-viz` (Vega-Lite: matrix/grid, radar, gauge, sunburst, network — only when no built-in fits) | **1** | [6-custom-visualizations.md#custom-vega-viz](references/6-custom-visualizations.md#custom-vega-viz) |
 
 > Cohort retention charts are built as a `pivot` with a color-scale cell style — there is no `cohort` widget type. See pivot in [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md).
 
@@ -333,6 +334,7 @@ Apply unless user specifies otherwise:
 | Any widget (text, counter, table, chart) | [1-widget-specifications.md](references/1-widget-specifications.md) |
 | Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
 | Dashboard with filters (global or page-level) | [3-filters.md](references/3-filters.md) |
+| A chart type that isn't built in (matrix/grid, radar, gauge, sunburst, network) — custom **Vega-Lite** viz | [6-custom-visualizations.md](references/6-custom-visualizations.md) |
 | Debugging a broken dashboard | [5-troubleshooting.md](references/5-troubleshooting.md) |
 
 ---
