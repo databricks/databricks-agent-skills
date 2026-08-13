@@ -1,6 +1,6 @@
 ---
 name: databricks-spark-structured-streaming
-description: "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance."
+description: "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, implementing transformWithState (including Python async / AsyncStatefulProcessor), optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
@@ -45,6 +45,7 @@ df.writeStream \
 | **Stream Joins** | Stream-stream joins, stream-static joins | See [references/stream-stream-joins.md](references/stream-stream-joins.md), [references/stream-static-joins.md](references/stream-static-joins.md) |
 | **Multi-Sink Writes** | Write to multiple tables, parallel merges | See [references/multi-sink-writes.md](references/multi-sink-writes.md) |
 | **Merge Operations** | MERGE performance, parallel merges, optimizations | See [references/merge-operations.md](references/merge-operations.md) |
+| **TransformWithState** | Custom stateful processors (ValueState/ListState/MapState), Python Row + `AsyncStatefulProcessor`, timers vs TTL, async MapState access | See [references/transform-with-state.md](references/transform-with-state.md) |
 
 ## Configuration
 

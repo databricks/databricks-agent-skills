@@ -132,7 +132,7 @@ For broadcast stream-static joins (the long-standing RTM-compatible enrichment p
 
 ## `transformWithState` behavior change
 
-`transformWithState` is also the main escape hatch for working around RTM's other restrictions — many things RTM doesn't support natively (event-time-window-like behavior, custom join logic, complex multi-row state transitions) can be implemented inside a stateful processor.
+`transformWithState` is also the main escape hatch for working around RTM's other restrictions — many things RTM doesn't support natively (event-time-window-like behavior, custom join logic, complex multi-row state transitions) can be implemented inside a stateful processor. For the Python TWS API, MapState access, and async patterns, see [transform-with-state.md](transform-with-state.md).
 
 The single semantic difference to know:
 

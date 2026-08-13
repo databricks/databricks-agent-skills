@@ -7,6 +7,8 @@ description: Configure watermarks and manage state stores for Spark Structured S
 
 Configure watermarks to handle late-arriving data and manage state stores for stateful streaming operations. Watermarks control state cleanup, while state stores handle the storage and retrieval of stateful data.
 
+For `transformWithState` (including Python `AsyncStatefulProcessor` and MapState access), see [transform-with-state.md](transform-with-state.md).
+
 ## Quick Start
 
 ```python
@@ -393,5 +395,6 @@ spark.conf.set(
 
 ## Related Skills
 
+- `transform-with-state` - `transformWithState` / Python async MapState access
 - `stream-stream-joins` - Late data in joins
 - `checkpoint-best-practices` - Checkpoint and state recovery
