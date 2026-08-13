@@ -52,6 +52,7 @@ These errors occur when the JSON structure is wrong:
 **Counter widget errors:**
 - Use `version: 2` (NOT 3)
 - Ensure dataset returns exactly 1 row for `disaggregated: true`
+- **Remove any `color` from the `value` encoding** — counters take no per-widget color, and a `color` there (`{"hex": ...}`, `themeColorType`, or a scale) is the definition the renderer rejects. Set counter color globally via `uiSettings.theme.fontColor` instead.
 
 ## Dashboard shows empty widgets
 

@@ -75,6 +75,7 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 - `version`: **2** (NOT 3!)
 - `widgetType`: "counter"
 - Percent values must be 0-1 in the data (not 0-100)
+- **No `color` on the `value` encoding.** A counter takes no per-widget color — `"value": {..., "color": {...}}` (any form: `{"hex": ...}`, `themeColorType`, or a scale) renders the widget as "unsupported widget definition". The counter number's color is set globally by the dashboard theme (`uiSettings.theme.fontColor`); see SKILL.md "Theme & Color".
 
 **Two strongly-recommended defaults:**
 

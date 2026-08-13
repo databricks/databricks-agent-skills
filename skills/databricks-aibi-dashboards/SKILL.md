@@ -161,13 +161,21 @@ After deploying, the same `lakeview` subcommands manage the dashboard's lifecycl
 # "FROM schema.trips" or "FROM catalog.schema.trips") — --dataset-catalog and
 # --dataset-schema only fill in missing parts, they do NOT rewrite hardcoded
 # prefixes.
-databricks lakeview create \
+#
+# parent_path must ALREADY EXIST or create fails "Tree node ... does not exist":
+databricks workspace mkdirs /Workspace/Users/me@co.com/dashboards
+
+# Capture the dashboard_id with -o json. Do NOT add 2>&1: create echoes the
+# serialized dashboard back, and merging stderr breaks the output so jq can't
+# parse it (the dashboard IS created, but you lose the id and the step looks failed).
+DASHBOARD_ID=$(databricks lakeview create \
   --display-name "My Dashboard" \
   --warehouse-id "abc123def456" \
   --dataset-catalog "my_catalog" \
   --dataset-schema "my_schema" \
   --serialized-dashboard "$(cat dashboard.json)" \
-  --json '{"parent_path": "/Workspace/Users/me@co.com/dashboards"}'
+  --json '{"parent_path": "/Workspace/Users/me@co.com/dashboards"}' \
+  -o json | jq -r '.dashboard_id')
 
 # List all dashboards
 databricks lakeview list
@@ -272,14 +280,15 @@ Mental model — **60/30/10 rule** mapped to theme keys: **60% neutral** = canva
 
 - `visualizationColors`: ordered palette every chart series and category mapping cycles through. **Positions are 0-indexed**: `position: 0` = first color (`#FFA600` above), `position: 6` = seventh (`#99DDB4`). Length 5–8 is typical.
 - Background / font / selection colors take `light` + `dark` pairs; the dashboard auto-selects based on viewer mode.
+- `fontColor` also drives the **counter number color** — counters have no per-widget color, so this is the only lever for them (it colors every counter's value on the dashboard, not per-tile).
 - `widgetHeaderAlignment`: `"LEFT"` (default), `"CENTER"`, or `"RIGHT"`. Optional top-level: `fontFamily` (e.g. `"Space Grotesk"`, `"Inter"` — sans-serif keeps dense data readable; don't override per widget) and `widgetCornerRadius` (integer px, e.g. `12` for rounded corners; `0` or omit = square).
-- Per-widget color references: `{"themeColorType": "visualizationColors", "position": N}` (0-indexed) to pin to a palette slot, or `{"hex": "#FF0000"}` for an exact color outside the palette.
+- Per-widget color references (charts only): `{"themeColorType": "visualizationColors", "position": N}` (0-indexed) to pin to a palette slot, or `{"hex": "#FF0000"}` for an exact color outside the palette. **Counters do NOT support a per-widget color** — a `color` on a counter's `value` renders the widget as "unsupported widget definition"; color counters via `fontColor` above.
 
 **Palette-design rules** (this is what separates a polished dashboard from a noisy one):
 
 1. **One coherent color family per dashboard, distinct across the suite.** Walk **across hues** (e.g., amber → coral → pink → purple → navy), not one color faded toward white — a single-hue lightness ramp reads as one color and the viewer can't tell categories apart. Adjacent stops must be visually distinct: if you squint and two blur into one, push them further apart. Single-hue ramps are for **quantitative** widgets only (`colorRamp.mode: "custom-sequential"`), never for `visualizationColors`.
 2. **Pin semantic colors as literal hex, outside the palette.** "Bad" = a warm coral (e.g. `#FF7E5C`), "good" = a calm teal/green. Use `color.scale.mappings` with a bare hex string — `{"value": "Critical", "color": "#FF7E5C"}` — **not** `{"hex": "..."}` or `themeColorType: position` (both are silently dropped on chart widgets). Reuse the good-teal that's already in the palette so it never clashes.
-3. **Color non-categorical widgets explicitly so they join the family.** Maps & heatmaps: `colorRamp.mode: "custom-sequential"` with `{start, end}` from the family (if directional: `start` = bad color, `end` = good color). Forecast / multi-series: pin per-series via `color.scale.mappings` keyed on `displayName` (actual = solid family color, forecast = contrast/alert, threshold = muted tone). Sparkline counters: set `value.color` to a family color, not grey.
+3. **Color non-categorical widgets explicitly so they join the family.** Maps & heatmaps: `colorRamp.mode: "custom-sequential"` with `{start, end}` from the family (if directional: `start` = bad color, `end` = good color). Forecast / multi-series: pin per-series via `color.scale.mappings` keyed on `displayName` (actual = solid family color, forecast = contrast/alert, threshold = muted tone). Counters (incl. sparkline counters) take **no** per-widget color — their number color comes from the theme's `fontColor`; do NOT set `value.color` (it renders "unsupported widget definition").
 4. **"Lighter / more pastel" tweak**: nudge all stops up in lightness *together*; don't recolor individual ones. Re-sync the pinned semantic hex values; keep enough contrast on the alert color that it still reads as a warning.
 
 **Starter palettes** (pick one and adapt — extend to 7-8 stops if needed; semantic red/green stay as literal hex per rule 2):
