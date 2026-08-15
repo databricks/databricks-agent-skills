@@ -3,11 +3,19 @@ name: Release
 # Cuts a release for the version recorded in version.meta.json (next_version):
 # regenerate the manifests stamped with it, commit the bumped tree + tag to main,
 # cut the GitHub release, and (via the bump script) advance version.meta.json.
-# Manual dispatch only; the version is auto-numbered from version.meta.json, so
-# there is no version input. The version commit and tag are the writes to main,
-# pushed as the DECO-SDK-Tagging App (on the branch + tag ruleset bypass lists).
+# The version is auto-numbered from version.meta.json, so there is no version
+# input. The version commit and tag are the writes to main, pushed as the
+# DECO-SDK-Tagging App (on the branch + tag ruleset bypass lists).
+#
+# Two triggers fire it: a weekday schedule and manual dispatch. The schedule
+# keeps the published release up to date, because aitools installs from the
+# latest release.
 on:
   workflow_dispatch: {}
+  schedule:
+    # 08:17 UTC on weekdays. The minute is off the hour on purpose: GitHub
+    # heavily delays on-the-hour crons.
+    - cron: "17 8 * * 1-5"
 
 # Serialize writes to main against self-heal-manifest.yml (same group), so a
 # release commit and a self-heal commit can never push concurrently and race the
@@ -17,7 +25,49 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Gate for the release job below. Manual dispatch always releases; a scheduled
+  # run releases only when main has new commits after the latest tag, so an
+  # unchanged main cuts no release. The `if` skips forks, which lack the
+  # DECO-SDK-Tagging App credentials the release job needs.
+  gate:
+    if: github.repository == 'databricks/databricks-agent-skills'
+    runs-on:
+      group: databricks-protected-runner-group
+      labels: linux-ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_release: ${{ steps.decide.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+          # Full history + tags: the gate resolves the latest release tag and
+          # counts the commits since it.
+          fetch-depth: 0
+      - id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          # Manual dispatch always releases; so does the first-ever run (no tag).
+          latest="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+          if [[ "$EVENT" == "workflow_dispatch" || -z "$latest" ]]; then
+            echo "releasing (manual dispatch or first run)"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          n="$(git rev-list --count "$latest"..HEAD)"
+          echo "$n commit(s) on main since $latest"
+          if [[ "$n" -gt 0 ]]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "main unchanged since $latest; skipping"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
   release:
+    needs: gate
+    if: needs.gate.outputs.should_release == 'true'
     runs-on:
       group: databricks-protected-runner-group
       labels: linux-ubuntu-latest
