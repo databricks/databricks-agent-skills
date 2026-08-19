@@ -317,11 +317,14 @@ and map 1:1 to a published version.
 
 ## Contributing
 
-These skills are maintained internally at Databricks and published to this open
-source repository, where we actively work in the open. We encourage you to open
-issues, and to open pull requests too. We can't merge PRs directly here (the
-source of truth is internal), but we will work to migrate them through our
-internal repository. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+We welcome feedback and change proposals through [GitHub issues][change-proposal].
+This repository is published from an internal Databricks source of truth. Pull
+request creation is restricted to repository collaborators and is used only to
+publish internal changes. If a proposal is accepted, a Databricks maintainer
+will implement it internally and publish the change here. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+
+[change-proposal]: /databricks/databricks-agent-skills/issues/new/choose
 
 - All changes require approval from a code owner (see [CODEOWNERS](./.github/CODEOWNERS)).
 - Documentation examples must follow least-privilege defaults — avoid suggesting elevated permissions or broad scopes unless explicitly necessary.

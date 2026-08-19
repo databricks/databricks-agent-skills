@@ -1,13 +1,26 @@
 # Contributing
 
-These skills are maintained internally at Databricks and published to this open
-source repository, where we actively work in the open. We encourage you to get
-involved:
+We welcome feedback and change proposals from the community. This repository is
+published from an internal Databricks source of truth. Pull request creation is
+restricted to repository collaborators, and pull requests are used only to
+publish changes from that internal source.
 
-- **Open issues.** We triage and address them here in the open source repository.
-- **Open pull requests.** Everyone is welcome to contribute. We can't merge PRs
-  directly here, since the source of truth is internal, but we will work to
-  migrate them through our internal repository.
+If you are not a Databricks maintainer, propose a change by
+[opening an issue][change-proposal]. Please describe:
+
+- The problem or opportunity.
+- The behavior or content you would like changed.
+- The affected skill or area, if known.
+- Any examples or context that will help us evaluate the proposal.
+
+A Databricks maintainer will review the request. If it is accepted, a maintainer
+will implement the change in the internal source of truth and publish it to this
+repository.
+
+[change-proposal]: /databricks/databricks-agent-skills/issues/new/choose
+
+The remaining guidance is for Databricks maintainers working in the internal
+source of truth.
 
 ## Skill anatomy
 

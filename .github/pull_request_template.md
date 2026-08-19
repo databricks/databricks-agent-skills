@@ -1,6 +1,13 @@
+<!--
+Pull request creation is restricted to repository collaborators.
+If you are not a Databricks maintainer, use the Change proposal issue template.
+Open it at https://github.com/databricks/databricks-agent-skills/issues/new/choose.
+See CONTRIBUTING.md for details.
+-->
+
 ## Summary
 
-<!-- Brief description of the change -->
+<!-- Briefly describe the change. -->
 
 ## Documentation safety checklist
 
