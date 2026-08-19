@@ -438,6 +438,7 @@
         "references/stream-static-joins.md",
         "references/stream-stream-joins.md",
         "references/streaming-best-practices.md",
+        "references/transform-with-state.md",
         "references/trigger-and-cost-optimization.md"
       ],
       "repo_dir": "skills",
