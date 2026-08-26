@@ -36,6 +36,7 @@
     "ml-training",
     "mlflow-evaluation",
     "python-sdk",
+    "setup-local",
     "structured-streaming",
     "synthetic-data",
     "unity-catalog",

@@ -25,6 +25,7 @@ that matches the request:
 - Databricks SQL warehouses -> databricks-dbsql
 - Databricks documentation lookup (llms.txt) -> databricks-docs
 - Executing code on Databricks compute -> databricks-execution-compute
+- Local Python environment matched to Databricks compute (setup-local, Databricks Connect) -> databricks-setup-local
 - Apache Iceberg tables / UniForm / Iceberg REST Catalog -> databricks-iceberg
 - Lakeflow Connect managed ingestion connectors -> databricks-lakeflow-connect
 - Metric Views / governed metrics -> databricks-metric-views
