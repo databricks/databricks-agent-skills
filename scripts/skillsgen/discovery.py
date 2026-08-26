@@ -183,6 +183,7 @@ DISPLAY_NAME_OVERRIDES = {
     "databricks-ai-functions": "Databricks AI Functions",
     "databricks-aibi-dashboards": "Databricks AI/BI Dashboards",
     "databricks-mlflow-evaluation": "Databricks MLflow Evaluation",
+    "databricks-setup-local": "Databricks Local Environment Setup",
     "databricks-unstructured-pdf-generation": "Databricks Unstructured PDF Generation",
 }
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Local Environment Setup"
+  short_description: "Provision a local Python environment matched to a Databricks cluster or serverless version with `databricks environments setup-local`."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-setup-local for provision a local python environment matched to a databricks cluster or serverless version with `databricks environments setup-local`."

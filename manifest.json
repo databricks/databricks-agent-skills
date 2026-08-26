@@ -421,6 +421,19 @@
       "repo_dir": "skills",
       "version": "0.1.0"
     },
+    "databricks-setup-local": {
+      "description": "Provision a local Python environment matched to a Databricks cluster or serverless version with `databricks environments setup-local`.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/json-output.md",
+        "references/troubleshooting.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
+    },
     "databricks-spark-structured-streaming": {
       "description": "Comprehensive guide to Spark Structured Streaming for production workloads.",
       "files": [
