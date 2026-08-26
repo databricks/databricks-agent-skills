@@ -35,7 +35,7 @@ Fail fast on the things the command cannot fix for the user:
 
 1. **CLI version** — `databricks version` must be **>= v1.12.0** (the release where `setup-local` became visible and its constraint source was pinned to the public `databricks/environments` repo). Older CLIs either lack the command or point at a private source.
 2. **Authentication** — `databricks auth describe` must resolve a workspace. Auth failures surface here as a **normal CLI error on stderr before any JSON is produced** (the command's own workspace-client preflight, not a pipeline phase), so they are *not* in the JSON contract — check for them up front. This command resolves auth from your **profile/env only**; a bundle's `workspace.host`/`profile` do **not** feed it.
-3. **`uv`** — the command auto-installs `uv` if missing, but if that install can fail in your sandbox (no network, locked-down PATH), confirm `uv --version` first. A missing/failed `uv` surfaces as `E_UV_MISSING`.
+3. **`uv`** — required. In a **non-interactive** session (how agents run) the command does **not** auto-install it: it returns `E_UV_MISSING` unless `DATABRICKS_LOCALENV_AUTO_INSTALL_UV=1` is set (that opts into the install without a prompt; interactive sessions instead get a yes/no prompt). So either confirm `uv --version` first, or set `DATABRICKS_LOCALENV_AUTO_INSTALL_UV=1` before running.
 4. **Project directory** — run from the project root; it must be `uv`-managed (or greenfield) and writable. A non-`uv` manager is a clean no-op exit (`E_MANAGER_UNSUPPORTED`); a read-only dir is `E_NOT_WRITABLE`.
 
 ### 2. Choose the compute target
@@ -61,7 +61,9 @@ databricks environments setup-local --serverless-version 5 --dry-run --output js
 # Full setup — matched Python + databricks-connect, writes .venv + pyproject.toml.
 databricks environments setup-local --serverless-version 5 --output json
 
-# Constraints-only — matched Python + dependency pins, NO databricks-connect.
+# Constraints-only — matched Python + constraints; does NOT add or manage
+# databricks-connect (a databricks-connect pin already in your pyproject stays
+# and may still be installed; the result's dbconnectVersion is omitted either way).
 databricks environments setup-local --cluster-name my-cluster --constraints-only --output json
 ```
 
