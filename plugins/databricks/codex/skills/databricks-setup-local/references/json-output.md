@@ -17,7 +17,7 @@ Run `databricks environments setup-local ... --output json`. On both success and
 | `resolved` | object | Resolved environment definition (below). Present once fetch succeeds. |
 | `greenfield` | bool | `true` when no prior `pyproject.toml` existed (a fresh one was rendered). |
 | `plan` | object | `--dry-run` only: `wouldWrite`, `wouldBackup`, `wouldInstallPython`, `diff`. |
-| `venvPath` | string | Provisioned virtualenv, **relative to the project root** (`.venv`). Set on success. |
+| `venvPath` | string | Provisioned virtualenv, **relative to the project root** (`.venv`). Set only on a successful **non-dry-run** — a `--dry-run` returns before the validate phase, so it is absent there. |
 | `phases` | array | Every phase with a status (below). Always the full canonical list. |
 | `warnings` | array | Non-fatal advisories (below). Always present (`[]` when none). |
 | `error` | object\|null | Failure detail (below). `null` on success. |

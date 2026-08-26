@@ -71,7 +71,7 @@ Prefer `--dry-run` first when a `pyproject.toml` already exists: the result's `p
 
 Parse stdout as JSON and branch on `ok`:
 
-- **`ok: true`** — report `compute` (target), `resolved.pythonVersion` / `resolved.dbconnectVersion`, and surface any `warnings[]` to the user (they are non-fatal but often need a manual follow-up — e.g. a duplicated `databricks-connect` pin uv cannot resolve). `venvPath` is the provisioned env (relative to the project root, `.venv`).
+- **`ok: true`** — report `compute` (target), `resolved.pythonVersion` / `resolved.dbconnectVersion`, and surface any `warnings[]` to the user (they are non-fatal but often need a manual follow-up — e.g. a duplicated `databricks-connect` pin uv cannot resolve). On a real (non-dry-run) success, `venvPath` is the provisioned env (relative to the project root, `.venv`); a `--dry-run` success omits it.
 - **`ok: false`** — read `error.code` and `error.failurePhase`, then follow [references/troubleshooting.md](references/troubleshooting.md): fix user-fixable causes, or route genuine post-preflight defects to the right repository.
 - **No JSON on stdout** — read **stderr**. This is the pre-pipeline path: most often authentication, but also other pre-pipeline errors (e.g. the CLI can't determine the working or cache directory). Act on what stderr reports rather than assuming auth; it is not a `setup-local` pipeline defect.
 
