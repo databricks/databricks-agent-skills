@@ -40,7 +40,7 @@ Fail fast on the things the command cannot fix for the user:
 
 ### 2. Choose the compute target
 
-Exactly one target flag (they are mutually exclusive → `E_USAGE`). Resolution precedence is `--cluster-id` → `--cluster-name` → `--serverless-version` → `--job-task` → bundle `bundle.cluster_id`.
+Pass **at most one** explicit target flag — they are mutually exclusive (two or more → `E_USAGE`); with none, the command falls back to the bundle's `cluster_id`. Resolution precedence is `--cluster-id` → `--cluster-name` → `--serverless-version` → `--job-task` → bundle `bundle.cluster_id`.
 
 | Flag | Use when | Notes |
 |------|----------|-------|

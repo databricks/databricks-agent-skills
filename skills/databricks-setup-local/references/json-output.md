@@ -30,7 +30,7 @@ Run `databricks environments setup-local ... --output json`. On both success and
 |-------|---------|
 | `source` | Which precedence source resolved the target: `"cluster"`, `"serverless"`, `"job"`, or `"bundle"`. |
 | `clusterId` | Cluster ID (cluster/bundle-cluster targets). |
-| `serverlessVersion` | Normalized serverless version, e.g. `"v5"` (serverless/bundle-serverless targets). |
+| `serverlessVersion` | Normalized serverless version, e.g. `"v5"` (a `--serverless-version` or serverless `--job-task` target). |
 | `envKey` | The environment key the constraints were fetched for (e.g. `dbr/...` or `serverless/...`). Include this in bug reports. |
 
 ### `resolved`
