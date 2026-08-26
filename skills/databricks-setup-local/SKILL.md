@@ -67,7 +67,7 @@ databricks environments setup-local --serverless-version 5 --output json
 databricks environments setup-local --cluster-name my-cluster --constraints-only --output json
 ```
 
-Prefer `--dry-run` first when a `pyproject.toml` already exists: the result's `plan.diff` shows exactly what would change, and `plan.wouldBackup` names the backup that a real run would write. The command backs up an existing `pyproject.toml` to `pyproject.toml.bak` (then timestamped `.bak` files) before overwriting; a no-op re-run writes nothing.
+Prefer `--dry-run` first when a `pyproject.toml` already exists: the result's `plan.diff` shows exactly what would change, and `plan.wouldBackup` names the backup that a real run would write. The command backs up an existing `pyproject.toml` to `pyproject.toml.bak` (then timestamped `.bak` files) before overwriting. A no-op re-run (when the merged file already matches disk) skips the `pyproject.toml` backup and rewrite, but still runs provisioning — Python install, `uv sync`, pip seed, validate — which can update `.venv` / `uv.lock`.
 
 ### 4. Read the result
 

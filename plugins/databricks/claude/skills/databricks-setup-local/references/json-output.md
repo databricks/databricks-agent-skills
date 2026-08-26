@@ -38,7 +38,7 @@ Run `databricks environments setup-local ... --output json`. On both success and
 | Field | Meaning |
 |-------|---------|
 | `pythonVersion` | The Python minor the env pins (e.g. `"3.12"`). |
-| `dbconnectVersion` | Installed `databricks-connect` version. Present in default mode; **omitted** in constraints-only mode. |
+| `dbconnectVersion` | Installed `databricks-connect` version. Present in default mode on a **real run**; **omitted** in constraints-only mode, and also on a `--dry-run` when the published pin is a range (e.g. `~=17.0`) rather than a concrete version. |
 | `artifactSource` | `"network"` (fetched fresh) or `"cache"` (offline fallback from a prior fetch). |
 
 ## Phases
