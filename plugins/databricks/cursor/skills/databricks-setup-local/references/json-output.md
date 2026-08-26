@@ -54,6 +54,8 @@ Fixed order; the `phases` array reports each with a `status` of `"ok"`, `"error"
 | `provision` | Ensure Python, run `uv sync`, seed pip. |
 | `validate` | Assert the venv's Python (and `databricks-connect` major, default mode) match the target. |
 
+Under `--dry-run` the `preflight` phase does less than the table's row implies: it validates flags and detects the manager but **skips** the writability and `uv`-availability checks (a dry run writes nothing and installs nothing). The `merge` phase computes the plan without writing, and `provision`/`validate` are reported `ok` without touching disk.
+
 `error.failurePhase` names the phase that failed and always matches the `error`-status entry in `phases`.
 
 ## Warning codes (`warnings[].code`)

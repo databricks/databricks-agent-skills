@@ -8,6 +8,8 @@ On `ok: false`, read `error.code` and `error.failurePhase` (see [json-output.md]
 
 Only kinds 2 and 3 are worth a report, and only *after* preflight — a preflight failure is almost always something the user can fix.
 
+**Several post-preflight codes are not 1:1 with a kind.** `E_PROVISION`, `E_VALIDATE`, `E_MERGE`, and `E_WRITE` each cover both a reportable defect *and* a user-fixable / local cause. For these, decide from `error.message`, not the code alone — the specifics are called out per code below.
+
 ## User-fixable — fix, do not report
 
 | Code | Phase | Cause | Action |
@@ -27,24 +29,24 @@ Only kinds 2 and 3 are worth a report, and only *after* preflight — a prefligh
 
 Published constraints/pins for the resolved compute are wrong, missing, or unresolvable — not something the user can fix locally.
 
-| Code | Phase | Cause |
-|------|-------|-------|
-| `E_ENV_UNSUPPORTED` | fetch | No published environment key exists for the resolved runtime (e.g. a DBR the constraints repo doesn't cover yet). |
-| `E_PROVISION` | provision | `uv sync` failed to resolve — the published pins conflict with each other. |
-| `E_VALIDATE` | validate | After provisioning, the venv's Python or `databricks-connect` version doesn't match the target the env claimed. |
+| Code | Phase | Report when… (else it is user-fixable — see above) |
+|------|-------|-----------------------------------------------------|
+| `E_ENV_UNSUPPORTED` | fetch | Always reportable: no published environment key exists for the resolved runtime (e.g. a DBR the constraints repo doesn't cover yet). |
+| `E_PROVISION` | provision | The message shows `uv sync` **failing to resolve** (a dependency conflict / "no solution found") — the published pins conflict with each other. *Not* reportable when the message shows a network/download failure or a pip-seeding (post-provision) error — those are transient/local: retry, treat as user-fixable. |
+| `E_VALIDATE` | validate | The message shows the installed **Python or `databricks-connect` version doesn't match** the target the env claimed. *Not* reportable when the message names a standalone-`pyspark` collision (the user declared `pyspark` alongside `databricks-connect`) — that is user-fixable: remove the standalone `pyspark` (see `W_STANDALONE_PYSPARK_CONFLICT`), keep a local Spark in a separate venv. |
 
 **Where:** file an issue at `https://github.com/databricks/environments/issues`.
 
 ## Report to `databricks/cli`
 
-The command itself failed in a way that isn't the user's fault and isn't a published-pins issue.
+The command failed after preflight in a way that is neither a published-pins issue nor an obvious local problem.
 
-| Code / symptom | Phase | Cause |
-|----------------|-------|-------|
-| `E_MERGE` | merge | Merging the managed regions into the existing `pyproject.toml` failed. |
-| `E_WRITE` | merge | Writing a fresh (greenfield) `pyproject.toml` failed. |
-| JSON parse / wiring error | — | Output wasn't valid JSON, or fields were missing/misshaped against `schemaVersion: 1`. |
-| Any uncategorized failure after preflight | any | An unexpected error not covered above. |
+| Code / symptom | Phase | Report when… |
+|----------------|-------|--------------|
+| `E_MERGE` | merge | Merging the managed regions into the existing `pyproject.toml` failed. **First rule out local causes** — permissions changed mid-run, disk full, a filesystem race, or a failed backup can all surface here. Report only when the filesystem is healthy; then it points to a merge-logic bug. |
+| `E_WRITE` | merge | Writing a fresh (greenfield) `pyproject.toml` failed. Apply the same local-cause check as `E_MERGE` (permissions, disk, race) before reporting. |
+| JSON parse / wiring error | — | Output wasn't valid JSON, or fields were missing/misshaped against `schemaVersion: 1`. Always reportable. |
+| Any uncategorized failure after preflight | any | An unexpected error not covered above, with no plausible local cause. |
 
 **Where:** file an issue at `https://github.com/databricks/cli/issues` with an **`[environments setup-local]`** title prefix.
 
