@@ -88,9 +88,9 @@ Then run the user's Spark code as documented in [`databricks-execution-compute`]
 
 Full mapping in [references/troubleshooting.md](references/troubleshooting.md). In short:
 
-- **User-fixable (fix, do not report):** `E_AUTH` (stderr), `E_USAGE`, `E_NO_TARGET`, `E_RESOLVE`, `E_MANAGER_UNSUPPORTED`, `E_NOT_WRITABLE`, `E_UV_MISSING`, `E_PYTHON_INSTALL`, `E_FETCH` (network/proxy), `E_CANCELED`.
-- **Report a published-constraints/pins defect → [`databricks/environments`](https://github.com/databricks/environments/issues):** `E_ENV_UNSUPPORTED`, `E_PROVISION`, `E_VALIDATE`.
-- **Report a CLI defect → [`databricks/cli`](https://github.com/databricks/cli/issues) with an `[environments setup-local]` title prefix:** `E_MERGE`, `E_WRITE`, JSON parse/wiring errors, and any uncategorized post-preflight failure.
+- **User-fixable (fix, do not report):** `E_AUTH` (stderr), `E_USAGE`, `E_NO_TARGET`, `E_RESOLVE`, `E_MANAGER_UNSUPPORTED`, `E_NOT_WRITABLE`, `E_UV_MISSING`, `E_PYTHON_INSTALL`, `E_FETCH` (unreachable/no-cache), `E_CANCELED`; plus the user-caused variants of `E_PROVISION` (network/pip-seed, or a `W_USER_CONSTRAINT_CONFLICT`/`W_DBCONNECT_PIN_DUPLICATED` conflict) and `E_VALIDATE` (standalone-`pyspark` collision).
+- **Report a published-constraints/pins defect → [`databricks/environments`](https://github.com/databricks/environments/issues):** `E_ENV_UNSUPPORTED`; `E_FETCH` (malformed-constraints message); `E_PROVISION` (published-pins resolution conflict); `E_VALIDATE` (version mismatch). **Decide these last three from `error.message` / `warnings[]`, not the code alone** — see the reference.
+- **Report a CLI defect → [`databricks/cli`](https://github.com/databricks/cli/issues) with an `[environments setup-local]` title prefix:** `E_MERGE`, `E_WRITE` (after ruling out local FS causes), JSON parse/wiring errors, and any uncategorized post-preflight failure.
 
 When reporting, include `error.code`, `error.failurePhase`, `compute.envKey`, and the CLI stderr tail — **never** local paths, usernames, cluster names, or tokens.
 

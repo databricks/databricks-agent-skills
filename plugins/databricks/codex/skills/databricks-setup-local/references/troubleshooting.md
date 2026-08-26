@@ -22,7 +22,7 @@ Only kinds 2 and 3 are worth a report, and only *after* preflight — a prefligh
 | `E_NOT_WRITABLE` | preflight | Project directory is not writable. | Fix permissions or run from a writable copy of the project. |
 | `E_UV_MISSING` | preflight | `uv` not found and auto-install failed. | Install `uv` (e.g. `curl -LsSf https://astral.sh/uv/install.sh \| sh`) or add it to PATH, then re-run. |
 | `E_PYTHON_INSTALL` | provision | `uv python install` failed for the required minor. | Usually transient/network or a locked-down sandbox. Retry; check `uv` can reach the Python download source. |
-| `E_FETCH` | fetch | Constraint repo unreachable and no usable cache. | Network/proxy issue. Check connectivity to `databricks/environments`; retry once online. Report **only** if the network is fine and it still fails (then it may be a defect — see below). |
+| `E_FETCH` | fetch | Constraint repo unreachable and no usable cache (**network/proxy**). | Check connectivity to `databricks/environments`; retry once online. *(If instead the message says it **cannot parse the python version from constraints**, the published artifact is malformed — that is not a network issue: report to `databricks/environments`, see below.)* |
 | `E_CANCELED` | any | The run was interrupted (SIGINT/SIGTERM). | Not a failure of the command. Re-run if the interrupt was unintended. |
 
 ## Report to `databricks/environments`
@@ -32,7 +32,8 @@ Published constraints/pins for the resolved compute are wrong, missing, or unres
 | Code | Phase | Report when… (else it is user-fixable — see above) |
 |------|-------|-----------------------------------------------------|
 | `E_ENV_UNSUPPORTED` | fetch | Always reportable: no published environment key exists for the resolved runtime (e.g. a DBR the constraints repo doesn't cover yet). |
-| `E_PROVISION` | provision | The message shows `uv sync` **failing to resolve** (a dependency conflict / "no solution found") — the published pins conflict with each other. *Not* reportable when the message shows a network/download failure or a pip-seeding (post-provision) error — those are transient/local: retry, treat as user-fixable. |
+| `E_FETCH` | fetch | Only when the message says it **cannot parse the python version from constraints** — the published artifact is malformed. (The unreachable-repo/no-cache variant is a network issue — user-fixable, see above.) |
+| `E_PROVISION` | provision | The message shows `uv sync` **failing to resolve** (a dependency conflict / "no solution found") **and** `warnings[]` shows no user-caused conflict. *Not* reportable when: `warnings[]` contains `W_USER_CONSTRAINT_CONFLICT` or `W_DBCONNECT_PIN_DUPLICATED` (the user's own pins are the conflict — user-fixable); or the message shows a network/download failure or a pip-seeding (post-provision) error (transient/local — retry). |
 | `E_VALIDATE` | validate | The message shows the installed **Python or `databricks-connect` version doesn't match** the target the env claimed. *Not* reportable when the message names a standalone-`pyspark` collision (the user declared `pyspark` alongside `databricks-connect`) — that is user-fixable: remove the standalone `pyspark` (see `W_STANDALONE_PYSPARK_CONFLICT`), keep a local Spark in a separate venv. |
 
 **Where:** file an issue at `https://github.com/databricks/environments/issues`.
