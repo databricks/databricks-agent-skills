@@ -2,6 +2,8 @@
 
 **IMPORTANT**: ALWAYS use SQL files in `config/queries/` for data retrieval. NEVER add custom endpoints for warehouse SQL queries.
 
+> For a **governed UC Metric View** (pre-defined semantic measures/dimensions) rather than ad-hoc SQL, use the metric-view path instead — `config/metric-views/definitions.json` + `useMetricView`. See [Metric Views](metric-views.md).
+
 - Store ALL SQL queries in `config/queries/` directory
 - Name files descriptively: `trip_statistics.sql`, `user_metrics.sql`, `sales_by_region.sql`
 - Reference by filename (without extension) in `useAnalyticsQuery` or directly in a visualization component passing it as `queryKey`

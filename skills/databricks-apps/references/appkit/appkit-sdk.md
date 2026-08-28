@@ -104,3 +104,29 @@ function CustomDisplay() {
   );
 }
 ```
+
+## useMetricView Hook
+
+For a **governed UC Metric View** (not a `config/queries/` SQL file), use `useMetricView` —
+a structured `{ measures, dimensions, filter, orderBy, limit }` request instead of SQL text.
+Register the view in `config/metric-views/definitions.json`, run `npm run typegen`, then:
+
+```typescript
+import { useMetricView } from '@databricks/appkit-ui/react';
+
+const { data, loading, error } = useMetricView('orders', {
+  measures: ['revenue'],
+  dimensions: ['region'],
+  orderBy: [{ field: 'revenue', direction: 'DESC' }],
+  limit: 10,
+});
+// numeric cells are strings/null → Number(row.revenue) before math
+```
+
+- `measures` is required (≥ 1); `dimensions`, `filter`, `orderBy`, `timeGrain`/`timeDimension`,
+  and `limit` are optional. `autoStart: false` defers the query (no `enabled` option — same as
+  `useAnalyticsQuery`).
+- Do **not** use `useAnalyticsQuery` for a metric view, or `useMetricView` for a plain table.
+
+See [Metric Views](metric-views.md) for registration, executor (service-principal vs OBO),
+the filter predicate tree, and the full request rules.

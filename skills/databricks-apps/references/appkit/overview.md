@@ -9,6 +9,7 @@ Before scaffolding, decide which data pattern the app needs:
 | Pattern | When to use | Init command |
 |---------|-------------|-------------|
 | **Analytics** (read-only) | Dashboards, charts, KPIs from warehouse | `--features analytics --set analytics.sql-warehouse.id=<ID>` |
+| **Metric Views** (governed) | Pre-defined UC semantic measures/dimensions you want kept consistent | Part of `--features analytics`; declare in `config/metric-views/definitions.json` — see [Metric Views](metric-views.md) |
 | **Lakebase synced tables** (low-latency reads) | Point lookups, entity search, catalogs from lakehouse data | `--features lakebase` (no `--set` flags needed) + sync Delta table via `databricks-lakebase` skill |
 | **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
 | **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
@@ -124,6 +125,7 @@ Do not guess paths — run without args first, then pick from the index.
 |-------------------------|------|
 | Write SQL files | [SQL Queries](sql-queries.md) — parameterization, dialect, sql.* helpers |
 | Use `useAnalyticsQuery` | [AppKit SDK](appkit-sdk.md) — memoization, conditional queries |
+| Query a governed UC Metric View | [Metric Views](metric-views.md) — definitions.json, `useMetricView`, request rules |
 | Add chart/table components | [Frontend](frontend.md) — component quick reference, anti-patterns |
 | Add API mutation endpoints | [Custom Endpoints](custom-endpoints.md) — only if you need server-side logic |
 | Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
@@ -145,5 +147,6 @@ Do not guess paths — run without args first, then pick from the index.
 - **Display data from SQL?**
   - Chart/Table → `BarChart`, `LineChart`, `DataTable` components
   - Custom layout (KPIs, cards) → `useAnalyticsQuery` hook
+- **Read a governed UC Metric View (semantic layer)?** → `useMetricView` hook — see [Metric Views](metric-views.md)
 - **Call Databricks API?** → Dedicated plugin (serving, jobs, files) or custom endpoint via `onPluginsReady`
 - **Modify data?** → Express routes in `onPluginsReady`

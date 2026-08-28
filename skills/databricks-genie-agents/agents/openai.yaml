@@ -1,6 +1,6 @@
 interface:
   display_name: "Databricks Genie Agents"
-  short_description: "Create and query Databricks Genie Agents."
+  short_description: "Create and query curated, per-data Databricks Genie Agents (formerly Genie Spaces) — distinct from general data discovery (Genie One)."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"

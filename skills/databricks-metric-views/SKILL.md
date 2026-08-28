@@ -27,283 +27,69 @@ Use this skill when:
 - SQL warehouse with `CAN USE` permissions
 - `SELECT` on source tables, `CREATE TABLE` + `USE SCHEMA` in the target schema
 
-## Quick Start
+## Metric View Lifecycle
 
-### Inspect Source Table Schema
+| Task | Reference | Load when |
+|------|-----------|-----------|
+| **Create** | [metric-view-advisor.md](references/metric-view-advisor.md) | Any creation task — the advisor handles the full workflow (profile schema, analyze sources, suggest, deploy). Load [create-patterns.md](references/create-patterns.md) alongside as the YAML spec and pattern reference. |
+| **YAML spec / patterns** | [create-patterns.md](references/create-patterns.md) | Patterns 1–12, full YAML field reference, formatting gotchas, deployment errors, quick reference. Companion to the advisor; also load directly for pattern lookup. |
+| **Query** | [query-patterns.md](references/query-patterns.md) | Writing SQL against a metric view — `MEASURE()` basics, filters, join rollups, window measures, Rules 1–3. |
+| **Genie integration** | [metric-view-advisor.md §Genie Design Rules](references/metric-view-advisor.md#genie-design-rules) | One-fact-source rule, base views, domain organization, naming. Agent metadata fields (`comment`, `synonyms`, `display_name`, `format`) are in [create-patterns.md §YAML Field Reference](references/create-patterns.md#yaml-field-reference). |
 
-Before authoring a metric view, inspect the source tables. Use `discover-schema` as the default — one call returns columns, types, sample rows, null counts, and row count. If you only know the schema, list tables first with `query "SHOW TABLES IN ..."`.
+Typical flow: **advisor → create → query/validate → Genie integration (if adding to a Genie Agent)**.
 
-`databricks experimental aitools tools discover-schema catalog.schema.orders catalog.schema.customers`
+### Source-controlled deployment with Declarative Automation Bundles
 
-For dimensions and measures, probe distribution beyond sampling — cardinality of candidate dimensions, min/max/percentiles for measures, top categorical values. Write aggregate SQL through `databricks experimental aitools tools query --warehouse <WH> "..."`. Both commands auto-pick the default warehouse; set `DATABRICKS_WAREHOUSE_ID` or pass `--warehouse <ID>` to override.
-
-> The `databricks experimental aitools tools` subcommands are experimental — subject to change between CLI versions. Confirm availability with `databricks experimental aitools tools --help` before relying on them; see [CLI Execution](#cli-execution) for the stable Statement Execution API fallback.
-
-### Create a Metric View
-
-```sql
-CREATE OR REPLACE VIEW catalog.schema.orders_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.orders
-  comment: "Orders KPIs for sales analysis"
-  filter: order_date > '2020-01-01'
-  dimensions:
-    - name: Order Month
-      expr: DATE_TRUNC('MONTH', order_date)
-      comment: "Month of order"
-    - name: Order Status
-      expr: CASE
-        WHEN status = 'O' THEN 'Open'
-        WHEN status = 'P' THEN 'Processing'
-        WHEN status = 'F' THEN 'Fulfilled'
-        END
-      comment: "Human-readable order status"
-  measures:
-    - name: Order Count
-      expr: COUNT(1)
-    - name: Total Revenue
-      expr: SUM(total_price)
-      comment: "Sum of total price"
-    - name: Revenue per Customer
-      expr: SUM(total_price) / COUNT(DISTINCT customer_id)
-      comment: "Average revenue per unique customer"
-$$
-```
-
-### Query a Metric View
-
-All measures must use the `MEASURE()` function. `SELECT *` is NOT supported.
-
-```sql
-SELECT
-  `Order Month`,
-  `Order Status`,
-  MEASURE(`Total Revenue`) AS total_revenue,
-  MEASURE(`Order Count`) AS order_count
-FROM catalog.schema.orders_metrics
-WHERE extract(year FROM `Order Month`) = 2024
-GROUP BY ALL
-ORDER BY ALL
-```
-
-## Reference Files
-
-| Topic | File | Description |
-|-------|------|-------------|
-| YAML Syntax | [references/yaml-reference.md](references/yaml-reference.md) | Complete YAML spec: dimensions, measures, joins, materialization |
-| Patterns & Examples | [references/patterns.md](references/patterns.md) | Common patterns: star schema, snowflake, filtered measures, window measures, ratios |
-| Multi-source build (Advisor) | [references/metric-view-advisor.md](references/metric-view-advisor.md) | Guided workflow to build metric views from gold schemas, dashboards, SQL queries, Genie spaces, or KPI files — analysis, overlap detection, deploy |
-
-## Guided, multi-source build (Metric View Advisor)
-
-For the single-table create/query patterns above, use this skill directly. When the user wants to **build metric views from existing assets** — gold/fact schemas, AI/BI dashboards, SQL query files, Genie spaces, or KPI spreadsheets — combine multiple sources, deduplicate against views that already exist, and walk deployment end to end, use the **Metric View Advisor** in [`references/metric-view-advisor.md`](references/metric-view-advisor.md). It builds on this skill's baseline spec and adds the multi-source analysis, overlap detection, and an interactive build/deploy flow. Load it when the user asks to "formalize our KPIs," "build a metric/semantic layer from our tables/dashboards/queries," or otherwise wants a guided build rather than authoring one view by hand.
-
-## SQL Operations
-
-### Create Metric View
-
-```sql
-CREATE OR REPLACE VIEW catalog.schema.orders_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  comment: "Orders KPIs for sales analysis"
-  source: catalog.schema.orders
-  filter: order_date > '2020-01-01'
-  dimensions:
-    - name: Order Month
-      expr: DATE_TRUNC('MONTH', order_date)
-      comment: "Month of order"
-    - name: Order Status
-      expr: status
-  measures:
-    - name: Order Count
-      expr: COUNT(1)
-    - name: Total Revenue
-      expr: SUM(total_price)
-      comment: "Sum of total price"
-$$;
-```
-
-### Query Metric View
-
-```sql
-SELECT
-  `Order Month`,
-  MEASURE(`Total Revenue`) AS total_revenue,
-  MEASURE(`Order Count`) AS order_count
-FROM catalog.schema.orders_metrics
-WHERE extract(year FROM `Order Month`) = 2024
-GROUP BY ALL
-ORDER BY ALL
-LIMIT 100;
-```
-
-### Describe Metric View
-
-```sql
-DESCRIBE TABLE EXTENDED catalog.schema.orders_metrics;
-
--- Or get YAML definition
-SHOW CREATE TABLE catalog.schema.orders_metrics;
-```
-
-### Grant Access
-
-```sql
-GRANT SELECT ON VIEW catalog.schema.orders_metrics TO `data-consumers`;
-```
-
-### Drop Metric View
-
-```sql
-DROP VIEW IF EXISTS catalog.schema.orders_metrics;
-```
-
-### CLI Execution
-
-> **The `databricks experimental aitools tools` commands are experimental and their surface can change between CLI versions.** Before relying on a subcommand (`query`, `statement submit`/`get`, `discover-schema`, `get-default-warehouse`), confirm it exists with `databricks experimental aitools tools --help`, and fall back to the stable [Statement Execution API](#statement-execution-api-stable-alternative) below if it isn't available. There is no stable `databricks sql execute` / `execute-statement` verb.
-
-For **short** statements (`SHOW`/`DESCRIBE`/`SELECT`), run the SQL inline:
-
-```bash
-databricks experimental aitools tools query --warehouse WAREHOUSE_ID "SHOW TABLES IN catalog.schema"
-```
-
-For **long DDL** (`CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$...$$`), write the SQL to a `.sql` file and submit the file — this avoids the `$$`-heredoc escaping traps (bash variable expansion, `sed`, JSON encoding) entirely:
-
-```bash
-# orders_metrics.sql holds the full CREATE OR REPLACE VIEW ... $$ ... $$ statement
-databricks experimental aitools tools statement submit --file orders_metrics.sql --warehouse WAREHOUSE_ID
-databricks experimental aitools tools statement get <statement_id>   # blocks until terminal
-```
-
-This is the same file-based path the [Metric View Advisor](references/metric-view-advisor.md) uses for deployment — keep to one method so the two don't drift.
-
-#### Statement Execution API (stable alternative)
-
-If the experimental `aitools` commands aren't available, use the stable Statement Execution REST API, which takes the SQL as a JSON string:
-
-```bash
-databricks api post /api/2.0/sql/statements/execute --json '{
-  "warehouse_id": "WAREHOUSE_ID",
-  "statement": "CREATE OR REPLACE VIEW catalog.schema.orders_metrics WITH METRICS LANGUAGE YAML AS $$\nversion: 1.1\nsource: catalog.schema.orders\ndimensions:\n  - name: Order Month\n    expr: DATE_TRUNC(MONTH, order_date)\nmeasures:\n  - name: Total Revenue\n    expr: SUM(total_price)\n$$"
-}'
-```
-
-For long statements, template the JSON from a `.sql` file rather than hand-escaping newlines.
-
-### Convert an Existing View to a Metric View
-
-To migrate a regular view to a metric view, treat its `SELECT` source as the metric view's `source`, then promote `GROUP BY` columns to `dimensions` and aggregations to `measures`. The new metric view does not replace the original — it sits alongside it as a governed metric layer.
-
-```sql
--- Existing regular view (keep as-is or drop later)
--- CREATE VIEW catalog.schema.orders_summary AS
--- SELECT DATE_TRUNC('MONTH', order_date) AS month,
---        SUM(total_price) AS revenue,
---        COUNT(*) AS order_count
--- FROM catalog.schema.orders
--- GROUP BY 1;
-
--- Equivalent metric view (new artifact, governed)
-CREATE OR REPLACE VIEW catalog.schema.orders_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.orders
-  dimensions:
-    - name: Order Month
-      expr: DATE_TRUNC('MONTH', order_date)
-  measures:
-    - name: Revenue
-      expr: SUM(total_price)
-    - name: Order Count
-      expr: COUNT(1)
-$$
-```
-
-After verifying parity (`SELECT ... FROM <orders_metrics>` returns the same numbers as the original view), update downstream consumers and drop the original view.
-
-## YAML Spec Quick Reference
+To source-control a metric view, commit its complete SQL definition and execute it through a bundle-managed SQL job. DABs do not have a native metric-view resource, but a bundle-managed SQL job can apply a committed definition:
 
 ```yaml
-version: 1.1                    # Required: "1.1" for DBR 17.2+ (semantic metadata needs 17.3+)
-source: catalog.schema.table    # Required: source table/view
-comment: "Description"          # Optional: metric view description
-filter: column > value          # Optional: global WHERE filter
+# databricks.yml
+bundle:
+  name: orders_metrics
 
-dimensions:                     # Required: at least one
-  - name: Display Name          # Backtick-quoted in queries
-    expr: sql_expression        # Column ref or SQL transformation
-    comment: "Description"      # Optional (v1.1+)
+variables:
+  catalog: { default: main }
+  schema:  { default: default }
+  warehouse_id: { default: "" }
 
-measures:                       # Required: at least one
-  - name: Display Name          # Queried via MEASURE(`name`)
-    expr: AGG_FUNC(column)      # Must be an aggregate expression
-    comment: "Description"      # Optional (v1.1+)
-
-joins:                          # Optional: star/snowflake schema
-  - name: dim_table
-    source: catalog.schema.dim_table
-    on: source.fk = dim_table.pk
-
-materialization:                # Optional (experimental)
-  schedule: every 6 hours
-  mode: relaxed
+resources:
+  jobs:
+    deploy_orders_metrics:
+      name: deploy_orders_metrics
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+      tasks:
+        - task_key: create_metric_view
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/orders_metrics.metric_view.sql
 ```
 
-## Key Concepts
+Deploy and run:
 
-### Dimensions vs Measures
+```bash
+databricks bundle deploy --target <TARGET> --profile <PROFILE>
+databricks bundle run deploy_orders_metrics --target <TARGET> --profile <PROFILE>
+```
 
-| | Dimensions | Measures |
-|---|---|---|
-| **Purpose** | Categorize and group data | Aggregate numeric values |
-| **Examples** | Region, Date, Status | SUM(revenue), COUNT(orders) |
-| **In queries** | Used in SELECT and GROUP BY | Wrapped in `MEASURE()` |
-| **SQL expressions** | Any SQL expression | Must use aggregate functions |
+See the official [metric view bundle example](https://github.com/databricks/bundle-examples/tree/main/knowledge_base/metric_view).
 
-### Why Metric Views vs Standard Views?
+## Related Skills
 
-| Feature | Standard Views | Metric Views |
-|---------|---------------|--------------|
-| Aggregation locked at creation | Yes | No - flexible at query time |
-| Safe re-aggregation of ratios | No | Yes |
-| Star/snowflake schema joins | Manual | Declarative in YAML |
-| Materialization | Separate MV needed | Built-in |
-| AI/BI Genie integration | Limited | Native |
-
-## Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| **SELECT * not supported** | Must explicitly list dimensions and use MEASURE() for measures |
-| **"Cannot resolve column"** | Dimension/measure names with spaces need backtick quoting |
-| **JOIN at query time fails** | Joins must be in the YAML definition, not in the SELECT query |
-| **MEASURE() required** | All measure references must be wrapped: `MEASURE(\`name\`)` |
-| **DBR version error** | Requires Runtime 17.2+ for YAML v1.1, or 16.4+ for v0.1. Semantic metadata (`synonyms`/`display_name`/`format`) needs 17.3+ |
-| **Materialization not working** | Requires serverless compute enabled; currently experimental |
-
-## Integrations
-
-Metric views work natively with:
-- **AI/BI Dashboards** - Use as datasets for visualizations
-- **AI/BI Genie** - Natural language querying of metrics
-- **Alerts** - Set threshold-based alerts on measures
-- **SQL Editor** - Direct SQL querying with MEASURE()
-- **Catalog Explorer UI** - Visual creation and browsing
+- **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)** — create, manage, and validate Genie Agents that consume the metric views built here. Metric-view design rules for Genie are in the [advisor §Genie Design Rules](references/metric-view-advisor.md#genie-design-rules); query rules are in [query-patterns.md](references/query-patterns.md).
+- **[databricks-aibi-dashboards](../databricks-aibi-dashboards/SKILL.md)** — build AI/BI dashboards on top of metric views.
+- **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)** — explore data before creating metric views; answer questions across your workspace.
+- **[databricks-dabs](../databricks-dabs/SKILL.md)** — source-control and deploy metric view SQL definitions via bundle-managed jobs.
 
 ## Resources
 
-- [Metric Views Documentation](https://docs.databricks.com/en/metric-views/)
-- [YAML Syntax Reference](https://docs.databricks.com/en/metric-views/data-modeling/syntax)
-- [Joins](https://docs.databricks.com/en/metric-views/data-modeling/joins)
+- [Metric Views Documentation](https://docs.databricks.com/metric-views/)
+- [YAML Syntax Reference](https://docs.databricks.com/metric-views/data-modeling/syntax)
+- [Joins](https://docs.databricks.com/metric-views/data-modeling/joins)
 - [Window Measures](https://docs.databricks.com/metric-views/data-modeling/window-measures) (Experimental)
-- [Materialization](https://docs.databricks.com/en/metric-views/materialization)
-- [MEASURE() Function](https://docs.databricks.com/en/sql/language-manual/functions/measure)
+- [Materialization](https://docs.databricks.com/metric-views/materialization)
+- [MEASURE() Function](https://docs.databricks.com/sql/language-manual/functions/measure)

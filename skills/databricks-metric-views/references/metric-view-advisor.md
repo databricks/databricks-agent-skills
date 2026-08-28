@@ -1,7 +1,7 @@
 # Metric View Advisor — multi-source build workflow
 
 Create Unity Catalog metric views from existing Databricks assets — gold/fact
-schemas, AI/BI dashboards, SQL queries, Genie spaces, or KPI files. This workflow
+schemas, AI/BI dashboards, SQL queries, Genie Agents, or KPI files. This workflow
 analyzes those sources, synthesizes them into richer, deduplicated suggestions,
 checks for overlap with views that already exist, and walks deployment end to end.
 Unlike a single-input "create a metric view" helper, it combines **multiple input
@@ -14,19 +14,11 @@ them," or "turn our ad-hoc queries into reusable metrics"). Do **not** use it fo
 querying or altering an already-existing metric view, comparing metric-view
 frameworks, creating regular UC tables/schemas, or MLflow/model tracking.
 
-> **The baseline metric-view spec lives in this skill, not here.** The parent
-> `databricks-metric-views` skill (`../SKILL.md`) and its references —
-> [`patterns.md`](patterns.md) (the pattern library) and
-> [`yaml-reference.md`](yaml-reference.md) (top-level fields, dimensions, measures,
-> window measures, joins, filter, materialization) — are the spec authority. **Read
-> them first.** This file documents only the *advisor-specific* material: the
-> multi-source build flow and the YAML additions that flow needs. It deliberately
-> does not restate the baseline spec, so the two can't drift apart.
+> **The metric-view *spec* lives in [`create-patterns.md`](create-patterns.md)** — patterns, YAML field reference, formatting gotchas, and deployment errors. **Read it first.** This file owns the *advisor workflow*: the multi-source build flow, its interactive steps, and the **execution mechanics that flow needs** (CLI & API operations, the deploy step). The boundary is **spec vs. workflow** — the reusable spec stays in create-patterns and is not restated here; the interactive flow and how to run it stay here. (CLI/deploy mechanics live here on purpose — they were consolidated out of create-patterns to avoid duplication.)
 
 ## Prerequisites & tooling
 
-1. **The baseline spec** from the parent skill (`../SKILL.md`, [`patterns.md`](patterns.md), [`yaml-reference.md`](yaml-reference.md)) — read it for the YAML spec and patterns.
-2. A working **Databricks CLI (>= v1.0.0)** authenticated to a workspace profile. All operations run through the CLI; the commands and fetch/parse details are in [CLI & API operations](#cli--api-operations) below. Auth, profiles, and warehouse selection are covered by the **`databricks-core`** skill.
+1. A working **Databricks CLI (>= v1.0.0)** authenticated to a workspace profile. All operations run through the CLI; the commands and fetch/parse details are in [CLI & API operations](#cli--api-operations) below. Auth, profiles, and warehouse selection are covered by the **`databricks-core`** skill.
 
 > **If the host agent has native asset readers** (a `readAssetById`-style tool), it may use them — but **verify the result is non-empty** and fall back to the CLI fetches below if it isn't. A native reader often returns an empty *published* serialization (`datasets: []`); empty ≠ no data.
 
@@ -46,16 +38,27 @@ march through a scripted list of questions or stop after every micro-step.
 
 ### Information this advisor needs (and why)
 
-Establish these before generating definitions. Read them from the user's request where possible; discover what you can; ask for the rest.
+Read what you can from the user's message. If the mandatory items below are missing, ask for all of them in a **single prompt** — do not ask one at a time:
 
-| Information | Why it's needed | How to obtain it |
+> "To get started I need a few things — fill in whatever isn't already clear from your message:
+>
+> 1. **Databricks profile** — which workspace should I use? Run `databricks auth profiles` to see your options.
+> 2. **Input sources** — what do you have? Pick any combination:
+>    - Gold schema (`catalog.schema`)
+>    - AI/BI dashboard (ID or URL)
+>    - SQL queries (`.sql` file path)
+>    - Genie Agent (Space ID)
+>    - KPI/measures file (`.csv` or `.yaml` path)
+> 3. **Target schema** — where should the metric views be created? (`catalog.schema`, may differ from the source)
+
+| Information | Mandatory? | How to obtain it |
 |---|---|---|
-| **Workspace / CLI profile** | All SQL and asset reads run against a specific workspace | **Never auto-select a profile.** List with `databricks auth profiles` (show workspace URLs) and let the user choose — even if only one exists. Accept a profile name or a workspace URL. Validate with `databricks auth describe --profile <PROFILE>` (reports host + auth status, mints no token); if stale, re-auth with `databricks auth login --profile <PROFILE>` (host is already stored — only pass `--host` for a brand-new profile). |
-| **SQL warehouse** | Needed to run SQL this session | Auto-discover the default — don't ask: `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`. `query`/`discover-schema` auto-pick it; pass `--warehouse <ID>` (or set `DATABRICKS_WAREHOUSE_ID`) only for `statement submit`. If the user names a specific warehouse, honor it for all SQL this session. |
-| **Input source(s)** | The richer the inputs, the better the suggestions; any combination is valid | See the input-source table below. Use whatever the user provides; if none is clear, ask which they want. |
-| **Source identifiers** | Each source needs its own locator | Per the table below. Sources 3 and 5 also need a `catalog.schema` if source 1 wasn't given; if several sources share one schema, resolve it once. |
-| **Target `catalog.schema`** | Where the metric views are created (may differ from the source) | Ask if not given. **Validate it exists** with `SHOW SCHEMAS IN <catalog> LIKE '<schema>'`. If missing, ask whether to create it (`CREATE SCHEMA IF NOT EXISTS <catalog>.<schema>` — a checkpoint, since it writes) or use a different target. |
-| **Review preference** | Controls how much the user reviews before anything is created | If not stated, default to **review-first** (show suggestions, save to YAML, confirm before creating). The user can opt into **auto-create** (generate + deploy without per-step approval; still save the suggestions file). SQL-file saving defaults to yes — mention only if asked. |
+| **Workspace / CLI profile** | Yes — never auto-select | List with `databricks auth profiles` (show workspace URLs) and let the user choose — even if only one exists. Validate with `databricks auth describe --profile <PROFILE>`; if stale, re-auth with `databricks auth login --profile <PROFILE>`. |
+| **Input source(s)** | Yes — ask if missing | Use whatever the user provides. See input-source table below. |
+| **Source identifiers** | Yes — follow up once source type is known | Sources 3 and 5 also need a `catalog.schema` if source 1 wasn't given; if several sources share one schema, resolve it once. |
+| **Target `catalog.schema`** | Yes — ask if not given | Validate with `SHOW SCHEMAS IN <catalog> LIKE '<schema>'`. If missing, ask whether to create it (`CREATE SCHEMA IF NOT EXISTS` — a checkpoint) or use a different target. |
+| **SQL warehouse** | No — auto-discover | `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`. `query`/`discover-schema` auto-pick it; capture the id explicitly for deploys — the Statement Execution API needs it as `warehouse_id` in the payload. Honor any warehouse the user names. |
+| **Review preference** | No — default to review-first | Default: show suggestions, save to YAML, confirm before creating. User can opt into **auto-create** (generate + deploy without per-step approval; still saves the suggestions file). |
 
 **Input sources** (combine any):
 
@@ -64,21 +67,26 @@ Establish these before generating definitions. Read them from the user's request
 | 1 | **Gold schema** | `catalog.schema` | — (is a schema) |
 | 2 | **AI/BI dashboard** | Dashboard ID or URL | No |
 | 3 | **Queries on gold tables** | `.sql` file path | Yes |
-| 4 | **Genie space** | Space ID | No |
+| 4 | **Genie Agent** | Space ID | No |
 | 5 | **KPIs, Measures & Dimensions** | `.csv`/`.yaml` file path | Yes |
 
 ## CLI & API operations
 
 Auth, profiles, warehouse discovery, and the basics of running SQL via the CLI are covered by the **`databricks-core`** skill — use it for `databricks auth login` / `auth describe`, listing profiles, and picking a warehouse. Below are the commands specific to building metric views from assets.
 
-> **No `databricks sql execute` / `execute-statement`** — those commands don't exist. Use the `aitools` query/statement commands below. These `databricks experimental aitools tools` commands are **experimental** and their surface can shift between CLI versions — confirm a subcommand with `databricks experimental aitools tools --help` before relying on it, and fall back to the stable Statement Execution API (`databricks api post /api/2.0/sql/statements/execute --json '{...}'`) if it's unavailable. The parent skill's [CLI Execution](../SKILL.md) section documents that same fallback; both files use the file-based `statement submit --file` path for long DDL so they stay consistent.
+> **No `databricks sql execute` / `execute-statement`** — those commands don't exist. The `databricks experimental aitools tools` commands are **experimental** and their surface can shift between CLI versions — confirm a subcommand with `databricks experimental aitools tools --help` before relying on it.
+>
+> **Do NOT deploy metric-view DDL through `aitools tools query` or `aitools tools statement submit`.** Both flatten the leading indentation of the `$$…$$` YAML body in transit, so the server rejects a valid definition with `METRIC_VIEW_INVALID_VIEW_DEFINITION` — *"Failed to parse YAML: Missing required creator property 'expr'"* or *"expected `<block end>`, but found `'-'`"*. This bites the canonical example too. Deploy metric views through the stable **Statement Execution API** (`databricks api post /api/2.0/sql/statements/` — note: **no** `/execute` suffix), which sends the body verbatim. Verified 2026-08 on CLI v1.12.1. The `aitools` tools remain correct for the short read statements below and `discover-schema`.
 
 **Running SQL:**
-- **Short statements** (`SHOW`/`DESCRIBE`/`SELECT`): `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (auto-picks the default warehouse).
-- **Long DDL** (`CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$...$$`): write it to a `.sql` file and submit — this avoids the heredoc/JSON-escaping traps of `$$`-quoted embedded YAML:
+- **Short statements** (`SHOW`/`DESCRIBE`/`SELECT`/`DROP`): `databricks experimental aitools tools query "<SQL>" --profile <PROFILE>` (auto-picks the default warehouse).
+- **Deploy metric-view DDL** (`CREATE OR REPLACE VIEW ... WITH METRICS LANGUAGE YAML AS $$...$$`): write it to a `.sql` file, then JSON-encode the file into the API payload with `jq -Rs` — this preserves the YAML indentation exactly and sidesteps the heredoc/JSON-escaping traps of hand-editing `$$`-quoted YAML:
   ```bash
-  databricks experimental aitools tools statement submit --file view.sql --warehouse <ID> --profile <PROFILE>
-  databricks experimental aitools tools statement get <statement_id> --profile <PROFILE>   # blocks until terminal
+  # view.sql holds the full CREATE OR REPLACE VIEW ... $$ ... $$ statement
+  jq -Rs --arg wh "<WAREHOUSE_ID>" '{warehouse_id: $wh, statement: ., wait_timeout: "30s"}' view.sql > /tmp/mv_payload.json
+  databricks api post /api/2.0/sql/statements/ --json @/tmp/mv_payload.json --profile <PROFILE>
+  # if the response state is PENDING, poll until terminal:
+  # databricks api get /api/2.0/sql/statements/<statement_id> --profile <PROFILE>
   ```
 - **Inspect a table**: `databricks experimental aitools tools discover-schema <catalog.schema.table> --profile <PROFILE>` (one call → columns, types, sample rows, null/row counts).
 
@@ -92,26 +100,27 @@ Auth, profiles, warehouse discovery, and the basics of running SQL via the CLI a
 
 > Don't use `/api/2.0/sql/dashboards/<id>` (404). **If `datasets`/`pages` come back empty** — common with a native published-asset reader or v3-editor dashboards — that's a fetch-method artifact, not an empty dashboard. Try in order: `lakeview get` (draft) → `lakeview get-published <id>` → fall back to Input 3 (ask for the widget SQL as a `.sql` file).
 
-**Fetch a Genie space:**
+**Fetch a Genie Agent:**
 Save to a file first, then parse — the payload is large, and piping it into inline Python makes `json.load(sys.stdin)` read an empty stream:
 
 ```bash
-databricks api get "/api/2.0/genie/spaces/<space_id>?include_serialized_space=true" --profile <PROFILE> > /tmp/genie.json
+databricks genie get-space <space_id> --include-serialized-space --profile <PROFILE> -o json > /tmp/genie.json
 ```
 
 Parse `serialized_space` (a JSON string). **Non-obvious gotcha — several fields are nested lists of strings, not plain strings**: `instructions.text_instructions[]`, `join_instructions`, `sql_instructions`; and `benchmarks.questions[]` has `.question` as a 1-element list and `.answer[].content` as a list of strings. Use `isinstance()` checks and join. `data_sources.tables[].identifier` is the fully-qualified table name.
 
 ## Workflow
 
-### Step 1 — Discover existing metric views (do this automatically)
+### Step 1 — Discover existing metric views (do this FIRST, always)
 
-Once the target schema is known, **automatically** check what metric views already exist there — this is read-only discovery, so just do it (no need to ask), and it prevents duplicate/overlapping views accumulating across runs.
+Do this **before analyzing any source table or generating suggestions** — even when the user points you directly at a table ("analyze table X") or names the source. Naming a source does **not** remove this step. Once the target schema is known, **automatically** check what metric views already exist there — this is read-only discovery, so just do it (no need to ask), and it prevents duplicate/overlapping views accumulating across runs.
 
 1. **List existing metric views** — they appear in `information_schema.tables` with `table_type = 'METRIC_VIEW'` (not in `SHOW VIEWS`):
 
-```sql
-SELECT table_name FROM <target_catalog>.information_schema.tables
-WHERE table_schema = '<target_schema>' AND table_type = 'METRIC_VIEW'
+```bash
+databricks experimental aitools tools query \
+  "SELECT table_name FROM <target_catalog>.information_schema.tables WHERE table_schema = '<target_schema>' AND table_type = 'METRIC_VIEW'" \
+  --profile <PROFILE>
 ```
 
 2. **If none exist** (empty result, or you just created the schema) → note "fresh schema, nothing to overlap-check" and move on.
@@ -124,9 +133,9 @@ WHERE table_schema = '<target_schema>' AND table_type = 'METRIC_VIEW'
 
 ### Step 2 — Analyze the inputs
 
-For **each** selected input source, run its handler below, then **merge** findings into a single combined analysis. The baseline YAML spec and the pattern library live in the parent skill ([`patterns.md`](patterns.md), [`yaml-reference.md`](yaml-reference.md)); the advisor's YAML additions are in [YAML reference — advisor additions](#yaml-reference--advisor-additions) at the end of this file.
+For **each** selected input source, run its handler below, then **merge** findings into a single combined analysis.
 
-> **Metadata priority (applies everywhere):** existing descriptions are authoritative — never invent when one exists. Order: Genie column descriptions → UC column comments → KPI-file names → dashboard labels → inferred from names. Put the richest description in `comment`, a business label in `display_name`, and every other name/alias in `synonyms`. **Never discard metadata** — it all lands in one of those three fields (this is what makes the views Genie-friendly).
+> **Metadata priority (applies everywhere):** existing descriptions are authoritative — never invent when one exists. Order: Genie column descriptions → UC column comments → KPI-file names → dashboard labels → inferred from names. Put the richest description in `comment` (DBR 17.2+), a business label in `display_name` (DBR 17.3+, max 255 chars), and every other name/alias in `synonyms` (DBR 17.3+, up to 10). **Never discard metadata** — it all lands in one of those three fields. Adding `synonyms` is the highest-impact thing you can do for Genie quality. When saving a v1.1 metric view, single-line YAML comments (`#`) are removed — put meaningful content in `comment` fields, not YAML comments. **Completeness is mandatory: every dimension and measure MUST end with a non-empty `comment` and `display_name`** — when nothing described it, infer a concise business-friendly value from the name; do not leave them blank (`synonyms` may be omitted only when there are no genuine alternates).
 
 **Input 1: Gold schema (`catalog.schema`)**
 
@@ -164,9 +173,9 @@ What to extract and why:
 - Per query: SELECT aggregations → measures, non-aggregated → dimensions, FROM/JOIN → tables, WHERE → filters, GROUP BY → confirm dimensions.
 - **Cross-reference**: repeated aggregations across queries = DRY/standardization opportunities; common WHERE clauses = candidate global filters.
 
-**Input 4: Genie space (Space ID)**
+**Input 4: Genie Agent (Space ID)**
 
-Dump it: fetch the space per [CLI & API operations](#cli--api-operations) (the `genie/spaces` API with `include_serialized_space=true` → file → parse `serialized_space`; mind the required param + nested-list gotchas). Understand how the space is used and which tables/queries it relies on, then pick the metrics from that.
+Dump it: fetch the space per [CLI & API operations](#cli--api-operations) (`databricks genie get-space <space_id> --include-serialized-space` → file → parse `serialized_space`; mind the nested-list gotchas). Understand how the space is used and which tables/queries it relies on, then pick the metrics from that.
 
 What to extract and why:
 - `title`/`description` → domain context, naming, comments.
@@ -276,30 +285,74 @@ Based on your analysis, suggest metric views that would provide value. This step
 
 After resolving all overlaps, proceed to generate the final suggestions list reflecting the user's choices.
 
+#### Genie Design Rules
+
+> For building, sizing, validating, and benchmarking the Genie Agent itself, see the `databricks-genie-agents` skill. These rules govern the *structure* of what to suggest.
+
+##### Rule 1: One Fact Source per Metric View
+
+**Each metric view must have exactly ONE fact table, view, or metric view as its `source`.** This is the most important design constraint.
+
+- Set a single fact table directly as `source` — do NOT build a base view for a single fact table. Add dimension-table joins in the metric view's `joins` block.
+- A base view is needed **only** when a KPI must combine **multiple fact tables** or contains nested logic the metric view cannot express directly (see Rule 2).
+- Co-locate measures in the same metric view only if they share both the same source AND the same dimension tables.
+
+##### Rule 2: Multi-Fact or Nested KPIs Need a Base View
+
+Build a base view **only** when a KPI spans multiple fact tables or contains nested logic. When needed:
+
+1. Create a SQL view joining the sources using CTEs (pre-aggregate to avoid fan-out — an order with multiple return rows would multiply fact columns if joined at row level).
+2. Build the metric view on top of the base view.
+3. **Remove the raw base view from the Genie Agent** once the metric view exists — keeping both exposes unaggregated rows and increases hallucination risk.
+
+##### Rule 3: Prefer Separate Metric Views per KPI Group
+
+Even when KPIs share the same source, prefer one metric view per KPI group — complex combined views are harder to isolate when a measure fails.
+
+##### Organize by Domain, Not by Report
+
+| Level | Maps To |
+|-------|---------|
+| **Domain** (e.g., "Marketing") | Genie Agent |
+| **Subdomain** (e.g., "Online Marketing") | Genie Agent (if domain is broad) |
+| **KPI group** (e.g., "Conversion Metrics") | One metric view |
+
+Use `{subdomain}_{kpi-group}` naming: `online_marketing_conversion_metrics`, `finance_revenue_metrics`.
+
+##### Anti-Patterns
+
+| Anti-pattern | Why it fails | Fix |
+|--------------|--------------|-----|
+| Building a base view for a single fact table | Unnecessary object; can expose unaggregated rows | Set fact table as `source` directly; add dimension joins in `joins` block |
+| Multiple fact tables joined directly in the metric view | Violates one-fact-source rule | Build a base view first; metric view sources from it |
+| Metric view with no comment, dimensions with no comments | Genie has no semantic context | Comment at all three levels (view, dimension, measure) |
+| Mirroring report structure in metric views | Reports change; semantics shouldn't | Organize by business domain/subdomain |
+
 #### Building suggestions from your analysis — use ALL gathered metadata
 
 Every suggestion must be a holistic synthesis of what you learned across ALL input sources — not just column names and types. For each metric view you suggest, apply this checklist:
 
 **1. Metric view naming and `comment`:**
-- Use Genie space `title`/`description` and dashboard title to name the metric view in a business-friendly way (e.g., "wholesale_supplier_order_metrics" not "orders_mv")
+- Use Genie Agent `title`/`description` and dashboard title to name the metric view in a business-friendly way (e.g., "wholesale_supplier_order_metrics" not "orders_mv")
 - Use catalog/schema comments and table comments to write a rich top-level `comment` describing the metric view's business purpose
 - If Genie text instructions describe the domain, incorporate that context
 
 **2. For each dimension — assemble from all sources:**
 - **`expr`**: Prefer Genie SQL expression instructions (canonical computed columns) > dashboard query expressions > KPI definitions > raw column references. Use CHECK constraints to inform valid value sets for CASE expressions; use partition/clustering keys as prioritized dimension candidates.
-- **`comment`/`display_name`/`synonyms`**: fill per the [Step 2 metadata-priority rule](#step-2--analyze-the-inputs) (richest description → `comment`, business label → `display_name`, every alias → `synonyms`); never leave `comment` empty if any source gave context.
+- **`comment`/`display_name`/`synonyms` (MUST)**: fill per the [Step 2 metadata-priority rule](#step-2--analyze-the-inputs) (richest description → `comment`, business label → `display_name`, every alias → `synonyms`). **Every dimension MUST have a non-empty `comment` and `display_name`** — this is not optional. When no source described it (no Genie/UC/KPI/dashboard metadata), **infer a concise business-friendly value from the column/expression name** rather than leaving it blank; only `synonyms` may be omitted when there are no genuine alternates.
 - **Null safety**: if the column is nullable (from schema stats), wrap in COALESCE or CASE.
 - **PII check**: if UC tags include `pii:true`, flag and exclude unless the user approves.
 
 **3. For each measure — assemble from all sources:**
 - **`expr`**: Prefer Genie SQL expression instructions > dashboard query aggregations > KPI definitions > SQL file patterns. The same aggregation across multiple sources is a strong signal it's the canonical expression.
-- **`comment`/`display_name`/`synonyms`**: same [Step 2 metadata-priority rule](#step-2--analyze-the-inputs) as dimensions; include units in `comment` if any source mentions them (e.g. "in USD").
+- **`comment`/`display_name`/`synonyms` (MUST)**: same [Step 2 metadata-priority rule](#step-2--analyze-the-inputs) as dimensions — **every measure MUST have a non-empty `comment` and `display_name`** (infer from the measure name/expression when no source metadata exists); include units in `comment` (e.g. "in USD"). Only `synonyms` may be omitted when there are no genuine alternates.
 - **Composed measures**: for every pair of atomic measures where a ratio makes business sense (revenue/customers, fulfilled/total), suggest a composed measure; reuse ratios already computed in SQL files, dashboards, or KPI definitions.
 - **Filtered measures**: for every status/category dimension, suggest filtered variants of key measures (e.g. status 'Open'/'Fulfilled'/'Processing' → `Open Revenue`, `Fulfilled Orders`).
 
 **4. Joins — assemble from all sources:**
 - Prefer Genie join instructions (author-intended) > dashboard query JOINs > FK constraints > inferred from column name matching
 - Include ALL dimension tables that enrich the fact table — even if not all input sources used them
+- Prefer declarative joins; use a SQL-query `source` only when joins can't be expressed declaratively — see [Pattern 9](create-patterns.md#pattern-9-sql-query-as-source)
 
 **5. Filters — assemble from all sources:**
 - Intersect common WHERE clauses from dashboard queries, SQL files, Genie SQL query instructions, and Genie text instructions
@@ -316,43 +369,41 @@ After building suggestions from existing sources, identify what's NOT yet covere
 
 Present this gap analysis alongside the suggestions so the user sees both what you recommend AND what additional coverage they could add.
 
-**Formatting guidelines:** apply the design best practices documented in this file — the dimension/measure patterns and metadata-priority rules in [Step 2](#step-2--analyze-the-inputs), and the composability / semantic-metadata / join rules in [YAML reference — advisor additions](#yaml-reference--advisor-additions). In short: atomic measures first then compose, humanize raw codes, include raw + truncated time dimensions, prefer fewer richer views, and fill `comment`/`display_name`/`synonyms` for Genie.
+**Window measures:** only suggest when the user specifically asks — see [Pattern 8](create-patterns.md#pattern-8-window-measures-experimental-version-01) for `version`/DBR requirements.
+
+**Formatting guidelines:** apply the design best practices in this file — the dimension/measure patterns and metadata-priority rules in [Step 2](#step-2--analyze-the-inputs) — and the composability / semantic-metadata / join rules in [`create-patterns.md`](create-patterns.md). In short: atomic measures first then compose, humanize raw codes, include raw + truncated time dimensions, prefer fewer richer views, and fill `comment`/`display_name`/`synonyms` for Genie.
 
 #### Suggestion format
 
-Generate suggestions as a YAML file with this structure:
+Generate suggestions as a YAML file with this structure. Dimensions and measures follow the same field spec as in [`create-patterns.md` §YAML Field Reference](create-patterns.md#yaml-field-reference) — apply [Pattern 3B](create-patterns.md#pattern-3-ratios-and-composability) (atomic measures first, then composed) and fill `comment`/`display_name`/`synonyms` for Genie.
 
 ```yaml
 # Metric View Suggestions
-# Edit this file to add, remove, or modify suggestions, then provide the path back to the skill.
+# Edit this file, then provide the path back to the advisor to proceed.
 # Source schema: <source catalog.schema>
 # Target schema: <target catalog.schema>
 
 metric_views:
   - name: <metric_view_name>
-    source_table: <fact_table>
+    source_table: <fact_table>           # becomes `source:` in the CREATE DDL
     rationale: "<why this metric view is useful>"
-    filter: "<optional global filter expression>"
+    filter: "<optional global filter>"
     joins:
-      - table: <dimension_table>
-        'on': "<join condition>"
+      - name: <alias>
+        source: <catalog.schema.dim_table>
+        'on': "source.<fk> = <alias>.<pk>"
     dimensions:
       - name: <Display Name>
         expr: "<sql_expression>"
         comment: "<description>"
-        display_name: "<visualization label>"
         synonyms: ["alt name 1", "alt name 2"]
     measures:
-      # Define atomic measures first
       - name: <Atomic Measure>
         expr: "<aggregate_expression>"
         comment: "<description>"
-        display_name: "<visualization label>"
         synonyms: ["alt name 1", "alt name 2"]
-      # Then composed measures referencing atomic ones (backtick-quote names with spaces)
       - name: <Composed Measure>
         expr: "MEASURE(`<Atomic Measure 1>`) / MEASURE(`<Atomic Measure 2>`)"
-        comment: "<description>"
 
 # Gap Analysis — additional coverage opportunities
 gaps:
@@ -414,68 +465,29 @@ After displaying and saving, tell the user:
 
 ### Step 4 — Create metric view definitions
 
-For each approved metric view, generate the full YAML definition, save it into the run folder, and present it to the user.
+For each approved metric view, generate the full YAML definition using [`create-patterns.md`](create-patterns.md) (patterns, YAML field reference, gotchas, deployment errors), save it into the run folder, and present it to the user.
 
-**Format each definition as a CREATE statement:**
-
-```sql
-CREATE OR REPLACE VIEW <catalog.schema.metric_view_name>
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  comment: "<description>"
-  source: <catalog.schema.source_table>
-  filter: <optional global filter>
-
-  joins:
-    - name: <dim_table_alias>
-      source: <catalog.schema.dim_table>
-      'on': source.<fk> = <alias>.<pk>
-
-  dimensions:
-    - name: <Display Name>
-      expr: <sql_expression>
-      comment: "<description>"
-
-  measures:
-    - name: <Display Name>
-      expr: <aggregate_expression>
-      comment: "<description>"
-$$
-```
-
-**YAML rules to follow** — the parent skill's [`yaml-reference.md`](yaml-reference.md) holds the full spec (dimension/measure rules, joins), and the authoring pitfalls — backtick-quoting `MEASURE()` names with spaces, the snowflake full dot-chain (`customer.nation.n_name`), `format` blocks needing a valid `type`, and `DATEDIFF()` instead of date subtraction — are the single source of truth in the [gotchas table](#yaml-formatting-gotchas). The advisor's design heuristics on top of the spec:
-- `version: 1.1` (the advisor's templates use 1.1 — see the parent skill for the `version`/DBR requirements).
-- Add `comment`/`display_name`/`synonyms` to the dimensions and measures that business/NL users will reference, for Genie discoverability (`synonyms`/`display_name`/`format` require DBR 17.3+).
-- **Use composability** — define atomic measures first (SUM, COUNT, AVG), then build complex measures referencing them via `MEASURE()`.
-- **Standardize dimension values** — use CASE expressions to convert raw codes to business-friendly names.
-- **Include granular + truncated time dimensions** — always add both the raw date and `Month`/`Quarter`/`Year`.
-
-**Join strategy — prefer joins, fall back to SQL source:**
-- **Prefer star/snowflake joins** when possible — the optimizer only joins tables needed for each query.
-- **If snowflake joins fail** (DBR < 17.1 or nested column references don't resolve), fall back to a **SQL query source** that pre-joins all tables. See [SQL query as source](#source-expanded-options) below.
-- When using a SQL source, column references use the aliased names directly (no `source.` or `join_name.` prefix).
+**Naming:** name each metric view `<subject>_metrics` (e.g. `orders_metrics`, `finance_revenue_metrics`) — a business-friendly subject plus the `_metrics` suffix. Do **not** use `_mv` or other ad-hoc suffixes. See the `{subdomain}_{kpi-group}` guidance in [Genie Design Rules](#genie-design-rules).
 
 **Always save SQL files locally** (unless the user opted out — see the "Review preference" row in [Information this advisor needs](#information-this-advisor-needs-and-why)):
 - Save into the **same timestamped run folder** created in Step 3.
 - Save each metric view definition as `<metric_view_name>.sql`, and also an `all_metric_views.sql` combining all definitions.
 - Inform the user of the saved folder and file paths.
 
-**Checkpoint (review-first):** show the generated definitions and let the user review before deploying. In auto-create mode, continue.
+**⛔ Review gate — review the definition before materialization/deploy.** This is the **content review**: present the full YAML block for each definition as a fenced ` ```yaml ` block, explain each dimension and measure in plain language, and wait for explicit approval. Do not proceed to Step 5/6 until the user confirms. (Step 6 has a separate **pre-deploy checklist** — the final pre-flight at the deploy command — which re-confirms this approval only if the definition changed, and adds the metadata / materialization / deploy-path checks.) In auto-create mode, still show the definitions — skip the approval wait.
 
 ### Step 5 — Materialization (optional — decide before deploy)
 
-Materialization is part of the YAML definition, so it must be settled before deploying — **ask the user; don't auto-decide.** Offer it plainly:
+Materialization is part of the YAML definition, so it must be settled before deploying. **Default to no materialization** — it requires serverless compute and incurs Lakeflow Declarative Pipelines charges, so never add it by default and don't ask about it on every view. **Only raise materialization when the view is a genuine candidate:** a large source table, a view that will be queried frequently, many joins, or the user explicitly wants pre-computed fast results. When it *is* a candidate, offer it plainly (otherwise skip straight to Step 6 with no `materialization:` block):
 
-> "Before I deploy, would you like to add **materialization** to pre-compute aggregations for faster queries? It's useful when views are queried frequently, source tables are large, or you want sub-second responses — it requires serverless compute and incurs Lakeflow Declarative Pipelines charges. (Default: no materialization.)"
+> "This view looks like a materialization candidate (<reason: large source / frequently queried / many joins>). Would you like to add **materialization** to pre-compute aggregations for faster queries? It requires serverless compute and incurs Lakeflow Declarative Pipelines charges. (Default: no materialization.)"
 
-If they decline, go to Step 6. If they want it, configure it — gather these together and ask only for whatever they don't specify, rather than one prompt per item:
+If it isn't a candidate or they decline, go to Step 6 with no materialization block. If they want it, configure it — gather these together and ask only for whatever they don't specify, rather than one prompt per item:
 - **Which views** to materialize (one, several, or all).
 - **Type** per view — Aggregated (pick dimension/measure combos), Unaggregated (full data model), or Both. For Aggregated/Both, suggest the most likely dimension/measure combinations based on what appeared most across input sources.
 - **Refresh schedule** — e.g. `every 1 hour` / `every 6 hours` / `every 24 hours` / custom. If table properties revealed a `refresh_frequency`, note that a faster schedule won't yield fresher data.
 
-Then **update definitions** with the `materialization:` block (see [Materialization — additional detail](#materialization--additional-detail) below and the **Materialized Metric View** pattern in [`patterns.md`](patterns.md)), update the saved SQL files, and re-display the final YAML.
+Then **update definitions** with the `materialization:` block — see [Pattern 7](create-patterns.md#pattern-7-materialized-metric-view) and [Materialization field reference](create-patterns.md#materialization) in `create-patterns.md`. Update the saved SQL files and re-display the final YAML.
 
 ### Step 6 — Deploy
 
@@ -484,51 +496,36 @@ Ask the user if they want to deploy:
 > | # | Option |
 > |---|--------|
 > | 1 | **Deploy now** — I'll create the metric views (includes materialization if configured) |
-> | 2 | **Review only** — you already have the SQL files; you'll deploy manually later |
+> | 2 | **Source-controlled** — commit the saved SQL and deploy it through a bundle-managed SQL job (DABs), so the definition is version-controlled and re-deployable. See [SKILL.md § Source-controlled deployment](../SKILL.md#source-controlled-deployment-with-declarative-automation-bundles) and the [`databricks-dabs`](../../databricks-dabs/SKILL.md) skill for the bundle layout. |
+> | 3 | **Review only** — you already have the SQL files; you'll deploy manually later |
 
-**Checkpoint — confirm before deploying.** Deploying writes to the workspace, so always get the user's go-ahead first (this holds in auto-create mode too).
+For option 2, use the saved `.sql` file as the bundle SQL job's source (don't hand-inline the DDL); the bundle applies the committed definition on `bundle run`.
 
-Deploy each metric view by submitting its saved `<metric_view_name>.sql` file (written in Step 4) with `databricks experimental aitools tools statement submit --file <metric_view_name>.sql --warehouse <warehouse_id>`, then confirming success with `statement get <statement_id>` (see [CLI & API operations](#cli--api-operations) — long DDL goes through the file-based `statement` path, not the inline `query` tool, to avoid heredoc/JSON escaping issues). If the user opted out of saving SQL files (see the "Review preference" row in [Information this advisor needs](#information-this-advisor-needs-and-why)), write the statement to a temporary `.sql` file first. If the user chose "Replace" for any overlap in Step 3, drop the old view after deploying the new one (`DROP VIEW IF EXISTS <old_view>`). If they chose "Extend", the view is deployed under the existing name via `CREATE OR REPLACE`.
+**⛔ Pre-deploy checklist — do NOT run the deploy command until every box is true.** This is a hard stop, not a formality; if any item is unmet, go back — do not deploy:
 
-After creation, verify each metric view with a test query (one dimension + one measure, `LIMIT 5`). The table below covers **deployment error codes**; for authoring-time gotchas (SELECT *, backtick quoting, JOIN-at-query-time, DBR version) see the parent skill's *Common Issues*. Report any errors and help fix them:
+1. **Definition reviewed & approved.** The [Step 4 review gate](#step-4--create-metric-view-definitions) was satisfied — the full YAML was shown as a fenced ` ```yaml ` block and the user approved *this* definition. If Step 5 materialization (or any edit) changed the definition after that approval, re-show the YAML and get a fresh yes. Silence, "validate it," or an earlier "go ahead build one" is **not** approval — confirm for the definition you're about to deploy.
+2. **Every dimension and every measure has a non-empty `comment` and `display_name`** (the MUST rule in Step 2 / Step 4). A definition with blank `comment`/`display_name` fields is not ready to deploy — fill them first.
+3. **Materialization decided** (Step 5). Defaulted to **none** — unless the view is a genuine candidate (large source, frequent queries, many joins) or the user asked, in which case it was offered and configured. Do not silently skip this; do not add materialization by default.
+4. You are deploying via the **Statement Execution API**, not the `aitools` path.
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `UNRESOLVED_COLUMN` | Snowflake join missing parent prefix | Full dot-chain: `customer.nation.n_name` |
-| `PARSE_SYNTAX_ERROR` | Unquoted multi-word MEASURE() name | Add backticks: `` MEASURE(`Total Revenue`) `` |
-| `METRIC_VIEW_INVALID_VIEW_DEFINITION` | Malformed `format` block (missing/incorrect `type`) | Fix the `format` block — set a valid `type` (`number`/`currency`/`percentage`/`byte`/`date`/`date_time`); `currency` also needs `currency_code` (see [Format Types](#format-types)) |
-| `DATATYPE_MISMATCH` | Date subtraction instead of DATEDIFF | Use `DATEDIFF(date1, date2)` |
-| `SCHEMA_NOT_FOUND` | Target schema does not exist | `CREATE SCHEMA IF NOT EXISTS <catalog>.<schema>`, or use a different target |
-| `TABLE_OR_VIEW_NOT_FOUND` | Source/joined table dropped or renamed | Verify with `SHOW TABLES IN <catalog>.<schema> LIKE '<table>'` and fix the reference |
-| `INSUFFICIENT_PRIVILEGES` | Missing `CREATE VIEW` or `USE SCHEMA` on target | `GRANT CREATE TABLE, USE SCHEMA ON SCHEMA <schema> TO <principal>` (least privilege), or use a schema the user owns |
+Deploy each metric view from its saved `<metric_view_name>.sql` file (written in Step 4) through the **Statement Execution API** — `jq -Rs` encode the file into the payload, then `databricks api post /api/2.0/sql/statements/` (see [CLI & API operations](#cli--api-operations) for the exact command). **Do not deploy metric-view DDL with `aitools tools query`/`statement submit`** — they flatten the `$$…$$` YAML indentation and the deploy fails with `METRIC_VIEW_INVALID_VIEW_DEFINITION`. Check the response `state`; if `PENDING`, poll `databricks api get /api/2.0/sql/statements/<statement_id>` until terminal. If the user opted out of saving SQL files (see the "Review preference" row in [Information this advisor needs](#information-this-advisor-needs-and-why)), write the statement to a temporary `.sql` file first. If the user chose "Replace" for any overlap in Step 3, drop the old view after deploying the new one (`DROP VIEW IF EXISTS <old_view>`). If they chose "Extend", the view is deployed under the existing name via `CREATE OR REPLACE`.
+
+After creation, verify each metric view with a test query (one dimension + one measure, `LIMIT 5`). For deployment error codes and authoring-time gotchas, see [`create-patterns.md` §Deployment Errors](create-patterns.md#deployment-errors) and [`create-patterns.md` §Common Issues](create-patterns.md#common-issues). Report any errors and help fix them.
 
 If materialization was configured, also tell the user how to trigger a manual refresh (`REFRESH MATERIALIZED VIEW <name>`), check status (`DESCRIBE EXTENDED <name>`), verify query rewrite (`EXPLAIN EXTENDED <query>` — look for `__materialization_mat___metric_view`), and that refreshes incur Lakeflow Declarative Pipelines charges. Report the deployment results. If anything failed, help fix it before moving on.
 
 ### Step 7 — Show sample queries
 
-**CRITICAL — Metric View Query Syntax.** Metric views are NOT regular SQL views. Every query MUST use both `MEASURE()` and `GROUP BY` together:
+For query syntax rules (`MEASURE()`, `GROUP BY ALL`, filtering, window measures, Rules 1–3), see [`query-patterns.md`](query-patterns.md).
 
-```sql
-SELECT
-  `Dimension Name`,
-  MEASURE(`Measure Name`) AS `Measure Name`
-FROM catalog.schema.metric_view
-GROUP BY ALL
-ORDER BY `Dimension Name`;
-```
-
-- **`MEASURE()` wrapper** — every measure column MUST be wrapped, or you get `METRIC_VIEW_MISSING_MEASURE_FUNCTION`.
-- **`GROUP BY`** — dimensions MUST appear in a `GROUP BY` (use `GROUP BY ALL`), or you get `MISSING_GROUP_BY`.
-- **`SELECT *` is NOT supported** on metric views.
-
-For each created metric view, generate 3-5 sample queries demonstrating: basic aggregation (one dim, two measures); multi-dimension slice; filtered query; time trend (if a date dimension exists); and Top-N (`ORDER BY measure DESC LIMIT 10`). Backtick-quote names with spaces, use `GROUP BY ALL`, and alias each `MEASURE()` call.
+For each created metric view, generate 3–5 sample queries demonstrating: basic aggregation (one dim, two measures); multi-dimension slice; filtered query; time trend (if a date dimension exists); Top-N (`ORDER BY measure DESC LIMIT 10`). Backtick-quote names with spaces, use `GROUP BY ALL`, alias each `MEASURE()` call.
 
 **Execute each sample query** to verify it works and show the results. **Save** each metric view's queries as `<metric_view_name>_sample_queries.sql` in the run folder (default: yes, unless the user opted out). Then share the next-step suggestions below.
 
 ### Next steps (suggestions)
 
 1. **Grant access**: `GRANT SELECT ON VIEW <metric_view> TO <principal>` to share with teams
-2. **Add to a Genie space**: metric views work natively with AI/BI Genie for natural language querying
+2. **Add to a Genie Agent**: metric views work natively with AI/BI Genie for natural language querying
 3. **Add to AI/BI dashboards**: use as datasets for visualizations
 4. **Set up SQL alerts**: threshold-based alerts on measures
 5. **BI tools / JDBC**: metric views are accessible via the Databricks JDBC driver and BI connectors
@@ -536,286 +533,6 @@ For each created metric view, generate 3-5 sample queries demonstrating: basic a
 7. **Inspect with metadata**: `DESCRIBE TABLE EXTENDED <metric_view> AS JSON` for the full definition
 8. **Set PK/FK constraints with RELY** on underlying tables for optimal join performance
 
-## YAML reference — advisor additions
-
-> The baseline YAML specification lives in the parent skill's [`yaml-reference.md`](yaml-reference.md) (Top-Level Fields, Dimensions, Measures, Window Measures, Joins, Filter, baseline Materialization). This section documents only what the advisor needs *beyond* the parent spec.
-
-### YAML formatting gotchas
-
-These are common pitfalls that cause metric view creation to fail:
-
-| Gotcha | Problem | Fix |
-|--------|---------|-----|
-| **Colons in expressions** | YAML interprets unquoted colons as key-value separators | Wrap `expr` in double quotes: `expr: "DATE_TRUNC('MONTH', order_date)"` |
-| **Backtick-starting expressions** | YAML cannot start values with backticks | Wrap in double quotes: `expr: "\`First Name\`"` |
-| **`on` keyword in joins** | YAML may interpret `on` as boolean `true` | Quote the key: `'on': source.fk = dim.pk` |
-| **`yes`/`no`/`off` keywords** | YAML 1.1 interprets `on`, `off`, `yes`, `no`, `NO` as booleans | Always quote these when used as values or keys |
-| **Multi-line expressions** | Indentation errors break YAML | Use `\|` block scalar: `expr: \|` then indent all lines 2+ spaces beyond `expr` |
-| **Column mapping** | System maps YAML columns to `column_list` by position, not by name | Order dimensions and measures carefully in definitions |
-| **MEASURE() with spaces** | `MEASURE(Total Revenue)` causes `PARSE_SYNTAX_ERROR` | Backtick-quote: `MEASURE(\`Total Revenue\`)` |
-| **Snowflake column refs** | `nation.n_name` causes `UNRESOLVED_COLUMN` when `nation` is nested | Use full dot-chain: `customer.nation.n_name` |
-| **`format` blocks** | A `format` block without a valid `type` discriminator fails with `METRIC_VIEW_INVALID_VIEW_DEFINITION` | Set a valid `type` (`number`/`currency`/`percentage`/`byte`/`date`/`date_time`); `currency` needs `currency_code`. See [Format Types](#format-types). Omit `format` entirely if unsure. |
-| **Date subtraction** | `date1 - date2` returns `INTERVAL DAY`, not an integer — comparing to `0` or `3` causes `DATATYPE_MISMATCH` | Use `DATEDIFF(date1, date2)` which returns an integer |
-
-### Source (expanded options)
-
-Beyond a plain table/view/SQL-query `source` (covered in the parent spec), `source` can also be a **metric view** (`catalog.schema.my_metric_view`) — enabling layered composition of metric views. **Joins are only supported when `source` is a table or view, not a SQL query.**
-
-#### SQL query as source (fallback for incompatible joins)
-
-When snowflake joins fail (DBR < 17.1) or cross-join references don't resolve,
-pre-join the tables in the source SQL query instead of using a `joins:` block.
-Prefer native joins; use a SQL-query source only when joins can't be expressed
-declaratively (a SQL-query source scans all joined tables, and the `joins:` block
-is unsupported with it).
-
-```sql
-CREATE OR REPLACE VIEW catalog.schema.pre_joined_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: "(SELECT o.o_totalprice, c.c_mktsegment FROM catalog.schema.orders o JOIN catalog.schema.customer c ON o.o_custkey = c.c_custkey)"
-  dimensions:
-    - name: Customer Segment
-      expr: c_mktsegment          # reference aliased columns directly — no source./join_name. prefix
-  measures:
-    - name: Total Revenue
-      expr: SUM(o_totalprice)
-$$
-```
-
-**Performance tip:** set PK/FK constraints with `RELY` on the underlying tables for optimal join performance (`ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY (...) RELY`, and the matching `FOREIGN KEY (...) REFERENCES ... RELY`).
-
-### Composability (recommended for complex measures)
-
-**Define atomic measures first** (`SUM`, `COUNT`, `AVG`, plus `FILTER`ed variants), then build composed measures that reference them via `MEASURE()` — ratios and rates stay safe to re-aggregate at any dimension grain. The atomic→composed shape is shown in the *Good measures* table in [Step 2](#step-2--analyze-the-inputs); backtick-quote measure names with spaces (see the [Gotchas](#yaml-formatting-gotchas) table). The parent skill's *Measure Rules* in [`yaml-reference.md`](yaml-reference.md) cover the mechanics. Metric views can also serve as the `source` for other metric views (layered composition).
-
-### Additional measure rules
-
-Follow the parent spec's *Measure Rules*; the composability shape is in the [Composability](#composability-recommended-for-complex-measures) section and backtick-quoting in the [Gotchas](#yaml-formatting-gotchas) table. The one advisor-only rule not in the parent:
-
-- `MEASURE()` cannot be used with the `OVER` clause, and only works on columns defined as measures in this metric view.
-
-### Additional join rules
-
-Follow the parent spec's *Join Rules* (cardinality and LEFT OUTER semantics live there). The advisor adds only:
-
-- In `on` clauses, an unprefixed reference defaults to the join table; the optimizer joins only the dimension tables a query actually needs.
-- **Snowflake column referencing** — use the full dot-chain through parent joins (`customer.nation.n_name`, not `nation.n_name`); see the [Gotchas](#yaml-formatting-gotchas) table.
-
-### Semantic metadata (v1.1, DBR 17.3+)
-
-Semantic metadata enhances Genie and AI/BI dashboard interpretation of metric views. **`synonyms`, `display_name`, and `format` require Databricks Runtime 17.3+** (with YAML version 1.1) — distinct from the 17.2+ floor for a plain v1.1 view. On 17.2 the view still parses, but the metadata is not applied. Add these fields to the dimensions and measures that business/NL users will reference.
-
-| Field | Max | Description |
-|-------|-----|-------------|
-| `comment` | — | Description of the dimension/measure. Powers Genie understanding. (v1.1, DBR 17.2+ — unlike the three below, `comment` does **not** need 17.3.) |
-| `display_name` | 255 chars | Human-readable label replacing technical names in visualizations |
-| `synonyms` | 10 items, 255 chars each | Alternative names for AI/NL tools to discover dimensions/measures |
-| `format` | — | Display formatting hint (number / currency / percentage / date). YAML 1.1, DBR 17.3+ — see [Format Types](#format-types) below. |
-
-```yaml
-dimensions:
-  - name: Order Date
-    expr: o_orderdate
-    comment: "Date when the order was placed"
-    display_name: "Order Date"
-    synonyms:
-      - 'order time'
-      - 'date of order'
-      - 'purchase date'
-
-measures:
-  - name: Total Revenue
-    expr: SUM(o_totalprice)
-    comment: "Sum of all order prices in USD"
-    display_name: "Total Revenue"
-    synonyms:
-      - 'total sales'
-      - 'gross revenue'
-      - 'sales amount'
-```
-
-#### Format Types
-
-`format` is a **YAML 1.1 field (requires DBR 17.3+)** on dimensions and measures. It carries a display-formatting hint that AI/BI dashboards and Genie apply automatically. Every `format` block requires a `type` discriminator; an omitted or invalid `type` is what causes `METRIC_VIEW_INVALID_VIEW_DEFINITION` at deployment — so always set a valid `type`.
-
-Supported types (see the [Databricks agent-metadata docs](https://docs.databricks.com/aws/en/business-semantics/agent-metadata) for the full option list):
-
-| `type` | Common options | Notes |
-|--------|----------------|-------|
-| `number` | `decimal_places`, `hide_group_separator`, `abbreviation` | Plain numeric formatting |
-| `currency` | `currency_code` (ISO 4217, e.g. `USD`) — **required** | |
-| `percentage` | `decimal_places` | Renders the value as a percentage |
-| `byte` | — | Byte-size formatting |
-| `date` | `date_format` (e.g. `year_month_day`, `locale_long_month`) | |
-| `date_time` | `date_format` | |
-
-```yaml
-measures:
-  - name: Total Revenue
-    expr: SUM(o_totalprice)
-    display_name: "Total Revenue"
-    format:
-      type: currency
-      currency_code: USD
-  - name: Fulfillment Rate
-    expr: "MEASURE(`Fulfilled Orders`) / MEASURE(`Order Count`)"
-    format:
-      type: percentage
-      decimal_places: 1
-```
-
-> **If you are unsure a given `type`/option is accepted by the deployment path you're using, omit `format`** — dashboards and Genie still infer reasonable formatting from column types and names. A malformed `format` block fails the whole definition, so prefer omitting over guessing.
-
-**Important:** When saving a v1.1 metric view, any single-line comments (`#`) in the YAML definition are removed.
-
-**Tip:** Adding `synonyms` is one of the highest-impact things you can do for Genie quality. Users ask questions using different terms — synonyms bridge that gap.
-
-### Level of Detail (LOD) expressions
-
-LOD expressions control aggregation granularity independently of the dimensions in a query. There are two approaches:
-
-#### Fixed LOD (via SQL window functions in source)
-
-Pre-compute aggregations at a fixed grain by using `OVER (PARTITION BY ...)` in the source query. The result becomes a dimension that measures can reference.
-
-```yaml
-version: 1.1
-source: |
-  SELECT
-    o_orderkey, o_orderpriority, o_totalprice, o_orderdate,
-    SUM(o_totalprice) OVER (PARTITION BY o_orderpriority) AS priority_total_price
-  FROM samples.tpch.orders
-
-dimensions:
-  - name: Order Priority
-    expr: o_orderpriority
-  - name: Order Date
-    expr: o_orderdate
-  - name: Priority Total Price
-    expr: priority_total_price
-    comment: "Pre-computed total price for each priority level"
-
-measures:
-  - name: Total Sales
-    expr: SUM(o_totalprice)
-  - name: Pct of Priority Total
-    expr: SUM(o_totalprice) / ANY_VALUE(priority_total_price)
-    comment: "What % of the priority group's total does this slice represent"
-```
-
-**Key rules for Fixed LOD:**
-- Computed in the source query, before query-time filters are applied
-- Use `OVER ()` with empty parentheses for dataset-wide aggregates (e.g., grand total)
-- When referencing a Fixed LOD dimension in a measure, wrap it in `ANY_VALUE()` since the value is constant within a group
-
-#### Coarser LOD (via window measures)
-
-Aggregate at a coarser grain than the query by using window measures with `range: all`. This is filter-aware and adapts to query-time dimensions.
-
-> **This pattern uses window measures — see the parent skill's *Window Measures* section for their `version`/DBR requirements** (this advisor doesn't restate the version gating, to avoid drift). Make sure the coarser-LOD window measure and the rest of the definition use a single, consistent `version` that supports window measures.
-
-```yaml
-dimensions:
-  - name: Order Priority
-    expr: o_orderpriority
-
-measures:
-  - name: Total Sales
-    expr: SUM(o_totalprice)
-  - name: All Priorities Sales
-    expr: SUM(o_totalprice)
-    window:
-      - order: Order Priority
-        range: all
-        semiadditive: last
-    comment: "Total sales across all priorities, ignoring priority grouping"
-  - name: Pct of Total Sales
-    expr: "SUM(o_totalprice) / MEASURE(`All Priorities Sales`)"
-    comment: "Dynamic % of total that respects query-time filters"
-```
-
-| Aspect | Fixed LOD | Coarser LOD |
-|--------|-----------|-------------|
-| Mechanism | SQL window functions in `source` | Window measures with `range: all` |
-| Filter behavior | Pre-computed, static (ignores query filters) | Respects query-time filters |
-| Dimension dependency | Independent of query GROUP BY | Adapts to query dimensions |
-
-LOD expressions are an advanced feature — only suggest them if the user's analysis requires cross-grain calculations (e.g., "percentage of total", "customer-level averages shown at region level").
-
-### Materialization — additional detail
-
-The parent spec covers the baseline `materialization:` block, the type table, the core requirements, and refresh. The SQL refresh/monitor/verify commands are in [Step 6 — Deploy](#step-6--deploy) above. The advisor adds only these design heuristics:
-
-- **Design for query rewrite:** include potential **filter columns as dimensions** so filtered queries match an aggregation; `aggregated` requires at least one dimension or measure; direct table references without selective filters may not benefit from `unaggregated`.
-- **Limitations:** a metric view that uses **another metric view as source** cannot have `unaggregated` materializations; incremental refresh is used when possible (standard MV incremental-refresh limitations apply); refreshes incur Lakeflow Spark Declarative Pipelines charges.
-- **Query rewrite order:** exact aggregated match → unaggregated match → source tables. Materializations must finish building first; in `relaxed` mode rewrite skips freshness checks but falls back to source for RLS/column-masking or non-deterministic functions (e.g. `current_timestamp()`).
-
-### Complete example
-
-The parent skill's [`patterns.md`](patterns.md) shows each piece on its own — **Pattern 5** (star joins), **Pattern 6** (snowflake nested joins with the full dot-chain), **Pattern 7** (the `materialization:` block). The advisor-specific bit is combining all three in one definition (note the dot-chain `customer.region.name`, not `region.name`):
-
-```sql
-CREATE OR REPLACE VIEW catalog.schema.sales_metrics
-WITH METRICS
-LANGUAGE YAML
-AS $$
-  version: 1.1
-  source: catalog.schema.fact_sales
-  filter: "sale_date >= '2023-01-01'"
-
-  joins:
-    - name: customer
-      source: catalog.schema.dim_customer
-      'on': source.customer_id = customer.id
-      joins:
-        - name: region
-          source: catalog.schema.dim_region
-          'on': customer.region_id = region.id
-
-  dimensions:
-    - name: Region
-      expr: customer.region.name          # full dot-chain through the customer join
-    - name: Sale Month
-      expr: "DATE_TRUNC('MONTH', sale_date)"
-
-  measures:
-    - name: Total Revenue
-      expr: SUM(amount)
-    - name: Unique Customers
-      expr: COUNT(DISTINCT customer_id)
-    - name: Revenue per Customer
-      expr: "MEASURE(`Total Revenue`) / MEASURE(`Unique Customers`)"
-
-  materialization:
-    schedule: every 1 hour
-    mode: relaxed
-    materialized_views:
-      - name: hourly_region
-        type: aggregated
-        dimensions:
-          - Region
-          - Sale Month
-        measures:
-          - Total Revenue
-$$
-```
-
-## Important notes (advisor heuristics)
-
-> **The baseline spec lives in the parent `databricks-metric-views` skill** (`../SKILL.md`, [`yaml-reference.md`](yaml-reference.md)) — YAML versions and DBR requirements, query rules (`MEASURE()` + `GROUP BY`, no `SELECT *`, `MEASURE()` without `OVER`), join structure/cardinality/semantics, window-measure requirements, and materialization. **Follow the spec there.** This advisor deliberately does **not** restate the spec, so the two can't drift apart; the notes below are advisor-specific guidance only.
-
-- Add `comment`, `display_name`, and `synonyms` to the dimensions and measures that business/NL users will reference — they power Genie's natural-language understanding (the advisor's core value-add). `synonyms`/`display_name`/`format` require DBR 17.3+.
-- Prefer fewer, richer metric views over many narrow ones.
-- **Window measures** (running totals, period-over-period, YTD): only *suggest* them when the user specifically asks — see the parent skill for their `version`/DBR requirements.
-- **SQL-query source fallback**: prefer declarative joins; fall back to a SQL-query `source` only when the joins can't be expressed declaratively (joins aren't supported on a SQL-query source). See [Source (expanded options)](#source-expanded-options).
-
 ## Limitations
 
-These are advisor-relevant facts not covered by the parent's spec sections (for spec-level limits, see the parent skill):
-
-- **No Delta Sharing** — metric views cannot be shared via Delta Sharing
-- **No data profiling** — data profiling is not supported on metric views
-- **`ALTER VIEW` removes UC comments** — unless `comment` fields are explicitly in the YAML
+For spec-level limits (no Delta Sharing, no data profiling, `ALTER VIEW` removing UC comments), see [`create-patterns.md` §Common Issues](create-patterns.md#common-issues). Advisor-specific note: the multi-source analysis in Step 2 may surface PII-tagged columns — always flag and exclude them unless the user explicitly approves exposure.

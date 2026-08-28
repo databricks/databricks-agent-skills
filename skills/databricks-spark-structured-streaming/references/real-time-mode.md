@@ -60,13 +60,15 @@ RTM runs **all pipeline stages simultaneously** (unlike micro-batch, which can r
 
 If `maxPartitions` is unset, the source partition count equals the Kafka topic's partition count. If under-sized, the query throws an insufficient-task-slots error at start and stalls or fails.
 
+RTM also allows **at most one streaming shuffle stage** per query — a second shuffle-requiring operation throws `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED` (see [Common errors](#common-errors)). Combine aggregations or use a broadcast join to stay within one shuffle.
+
 ## Supported sources and sinks
 
 | Source / sink | As source | As sink |
 |---|---|---|
 | Kafka | ✓ | ✓ |
 | Event Hubs (via Kafka connector) | ✓ | ✓ |
-| Kinesis (EFO mode only) | ✓ | ✗ |
+| Kinesis (EFO mode recommended) | ✓ | ✗ |
 | AWS MSK | ✓ | ✗ |
 | Rate (demos) | ✓ | N/A |
 | Delta | ✗ | ✗ |
@@ -92,25 +94,27 @@ For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-
 
 ### Stateful (higher cost, requires more slots)
 
-- `dropDuplicates` for deduplication (NOT `dropDuplicatesWithinWatermark` — see below)
+- `dropDuplicates` **and `dropDuplicatesWithinWatermark`** for deduplication (both supported — see note below)
 - Tumbling and sliding windowed aggregations (watermark required for state cleanup)
 - Simple aggregations: `groupBy(...).count()`, `sum`, `avg`, etc.
 - **Stream-stream inner join** — supported on **DBR 18+** with five Spark configs (see [Stream-stream inner join](#stream-stream-inner-join-dbr-18) below).
 - `transformWithState` for custom state (see below)
 
+> **Note on `dropDuplicatesWithinWatermark`:** the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference) marks it **supported** in standalone Structured Streaming RTM (state is kept unbounded — pass the event-time column so state can evict). A `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` error class exists in the catalog, but the existence of the class does not make the operator unsupported here — it is not raised on this surface. It *is* raised on Lakeflow/SDP RTM, where the operator is genuinely unsupported (see [databricks-pipelines/references/real-time-mode.md](../../databricks-pipelines/references/real-time-mode.md)). Do **not** replace `dropDuplicatesWithinWatermark` with `dropDuplicates` in standalone RTM.
+
 ### Not supported in RTM
 
 - Session windows
-- **`dropDuplicatesWithinWatermark`** — blocked by `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED`. Use `dropDuplicates` instead. (Note: the [RTM reference matrix](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference) lists it as supported, but the runtime error-class check is definitive.)
 - **Outer / left-semi / left-anti stream-stream joins** — RTM stream-stream join is inner-only (`STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_NON_INNER_NOT_SUPPORTED`)
 - `flatMapGroupsWithState` and `mapGroupsWithState` (older APIs)
 - `foreachBatch` and `mapPartitions`
 - `transformWithStateInPandas` — use the row-based Python API
 - Output modes `append` and `complete`
 - Event-time timers inside `transformWithState`
-- Async progress tracking
 - Checkpoint format v1
 - Union with batch sources; union of two identical streaming sources
+
+> **Note on async progress tracking:** RTM **enables async progress tracking by default** — do not disable it. The one constraint is that the async checkpoint interval must be `0`; a non-zero value raises `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO`.
 
 The full supported-/unsupported-features matrix lives at [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference).
 
@@ -208,12 +212,14 @@ The full RTM error-class catalog is documented at [STREAMING_REAL_TIME_MODE erro
 | `STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_NON_INNER_NOT_SUPPORTED` | RTM stream-stream join is inner-only. Outer/semi/anti are not available; refactor to an inner join or move to micro-batch. |
 | `STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_POLLING_REQUIRED` | A join input source doesn't support non-blocking iteration. See the join setup confs in [Stream-stream inner join](#stream-stream-inner-join-dbr-18). |
 | `STREAMING_REAL_TIME_MODE.CHECKPOINT_FORMAT_V1_NOT_SUPPORTED` | The checkpoint location is in the legacy v1 format. Recreate the checkpoint (RTM uses v2+ only). |
+| `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO` | Async progress tracking is on by default in RTM; its checkpoint interval must be `0`. Set the async checkpoint interval to `0` — do **not** disable async progress tracking. |
 | `STREAMING_REAL_TIME_MODE.SESSION_WINDOWS_NOT_SUPPORTED` | Session windows aren't supported. Use tumbling/sliding or `transformWithState`. |
 | `STREAMING_REAL_TIME_MODE.BATCH_UNION_NOT_SUPPORTED` | Cannot union a streaming source with a batch DataFrame. |
 | `STREAMING_REAL_TIME_MODE.IDENTICAL_SOURCES_IN_UNION_NOT_SUPPORTED` | Cannot union two identical streaming sources (e.g. same Kafka topic read twice). |
 | `STREAMING_REAL_TIME_MODE.EVENT_TIME_BASED_TIMERS_IN_TRANSFORM_WITH_STATE_NOT_SUPPORTED` | Use processing-time timers only inside `transformWithState`. |
 | `STREAMING_REAL_TIME_MODE.CLUSTER_CONFIGURATION_NOT_SUPPORTED` | Cluster setting is incompatible (e.g. Photon on, autoscaling on). Fix the offending setting (see [Cluster setup](#cluster-setup)). |
-| `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` | `dropDuplicatesWithinWatermark` is blocked in RTM. Use `dropDuplicates` instead. |
+| `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` | Exists in the catalog but is **not raised in standalone Structured Streaming RTM** — `dropDuplicatesWithinWatermark` is supported there per the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference). This class applies on other surfaces (e.g. Lakeflow/SDP RTM), where the operator is genuinely unsupported. |
+| More than one streaming shuffle stage (`STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED`) | RTM allows **at most one streaming shuffle stage** per query. Two shuffle-requiring operations (e.g. two aggregations, or an aggregation plus a shuffle join) trigger this — note the different top-level class, **not** a `STREAMING_REAL_TIME_MODE.*` subclass. Combine aggregations into one `groupBy`, or convert a shuffle join to a broadcast (stream-static) join, to stay within one shuffle. |
 | Query fails at start: **insufficient task slots** (`CONCURRENT_SCHEDULER_INSUFFICIENT_SLOT`) | This class lives outside the curated `STREAMING_REAL_TIME_MODE.*` namespace in public docs. Cluster has fewer vCPUs than the pipeline's sum-of-partitions. Increase cluster size to match the [Slot math](#slot-math) above. |
 
 ## Worker memory and GC

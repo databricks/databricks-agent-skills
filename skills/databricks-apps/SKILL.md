@@ -3,7 +3,7 @@ name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create data apps, analytics tools, or custom interactive visualizations. A plain \"create a dashboard\" request means a managed AI/BI (Lakeview) dashboard → use databricks-aibi-dashboards, not this skill. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.2"
+  version: "0.1.3"
 parent: databricks-core
 ---
 
@@ -25,6 +25,7 @@ Build apps that deploy to Databricks Apps platform.
 | Writing SQL queries | [SQL Queries Guide](references/appkit/sql-queries.md) |
 | Writing UI components | [Frontend Guide](references/appkit/frontend.md) |
 | Using `useAnalyticsQuery` | [AppKit SDK](references/appkit/appkit-sdk.md) |
+| Querying a governed UC Metric View | [Metric Views Guide](references/appkit/metric-views.md) |
 | Adding API endpoints | [Custom Endpoints Guide](references/appkit/custom-endpoints.md) |
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
 | Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — follow the Genie agent workflow below |
@@ -44,12 +45,13 @@ Build apps that deploy to Databricks Apps platform.
 - **Smoke test data**: keep result sets under the 1 MB analytics-event payload cap. Queries returning thousands of rows cause `INVALID_REQUEST: Event exceeds max size of 1048576 bytes` and `net::ERR_ABORTED`, leaving every asserted UI element absent. Use `LIMIT` or an aggregated query (e.g. `COUNT(*) GROUP BY status`) — never raw row dumps.
 - **AppKit version**: never override the `@databricks/appkit` or `@databricks/appkit-ui` version in `package.json` — `databricks apps init` sets the correct version. Do not run `npm install @databricks/appkit@<version>` unless explicitly asked by the user. If you need a different version, re-scaffold with `databricks apps init --version <version>`.
 - **Authentication**: covered by parent `databricks-core` skill.
-- **AppKit API surface**: before writing code that calls AppKit APIs (`createApp`, plugin shapes, `useAnalyticsQuery`, etc.), run `npx @databricks/appkit docs <section>` and use the actual signature. Training data has stale shapes; a single invented signature fails `tsc --noEmit` during validate. The docs ship with the installed AppKit and are the authoritative source.
+- **AppKit API surface**: before writing code that calls AppKit APIs (`createApp`, plugin shapes, `useAnalyticsQuery`, `useMetricView`, etc.), run `npx @databricks/appkit docs <section>` and use the actual signature. Training data has stale shapes; a single invented signature fails `tsc --noEmit` during validate. The docs ship with the installed AppKit and are the authoritative source.
 - **TypeScript casts**: never use `as unknown as <T>` double-assertions — `appkit lint` enforces `no-double-type-assertion` and one violation fails the entire validate step. Instead: narrow with Zod (`z.infer<typeof schema>`), use a runtime type guard, or write a typed mapper function. If a query result needs reshaping, type the row schema via queryKey types rather than casting.
 
 ## Project Structure (after `databricks apps init --features analytics`)
 - `client/src/App.tsx` — main React component (start here)
 - `config/queries/*.sql` — SQL query files (queryKey = filename without .sql)
+- `config/metric-views/definitions.json` — governed UC Metric View bindings (optional; see [Metric Views](references/appkit/metric-views.md))
 - `server/server.ts` — backend entry (`onPluginsReady` + Express routes)
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
 - `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
@@ -94,7 +96,7 @@ After showing the table, add a brief recommendation. Default to recommending Ana
 
 After the user chooses:
 - (A) Lakebase synced tables → scaffold with `--features lakebase`. See [Lakebase Guide](references/appkit/lakebase.md) for full workflow.
-- (B) Analytics → scaffold with `--features analytics`.
+- (B) Analytics → scaffold with `--features analytics`. **Within Analytics**, if the data is a governed UC **Metric View** (pre-defined semantic measures/dimensions), query it via the metric-view path — see [Metric Views](references/appkit/metric-views.md) — otherwise write `config/queries/` SQL.
 - Both → scaffold with `--features analytics,lakebase` if the app needs both patterns.
 - If the app does NOT read Unity Catalog data (pure CRUD, Genie, Model Serving), skip this gate and scaffold with the appropriate `--features` flag.
 
@@ -118,6 +120,7 @@ After completing the decision gate above, use this routing table:
 - **Read analytics data → display in chart/table**: Use visualization components with `queryKey` prop
 - **Read analytics data → custom display (KPIs, cards)**: Use `useAnalyticsQuery` hook
 - **Read analytics data → need computation before display**: Still use `useAnalyticsQuery`, transform client-side
+- **Read a governed UC Metric View (semantic layer)**: Use the `useMetricView` hook + `config/metric-views/definitions.json` — see [Metric Views](references/appkit/metric-views.md)
 - **Read lakehouse data at low latency (lookups, search, catalogs)**: Use Lakebase synced tables — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase via Express routes in `onPluginsReady` — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
