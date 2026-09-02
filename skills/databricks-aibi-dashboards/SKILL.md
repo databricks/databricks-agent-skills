@@ -145,6 +145,10 @@ Always make sure you read an entire example to understand the structure, like [4
 
 **Now deploy the JSON to the workspace.** Run `databricks lakeview create` (below). Your task is not complete until this command succeeds and returns a dashboard ID — the JSON file alone is an intermediate working artifact.
 
+**Give the user the dashboard link** (host from `databricks auth env -o json` → `.env.DATABRICKS_HOST`). Note the `v3` — `/sql/dashboards/` without it is the wrong legacy path:
+- **Draft:** `https://<host>/sql/dashboardsv3/<DASHBOARD_ID>`
+- **Published:** append `/published` (only valid once you've run `databricks lakeview publish DASHBOARD_ID`)
+
 After deploying, the same `lakeview` subcommands manage the dashboard's lifecycle (list, get, update, publish, trash).
 
 ```bash
@@ -518,6 +522,7 @@ Before deploying, verify:
 10. SQL uses Spark syntax (date_sub, not INTERVAL)
 11. **All SQL queries tested via CLI and return expected data**
 12. **Every dataset you want filtered MUST contain the filter field** — filters only affect datasets with that column in their query
+13. **`abbreviation: "compact"` needs `decimalPlaces`** — without it the value isn't rounded (renders `$9.756278496M`, not `$9.76M`)
 
 ---
 

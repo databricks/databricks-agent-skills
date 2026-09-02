@@ -259,6 +259,7 @@ This example's header carries a short narrative tying the widgets together, and 
               "encodings": {
                 "value": {
                   "fieldName": "measure(Avg Resolution Hours)",
+                  "format": {"type": "number-plain", "decimalPlaces": {"type": "max", "places": 1}},
                   "formatTemplate": "{{ @formatted }} hrs",
                   "displayName": "Avg Hours"
                 }

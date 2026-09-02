@@ -37,31 +37,16 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 - **CRITICAL: Text widgets do NOT use a spec block** - use `multilineTextboxSpec` directly
 - Supports markdown: `#`, `##`, `###`, `**bold**`, `*italic*`
 - **CRITICAL: Multiple items in the `lines` array are concatenated on a single line, NOT displayed as separate lines!**
-- For title + subtitle, use **separate text widgets** at different y positions
+- **Never put a heading and body in the same string** — `lines[]` is joined verbatim with no separator (like `queryLines`), and a `#` heading runs until a line break, so `["# Title. Body text..."]` renders the whole paragraph as one giant H1. Split them: `["# Title\n", "\n", "subtitle text"]`.
 
 ```json
-// CORRECT: Separate widgets for title and subtitle
+// CORRECT: heading, blank line, body — one widget. Size `height` to the text
+// (title-only ~1, long paragraph 3+) so it isn't clipped or over-padded.
 {
   "widget": {
-    "name": "title",
-    "multilineTextboxSpec": {"lines": ["## Dashboard Title"]}
-  },
-  "position": {"x": 0, "y": 0, "width": 12, "height": 1}
-},
-{
-  "widget": {
-    "name": "subtitle",
-    "multilineTextboxSpec": {"lines": ["Description text here"]}
-  },
-  "position": {"x": 0, "y": 1, "width": 12, "height": 1}
-}
-
-// WRONG: Multiple lines concatenate into one line!
-{
-  "widget": {
-    "name": "title-widget",
+    "name": "header",
     "multilineTextboxSpec": {
-      "lines": ["## Dashboard Title", "Description text here"]  // Becomes "## Dashboard TitleDescription text here"
+      "lines": ["## Dashboard Title\n", "\n", "Description text here"]
     }
   },
   "position": {"x": 0, "y": 0, "width": 12, "height": 2}
@@ -188,11 +173,13 @@ Format types: `number`, `number-plain`, `number-currency`, `number-percent`.
 
 | Field type | Format | Why |
 |---|---|---|
-| Money | `number-currency` + `currencyCode: "USD"` (or `EUR` etc.) + `abbreviation: "compact"` | "$1.2M" is readable, "1287394.55" isn't |
+| Money | `number-currency` + `currencyCode: "USD"` (or `EUR` etc.) + `abbreviation: "compact"` + `decimalPlaces` | "$1.2M" is readable, "1287394.55" isn't |
 | Percentage | `number-percent` (data must be 0-1) | Renders "12.5%" from 0.125 |
-| Large count | `number` + `abbreviation: "compact"` | Renders "1.5K" / "2.3M" |
+| Large count | `number` + `abbreviation: "compact"` + `decimalPlaces` | Renders "1.5K" / "2.3M" |
 | Small count (under ~1K) | `number` (no abbreviation) or omit `format` | Raw integer is fine |
 | Value with custom unit (e.g., "8 hrs", "2 weeks") | `number-plain` + `formatTemplate: "{{ @formatted }} hrs"` | Append a unit cleanly without baking it into the dataset |
+
+> **`abbreviation: "compact"` requires a `decimalPlaces` object to round** — without it the value keeps its full digits (renders `$9.756278496M`, not `$9.76M`). Always pair them: `"abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 2}` (use `"places": 0` for counts).
 
 Optional `format.suffix` (e.g., `"suffix": "h"`) appends a short unit directly after the number without a template — simpler than `formatTemplate` when you just need a single-char unit.
 
@@ -233,7 +220,7 @@ Wrap the value with surrounding text. Use `{{@}}` for the raw value and `{{@form
 ```json
 "value": {
   "fieldName": "sum(revenue)",
-  "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact"},
+  "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 2}},
   "formatTemplate": "{{@formatted}} (in {{Region}})"
 }
 ```
