@@ -50,8 +50,8 @@ SEQUENCE BY updated_at;
 ### Pre-filter via temporary view (when the source needs transformation)
 
 ```sql
-CREATE OR REFRESH TEMPORARY VIEW filtered_changes AS
-SELECT * FROM source_table WHERE status = 'active';
+CREATE TEMPORARY VIEW filtered_changes AS
+SELECT * FROM STREAM source_table WHERE status = 'active';
 
 CREATE OR REFRESH STREAMING TABLE active_records;
 
