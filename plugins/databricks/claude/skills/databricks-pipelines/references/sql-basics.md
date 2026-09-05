@@ -49,7 +49,7 @@ UDFs must be declared in a Python file in the pipeline (e.g. `@dp.temporary_view
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE downstream
-AS SELECT * FROM STREAM read_stream("upstream_table", skipChangeCommits => true);
+AS SELECT * FROM STREAM upstream_table WITH (SKIPCHANGECOMMITS);
 ```
 
 Use when reading from a streaming table that has updates/deletes (GDPR purges, Auto CDC targets). Without it, change commits fail.

@@ -126,7 +126,7 @@ JOIN customers c ON t.customer_id = c.id;
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE downstream
-AS SELECT * FROM STREAM read_stream("upstream_with_deletes", skipChangeCommits => true);
+AS SELECT * FROM STREAM upstream_with_deletes WITH (SKIPCHANGECOMMITS);
 ```
 
 `skipChangeCommits` ignores update/delete commits on the upstream (e.g. GDPR purges, Auto CDC targets). Without it, change commits cause errors.

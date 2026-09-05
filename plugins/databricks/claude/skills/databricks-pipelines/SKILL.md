@@ -151,7 +151,7 @@ For querying SCD Type 2 history tables (`__START_AT` / `__END_AT`, point-in-time
 | JDBC / Lakehouse Federation       | Batch read from external systems via federation.       | `spark.read.format("postgresql")` etc.         | Direct table ref via federation catalog          | —                                                       | —                                                 |
 | Custom data source                | User-defined Python data source.                       | `spark.read[Stream].format("custom")`          | N/A — Python only                                | —                                                       | —                                                 |
 | Static file read (batch)          | One-shot load of files (no incremental tracking).      | `spark.read.format("json"\|"csv"\|...).load()` | `read_files(...)` (no STREAM)                    | —                                                       | —                                                 |
-| Skip upstream change commits      | Ignore CDC commits on the upstream table.              | `.option("skipChangeCommits", "true")`         | `read_stream("name", skipChangeCommits => true)` | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
+| Skip upstream change commits      | Ignore CDC commits on the upstream table.              | `.option("skipChangeCommits", "true")`         | `STREAM name WITH (SKIPCHANGECOMMITS)`            | [streaming-table-python](references/streaming-table-python.md) | [streaming-table-sql](references/streaming-table-sql.md) |
 
 ### Table/Schema Feature APIs
 
