@@ -315,6 +315,194 @@ class SkillFrontmatterTest(unittest.TestCase):
             )
             self.assertEqual(skills.check_skill_frontmatter(root), [])
 
+    def _make_skill_raw(self, root: Path, dirname: str, frontmatter: str) -> None:
+        # For shapes _make_skill can't express (block scalars, absent fields).
+        skill_dir = root / "skills" / dirname
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(f"---\n{frontmatter}\n---\n")
+
+    def test_long_name_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = "databricks-" + "x" * skills.MAX_SKILL_NAME_LEN
+            self._make_skill(root, name, "Use when building dashboards.")
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character name" in e for e in errors), errors
+            )
+
+    def test_name_at_limit_ok(self):
+        # Boundary: exactly at the cap must pass, so the check is > and not >=.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            name = "d" * skills.MAX_SKILL_NAME_LEN
+            self._make_skill(root, name, "Use when building dashboards.")
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    def test_missing_name_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill_raw(
+                root, "databricks-nameless", "description: Use when charting."
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("missing a 'name'" in e for e in errors), errors
+            )
+
+    def test_long_description_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            desc = "word " * (skills.MAX_SKILL_DESCRIPTION_LEN // 4)
+            self._make_skill(root, "databricks-verbose", desc)
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_description_at_limit_ok(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            desc = "d" * skills.MAX_SKILL_DESCRIPTION_LEN
+            self._make_skill(root, "databricks-atlimit", desc)
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    def test_block_scalar_description_over_limit_flagged(self):
+        # The regression a first-line-only regex misses: a folded scalar's
+        # `description:` line holds just the two-character '>-' indicator, so
+        # the cap has to be applied to the RESOLVED value. databricks-dbsql
+        # ships this shape, which is why it matters.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            line = "filler " * 30
+            body = "name: databricks-folded\ndescription: >-\n" + "".join(
+                f"  {line.strip()}\n" for _ in range(8)
+            )
+            self._make_skill_raw(root, "databricks-folded", body.rstrip("\n"))
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_block_scalar_description_under_limit_ok(self):
+        # Control for the above: the same folded shape, short, must not flag.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = (
+                "name: databricks-folded-ok\ndescription: >-\n"
+                "  Use when building dashboards\n  and charts.\n"
+            )
+            self._make_skill_raw(root, "databricks-folded-ok", body.rstrip("\n"))
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    # The three holes review found in measuring a description by delegating to
+    # discovery.extract_description_from_skill. Each let an over-limit
+    # description pass silently, which is the exact failure the check exists to
+    # stop, so each gets a flagging test and a short control.
+
+    def test_literal_triple_dash_in_description_still_measured(self):
+        # extract_description_from_skill ends the frontmatter at the first '---'
+        # ANYWHERE, so a description containing one was truncated to a few
+        # characters and sailed past the limit. Measured from the frontmatter
+        # block instead, which only closes on a delimiter line.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            tail = "z" * (skills.MAX_SKILL_DESCRIPTION_LEN + 100)
+            self._make_skill_raw(
+                root,
+                "databricks-dashes",
+                f'name: databricks-dashes\ndescription: "start --- {tail}"',
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_short_description_containing_triple_dash_ok(self):
+        # Control for the above: the '---' must not itself trip anything.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill_raw(
+                root,
+                "databricks-dashes-ok",
+                'name: databricks-dashes-ok\ndescription: "before --- after"',
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    def test_block_scalar_header_with_trailing_comment_measured(self):
+        # `>- # note` is a valid header but was not one of the six bare forms,
+        # so it fell through as a plain scalar and measured as the header token.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = "\n".join("  " + "w" * 100 for _ in range(15))
+            self._make_skill_raw(
+                root,
+                "databricks-hdrcomment",
+                f"name: databricks-hdrcomment\ndescription: >- # note\n{body}",
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_block_scalar_indentation_indicator_measured(self):
+        # Same class of gap for an explicit indentation indicator such as `>2`.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = "\n".join("  " + "w" * 100 for _ in range(15))
+            self._make_skill_raw(
+                root,
+                "databricks-indent",
+                f"name: databricks-indent\ndescription: >2\n{body}",
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_short_block_scalar_with_trailing_comment_ok(self):
+        # Control: the header forms above must not flag when the body is short.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill_raw(
+                root,
+                "databricks-hdr-ok",
+                "name: databricks-hdr-ok\ndescription: >- # note\n"
+                "  Use when building dashboards\n  and charts.",
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
+    def test_plain_multiline_description_measured(self):
+        # A plain (unquoted) scalar can run onto indented continuation lines.
+        # Measuring only the `description:` line let a short opening line hide
+        # an over-limit folded body - the exact violation this check exists for.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = "\n".join("  " + "w" * 100 for _ in range(15))
+            self._make_skill_raw(
+                root,
+                "databricks-plainmulti",
+                f"name: databricks-plainmulti\ndescription: Short first line\n{body}",
+            )
+            errors = skills.check_skill_frontmatter(root)
+            self.assertTrue(
+                any("character description" in e for e in errors), errors
+            )
+
+    def test_short_plain_multiline_description_ok(self):
+        # Control: folding continuation lines must not flag a short value, and a
+        # sibling key at column 0 must end the run rather than be folded in.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill_raw(
+                root,
+                "databricks-plainmulti-ok",
+                "name: databricks-plainmulti-ok\n"
+                "description: Use when building\n  dashboards and charts.\n"
+                "parent: databricks-core",
+            )
+            self.assertEqual(skills.check_skill_frontmatter(root), [])
+
 
 class BundleTest(unittest.TestCase):
     """The per-provider bundles under plugins/databricks/<provider>/."""

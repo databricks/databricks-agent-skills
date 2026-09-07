@@ -161,14 +161,89 @@ def check_plugin_components(repo_root: Path) -> list[str]:
     return errors
 
 
+# Frontmatter field limits enforced by third-party skill loaders. Verified
+# empirically against Kiro 1.0.182's loader (NodeProgressiveContextSource), which
+# drops a skill outright when `name` falls outside 1-64 characters or
+# `description` exceeds 1024, and matches the documented Agent Skills limits.
+# Worth guarding here because nothing in this repo caps either field today and
+# the longest shipped description already sits at 83% of the description budget,
+# so the next verbose skill silently stops loading in those agents.
+MAX_SKILL_NAME_LEN = 64
+MAX_SKILL_DESCRIPTION_LEN = 1024
+
+# `name` as a bare, single-quoted or double-quoted scalar. A block scalar makes
+# no sense for a name, so this deliberately does not handle one.
+_SKILL_NAME_RE = re.compile(r"^name:[ \t]*(.*?)[ \t]*$", re.MULTILINE)
+
+# A YAML block-scalar header: | or > plus an optional chomping indicator and an
+# optional explicit indentation indicator in either order, then an optional
+# trailing comment. Matching only the six bare forms (`|`, `|-`, `|+`, `>`,
+# `>-`, `>+`) misses valid headers like `>2` or `>- # note`, which then look
+# like plain scalars and measure as the header token instead of the body.
+_BLOCK_SCALAR_HEADER_RE = re.compile(r"^[|>](?:[0-9]|[+-]){0,2}[ \t]*(?:#.*)?$")
+
+_DESCRIPTION_LINE_RE = re.compile(r"^description:[ \t]*(.*?)[ \t]*$")
+
+
+def _description_from_frontmatter(frontmatter: str) -> str:
+    """Resolve the `description` value out of an already-extracted frontmatter block.
+
+    Deliberately local rather than reusing discovery.extract_description_from_skill.
+    That helper re-reads the file and ends the frontmatter at the first `---`
+    *anywhere*, not just on a delimiter line, so a description containing a
+    literal `---` is truncated before it can be measured; and it recognises only
+    the six bare block-scalar headers, so `>- # note` or `>2` fall through as
+    plain scalars and measure as the header token. It also returns only the
+    first line of a plain scalar continued across indented lines. Each of
+    those lets an over-limit description pass the check. It is also the input to manifest and
+    marketplace generation, so tightening it there is a wider change than a lint
+    fix should make.
+
+    Known limit: this approximates YAML folding rather than implementing it,
+    because the package is stdlib-only (the protected CI runner has no pypi). A
+    value within a few characters of the ceiling can still measure slightly
+    short. It errs toward under-counting, so the failure mode is a missed
+    violation rather than a false alarm on a valid skill.
+    """
+    lines = frontmatter.splitlines()
+    for i, line in enumerate(lines):
+        match = _DESCRIPTION_LINE_RE.match(line)
+        if match is None:
+            continue
+        value = match.group(1)
+        # Indented lines that follow belong to the value, whether it is a block
+        # scalar or a plain/quoted scalar continued across lines. A sibling key
+        # sits at column 0 in this flat frontmatter and ends the run.
+        continuation: list[str] = []
+        for cont in lines[i + 1:]:
+            if cont and not cont[0].isspace():
+                break
+            # Blank lines are significant inside a block scalar, so they are
+            # kept as separators rather than dropped.
+            continuation.append(cont.strip())
+        if _BLOCK_SCALAR_HEADER_RE.match(value):
+            joiner = " " if value.startswith(">") else "\n"
+            return joiner.join(continuation).strip()
+        # A plain or quoted scalar can also run onto following indented lines,
+        # which YAML folds into the value with spaces. Measuring only the first
+        # line let a short opening line hide an over-limit body.
+        return " ".join([value, *continuation]).strip().strip('"').strip("'")
+    return ""
+
+
 def check_skill_frontmatter(repo_root: Path) -> list[str]:
-    """Flag SKILL.md frontmatter that a strict YAML parser would reject.
+    """Flag SKILL.md frontmatter a strict YAML parser or a loader would reject.
 
     Checked with a regex, not yaml.safe_load, because this package is
-    stdlib-only (the protected CI runner has no pypi). The failure that bites in
-    practice: an unquoted ':' in `description`, which strict-YAML skill loaders
-    read as a mapping separator and silently drop. Skills counterpart to the
-    commands check in check_plugin_components.
+    stdlib-only (the protected CI runner has no pypi). Two classes of failure,
+    both of which drop the skill silently rather than erroring:
+
+    - an unquoted ':' in `description`, which strict-YAML skill loaders read as
+      a mapping separator (the failure that bit databricks-app-design);
+    - `name` or `description` outside the length limits third-party loaders
+      enforce, which drops the skill at load time with at most a console warning.
+
+    Skills counterpart to the commands check in check_plugin_components.
 
     Returns a list of error strings (empty means all good).
     """
@@ -178,13 +253,38 @@ def check_skill_frontmatter(repo_root: Path) -> list[str]:
         frontmatter = _read_frontmatter(skill_dir / "SKILL.md")
         if frontmatter is None:
             errors.append(f"Skill '{rel}' is missing YAML frontmatter.")
-        elif not re.search(r"^description:\s*\S", frontmatter, re.MULTILINE):
+            continue
+
+        if not re.search(r"^description:\s*\S", frontmatter, re.MULTILINE):
             errors.append(f"Skill '{rel}' frontmatter is missing a 'description'.")
         elif re.search(r"^description:[ \t]*[^\s\"'>|].*:(?:\s|$)", frontmatter, re.MULTILINE):
             errors.append(
                 f"Skill '{rel}' has an unquoted ':' in its description, which "
                 "strict YAML parsers reject (the skill is then silently dropped "
                 "at load time). Quote the whole description string."
+            )
+        else:
+            # Measured off the resolved value, not the raw line, so a block
+            # scalar (`description: >-` plus indented lines) is measured by its
+            # content instead of by its header token.
+            description = _description_from_frontmatter(frontmatter)
+            if len(description) > MAX_SKILL_DESCRIPTION_LEN:
+                errors.append(
+                    f"Skill '{rel}' has a {len(description)}-character description, "
+                    f"over the {MAX_SKILL_DESCRIPTION_LEN}-character limit that "
+                    "third-party loaders enforce (the skill is dropped at load "
+                    "time). Shorten it, or move detail into references/."
+                )
+
+        name_match = _SKILL_NAME_RE.search(frontmatter)
+        name = name_match.group(1).strip().strip('"').strip("'") if name_match else ""
+        if not name:
+            errors.append(f"Skill '{rel}' frontmatter is missing a 'name'.")
+        elif len(name) > MAX_SKILL_NAME_LEN:
+            errors.append(
+                f"Skill '{rel}' has a {len(name)}-character name, over the "
+                f"{MAX_SKILL_NAME_LEN}-character limit that third-party loaders "
+                "enforce (the skill is dropped at load time). Shorten it."
             )
     return errors
 
