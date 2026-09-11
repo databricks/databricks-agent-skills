@@ -14,6 +14,7 @@ Before scaffolding, decide which data pattern the app needs:
 | **Lakebase (OLTP)** (read/write) | CRUD forms, persistent state, user data | `--features lakebase --set lakebase.postgres.branch=<BRANCH> --set lakebase.postgres.database=<DB>` |
 | **Genie** (NL queries) | Chat interface over Unity Catalog tables | `--features genie --set genie.<resourceKey>.<field>=<value>` (check manifest) |
 | **Model Serving** (ML inference) | Chat, AI features, model predictions | `--features serving --set serving.serving-endpoint.name=<NAME>` (check manifest) |
+| **Agents** (tool-using LLM, **beta**) | AI assistant that calls tools (SQL, files, Genie, MCP), delegates to sub-agents, streamed chat + HITL approval | `--features agents` (+ tool-provider plugins like analytics/files/genie); backend A also `--set agents.agents-serving-endpoint.name=<STREAMING_ENDPOINT>` (check manifest), backend B needs none — see [Agents](agents.md) |
 | **Jobs** (trigger Lakeflow Jobs) | Kick off and monitor pre-existing notebooks / Python / SQL / dbt jobs | `--features jobs --set jobs.<resourceKey>.<field>=<JOB_ID>` (check manifest) |
 | **Multiple** | Combine plugins as needed (e.g. dashboard + CRUD, analytics + Genie) | `--features analytics,lakebase,genie,...` with all required `--set` flags per plugin |
 
@@ -131,6 +132,7 @@ Do not guess paths — run without args first, then pick from the index.
 | Use Lakebase for CRUD / persistent state | [Lakebase](lakebase.md) — Lakebase plugin API, `onPluginsReady` patterns, schema init |
 | Add Genie chat | [Genie](genie.md) — space creation, plugin setup, frontend components |
 | Call ML model serving endpoints | [Model Serving](model-serving.md) — serving plugin, frontend hooks |
+| Host a tool-using AI agent (**beta**) | [Agents](agents.md) — `agents()` plugin, model backends, `useAgentChat`, tools opt-in, HITL |
 | Trigger / monitor Lakeflow Jobs from the app | [Jobs](jobs.md) — env discovery, JobHandle API, SSE streaming |
 
 ## Critical Rules
