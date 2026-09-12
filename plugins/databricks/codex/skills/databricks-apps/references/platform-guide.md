@@ -173,4 +173,4 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | OBO scopes missing after deploy | Destructive update wiped them | Re-apply scopes after each deploy |
 | `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
 | 504 Gateway Timeout | Request exceeded 120s | Use WebSockets for long operations |
-| `user token passthrough not enabled` | `user_api_scopes` in `databricks.yml` requires user authorization, which is not enabled in the workspace | Ask workspace admin to enable user authorization (Public Preview). See [Databricks Apps auth docs](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth#user-authorization) |
+| `user token passthrough not enabled` | The app doesn't declare `user_api_scopes`, or the requested scope isn't allowed in the workspace | Declare `user_api_scopes` on the app — user authorization is GA and on by default, no admin toggle. Confirm the scope is allowed (admins can restrict which scopes apps may request). See [Databricks Apps auth docs](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth#user-authorization) |

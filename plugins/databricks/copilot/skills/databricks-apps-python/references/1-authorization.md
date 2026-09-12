@@ -39,7 +39,7 @@ Allows the app to act with the identity of the current user. Databricks forwards
 
 **Use for**: user-specific data queries, Unity Catalog row/column filters, audit trails.
 
-**Prerequisite**: workspace admin must enable user authorization (Public Preview). Add scopes when creating/editing the app in the UI.
+**Availability**: User authorization is generally available and on by default — no workspace-admin toggle is required to turn it on. Add scopes when creating/editing the app (in `databricks.yml` or the UI); workspace admins can optionally restrict which scopes apps may request.
 
 ### Retrieving the User Token Per Framework
 
