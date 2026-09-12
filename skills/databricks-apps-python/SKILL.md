@@ -191,7 +191,7 @@ class EntityIn(BaseModel):
 | **Pre-installed frameworks** | Dash, Streamlit, Gradio, Flask, FastAPI, Shiny |
 | **Custom packages** | Add to `requirements.txt` in app root |
 | **Network** | Apps can reach Databricks APIs; external access depends on workspace config |
-| **User auth** | Public Preview — workspace admin must enable before adding scopes |
+| **User auth** | GA, on by default — no admin enablement required; declare `user_api_scopes` to add scopes |
 
 ---
 
