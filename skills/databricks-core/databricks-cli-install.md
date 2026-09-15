@@ -14,9 +14,51 @@ For Linux/macOS containers or Cursor: prefer the **Linux manual install to user 
 1. Determine OS and shell:
    - macOS/Linux: bash/zsh
    - Windows: Command Prompt / PowerShell; optionally WSL for Linux shell
-2. Detect whether `databricks` is already installed:
-   - Run: `databricks -v` (or `databricks version`)
-   - If already installed with a recent version, installation is already OK.
+2. Detect the installed CLI. A present CLI is **not** automatically current enough —
+   don't skip installation just because `databricks` exists:
+
+   For bash/zsh (macOS, Linux, WSL):
+
+   ```bash
+   # databricks-core CLI floor check. Prints OK / UPGRADE / INSTALL and exits 0 / 1 / 2.
+   # Subshell so a non-zero exit won't close a persistent shell.
+   # awk is portable (GNU/BSD/busybox); `sort -V` is not.
+   (
+     # Read each form separately (never A||B -- that concatenates both stdouts).
+     have=""
+     for probe in "--version" "version"; do
+       raw="$(databricks "$probe" 2>/dev/null)"
+       have="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n1)"
+       [ -n "$have" ] && break
+     done
+     if [ -z "$have" ]; then
+       echo "INSTALL: no databricks CLI detected -- follow the installation paths below"; exit 2
+     fi
+     # awk prints the verdict; an empty verdict (awk missing/errored) falls through to a
+     # cautious UPGRADE rather than a false OK.
+     verdict="$(awk -v a="$have" 'BEGIN{split(a,A,".");split("1.0.0",B,".");for(i=1;i<=3;i++){x=A[i]+0;y=B[i]+0;if(x<y){print "UPGRADE";exit}if(x>y){print "OK";exit}}print "OK"}')"
+     if [ "$verdict" = "OK" ]; then
+       echo "OK: databricks CLI $have meets core's floor v1.0.0 (a routing skill may require newer)"; exit 0
+     else
+       echo "UPGRADE: databricks CLI $have is below v1.0.0 or unverifiable -- run the Update / repair procedures below"; exit 1
+     fi
+   )
+   ```
+
+   On native Windows (Command Prompt / PowerShell, not WSL) the pipeline above won't run.
+   Rather than eyeball the version, (re)install the latest stable via the Windows method that
+   matches how the CLI was installed (WinGet / Chocolatey / curl-in-WSL, below) — the latest
+   release satisfies the v1.0.0 floor and any routing skill's floor. Note `winget upgrade`
+   only updates a CLI that was installed through WinGet.
+
+   - `OK` — meets core's floor; skip installation.
+   - `UPGRADE` — present but below v1.0.0; run the [Update / repair procedures](#update--repair-procedures) below.
+   - `INSTALL` — no usable CLI; follow the installation paths below.
+
+   **A passing `OK` reflects only core's own v1.0.0 floor.** If a skill routed you here to
+   upgrade, its own (higher) floor governs — see the routing rule in
+   [databricks-core `SKILL.md`](SKILL.md); run the [Update / repair procedures](#update--repair-procedures),
+   which install the latest stable and satisfy any skill's floor.
 3. Avoid the legacy Python package `databricks-cli` (PyPI). This skill installs the modern Databricks CLI binary.
 
 ## Preferred installation paths (by OS)

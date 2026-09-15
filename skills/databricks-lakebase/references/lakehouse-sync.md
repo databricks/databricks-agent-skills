@@ -31,9 +31,57 @@ Each row includes CDC metadata columns:
 
 ## Enablement
 
-**Lakehouse Sync is UI-only — there is NO CLI command or REST API to configure it. Do NOT attempt to automate this step.** It is configured through the Databricks workspace UI: "Lakehouse sync" tab in the branch overview. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog.
+Lakehouse Sync is programmable via the CLI and SDK (**Beta** — `databricks postgres *-cdf-config` / `w.postgres.*_cdf_config`, CLI >= v1.9 / databricks-sdk >= ~0.135). Creating a **CDF config** is what turns the sync on: it captures the change data feed for a Postgres schema and materializes each table as an `lb_<table>_history` Delta table in Unity Catalog with the CDC columns shown [above](#history-tables). It works at the **schema level** — one config covers all current and future tables in that schema. (The workspace UI — branch overview → "Lakehouse sync" tab → **Start Sync** — does the same thing.)
 
-Navigate to: **Catalog** → your Autoscaling project → branch → **Lakehouse Sync** → **Start Sync**, then select the source database/schema, destination catalog/schema, and tables.
+**CLI** — `PARENT` is the database **resource path**, not the Postgres database name (see the gotcha below):
+
+```bash
+# Create a CDF config: replicate Postgres schema `public` into UC catalog.schema.
+# Args are positional: PARENT CATALOG SCHEMA POSTGRES_SCHEMA. Long-running; waits by default.
+databricks postgres create-cdf-config \
+  projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID> \
+  <UC_CATALOG> <UC_SCHEMA> public \
+  --cdf-config-id <id> --profile <PROFILE>
+
+# Check / manage
+databricks postgres list-cdf-configs   projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID> --profile <PROFILE>
+databricks postgres list-cdf-statuses  projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID> --profile <PROFILE>
+databricks postgres get-cdf-status     <CDF_CONFIG_RESOURCE_NAME> --profile <PROFILE>
+databricks postgres delete-cdf-config  <CDF_CONFIG_RESOURCE_NAME> --profile <PROFILE>
+```
+
+**SDK** — the config lives in `databricks.sdk.service.postgres` (not Unity Catalog):
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.postgres import CdfConfig
+
+w = WorkspaceClient(profile="<PROFILE>")
+db = "projects/<PROJECT_ID>/branches/<BRANCH_ID>/databases/<DATABASE_ID>"   # resource path
+
+w.postgres.create_cdf_config(
+    parent=db,
+    cdf_config=CdfConfig(catalog="<UC_CATALOG>", schema="<UC_SCHEMA>", postgres_schema="public"),
+    cdf_config_id="<id>")
+
+# poll until tables are ONLINE
+w.postgres.list_cdf_statuses(parent=db)
+# also: get_cdf_config / get_cdf_status / list_cdf_configs / delete_cdf_config
+```
+
+Once `ONLINE`, the CDC history tables exist in UC — one `lb_<table>_history` per source table, carrying the CDC columns documented above:
+
+```sql
+SELECT _pg_change_type, _pg_lsn, _timestamp, *
+FROM <UC_CATALOG>.<UC_SCHEMA>.lb_<table>_history
+ORDER BY _sort_by DESC;
+```
+
+**Gotchas:**
+
+- **`parent`/`PARENT` is the database RESOURCE path** (`projects/<p>/branches/<b>/databases/<DATABASE_ID>`), **not** the Postgres database name you connect with (`databricks_postgres`). The resource id (e.g. `db-...`) differs from the connect name — resolve it with `databricks postgres list-databases projects/<p>/branches/<b>` and match on `status.postgres_database`. Passing the connect name yields a misleading `NotFound: database not found`.
+- **The destination UC catalog + schema must already exist** — the API does not create them, and a missing one fails with `Schema '<cat>.<schema>' does not exist`.
+- **`list-cdf-configs` / `list-cdf-statuses` return `NotFound` (404) when none exist**, not an empty list — in the SDK, catch `databricks.sdk.errors.platform.NotFound`.
 
 ## Prerequisites
 

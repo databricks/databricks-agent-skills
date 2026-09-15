@@ -200,7 +200,7 @@ Reverse direction: continuously streams changes **from** Lakebase Postgres **int
 
 > **Important:** Tables must reside in the `databricks_postgres` database for Lakehouse Sync to work.
 
-**Lakehouse Sync enablement is a UI-only action** — configured via the "Lakehouse sync" tab in the branch overview, not via CLI or API. It operates at the **schema level**: once enabled, all current and future tables in that schema sync to Unity Catalog. When automating CDC workflows, treat this as a manual post-automation step and inform the user.
+**Lakehouse Sync enablement is programmable** (Beta) — `databricks postgres create-cdf-config` / `w.postgres.create_cdf_config`, or the "Lakehouse sync" tab in the branch overview. It operates at the **schema level**: one config syncs a whole Postgres schema, so all current and future tables in it sync to Unity Catalog. See [lakehouse-sync.md](lakehouse-sync.md) for the commands and gotchas.
 
 **Prerequisites:**
 - Lakebase Autoscaling project running **Postgres 17**
