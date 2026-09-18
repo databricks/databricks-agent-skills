@@ -15,12 +15,43 @@ parent: databricks-core
 
 ### 1. Check CLI and authentication
 
+The CLI must be >= v1.12.0. Compare deterministically -- never eyeball the version (1.9.0 is older than 1.12.0, and a lexical string compare gets this wrong). Run this gate first and do not proceed if it exits non-zero:
+
 ```bash
-databricks version                         # must be >= v1.12.0
+# Subshell so a failed gate reports non-zero without closing a persistent shell.
+(
+  # Read stdout only -- upgrade nags on stderr carry their own semver and would win the parse.
+  if ! raw="$(databricks version 2>/dev/null)"; then
+    echo "STOP: databricks CLI is missing or failed to run -- install or upgrade it via databricks-core first"
+    exit 1
+  fi
+  have="$(printf '%s\n' "$raw" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1 | tr -d v)"
+  [ -n "$have" ] || have="$(printf '%s\n' "$raw" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+  if [ -z "$have" ]; then
+    echo "STOP: could not read a version from 'databricks version' -- upgrade via databricks-core first"
+    exit 1
+  fi
+  case "$raw" in
+    *-dev*)
+      echo "NOTE: dev build $have -- the floor cannot be checked; ask the user to confirm this build has setup-local"
+      ;;
+    *)
+      if [ "$(printf '%s\n%s\n' "1.12.0" "$have" | sort -V | head -n1)" != "1.12.0" ]; then
+        echo "STOP: databricks CLI $have is older than v1.12.0 -- do not run setup-local; upgrade via databricks-core first"
+        exit 1
+      fi
+      ;;
+  esac
+)
+```
+
+Only after the gate passes, authenticate with the selected profile:
+
+```bash
 databricks auth describe --profile <PROFILE>
 ```
 
-Prefer the latest stable CLI; no online lookup is required. Compare the full semantic version: v0.299.1 is older than v1.12.0. If missing or older, or `setup-local` is absent from help, reports `unknown command`, or rejects a documented flag, stop. Use `databricks-core` to upgrade with approval and verify; never recreate `setup-local` manually.
+Prefer the latest stable CLI; no online lookup is required. If the gate exits non-zero (older than v1.12.0, missing CLI, or no readable version), or `setup-local` is absent from help, reports `unknown command`, or rejects a documented flag, stop. If it prints `NOTE: dev build`, the floor is unverifiable -- confirm with the user before continuing. Use `databricks-core` to upgrade with approval and verify; never recreate `setup-local` manually.
 
 Use the selected profile for every workspace command. Do not convert another package manager without approval.
 
