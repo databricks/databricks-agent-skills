@@ -42,7 +42,9 @@ _WRAPPERS = frozenset({"sudo", "env", "command", "exec", "time", "nohup", "xargs
 # shell/unified_exec variants in the wild), VS Code Copilot uses
 # run_in_terminal. The real filter is _invokes_databricks_cli below; this
 # gate only keeps non-shell tools (file reads, edits) from being scanned.
-_SHELL_TOOL_RE = re.compile(r"(?i)^(bash|shell|local_shell|unified_exec|run_in_terminal)$")
+_SHELL_TOOL_RE = re.compile(
+    r"(?i)^(bash|shell|local_shell|unified_exec|run_in_terminal)$"
+)
 
 # Per-platform names for the setup/doctor commands referenced in the hint
 # (Claude Code namespaces plugin commands as /databricks:<name>; Cursor has a
@@ -86,12 +88,14 @@ def _segment_executable(tokens):
 
 
 def _invokes_databricks_cli(command):
-    """True when any segment of the command runs the `databricks` executable."""
+    """True when any segment of the command runs the `databricks`
+    executable."""
     for segment in _SEGMENT_SPLIT_RE.split(command):
         executable = _segment_executable(segment.split())
         if executable.rsplit("/", 1)[-1] == "databricks":
             return True
     return False
+
 
 # Phrase-shaped auth-failure signals as emitted by the CLI / Go SDK error
 # paths. Deliberately not bare status codes, so ordinary data in stdout
@@ -127,7 +131,8 @@ def _parse_maybe_json(value):
 
 
 def extract_payload(data):
-    """(tool_name, command, response_text) from a Claude/Codex or Cursor payload."""
+    """(tool_name, command, response_text) from a Claude/Codex or Cursor
+    payload."""
     tool_name = str(data.get("tool_name", ""))
     tool_input = _parse_maybe_json(data.get("tool_input"))
     command = tool_input.get("command", "") if tool_input else ""
@@ -143,7 +148,8 @@ def extract_payload(data):
 
 
 def check(tool_name, command, response_text, platform="claude"):
-    """Return the auth hint when a databricks command hit an auth error, else None."""
+    """Return the auth hint when a databricks command hit an auth error, else
+    None."""
     if not _SHELL_TOOL_RE.match(tool_name or ""):
         return None
     if not command or not _invokes_databricks_cli(command):
@@ -159,12 +165,14 @@ def render_output(hint, platform="claude"):
     """Wrap the hint in the platform's hook output envelope."""
     if platform == "cursor":
         return json.dumps({"additional_context": hint})
-    return json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": hint,
+    return json.dumps(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": hint,
+            }
         }
-    })
+    )
 
 
 def main():
