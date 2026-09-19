@@ -9,7 +9,7 @@ but end up loaded by the same agents — pick whichever fits your workflow.
 
 - **Databricks CLI** writes SKILL.md files directly into each agent's skill
   directory (`~/.claude/skills/`, `~/.cursor/extensions/<...>`, etc.).
-- **Plugin marketplaces** (Claude Code, Cursor) cache the plugin under the
+- **Plugin marketplaces** (Claude Code, Cursor, GitHub Copilot, Codex CLI) cache the plugin under the
   agent's plugin directory (e.g. `~/.claude/plugins/cache/databricks-agent-skills/`);
   the agent discovers skills from there.
 
@@ -144,12 +144,13 @@ originally imported from
 - See [`experimental/README.md`](./experimental/README.md) for the full list
   and caveats.
 
-## Commands and hooks (Claude Code, Cursor)
+## Commands and hooks
 
-When installed as a Claude Code plugin, the `databricks` plugin adds slash
-commands and three hooks (prompt routing, session context, auth-failure hints)
-on top of the skills. The Cursor plugin (`databricks`) ships the same
-commands and two of the hooks; see the Cursor note below.
+When installed as a plugin, the `databricks` plugin adds skills and
+target-specific commands, hooks, and routing. Claude Code ships slash commands
+and three hooks; Cursor ships the same commands, two hooks, and a routing rule;
+Codex ships three hooks; and Copilot ships two hooks. See the target-specific
+notes below.
 (These ship via the plugin marketplaces; the CLI `databricks aitools install`
 path installs skills only today; see the note at the end.)
 
@@ -195,20 +196,24 @@ the routing table when a prompt is Databricks-related, independent of an open
 Cursor bug that currently drops hook `additional_context`. Native skill
 selection also helps.
 
-> **Distribution parity (follow-up).** The plugin marketplace ships the whole
-> repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.
+> **Distribution parity (follow-up).** The plugin marketplaces fetch the
+> target-specific provider bundle under `plugins/databricks/<provider>`, so each
+> plugin receives only the commands and hooks supported by that target.
 > `databricks aitools install` currently packages only `skills/`, so CLI-install
 > users don't yet get commands/hooks. Closing that gap is tracked as CLI-side
 > work.
 
 ## Structure
 
-Each skill follows the [Agent Skills Specification](https://agentskills.io/specification):
+Each skill follows the [Agent Skills Specification](https://agentskills.io/specification)
+and includes Codex marketplace metadata and shared icons:
 
 ```
 skill-name/
 ├── SKILL.md           # Main skill file with frontmatter + instructions
-└── references/        # Additional documentation loaded on demand
+├── references/        # Additional documentation loaded on demand
+├── agents/openai.yaml # Codex marketplace metadata
+└── assets/             # Shared Databricks icons
 ```
 
 ## Development
