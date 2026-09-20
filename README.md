@@ -9,7 +9,7 @@ and data pipelines, working with Lakebase and Model Serving, and deploying
 resources with Declarative Automation Bundles. Plugins add hooks and commands
 where supported.
 
-See the [Databricks AI Tools documentation](https://docs.databricks.com/aws/en/agent-skills/)
+See the [Databricks AI Tools documentation](https://docs.databricks.com/agent-skills/)
 for setup and guidance on using AI Tools alongside managed MCP servers.
 
 ## Installation
