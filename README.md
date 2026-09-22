@@ -1,6 +1,16 @@
-# Databricks Agent Skills
+# Databricks AI Tools
 
-Skills for AI coding assistants (Claude Code, Cursor, etc.) that provide Databricks-specific guidance.
+Build on Databricks with AI coding agents such as Claude Code, Cursor, Codex,
+and GitHub Copilot.
+
+This repository provides the skills and agent plugins for Databricks AI Tools.
+Skills give your agent Databricks-specific guidance for building apps, jobs,
+and data pipelines, working with Lakebase and Model Serving, and deploying
+resources with Declarative Automation Bundles. Plugins add hooks and commands
+where supported.
+
+See the [Databricks AI Tools documentation](https://docs.databricks.com/agent-skills/)
+for setup and guidance on using AI Tools alongside managed MCP servers.
 
 ## Installation
 
