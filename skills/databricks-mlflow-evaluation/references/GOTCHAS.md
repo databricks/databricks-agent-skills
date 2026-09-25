@@ -509,6 +509,24 @@ Guidelines(name="test", guidelines="...", model="databricks:/my-endpoint")
 Guidelines(name="test", guidelines="...", model="openai:/gpt-4o")
 ```
 
+### ✅ CORRECT: UC-native judge models
+
+When the workspace uses Unity Catalog model services, address foundation
+models by their UC name — and use a new-enough client:
+
+```python
+# Requires mlflow[databricks]>=3.16.0 to route databricks:/system.ai.* model URIs
+make_judge(name="q", instructions="...", model="databricks:/system.ai.claude-sonnet-4")
+```
+
+- **404 `ENDPOINT_NOT_FOUND` on a `databricks:/system.ai.*` model** → MLflow client too old.
+  Below the floor above, the UC routing branch is missing, so the URI falls through to
+  the legacy `/serving-endpoints/...` path and 404s. Fix: upgrade the client per the floor above.
+- **403 `PERMISSION_DENIED` — `"'<endpoint>' is no longer available. Use Unity Catalog model services."`**
+  (variant `"...Please use Unity Gateway."`) → routing works, but the endpoint *name* is legacy.
+  A workspace endpoint URI `databricks:/<endpoint>` resolves only while that endpoint exists;
+  once legacy endpoints are disabled switch to `databricks:/system.ai.<model>` (no automatic alias).
+
 ---
 
 ## ❌ WRONG Aggregation Values
@@ -591,6 +609,10 @@ pip install mlflow[databricks]>=3.1.0
 # ✅ CORRECT
 pip install "mlflow[databricks]>=3.9.0" --upgrade --force-reinstall
 ```
+
+> **Distinct floor for UC model service routing:** UC *trace ingestion* needs 3.9.0+, but routing
+> `databricks:/system.ai.*` judge/scorer model URIs (UC model services) needs a higher floor —
+> see "Custom Judge Model Format" above for the exact version.
 
 ---
 
