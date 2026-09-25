@@ -186,6 +186,19 @@ FROM (
 );
 ```
 
+### Unity Gateway Migration (403 PERMISSION_DENIED)
+
+With Unity Catalog–native model serving (the Unity Gateway), foundation models are addressed as `system.ai.<model>`. Once the legacy path is disabled in a workspace that has completed the Unity Gateway migration (legacy pay-per-token endpoints discontinued by end of 2026), a bare `databricks-<model>` name hard-fails with HTTP 403 PERMISSION_DENIED — `"'<endpoint>' is no longer available. Use Unity Catalog model services."` (or the `"... Please use Unity Gateway."` variant). With `failOnError => false`, that text is returned in the `errorMessage` field. Fix: replace `databricks-<model>` with `system.ai.<model>` (drop the `databricks-` prefix), keeping other arguments unchanged. This applies to built-in foundation models only — custom (non-FM) endpoints are not affected by this migration.
+
+```sql
+-- Before (403 once legacy endpoints are disabled):
+SELECT ai_query('databricks-meta-llama-3-3-70b-instruct', question) FROM catalog.schema.questions;
+-- After:
+SELECT ai_query('system.ai.meta-llama-3-3-70b-instruct', question) FROM catalog.schema.questions;
+```
+
+Other `ai_query` examples in this reference use the `databricks-*` names (the default today); in a workspace cut over to Unity Gateway, swap them to `system.ai.<model>` as shown above.
+
 ### Embedding Generation
 
 ```sql
