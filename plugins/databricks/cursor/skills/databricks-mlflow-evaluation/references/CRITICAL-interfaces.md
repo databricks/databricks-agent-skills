@@ -2,6 +2,7 @@
 
 **Version**: MLflow 3.1.0+ (mlflow[databricks]>=3.1.0)
 **Last Updated**: Based on official Databricks documentation
+**UC model services**: judge/scorer models addressed as `databricks:/system.ai.<model>` require a minimum `mlflow[databricks]` version — see GOTCHAS.md → "Custom Judge Model Format" for the floor and the routing failure mode.
 
 ## Table of Contents
 
@@ -515,7 +516,7 @@ str              # Categorical values
 ## Installation
 
 ```bash
-pip install --upgrade "mlflow[databricks]>=3.1.0" openai
+pip install --upgrade "mlflow[databricks]>=3.16.0" openai
 ```
 
 ## Setup

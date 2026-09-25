@@ -153,6 +153,7 @@ For automatically improving a registered system prompt using `optimize_prompts()
 - **GEPA optimization dataset:** Must have both `inputs` AND `expectations` per record (different from eval dataset)
 - **Episodic memory:** Lazily loaded -- `get_scorer()` results won't show episodic memory on print until the judge is first used
 - **optimize_prompts:** Requires MLflow >= 3.5.0
+- **UC model service judge models:** `databricks:/system.ai.<model>` judge/scorer URIs need a version floor and can hit a 404 (old client) or 403 (legacy endpoint name) -- see `GOTCHAS.md` -> "Custom Judge Model Format" for the version, exact error text, and fix
 
 See `GOTCHAS.md` for complete list.
 

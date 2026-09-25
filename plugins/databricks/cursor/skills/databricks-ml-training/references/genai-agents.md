@@ -35,6 +35,8 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 
+# databricks-* is the default and works today; in a workspace cut over to Unity Catalog
+# model services, use the UC name instead, e.g. "system.ai.claude-sonnet-4-6" (no alias).
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"   # resolve at runtime — see databricks-model-serving
 VS_INDEX     = "ai_demo_gen.wind_farm.docs_index"
 UC_FUNCTIONS = ["ai_demo_gen.wind_farm.lookup_turbine_history"]

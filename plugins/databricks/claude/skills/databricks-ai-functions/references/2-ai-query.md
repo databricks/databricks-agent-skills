@@ -26,7 +26,23 @@ databricks serving-endpoints list -o json \
   | jq -r '.[] | select(.name|startswith("databricks-")) | select(.creator==null) | "\(.name)\t\(.task)"'
 ```
 
-Pick by `task`: `llm/v1/chat` for `ai_query` text/multimodal, `llm/v1/embeddings` for embeddings. Broadly-available stable names to fall back on: `databricks-claude-sonnet-4` (general), `databricks-meta-llama-3-1-8b-instruct` (fast/cheap), `databricks-llama-4-maverick` (vision), `databricks-gte-large-en` (embeddings). Newer families (e.g. `databricks-claude-opus-4-*`, `databricks-gpt-5-*`, `databricks-gemini-3-*`) appear in many workspaces — confirm with the list above before using one.
+Pick by `task`: `llm/v1/chat` for `ai_query` text/multimodal, `llm/v1/embeddings` for embeddings. Broadly-available stable names to fall back on: `databricks-claude-sonnet-4` (general), `databricks-meta-llama-3-1-8b-instruct` (fast/cheap), `databricks-llama-4-maverick` (vision), `databricks-gte-large-en` (embeddings). Newer families (e.g. `databricks-claude-opus-4-*`, `databricks-gpt-5-*`, `databricks-gemini-3-*`) appear in many workspaces — confirm with the list above before using one. In a workspace cut over to Unity Gateway, address the same built-in models as `system.ai.<model>` instead — see *Unity Gateway migration* below.
+
+## Unity Gateway migration (403 PERMISSION_DENIED)
+
+With Unity Catalog–native model serving (the Unity Gateway) the built-in foundation models are addressed as `system.ai.<model>`, not the bare `databricks-<model>` name. Once a workspace disables the legacy path (legacy pay-per-token endpoints are discontinued by end of 2026 as workspaces complete the Unity Gateway migration), the bare names hard-fail — there is no automatic alias.
+
+- **Symptom:** HTTP **403 PERMISSION_DENIED** with a message like `"'databricks-claude-sonnet-4' is no longer available. Use Unity Catalog model services."` (or the variant `"... Please use Unity Gateway."`). With `failOnError => false`, that text lands in the returned STRUCT's `errorMessage` field instead of raising.
+- **Fix:** swap the endpoint name to its `system.ai.*` form (drop the `databricks-` prefix) and keep every other argument unchanged:
+
+```sql
+-- Before (fails with 403 once legacy endpoints are disabled):
+SELECT ai_query('databricks-claude-sonnet-4', 'Summarize: ' || text) FROM articles;
+-- After:
+SELECT ai_query('system.ai.claude-sonnet-4', 'Summarize: ' || text) FROM articles;
+```
+
+This applies to built-in foundation models only; custom (non-foundation-model) endpoints are not affected by this migration and keep their existing name.
 
 ## Patterns
 
