@@ -33,7 +33,7 @@ exploration). If it isn't installed, use the AI-tool commands below and
      `UPGRADE` or `INSTALL`: STOP and follow that reference file to upgrade or install — do
      not proceed or tell the user their CLI is fine.
    - **If another skill routed you here to upgrade** (it needs a newer CLI than v1.0.0 — e.g.
-     `databricks-setup-local` needs v1.12.0), that skill already detected the gap. A passing
+     `databricks-setup-local` needs v1.16.0), that skill already detected the gap. A passing
      v1.0.0 floor check is not enough: follow the Update / repair procedures to install the
      latest stable, which satisfies any skill's floor.
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.

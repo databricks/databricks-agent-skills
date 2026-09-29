@@ -1,7 +1,7 @@
 ---
 name: databricks-setup-local
 description: "Previews, provisions, or diagnoses a uv-managed local Python .venv with `databricks environments setup-local`. Use when the user wants to set up or fix one for Databricks Connect, cluster or serverless compute, `--job-task`, or a bundle target, or when setup-local fails."
-compatibility: Requires databricks CLI (>= v1.12.0) and uv
+compatibility: Requires databricks CLI (>= v1.16.0) and uv
 metadata:
   version: "0.1.0"
 parent: databricks-core
@@ -15,7 +15,7 @@ parent: databricks-core
 
 ### 1. Check CLI and authentication
 
-The CLI must be >= v1.12.0. Compare deterministically -- never eyeball the version (1.9.0 is older than 1.12.0, and a lexical string compare gets this wrong). Run this gate first and do not proceed if it exits non-zero:
+The CLI must be >= v1.16.0 -- the release that added `--no-dbconnect` and the `E_PROVISION_CONFLICT` failure this skill routes. Compare deterministically -- never eyeball the version (1.9.0 is older than 1.16.0, and a lexical string compare gets this wrong). Run this gate first and do not proceed if it exits non-zero:
 
 ```bash
 # Subshell so a failed gate reports non-zero without closing a persistent shell.
@@ -36,8 +36,8 @@ The CLI must be >= v1.12.0. Compare deterministically -- never eyeball the versi
       echo "NOTE: dev build $have -- the floor cannot be checked; ask the user to confirm this build has setup-local"
       ;;
     *)
-      if [ "$(printf '%s\n%s\n' "1.12.0" "$have" | sort -V | head -n1)" != "1.12.0" ]; then
-        echo "STOP: databricks CLI $have is older than v1.12.0 -- do not run setup-local; upgrade via databricks-core first"
+      if [ "$(printf '%s\n%s\n' "1.16.0" "$have" | sort -V | head -n1)" != "1.16.0" ]; then
+        echo "STOP: databricks CLI $have is older than v1.16.0, the floor this skill requires -- older CLIs can run setup-local but not as documented here; upgrade via databricks-core first"
         exit 1
       fi
       ;;
@@ -51,7 +51,7 @@ Only after the gate passes, authenticate with the selected profile:
 databricks auth describe --profile <PROFILE>
 ```
 
-Prefer the latest stable CLI; no online lookup is required. If the gate exits non-zero (older than v1.12.0, missing CLI, or no readable version), or `setup-local` is absent from help, reports `unknown command`, or rejects a documented flag, stop. If it prints `NOTE: dev build`, the floor is unverifiable -- confirm with the user before continuing. Use `databricks-core` to upgrade with approval and verify; never recreate `setup-local` manually.
+Prefer the latest stable CLI; no online lookup is required. If the gate exits non-zero (older than v1.16.0, missing CLI, or no readable version), or `setup-local` is absent from help, reports `unknown command`, or rejects a flag this skill tells you to pass, stop. If it prints `NOTE: dev build`, the floor is unverifiable -- confirm with the user before continuing. Use `databricks-core` to upgrade with approval and verify; never recreate `setup-local` manually.
 
 Use the selected profile for every workspace command. Do not convert another package manager without approval.
 
@@ -78,7 +78,7 @@ Dry-run first; it writes and installs nothing:
 databricks environments setup-local --profile <PROFILE> <TARGET_ARGS> --dry-run --output json
 ```
 
-For bundles, `<TARGET_ARGS>` is empty or `--target <BUNDLE_TARGET>`. Default to normal mode. Use `--constraints-only` only when the user explicitly does not want this command managing `databricks-connect`. See [JSON output](references/json-output.md) and [examples](references/examples.md).
+For bundles, `<TARGET_ARGS>` is empty or `--target <BUNDLE_TARGET>`. Default to normal mode. Use `--no-dbconnect` only when the user explicitly does not want this command managing `databricks-connect`; the result's `mode` still reports `constraints-only` for it. See [JSON output](references/json-output.md) and [examples](references/examples.md).
 
 ### 5. Obtain approval and apply
 

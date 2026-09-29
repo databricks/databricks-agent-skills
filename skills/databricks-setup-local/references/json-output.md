@@ -9,7 +9,7 @@ Use `--output json` and branch on `ok`. Successful runs exit zero; pipeline fail
 | `schemaVersion` | Always | Contract version, currently `1`. |
 | `command` | Always | `"environments setup-local"`. |
 | `ok` | Always | Whether the pipeline succeeded. |
-| `mode` | Always | `"default"` or `"constraints-only"`. |
+| `mode` | Always | `"default"` or `"constraints-only"`. `--no-dbconnect` reports `"constraints-only"`: the flag was renamed, the value was not, so this is the output contract, not a mismatch. The older `--constraints-only` spelling is a deprecated alias with identical behaviour -- still accepted, but hidden from `--help`, so its absence there is not evidence of an old CLI. Migrate any invocation that still uses it. |
 | `dryRun` | Always | Whether the run was preview-only. |
 | `compute` | After target resolution | `source`, optional `clusterId`/`serverlessVersion`, and report-safe `envKey`. |
 | `resolved` | After constraint fetch | `pythonVersion`, optional `dbconnectVersion`, and `artifactSource` (`network` or `cache`). |
@@ -30,8 +30,8 @@ Always surface warnings. These require user action:
 
 | Code | Action |
 |---|---|
-| `W_DBCONNECT_PIN_DUPLICATED` | Remove or reconcile the duplicate pin if its range conflicts. |
-| `W_USER_CONSTRAINT_CONFLICT` | Reconcile the user dependency with the compute constraint. |
+| `W_DBCONNECT_PIN_DUPLICATED` | Remove or reconcile the duplicate pin if its range conflicts. Disjoint ranges leave two pins uv cannot resolve, so provisioning fails on apply while `--dry-run` still reports `ok: true`. |
+| `W_USER_CONSTRAINT_CONFLICT` | Reconcile the user dependency with the compute constraint. A `--dry-run` carrying this warning still reports `ok: true`, but the same project fails `E_PROVISION_CONFLICT` on apply -- reconcile it before asking for approval, not after. |
 | `W_STALE_ENVIRONMENT_VERSION` | Review the stale serverless version after switching to a cluster target. |
 | `W_STANDALONE_PYSPARK_CONFLICT` | Keep standalone `pyspark` in a separate environment from `databricks-connect`. |
 

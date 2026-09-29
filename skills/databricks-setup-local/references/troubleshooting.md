@@ -17,7 +17,7 @@ Start with `error.code` and `error.failurePhase`. For overloaded codes, use the 
 | `E_FETCH` with transport/cache error | Restore access to `databricks/environments` and retry. |
 | `E_CANCELED` | Re-run only if the interruption was unintended. |
 | `E_PROVISION` with network/pip-seed failure | Fix connectivity or retry. |
-| `E_PROVISION` with `W_USER_CONSTRAINT_CONFLICT` or `W_DBCONNECT_PIN_DUPLICATED` | Reconcile the user's pins. |
+| `E_PROVISION_CONFLICT` with `W_USER_CONSTRAINT_CONFLICT` (`failurePhase: provision`), or `E_PROVISION`/`E_PROVISION_CONFLICT` with `W_DBCONNECT_PIN_DUPLICATED` | Reconcile the user's pins. The merge-detected conflict fails only on apply -- `--dry-run` returns `ok: true` and reports it in `warnings[]`, so read the warnings before applying. On CLI >= v1.17.0, an `E_PROVISION_CONFLICT` carrying no conflict warning at all is a transitive resolver conflict the merge cannot see: route it below, do not blame the user's pins. This failure has already rewritten `pyproject.toml` (`diskMutated: true`) and left a backup, so recover from `backupPath` rather than assuming the file is untouched. |
 | `E_VALIDATE` naming standalone `pyspark` | Remove it from the Connect environment; use a separate environment for standalone Spark. |
 
 ## Determine defect ownership
@@ -28,7 +28,7 @@ Some failures require reproduction in an empty temporary project with the same p
 |---|---|
 | `E_ENV_UNSUPPORTED` for a target expected to be supported | `databricks/environments` |
 | `E_FETCH` identifies malformed published Python or constraints data | `databricks/environments` |
-| `E_PROVISION` cannot resolve published pins and no user-conflict warning exists | `databricks/environments` |
+| `E_PROVISION` or `E_PROVISION_CONFLICT` cannot resolve published pins and no conflict warning exists (the warning-free `E_PROVISION_CONFLICT` needs CLI >= v1.17.0). Decide this from `error.message`, never the code alone -- the same code also covers a typo'd or nonexistent package and a `requires-python` mismatch, which are the user's to fix. Read uv's verbatim stderr and reproduce in a clean project first. | `databricks/environments` |
 | `E_VALIDATE` reports a Python or Databricks Connect version mismatch | `databricks/environments` |
 | Invalid/misshapen schema-version-1 JSON | `databricks/cli` |
 | `E_MERGE` or `E_WRITE` after ruling out permissions, disk space, and filesystem races | `databricks/cli` |
