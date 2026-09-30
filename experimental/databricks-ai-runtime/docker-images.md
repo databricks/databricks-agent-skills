@@ -3,9 +3,9 @@
 Build a custom Docker image when your training workload needs a CUDA
 extension (flash-attn, apex, xformers, custom kernels), a non-standard
 framework, or any system-level dependency that doesn't fit a plain
-`pip install`. Reference the resulting image from the `air` YAML via
-`environment.docker_image.url` and register it once with
-`air register image` (see the last section).
+`pip install`. Reference the resulting image from the workload YAML via
+`environment.docker_image.url` and register it once with Databricks (see the
+last section).
 
 Two paths:
 
@@ -174,7 +174,7 @@ build can't reach S3 at all, pre-download the tarball on the host and
 > Option 1 and your `gpu_type` is `a10`, the OFI plugin will still try to
 > probe at NCCL init and emit three `NET/OFI ... initialization failed`
 > WARN lines per job. They're non-fatal (NCCL falls back to socket); to
-> silence: `env_variables: { NCCL_NET_PLUGIN: "none" }` in the `air` YAML.
+> silence: `env_variables: { NCCL_NET_PLUGIN: "none" }` in the workload YAML.
 
 ### Azure networking (InfiniBand)
 
@@ -194,7 +194,7 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages \
 COPY . /app
 ```
 
-Reference the code in your `air` `command:` via absolute path
+Reference the code in your workload `command:` via absolute path
 (`python /app/train.py`) — see the WORKDIR note below.
 
 ---
@@ -262,7 +262,7 @@ command: |-
 ```
 
 Use `COPY . /app` in the Dockerfile and reference `/app/<file>` in the
-`air` YAML.
+workload YAML.
 
 ---
 
@@ -274,7 +274,7 @@ after the build.
 
 ### 1. Host GPU driver
 
-Run on any pod (a 1-GPU `air run` is enough) — `nvidia-smi` is the
+Run on any pod (a 1-GPU `databricks air run` is enough) — `nvidia-smi` is the
 only ground truth:
 
 ```bash
@@ -388,25 +388,12 @@ decide whether it applies to your workload.
 
 ## Register and run
 
-Custom images must be **registered** before `air` can run them
-(one-time per image SHA; the platform pulls and caches it).
+Custom images must be **registered** with Databricks before a workload can run
+them (one-time per image; the platform pulls and caches it). Follow the current
+registration procedure in the Artifact Registry docs:
+https://docs.databricks.com/aws/en/artifact-registry/
 
-```bash
-air register image <registry>/<repo>:<tag> -p <profile>
-# Private registry, credentials stored in a Databricks secret (recommended):
-air register image <registry>/<repo>:<tag> -p <profile> --scope <scope> --key <key>
-# Private registry, prompt for credentials interactively at the terminal:
-air register image <registry>/<repo>:<tag> -p <profile> --interactive-authenticate
-```
-
-Registration takes 2–6 min and blocks until the image is ready.
-
-> Prefer the `--scope <scope> --key <key>` form for any automated /
-> non-interactive flow (CI, scripts) — `--interactive-authenticate`
-> reads credentials from the controlling TTY and will hang in
-> environments without one.
-
-Reference in the `air` YAML:
+Reference the registered image in the workload YAML:
 
 ```yaml
 experiment_name: my-training-job

@@ -31,29 +31,19 @@ SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
 - A Databricks workspace with Lakebase enabled
 - An active Lakebase project with a branch and endpoint
 - A Unity Catalog source table to sync
-- **Permissions:** `USE_SCHEMA` and `CREATE_TABLE` on the target schema
+- **Permissions:** `USE_CATALOG` on the target catalog, plus `USE_SCHEMA` and `CREATE_TABLE` on the target schema; read access to the source table
 - For Triggered/Continuous modes: Change Data Feed enabled on the source table
 
-> **Note:** Your Lakebase database must be registered as a UC catalog (one-time setup per project). Skip if already done.
->
-> ```bash
-> databricks postgres create-catalog <CATALOG_NAME> \
->   --json '{
->     "spec": {
->       "postgres_database": "<POSTGRES_DATABASE>",
->       "branch": "projects/<PROJECT_ID>/branches/<BRANCH_ID>"
->     }
->   }' --profile <PROFILE>
-> ```
->
-> The `<POSTGRES_DATABASE>` is the Postgres database name (default: `databricks_postgres`), not the resource path.
+Use an **existing regular Unity Catalog catalog and schema** for the synced table entry. The Lakebase database does **not** need to be registered as a UC catalog. Do not run `databricks postgres create-catalog` or request `CREATE CATALOG` just to set up a sync.
+
+Registering a Postgres database as a UC catalog is a separate, optional operation for discovering and querying Postgres data through Unity Catalog. That operation requires `CREATE CATALOG` on the metastore.
 
 ## Creating Lakebase synced tables
 
 > **Source table must exist first.** Synced tables sync from an existing UC table, view, or materialized view. If the source needs transformation, ask the user how they want to prepare it (DLT materialized view, regular view, or existing table). Do not run ad-hoc `CREATE TABLE AS SELECT` statements.
 
 ```bash
-databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
+databricks postgres create-synced-table <UC_CATALOG>.<SCHEMA>.<TABLE> \
   --json '{
     "spec": {
       "source_table_full_name": "analytics.gold.user_profiles",
@@ -61,14 +51,12 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
       "scheduling_policy": "TRIGGERED",
       "branch": "projects/<PROJECT_ID>/branches/production",
       "postgres_database": "databricks_postgres",
-      "create_database_objects_if_missing": true,
-      "new_pipeline_spec": {
-        "storage_catalog": "<REGULAR_UC_CATALOG>",
-        "storage_schema": "default"
-      }
+      "create_database_objects_if_missing": true
     }
   }' --profile <PROFILE>
 ```
+
+The positional ID `<UC_CATALOG>.<SCHEMA>.<TABLE>` names the synced table in an existing UC catalog and schema. The Postgres destination is `<SCHEMA>.<TABLE>` in `postgres_database` on `branch`.
 
 | Field | Required | Description |
 |-------|----------|-------------|
@@ -77,9 +65,9 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.<SCHEMA>.<TABLE> \
 | `scheduling_policy` | Yes | `SNAPSHOT`, `TRIGGERED`, or `CONTINUOUS` |
 | `branch` | Yes | Target Lakebase branch (`projects/<PROJECT_ID>/branches/<BRANCH_ID>`) |
 | `postgres_database` | Yes | Postgres database name (default: `databricks_postgres`), not the resource path |
-| `create_database_objects_if_missing` | No | Auto-create Postgres schema/database if missing (default: `false`) |
-| `new_pipeline_spec.storage_catalog` | Yes | A **regular** UC catalog for DLT pipeline metadata (NOT the Lakebase catalog) |
-| `new_pipeline_spec.storage_schema` | Yes | Schema in the storage catalog for pipeline metadata (e.g. `default`) |
+| `create_database_objects_if_missing` | No | Auto-create the Postgres schema/database if missing (default: `false`); does not create a UC catalog or schema |
+| `new_pipeline_spec.storage_catalog` | Only for a registered Lakebase catalog | A regular UC catalog for pipeline metadata; inferred from the synced table name when using a regular catalog |
+| `new_pipeline_spec.storage_schema` | Only for a registered Lakebase catalog | Schema for pipeline metadata; inferred from the synced table name when using a regular catalog |
 | `timeseries_key` | No | Column for deduplication when source has duplicate PKs (latest wins). Performance penalty. |
 
 > **Note:** Nulls in PK columns are excluded from sync.
@@ -91,13 +79,13 @@ Long-running operation; CLI waits by default. Use `--no-wait` to return immediat
 **Check status:**
 
 ```bash
-databricks postgres get-synced-table "synced_tables/<LAKEBASE_CATALOG>.<SCHEMA>.<TABLE>" --profile <PROFILE>
+databricks postgres get-synced-table "synced_tables/<UC_CATALOG>.<SCHEMA>.<TABLE>" --profile <PROFILE>
 ```
 
 **Delete:**
 
 ```bash
-databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.<SCHEMA>.<TABLE>" --profile <PROFILE>
+databricks postgres delete-synced-table "synced_tables/<UC_CATALOG>.<SCHEMA>.<TABLE>" --profile <PROFILE>
 ```
 
 Deletes the sync pipeline and the UC table entry. The Postgres table remains and must be dropped manually if no longer needed (`DROP TABLE <schema>.<table>`).
@@ -108,12 +96,12 @@ Deletes the sync pipeline and the UC table entry. The Postgres table remains and
 
 Sync the `samples.nyctaxi.trips` sample table into Lakebase for low-latency app queries.
 
-**1. Register a UC catalog** (if not already done — see Prerequisites above).
+**1. Choose an existing regular UC catalog and schema** where you can create tables.
 
 **2. Create the synced table (Snapshot mode):**
 
 ```bash
-databricks postgres create-synced-table <LAKEBASE_CATALOG>.public.nyc_trips \
+databricks postgres create-synced-table <UC_CATALOG>.<SCHEMA>.nyc_trips \
   --json '{
     "spec": {
       "source_table_full_name": "samples.nyctaxi.trips",
@@ -121,11 +109,7 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.public.nyc_trips \
       "scheduling_policy": "SNAPSHOT",
       "branch": "projects/<PROJECT_ID>/branches/production",
       "postgres_database": "databricks_postgres",
-      "create_database_objects_if_missing": true,
-      "new_pipeline_spec": {
-        "storage_catalog": "<REGULAR_UC_CATALOG>",
-        "storage_schema": "default"
-      }
+      "create_database_objects_if_missing": true
     }
   }' --profile <PROFILE>
 ```
@@ -135,14 +119,14 @@ databricks postgres create-synced-table <LAKEBASE_CATALOG>.public.nyc_trips \
 **3. Check sync status:**
 
 ```bash
-databricks postgres get-synced-table "synced_tables/<LAKEBASE_CATALOG>.public.nyc_trips" --profile <PROFILE>
+databricks postgres get-synced-table "synced_tables/<UC_CATALOG>.<SCHEMA>.nyc_trips" --profile <PROFILE>
 ```
 
 **4. Query from Postgres once synced:**
 
 ```sql
 SELECT pickup_zip, COUNT(*) AS trip_count, AVG(fare_amount) AS avg_fare
-FROM public.nyc_trips
+FROM <SCHEMA>.nyc_trips
 GROUP BY pickup_zip
 ORDER BY trip_count DESC
 LIMIT 10;
@@ -151,7 +135,7 @@ LIMIT 10;
 **5. Clean up:**
 
 ```bash
-databricks postgres delete-synced-table "synced_tables/<LAKEBASE_CATALOG>.public.nyc_trips" --profile <PROFILE>
+databricks postgres delete-synced-table "synced_tables/<UC_CATALOG>.<SCHEMA>.nyc_trips" --profile <PROFILE>
 ```
 
 ## App Access
