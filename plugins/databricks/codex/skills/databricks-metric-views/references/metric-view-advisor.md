@@ -366,6 +366,7 @@ After building suggestions from existing sources, identify what's NOT yet covere
 - **Missing filtered measures**: For every categorical dimension, ask "would filtered versions of the key measures be useful?"
 - **Cross-table measures**: If dimension tables exist, are there measures that should use joined columns?
 - **Genie gaps**: If Genie benchmark questions ask about something not yet covered, add it
+- **Not a metric-view gap — needs a function**: if a requested measure fails the additivity / single-pass test (non-additive at the queried grain, selection-dependent, iterative, or bundle-output), it is **not** a metric view to add — route it to a governed UC SQL function ([When a metric view is not the right tool → governed function](#when-a-metric-view-is-not-the-right-tool--governed-function))
 
 Present this gap analysis alongside the suggestions so the user sees both what you recommend AND what additional coverage they could add.
 
@@ -532,6 +533,28 @@ For each created metric view, generate 3–5 sample queries demonstrating: basic
 6. **Compose metric views**: use an existing metric view as the source for a new one — layered metrics
 7. **Inspect with metadata**: `DESCRIBE TABLE EXTENDED <metric_view> AS JSON` for the full definition
 8. **Set PK/FK constraints with RELY** on underlying tables for optimal join performance
+
+## When a metric view is not the right tool → governed function
+
+A metric view is the right home for a measure only when it **re-aggregates correctly at query time** — an additive `SUM`/`COUNT`, a `COUNT(DISTINCT)` that recomputes per cell, or a ratio of such measures composed with `MEASURE()` (divide last). When a measure cannot be expressed that way, do **not** force it into a metric view — author it as a **governed Unity Catalog SQL function** and expose that to Genie instead.
+
+**A measure needs a governed UC SQL function (not a metric view) when *any* of these hold:**
+
+1. **Computed per-entity, then aggregated — and the per-entity step isn't a sum/count/ratio-of-sums.** The value is derived at a finer grain (per customer / household / account) and then combined — e.g. a per-entity *min or max across two periods*, a threshold on a per-entity distinct count, or a set operation on each entity's history. A metric-view measure cannot express the per-entity step.
+2. **The result changes with the user's selection** (selection-dependent redistribution). Filtering to a subset shifts *every* cell — e.g. an "all others" bucket that recomputes whenever the selected set changes. A metric-view measure is a fixed expression; it can't redistribute against the query's own filter.
+3. **It requires an iterative step** — repeats until convergence (e.g. panel reweighting), which no single-pass aggregate can express.
+4. **It returns a bundle of tables**, not a single measure — e.g. a matrix plus per-row totals plus a residual, delivered together.
+
+**Additivity is the quick test.** If summing a measure across a dimension double-counts, it is non-additive along that dimension and a metric view cannot roll it up there. Distinct-entity counts are the classic trap: an entity that appears under two attribute values is **one** entity, not two, so a per-cell distinct count must never be summed across a multi-attribute cross. A re-aggregating `COUNT(DISTINCT …)` measure recomputes correctly at **any** grouping cross the view's dimensions allow — grouping distinct counts by an arbitrary product × attribute cross is a supported metric view. What needs a function is an extra non-additive step layered *on top of* the distinct count: **summing** the per-cell distinct counts across the cross, or a **per-entity threshold / set operation** (e.g. "bought in more than one district").
+
+**"Just pre-compute it into a base view" — when that's fine, and when it isn't.** The tempting escape hatch is to pre-aggregate the awkward step into a base view (or SQL-query source / materialized table) and put a metric view on top. That is legitimate when the definition is **fixed and enumerable** — you materialize one settled shape and re-aggregate it, purely as a performance choice. It is **not** a substitute for a function when the computation is *dynamic* — i.e. the measure must respond to the user's **runtime selection in Genie**: an arbitrary product × attribute cross, a parameter (e.g. the multi-district threshold, the two comparison windows), or a denominator that shifts with the selected set. You cannot pre-materialize a result that depends on the runtime slice without enumerating every possible slice, and a base view cannot accept per-query arguments. So the real discriminator is: **can this be settled once for all slices the user might ask for?** If yes, a base view + metric view is fine. If the answer is computed *on the fly* from the user's selection, it needs a **parameterized governed SQL function** that Genie calls with runtime arguments — pre-computation only hides the non-additivity, it doesn't resolve it.
+
+**Two worked shapes** (generic — author them as your own):
+
+- **Penetration-style share (buyers ÷ base) — *mostly* a metric view.** Buyers and the customer base are additive, so express penetration as a ratio of two re-aggregating measures and **divide last**; `COUNT(DISTINCT customer)` recomputes correctly per product and per product × one attribute. Two parts still need a function: any **short-window statistical correction** (hoist it into a deterministic function called *inside* the measure), and any step that layers non-additivity **on top of** the distinct count — **summing** distinct buyers across a multi-attribute cross, or a **per-entity threshold** — e.g. "share of a product's buyers who bought it in more than one district": distinct buyers don't add across the cross, and the per-customer threshold isn't a sum/count/ratio-of-sums. (Grouping the distinct buyer count by the cross itself, without summing across it, stays a metric view.)
+- **Brand-switching (gains & loss) — a *pure* function.** Comparing each entity's set of brands between two periods and rolling the transitions into a source × destination matrix fails all four tests: per-entity grain (a set difference per customer), selection-dependent (the switched-from / "others" bucket shifts with the selected brands), multi-pass (period-1 set → period-2 set → matrix → normalize), and bundle output (matrix + per-brand net + retained/gained/lost). It is not a metric view under any framing.
+
+**Outward pointers.** Author the function with the **`databricks-dbsql`** skill (SQL UDFs / table functions, `CREATE FUNCTION`). Expose it to a Genie Agent as a **trusted registered SQL function** — Design Priorities surface #11 in the **`databricks-genie-agents`** skill ([`create-genie-agent.md`](../../databricks-genie-agents/references/create-genie-agent.md#design-priorities)) — never as duplicated metric-view logic. Before registering a function that reproduces an external methodology, apply the **methodology parity gate** ([`optimize-genie-agent.md`](../../databricks-genie-agents/references/optimize-genie-agent.md#methodology-parity-gate-upstream-of-benchmarking)): validate its numbers to N-decimal parity against the reference *before* benchmarking Genie's routing to it.
 
 ## Limitations
 

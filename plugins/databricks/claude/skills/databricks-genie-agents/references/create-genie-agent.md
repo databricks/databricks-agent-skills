@@ -115,7 +115,7 @@ Prefer structured context over broad instructions. Add surfaces in this order �
 8. **Join specs** for raw tables exposed together — add standard raw-table relationships only when evidence or user confirmation supports them.
 9. **SQL snippets** (SQL expressions) for reusable filters, expressions, and measures not already governed by Metric Views — see [Qualify Columns In SQL](#qualify-columns-in-sql).
 10. **Example SQL** for representative complex question patterns; instructive, not memorized benchmark answers — see [Qualify Columns In SQL](#qualify-columns-in-sql).
-11. **SQL functions** — trusted registered UC logic.
+11. **SQL functions** — trusted registered UC logic. Reach for a registered SQL function (not a Metric View, #2) when a measure **fails the additivity / single-pass test** — non-additive at the queried grain, selection-dependent on the user's filter, iterative, or returning a bundle of tables. The `databricks-metric-views` skill's [decision test](../../databricks-metric-views/references/metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function) has the full rule + worked examples; validate a methodology function against a reference (the [parity gate](optimize-genie-agent.md#methodology-parity-gate-upstream-of-benchmarking)) before benchmarking Genie's routing to it.
 12. **Text instructions** — **last resort**, see [Text Instructions Are A Last Resort](#text-instructions-are-a-last-resort).
 13. **Sample questions and benchmarks** — cover realistic user workflows without teaching from benchmark answers, see [Examples And Benchmarks](#examples-and-benchmarks).
 

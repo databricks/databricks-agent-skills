@@ -21,6 +21,18 @@ Use this skill when:
 - Modeling **star or snowflake schemas** with joins in metric definitions
 - Enabling **materialization** for pre-computed metric aggregations
 
+## First: can this even be a metric view? (decision gate)
+
+**Before authoring, confirm the measure re-aggregates at query time.** Additive `SUM`/`COUNT`, a `COUNT(DISTINCT)` that recomputes per cell, `MEASURE()` ratios (divide last), and supported **window measures** (trailing / cumulative / period-over-period — [Pattern 8](references/create-patterns.md#pattern-8-window-measures-experimental-version-01)) all re-aggregate correctly and are valid metric-view measures; this list is not exhaustive. The gate below is about *disqualifying* shapes — if **any** of the following hold, it is **not** a metric view: author a **governed Unity Catalog SQL function** instead (build it with `databricks-dbsql`) and expose it to Genie as a trusted registered SQL function (Design Priorities surface #11), rather than forcing it into a view or a pre-aggregated helper view:
+
+- **Non-additive at the queried grain** — summing it across a dimension double-counts. Distinct-entity counts are the classic trap: an entity appearing under two attribute values is **one** entity, not two, so a per-cell distinct count must not be summed across an arbitrary multi-attribute cross.
+- **Computed per-entity, then aggregated**, where the per-entity step isn't a sum/count/ratio-of-sums — e.g. a per-entity min/max across two periods, or a threshold on a per-entity distinct count.
+- **Selection-dependent** — the result redistributes with the user's filter (an "all others" bucket that shifts every cell).
+- **Iterative** — repeats until convergence (e.g. panel reweighting).
+- **Returns a bundle of tables**, not a single measure (e.g. a source×destination matrix plus per-row nets).
+
+A measure can be *mostly* a metric view with one part hoisted into a function (penetration = additive buyers ÷ base, divide last — but a short-window correction, or an arbitrary multi-attribute cross / per-entity threshold, goes in a function). **Pre-computing the awkward step into a base/helper view is only a fix for a *fixed* definition** — a performance choice, settled once for all slices. If the measure must respond to the user's runtime selection in Genie (arbitrary cross, a parameter, or a shifting denominator), it is computed *on the fly* and cannot be pre-computed — it needs a **parameterized** governed SQL function, not a pre-aggregated view. Full rule + two worked examples (penetration, brand-switching gains & loss): [metric-view-advisor.md §When a metric view is not the right tool](references/metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function). Before benchmarking Genie's routing to a function that reproduces an external methodology, validate it to N-decimal **parity** against its reference — see the `databricks-genie-agents` skill.
+
 ## Prerequisites
 
 - **Databricks Runtime 17.2+** (for YAML version 1.1); **17.3+** for semantic metadata (`synonyms` / `display_name` / `format`)
