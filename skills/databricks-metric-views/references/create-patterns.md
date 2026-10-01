@@ -2,6 +2,8 @@
 
 Patterns for **creating** metric views and the complete YAML field reference. For how to **query** them, see [query-patterns.md](query-patterns.md).
 
+> **Before authoring, confirm a metric view is the right tool.** If the measure is non-additive at the queried grain, computed per-entity then aggregated (with a non-sum/count/ratio step), selection-dependent, iterative, or returns a bundle of tables, it belongs in a **governed UC SQL function** (build with `databricks-dbsql`; expose to Genie as surface #11). Pre-aggregating a **fixed, enumerable** definition into a base view + metric view — including [Pattern 9 (SQL query as source)](#pattern-9-sql-query-as-source) — is a legitimate performance choice and stays supported. What you must **not** do is reach for a base view or Pattern 9 to force in a measure whose result is computed **on the fly** from the user's runtime selection (an arbitrary cross, a parameter, a shifting denominator): pre-computation can't answer a runtime slice, so that needs a *parameterized* function, not a pre-aggregated view. Full rule + worked examples: [metric-view-advisor.md §When a metric view is not the right tool](metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function).
+
 ## Creation Patterns
 
 ### Pattern 1: Simple Metrics from a Single Table
