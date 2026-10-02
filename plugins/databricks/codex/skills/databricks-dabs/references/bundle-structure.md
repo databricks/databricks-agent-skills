@@ -167,6 +167,8 @@ resources:
 
 Apps have minimal configuration — environment variables are defined in `app.yaml` in the source directory, NOT in databricks.yml.
 
+Databricks App names are workspace-global and limited to 30 characters. DABs development mode does not automatically prefix an App name with the current developer, so a shared-development default should combine a recognizable app prefix with `${workspace.current_user.domain_friendly_name}`. This substitution requires Databricks CLI 0.270.0 or later; with an older CLI, omit the default and require each developer to set `app_name` explicitly.
+
 ### Generate from Existing App (Recommended)
 
 ```bash
@@ -175,16 +177,55 @@ databricks bundle generate app --existing-app-name my-app --key my_app --profile
 
 ### Manual Configuration
 
+**databricks.yml:**
+
+```yaml
+variables:
+  app_name:
+    description: 'App name: lowercase letters, digits, and hyphens; maximum 30 characters'
+    default: my-app-${workspace.current_user.domain_friendly_name}
+
+targets:
+  dev:
+    default: true
+    mode: development
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      app_name: my-app
+```
+
 **resources/my_app.app.yml:**
 
 ```yaml
 resources:
   apps:
     my_app:
-      name: my-app-${bundle.target}
+      name: ${var.app_name}
       description: 'My application'
       source_code_path: ../src/app
 ```
+
+The default separates apps and developers that share a workspace. Production replaces it with a stable name that does not depend on the deployer.
+
+If the resolved name exceeds 30 characters or normalized developer names collide, persist a shorter developer-specific value locally. Also use a distinct value for each target when multiple non-production targets for the same app share a workspace. Do not commit this file:
+
+**`.databricks/bundle/<target>/variable-overrides.json`:**
+
+```json
+{
+  "app_name": "myapp-gp-dev"
+}
+```
+
+For the `dev` target above, replace `<target>` with `dev`. Use the active target name for any other target.
+
+The persistent override applies to later validate, deploy, run, and lifecycle commands for that target. A one-off `--var='app_name=myapp-gp-dev'` takes precedence when needed.
+
+Keep the complete value within 30 characters. Do not use `${workspace.current_user.short_name}` because it can contain underscores, which App names do not allow. `${bundle.target}` alone does not separate developers using the same target. `databricks bundle validate` does not reject every invalid App name, including names with underscores, so successful validation does not prove that the name will deploy.
 
 **src/app/app.yaml:**
 
@@ -236,6 +277,7 @@ Substitutions are resolved at deploy time and are usable in any string field acr
 | `${bundle.target}`                      | The active target (`dev`, `staging`, `prod`, …)        |
 | `${workspace.current_user.userName}`    | Deployer's email                                       |
 | `${workspace.current_user.short_name}`  | Deployer's short name (handle before `@`)              |
+| `${workspace.current_user.domain_friendly_name}` | Deployer identity normalized for DNS-compatible resource names |
 | `${workspace.file_path}`                | Bundle's workspace file path                           |
 | `${resources.jobs.<key>.id}`            | ID of another job in the same bundle                   |
 | `${resources.pipelines.<key>.id}`       | ID of another pipeline in the same bundle              |

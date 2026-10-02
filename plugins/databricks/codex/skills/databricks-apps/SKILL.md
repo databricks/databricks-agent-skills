@@ -39,7 +39,7 @@ Build apps that deploy to Databricks Apps platform.
 
 ## Generic Guidelines
 
-- **App name**: ≤26 characters, lowercase letters/numbers/hyphens only (no underscores). dev- prefix adds 4 chars, max 30 total.
+- **App name**: Platform App resource names allow up to 30 lowercase letters, numbers, and hyphens (no underscores). For AppKit projects created with `databricks apps init`, keep the base name to 26 characters because its development workflow adds a `dev-` prefix. DABs does not add that prefix.
 - **Validation**: `databricks apps validate --profile <PROFILE>` before deploying.
 - **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Smoke test selectors**: use only Playwright locator APIs — `getByRole`, `getByText`, `getByPlaceholder`, `getByLabel`. `getByLabelText` does not exist in Playwright (it is a React Testing Library method) and throws `TypeError` at runtime. See [testing guide](references/testing.md) or `npx playwright codegen`.

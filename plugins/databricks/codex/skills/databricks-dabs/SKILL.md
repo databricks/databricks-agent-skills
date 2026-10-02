@@ -37,6 +37,7 @@ Load this skill for any request involving:
 4. **Path resolution is critical** - Paths differ based on file location (see Bundle Structure reference)
 5. **Preserve existing structure** - Keep user comments and structure when editing YAML files
 6. **Use variables** - Parameterize catalog, schema, and warehouse for multi-environment support
+7. **Namespace App names** - App names are workspace-global and limited to 30 characters. With Databricks CLI 0.270.0 or later, shared-development defaults should include the app and `${workspace.current_user.domain_friendly_name}`; override production with a stable name, and persist an explicit local value when the default is invalid, collides, or must distinguish multiple non-production targets in one workspace. On older CLI versions, require an explicit `app_name` value instead
 
 ## Documentation
 
