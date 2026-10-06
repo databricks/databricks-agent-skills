@@ -31,17 +31,14 @@ Smoke-test an endpoint before wiring it up (leave out `size`/`quality` for now):
 
 ```bash
 # OpenAI Responses API
-curl -s -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"databricks-gpt-5","input":"a red bicycle","tools":[{"type":"image_generation"}]}' \
-  "$DATABRICKS_HOST/serving-endpoints/responses" | jq '.output[].type'
+databricks api post /serving-endpoints/responses --profile <PROFILE> \
+  --json '{"model":"databricks-gpt-5","input":"a red bicycle","tools":[{"type":"image_generation"}]}' \
+  | jq -r '.output[].type'
 
 # Gemini image model (chat completions)
-curl -s -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"a red bicycle"}]}' \
-  "$DATABRICKS_HOST/serving-endpoints/databricks-gemini-3-1-flash-image/invocations" \
-  | jq '.choices[0].message.content[0].type'
+databricks api post /serving-endpoints/databricks-gemini-3-1-flash-image/invocations --profile <PROFILE> \
+  --json '{"messages":[{"role":"user","content":"a red bicycle"}]}' \
+  | jq -r '.choices[0].message.content[].type'
 ```
 
 The OpenAI call should list an `image_generation_call` item. The Gemini call should print `image_url`.
@@ -123,6 +120,8 @@ const dataUrl = part.image_url.url; // already "data:image/png;base64,..."
 
 Either `dataUrl` can go straight into `<img src={dataUrl}>`. To decode it server-side, use `Buffer.from(base64, 'base64')`.
 
+**Handle "no image" responses.** A response can succeed (HTTP 200) and still contain no image, for example when the model refuses the prompt or asks a clarifying question. For Gemini, `content` is then a plain string or holds only `text` parts. For OpenAI, there's no `image_generation_call` item, only a `message`. Collect the text and return it as a user-facing error rather than "unexpected response".
+
 ## 5. Server route & authentication (the gotchas)
 
 Call the endpoints from a custom Express route registered with `appkit.server.extend` inside `onPluginsReady` (see [Custom Endpoints](custom-endpoints.md)). Don't use the `serving()` plugin here: it's deprecated, and it targets chat/streaming rather than image output. Image payloads hit several limits that ordinary JSON calls don't:
@@ -133,7 +132,7 @@ Call the endpoints from a custom Express route registered with `appkit.server.ex
 
 **Gotcha C — handle the 120s proxy timeout and non-JSON responses.** The Databricks Apps reverse proxy ends requests after **120s**, a limit you can't change (see [Platform Guide](../platform-guide.md)). When that happens it returns an **HTML** error page. Abort server-side just before the limit so the app returns clean JSON. On the client, read the body as text and parse it defensively; calling `res.json()` on HTML throws the cryptic `Unexpected token '<'`.
 
-**Gotcha D — raise the body limit.** The server plugin's `express.json()` defaults to `bodyLimit: "1mb"`, which rejects reference images with `413`. Set `server({ bodyLimit: "25mb" })` and validate the input, e.g. `z.string().startsWith("data:image/").max(20_000_000)`.
+**Gotcha D — raise the body limit when accepting reference images.** The server plugin's `express.json()` defaults to `bodyLimit: "1mb"`, which rejects reference images with `413`. Prompt-only generation fits in the default, so leave it alone there. Responses aren't affected by this limit. Set `server({ bodyLimit: "25mb" })` and validate the input, e.g. `z.string().startsWith("data:image/").max(20_000_000)`.
 
 ```ts
 // server/imageGeneration.ts
