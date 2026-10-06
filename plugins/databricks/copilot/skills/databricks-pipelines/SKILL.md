@@ -1,6 +1,6 @@
 ---
 name: databricks-pipelines
-description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL. Invoke BEFORE starting implementation.
+description: Develop Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables) on Databricks. Use when building batch or streaming data pipelines with Python or SQL, including Auto CDC from event streams or periodic complete snapshots. Invoke BEFORE starting implementation.
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.3.0"
@@ -23,6 +23,7 @@ User request → What kind of output?
 │   ├── Pipeline-private helper logic (not published to catalog)
 │   └── Published to UC for external queries → Persistent View (SQL only)
 ├── Persisted dataset
+│   ├── Source is a periodic complete snapshot that must be diffed by key → Streaming Table + Auto CDC FROM SNAPSHOT (SQL requires DBR 18.3+)
 │   ├── Source is streaming/incremental/continuously growing → Streaming Table
 │   │   ├── File ingestion (cloud storage, Volumes) → Auto Loader
 │   │   ├── Message bus (Kafka, Kinesis, Pub/Sub, Pulsar, Event Hubs) → streaming source read
@@ -58,7 +59,8 @@ User request → What kind of output?
 - **Kafka/Event Hubs sink serialization** → the `value` column is mandatory; serialize the row with `to_json(struct(*)) AS value`. See [sink-python.md](references/sink-python.md).
 - **Multi-column Auto CDC sequencing** → SQL: `SEQUENCE BY STRUCT(col1, col2)`. Python: `sequence_by=struct("col1", "col2")`. See the auto-cdc references.
 - **Auto CDC TRUNCATE** (SCD Type 1 only) → SQL: `APPLY AS TRUNCATE WHEN condition`. Python: `apply_as_truncates=expr("condition")`. Do NOT claim truncate is unsupported.
-- **Python-only features** → Sinks, ForEachBatch Sinks, CDC from snapshots, and custom data sources are Python-only. When the user is working in SQL, clarify this and suggest switching to Python.
+- **Periodic complete snapshots** → use SQL `AUTO CDC FROM SNAPSHOT` on DBR 18.3+, or Python `dp.create_auto_cdc_from_snapshot_flow` on older runtimes. Read the Auto CDC reference for version selection and lifecycle rules.
+- **Python-only features** → Sinks, ForEachBatch Sinks, and custom data sources are Python-only. When the user is working in SQL, clarify this and suggest switching to Python.
 - **Recommend ONE clear approach** → present a single recommended path. Don't list anti-patterns or inferior alternatives — they confuse. Only mention alternatives when they genuinely offer different trade-offs.
 
 ## Common Issues
@@ -121,7 +123,7 @@ Some features sit on top of others — read both:
 | Feature                      | Description                                                          | Python                                      | SQL                             | Skill (Py)                                | Skill (SQL)                          |
 | ---------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------------------------------ |
 | Auto CDC (streaming source)  | SCD Type 1 (overwrite) or Type 2 (history) from a CDC feed.          | `dp.create_auto_cdc_flow()`                 | `AUTO CDC INTO ... FROM STREAM` | [auto-cdc-python](references/auto-cdc-python.md) | [auto-cdc-sql](references/auto-cdc-sql.md) |
-| Auto CDC (periodic snapshot) | Compare consecutive full snapshots to detect changes.                | `dp.create_auto_cdc_from_snapshot_flow()`   | N/A — Python only               | [auto-cdc-python](references/auto-cdc-python.md) | —                                    |
+| Auto CDC (periodic snapshot) | Compare consecutive full snapshots to detect changes.                | `dp.create_auto_cdc_from_snapshot_flow()`   | `AUTO CDC ... FROM SNAPSHOT` (DBR 18.3+) | [auto-cdc-python](references/auto-cdc-python.md) | [auto-cdc-sql](references/auto-cdc-sql.md) |
 
 For querying SCD Type 2 history tables (`__START_AT` / `__END_AT`, point-in-time, joining facts with historical dimensions), see [scd-2-querying.md](references/scd-2-querying.md).
 

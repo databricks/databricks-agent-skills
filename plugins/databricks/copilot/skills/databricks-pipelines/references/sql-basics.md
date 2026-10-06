@@ -6,7 +6,7 @@
 - `CREATE OR REFRESH MATERIALIZED VIEW` — batch table. See [materialized-view-sql.md](materialized-view-sql.md).
 - `CREATE TEMPORARY VIEW` — pipeline-scoped view. See [temporary-view-sql.md](temporary-view-sql.md).
 - `CREATE VIEW` — UC-published view. See [view-sql.md](view-sql.md).
-- `AUTO CDC INTO` (inside `CREATE FLOW`) — CDC. See [auto-cdc-sql.md](auto-cdc-sql.md).
+- `AUTO CDC INTO` (inside `CREATE FLOW`) — streaming CDC; `AUTO CDC ... FROM SNAPSHOT` — complete-snapshot CDC on DBR 18.3+. See [auto-cdc-sql.md](auto-cdc-sql.md).
 - `CREATE FLOW ... AS INSERT INTO [ONCE] target_table` — append / backfill flows. See [streaming-table-sql.md](streaming-table-sql.md).
 
 ## Source functions (streaming)
