@@ -76,8 +76,10 @@ await createApp({
       // Example: Call a Databricks API (e.g. MLflow)
       app.get("/api/experiments/:experimentId", async (req, res) => {
         const { experimentId } = req.params;
-        const { serviceDatabricksClient: client } = getExecutionContext();
-        const response = await client.experiments.getExperiment({
+        const { client } = getExecutionContext();
+        // AppKit's client exposes a subset of services (files, jobs, servingEndpoints, ...);
+        // use toLegacyWorkspaceClient() for the rest of the SDK, e.g. MLflow experiments
+        const response = await client.toLegacyWorkspaceClient().experiments.getExperiment({
           experiment_id: experimentId,
         });
         res.json(response);
