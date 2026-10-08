@@ -82,7 +82,7 @@ export default createAgent({                 // id = folder name "support"
 
 ## ⚠️ Code agents need a build change
 
-**Markdown agents** are read from source at runtime — nothing to build. **Code agents** (`agent.ts`) are **not imported anywhere**, so a production bundle that only compiles `server/server.ts` emits **zero** `dist/agents/*/agent.js` and discovers **no** code agents. `npm run dev` (tsx) reads the `.ts` source directly and hides the gap — it only bites the bundled build.
+**Markdown agents** are read from source at runtime — nothing to build. **Code agents** (`agent.ts`) are **not imported anywhere**, so a production bundle that only compiles `server/server.ts` emits **zero** `dist/agents/*/agent.js` and discovers **no** code agents. The `dev` script (tsx) reads the `.ts` source directly and hides the gap — it only bites the bundled build.
 
 Fix once with the build preset:
 
@@ -112,7 +112,7 @@ databricks apps init --name <APP_NAME> --features agents,analytics,files \
 # 3. Local env + develop
 cd <APP_NAME>
 echo "DATABRICKS_SERVING_ENDPOINT_NAME=<STREAMING_ENDPOINT>" >> server/.env
-npm install && npm run dev
+<pm> install && <pm> run dev
 ```
 
 **Do not guess** `--set` keys — derive from `databricks apps manifest`. Optional resources:

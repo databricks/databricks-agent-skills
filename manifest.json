@@ -409,6 +409,17 @@
       "repo_dir": "skills",
       "version": "0.1.0"
     },
+    "databricks-serverless": {
+      "description": "Serverless compute for Databricks jobs, Lakeflow pipelines and Declarative Automation Bundles (DABs), with STANDARD or PERFORMANCE_OPTIMIZED and classic only where serverless cannot run the workload.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg"
+      ],
+      "repo_dir": "skills",
+      "version": "0.3.2"
+    },
     "databricks-serverless-migration": {
       "description": "Migrate Databricks workloads from classic compute to serverless compute.",
       "files": [
@@ -497,6 +508,25 @@
       ],
       "repo_dir": "skills",
       "version": "0.3.0"
+    },
+    "databricks-unity-gateway": {
+      "description": "Use when querying or calling pay-per-token foundation models, or when creating, updating, listing, or querying Unity Gateway (also called Unity AI Gateway) services, including model provider servic...",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/account-access.md",
+        "references/budgets.md",
+        "references/mcp-services.md",
+        "references/model-provider-services.md",
+        "references/model-services.md",
+        "references/model-serving-migration.md",
+        "references/permissions.md",
+        "references/querying.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
     },
     "databricks-unstructured-pdf-generation": {
       "description": "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for Knowledge Assistant) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair eac...",

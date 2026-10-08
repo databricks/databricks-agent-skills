@@ -169,6 +169,6 @@ All data components **require `parameters={{}}`** even when the query has no par
 - `SelectItem` cannot have `value=""`. Use sentinel value like `"all"` for "show all" options.
 - Use `<Skeleton>` components instead of plain "Loading..." text
 - Handle nullable fields: `value={field || ''}` for inputs
-- For maps with React 19, use react-leaflet v5: `npm install react-leaflet@^5.0.0 leaflet @types/leaflet`
+- For maps with React 19, install `react-leaflet@^5.0.0`, `leaflet`, and `@types/leaflet` with the project's package manager.
 
 Databricks brand colors: `['#40d1f5', '#4462c9', '#EB1600', '#0B2026', '#4A4A4A', '#353a4a']`

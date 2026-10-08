@@ -1,5 +1,5 @@
 ---
-description: Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.
+description: Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.
 alwaysApply: false
 ---
 
@@ -15,6 +15,7 @@ that matches the request:
 - Model Serving / endpoints -> databricks-model-serving
 - Lakebase / Postgres -> databricks-lakebase
 - Vector Search / RAG -> databricks-vector-search
+- Compute for new jobs and pipelines / serverless vs classic / STANDARD vs PERFORMANCE_OPTIMIZED -> databricks-serverless
 - Classic-to-serverless migration -> databricks-serverless-migration
 - Data discovery / finding & exploring data / natural-language data Q&A / SQL generation (Genie) -> databricks-data-discovery
 - Genie Agents (formerly Genie Spaces): building, managing & tuning a curated per-data Genie Agent -> databricks-genie-agents
@@ -35,6 +36,7 @@ that matches the request:
 - Spark Structured Streaming -> databricks-spark-structured-streaming
 - Synthetic / test data generation (Faker) -> databricks-synthetic-data-gen
 - Unity Catalog governance, access control & system tables -> databricks-unity-catalog
+- Unity Gateway (formerly Unity AI Gateway): model services, MCP services & model provider services -> databricks-unity-gateway
 - Synthetic PDF generation for RAG -> databricks-unstructured-pdf-generation
 - Zerobus streaming ingest -> databricks-zerobus-ingest
 

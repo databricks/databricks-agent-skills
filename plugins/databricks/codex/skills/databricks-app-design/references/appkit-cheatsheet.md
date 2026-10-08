@@ -6,8 +6,8 @@ source of truth the parent `databricks-apps` skill mandates ("ALWAYS start here"
 paths"). Do **not** rely on a pinned list here; it drifts with the package version:
 
 ```bash
-npx @databricks/appkit docs                              # ALWAYS start here — lists every section + doc path
-npx @databricks/appkit docs "appkit-ui API reference"    # UI: charts, tables, Genie, shadcn primitives, hooks
+npx @databricks/appkit docs                            # ALWAYS start here — lists every section + doc path
+npx @databricks/appkit docs "appkit-ui API reference"   # UI: charts, tables, Genie, shadcn primitives, hooks
 npx @databricks/appkit docs ./docs/plugins/analytics.md  # backend: analytics plugin, sql helpers, queryKey
 ```
 

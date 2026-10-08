@@ -54,7 +54,7 @@ const { data } = useAnalyticsQuery('query', params, { autoStart: false });
 
 ### Type Inference
 
-When `appKitTypes.d.ts` has been generated (via `npm run typegen`), types are inferred automatically:
+When `appKitTypes.d.ts` has been generated (via `<pm> run typegen`), types are inferred automatically:
 ```typescript
 // ✅ After typegen - types are automatic, no generic needed
 const { data } = useAnalyticsQuery('my_query', params);
@@ -69,7 +69,7 @@ const { data } = useAnalyticsQuery<MyRow[]>('my_query', params);
 interface MyData { id: string; value: number; }
 const { data } = useAnalyticsQuery<MyData[]>('my_query', params);
 
-// ✅ CORRECT - run `npm run typegen` and let it provide types
+// ✅ CORRECT - run `<pm> run typegen` and let it provide types
 const { data } = useAnalyticsQuery('my_query', params);
 ```
 
@@ -109,7 +109,7 @@ function CustomDisplay() {
 
 For a **governed UC Metric View** (not a `config/queries/` SQL file), use `useMetricView` —
 a structured `{ measures, dimensions, filter, orderBy, limit }` request instead of SQL text.
-Register the view in `config/metric-views/definitions.json`, run `npm run typegen`, then:
+Register the view in `config/metric-views/definitions.json`, run `<pm> run typegen`, then:
 
 ```typescript
 import { useMetricView } from '@databricks/appkit-ui/react';

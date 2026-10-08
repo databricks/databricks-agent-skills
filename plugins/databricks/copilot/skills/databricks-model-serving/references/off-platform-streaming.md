@@ -1,10 +1,10 @@
 # Off-Platform Streaming with AI SDK v6
 
-These patterns are for apps deployed **outside** Databricks Apps (e.g., Vercel, AWS, standalone Node.js servers) using direct AI SDK v6 integration with Databricks AI Gateway. For AppKit-based apps, use the **`databricks-apps`** skill's built-in serving plugin instead.
+These patterns are for apps deployed **outside** Databricks Apps (e.g., Vercel, AWS, standalone Node.js servers) using direct AI SDK v6 integration with Databricks legacy AI Gateway on model serving endpoints. For AppKit-based apps, use the **`databricks-apps`** skill's built-in serving plugin instead.
 
 ## AI SDK v6 Streaming Pattern
 
-Use this pattern for streaming AI chat with Databricks AI Gateway and Vercel AI SDK v6 in off-platform apps.
+Use this pattern for streaming AI chat with Databricks **legacy** AI Gateway endpoints and Vercel AI SDK v6 in off-platform apps. Do not use with endpoints governed by Unity Gateway or on newer workspaces where Enforce Unity Gateway is the default.
 
 **Dependencies:** `ai@6`, `@ai-sdk/react@3`, `@ai-sdk/openai`, `@databricks/sdk-experimental`
 

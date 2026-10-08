@@ -136,7 +136,7 @@ Databricks uses Databricks SQL (based on Spark SQL), NOT PostgreSQL/MySQL. Commo
 
 Always check date ranges before writing date-filtered queries.
 
-## Before Running `npm run typegen`
+## Before Running `<pm> run typegen`
 
 Verify each SQL file before running typegen:
 

@@ -46,7 +46,7 @@ they appear with `table_type = 'METRIC_VIEW'` in `information_schema`.
 
 ## 2. Regenerate types
 
-Run `npm run typegen` after editing `definitions.json`. It regenerates the analytics types
+Run `<pm> run typegen` after editing `definitions.json`. It regenerates the analytics types
 for **both** `config/queries/` and `config/metric-views/`, so a metric view's `measures`
 and `dimensions` are type-checked against the actual view. Confirm hook and option shapes
 with `npx @databricks/appkit docs` — the docs are the authority.

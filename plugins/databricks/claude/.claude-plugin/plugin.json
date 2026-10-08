@@ -20,6 +20,7 @@
     "jobs",
     "pipelines",
     "dabs",
+    "serverless-compute",
     "serverless",
     "vector-search",
     "agent-bricks",
@@ -40,6 +41,7 @@
     "structured-streaming",
     "synthetic-data",
     "unity-catalog",
+    "unity-gateway",
     "pdf-generation",
     "zerobus",
     "data-engineering"

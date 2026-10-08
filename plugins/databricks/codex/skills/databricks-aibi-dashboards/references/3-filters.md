@@ -1,15 +1,17 @@
 # Filters (Global vs Page-Level)
 
 > **CRITICAL**: Filter widgets use DIFFERENT widget types than charts!
-> - Valid types: `filter-multi-select`, `filter-single-select`, `filter-date-range-picker`
+> - Valid types: `filter-multi-select`, `filter-single-select`, `filter-date-picker`, `filter-date-range-picker`, `filter-text-entry`, `range-slider`
 > - **DO NOT** use `widgetType: "filter"` - this does not exist and will cause errors
 > - Filters use `spec.version: 2`
 > - **ALWAYS include `frame` with `showTitle: true`** for filter widgets
 
 **Filter widget types:**
+- `filter-date-picker`: for selecting one DATE/TIMESTAMP value
 - `filter-date-range-picker`: for DATE/TIMESTAMP fields (date range selection)
 - `filter-single-select`: categorical with single selection
 - `filter-multi-select`: categorical with multiple selections (preferred for drill-down)
+- `filter-text-entry`: free-text matching against a string column
 - `range-slider`: numeric range filter on a quantitative column (e.g., "resolution time hours", "order amount")
 
 > **Performance note**: Global filters automatically apply `WHERE` clauses to dataset queries at runtime. You don't need to pre-filter data in your SQL - the dashboard engine handles this efficiently.
@@ -68,6 +70,84 @@
   "position": {"x": 0, "y": 0, "width": 4, "height": 2}
 }
 ```
+
+---
+
+## Single Date Picker
+
+Use `filter-date-picker` when the user should choose one date rather than a range. It can bind to a date field or to a dataset parameter. This field-bound example filters datasets that expose `snapshot_date`:
+
+```json
+{
+  "widget": {
+    "name": "snapshot-date-filter",
+    "queries": [{
+      "name": "snapshot_date_query",
+      "query": {
+        "datasetName": "daily_snapshot",
+        "fields": [{"name": "snapshot_date", "expression": "`snapshot_date`"}],
+        "disaggregated": false
+      }
+    }],
+    "spec": {
+      "version": 2,
+      "widgetType": "filter-date-picker",
+      "encodings": {
+        "fields": [{
+          "fieldName": "snapshot_date",
+          "displayName": "Snapshot date",
+          "queryName": "snapshot_date_query"
+        }]
+      },
+      "frame": {"showTitle": true, "title": "Snapshot date"}
+    }
+  },
+  "position": {"x": 0, "y": 0, "width": 2, "height": 2}
+}
+```
+
+For a parameter binding, replace the query's `fields` with `"parameters": [{"name": "snapshot_date", "keyword": "snapshot_date"}]` and encode `{"parameterName": "snapshot_date", "queryName": "snapshot_date_query"}`. The dataset must declare a compatible single-value date parameter.
+
+See the [date picker documentation](https://docs.databricks.com/aws/en/dashboards/manage/filter-types#date-picker).
+
+---
+
+## Text Entry Filter
+
+Use `filter-text-entry` for free-text matching against a string column. `matchMode` is `exact-match`, `contains`, or `starts-with`; `isCaseSensitive` controls case matching.
+
+```json
+{
+  "widget": {
+    "name": "workspace-name-filter",
+    "queries": [{
+      "name": "workspace_name_query",
+      "query": {
+        "datasetName": "workspace_inventory",
+        "fields": [{"name": "workspace_name", "expression": "`workspace_name`"}],
+        "disaggregated": false
+      }
+    }],
+    "spec": {
+      "version": 2,
+      "widgetType": "filter-text-entry",
+      "matchMode": "contains",
+      "isCaseSensitive": false,
+      "encodings": {
+        "fields": [{
+          "fieldName": "workspace_name",
+          "displayName": "Workspace name",
+          "queryName": "workspace_name_query"
+        }]
+      },
+      "frame": {"showTitle": true, "title": "Workspace name"}
+    }
+  },
+  "position": {"x": 2, "y": 0, "width": 3, "height": 2}
+}
+```
+
+See the [text entry filter documentation](https://docs.databricks.com/aws/en/dashboards/manage/filter-types#text-entry).
 
 ---
 
@@ -317,7 +397,7 @@ For filtering on a numeric column where the user wants to drag a min/max slider 
 }
 ```
 
-`range-slider` only works on numeric / temporal columns. On a categorical field it will fail at render. To filter a numeric field by an explicit min/max in SQL (rather than a UI-only WHERE), bind to a `:param.min`/`:param.max` parameter — same pattern as date-range, see "Date Range Filtering" above.
+`range-slider` only works on numeric columns. On categorical or temporal fields it will fail at render; use a date or date-range picker for temporal filtering. Range sliders are field-bound and do not support numeric range parameter binding. If SQL needs explicit numeric parameters, use separate supported parameter controls.
 
 ---
 

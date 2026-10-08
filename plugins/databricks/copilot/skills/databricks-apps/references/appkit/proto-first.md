@@ -259,8 +259,8 @@ CREATE TABLE IF NOT EXISTS runs (
 ### 3d. Validate
 
 ```bash
-npx tsc --noEmit  # all generated types compile
-buf lint proto/    # proto style checks
+npx tsc --noEmit      # all generated types compile
+buf lint proto/  # proto style checks
 ```
 
 ## Phase 4: Implement Against Contracts

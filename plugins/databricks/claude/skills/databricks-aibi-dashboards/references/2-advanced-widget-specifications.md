@@ -479,11 +479,170 @@ Dataset typically returns one row per period with signed values (positive contri
 
 ---
 
-## Other (less common)
+## Gantt
 
-| Widget Type | When to use |
-|-------------|-------------|
-| `word-cloud` | Word/category frequency from a text field. |
-| `sunburst`   | Hierarchical data in nested rings (org chart, taxonomy). |
+Horizontal bars over a temporal or quantitative range, grouped by a row hierarchy. Use a Gantt chart for project schedules, workflows, and other events with a start and end.
 
-These follow the same `version`/`widgetType`/`encodings` pattern — see the [official docs](https://docs.databricks.com/dashboards/manage/visualizations/types) for spec details.
+- `version`: **1**
+- `widgetType`: `"gantt"`
+- `rows`: one or more categorical fields, ordered from the outermost group to the innermost
+- `range.start` and `range.end`: fields of the same type, with a `temporal` or `quantitative` scale
+- `color` and `values`: optional. `values` adds columns beside each bar.
+
+```json
+{
+  "widget": {
+    "name": "project-schedule",
+    "queries": [{
+      "name": "main_query",
+      "query": {
+        "datasetName": "project_tasks",
+        "fields": [
+          {"name": "task", "expression": "`task`"},
+          {"name": "subtask", "expression": "`subtask`"},
+          {"name": "min(start_at)", "expression": "MIN(`start_at`)"},
+          {"name": "max(end_at)", "expression": "MAX(`end_at`)"},
+          {"name": "first(status)", "expression": "FIRST(`status`)"}
+        ],
+        "disaggregated": false
+      }
+    }],
+    "spec": {
+      "version": 1,
+      "widgetType": "gantt",
+      "encodings": {
+        "rows": [
+          {"fieldName": "task", "displayName": "Task"},
+          {"fieldName": "subtask", "displayName": "Subtask"}
+        ],
+        "range": {
+          "start": {"fieldName": "min(start_at)", "displayName": "Start"},
+          "end": {"fieldName": "max(end_at)", "displayName": "End"},
+          "scale": {"type": "temporal"}
+        },
+        "color": {
+          "fieldName": "first(status)",
+          "displayName": "Status",
+          "scale": {"type": "categorical"}
+        }
+      },
+      "frame": {"showTitle": true, "title": "Project schedule"}
+    }
+  },
+  "position": {"x": 0, "y": 0, "width": 12, "height": 6}
+}
+```
+
+Every encoded `fieldName` must match a field selected by the widget query. The start and end fields must have the same data type. For numeric ranges such as completion intervals, change the range scale to `{"type": "quantitative"}`.
+
+See the [Gantt chart documentation](https://docs.databricks.com/aws/en/dashboards/manage/visualizations/types#gantt).
+
+---
+
+## Path Map
+
+Draws routes, tracks, transit lines, rivers, and other connected paths over a basemap.
+
+- `version`: **1**
+- `widgetType`: `"path-map"`
+- `path.pathType`: `"geometry"` for a stored line, `"longitude-latitude-sequence"` for ordered coordinates, or `"geometry-point-sequence"` for ordered Point geometries
+- `color` and `linePattern`: optional categorical fields that also partition sequence rows into separate paths
+- `size`: optional data-driven line width for stored geometry paths; sequence paths use constant `mark.size`
+- `extra`: optional tooltip fields
+
+For waypoint data, set `disaggregated: true` so each point remains available to the renderer. `order` determines how the points within each route are connected.
+
+```json
+{
+  "widget": {
+    "name": "delivery-routes",
+    "queries": [{
+      "name": "main_query",
+      "query": {
+        "datasetName": "route_waypoints",
+        "fields": [
+          {"name": "route_name", "expression": "`route_name`"},
+          {"name": "latitude", "expression": "`latitude`"},
+          {"name": "longitude", "expression": "`longitude`"},
+          {"name": "stop_order", "expression": "`stop_order`"}
+        ],
+        "disaggregated": true
+      }
+    }],
+    "spec": {
+      "version": 1,
+      "widgetType": "path-map",
+      "encodings": {
+        "path": {
+          "pathType": "longitude-latitude-sequence",
+          "latitude": {"fieldName": "latitude"},
+          "longitude": {"fieldName": "longitude"},
+          "order": {"fieldName": "stop_order"}
+        },
+        "color": {
+          "fieldName": "route_name",
+          "displayName": "Route",
+          "scale": {"type": "categorical"}
+        }
+      },
+      "frame": {"showTitle": true, "title": "Delivery routes"}
+    }
+  },
+  "position": {"x": 0, "y": 0, "width": 12, "height": 7}
+}
+```
+
+For waypoints stored as `Point` geometries, use `geometry-point-sequence` with GeoJSON query output and an ordering field:
+
+```json
+"queries": [{
+  "name": "main_query",
+  "query": {
+    "datasetName": "route_waypoints",
+    "fields": [
+      {"name": "route_name", "expression": "`route_name`"},
+      {"name": "point_geojson", "expression": "ST_ASGEOJSON(`point_geometry`)"},
+      {"name": "stop_order", "expression": "`stop_order`"}
+    ],
+    "disaggregated": true
+  }
+}],
+"spec": {
+  "version": 1,
+  "widgetType": "path-map",
+  "encodings": {
+    "path": {"pathType": "geometry-point-sequence", "fieldName": "point_geojson", "order": {"fieldName": "stop_order"}},
+    "color": {"fieldName": "route_name", "scale": {"type": "categorical"}}
+  }
+}
+```
+
+For a `GEOMETRY` or `GEOGRAPHY` column containing `LineString` or `MultiLineString` values, use a geometry path instead:
+
+```json
+"queries": [{
+  "name": "main_query",
+  "query": {
+    "datasetName": "transit_lines",
+    "fields": [{"name": "route_geojson", "expression": "ST_ASGEOJSON(`route_geometry`)"}],
+    "disaggregated": true
+  }
+}],
+"spec": {
+  "version": 1,
+  "widgetType": "path-map",
+  "encodings": {
+    "path": {"pathType": "geometry", "fieldName": "route_geojson"}
+  }
+}
+```
+
+The geometry query field must use `ST_ASGEOJSON(...)`; a bare geometry column produces an empty map. For grouped geometry, supported expressions include `ST_ASGEOJSON(FIRST(...))`, `ST_ASGEOJSON(LAST(...))`, and `ST_ASGEOJSON(ST_UNION_AGG(...))`.
+
+See the [path map documentation](https://docs.databricks.com/aws/en/dashboards/manage/visualizations/types#path-map) and [path map options](https://docs.databricks.com/aws/en/dashboards/manage/visualizations/maps#path-map-options).
+
+---
+
+## Non-native visualizations
+
+`word-cloud` and `sunburst` are not native AI/BI dashboard widget types. Do not emit either value as `widgetType`. For a sunburst or a word-cloud-like visualization, use [`custom-vega-viz`](6-custom-visualizations.md) when Vega-Lite can express the requested result; otherwise explain the limitation and choose a supported visualization.
