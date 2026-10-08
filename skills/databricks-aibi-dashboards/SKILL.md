@@ -13,6 +13,24 @@ Create Databricks AI/BI dashboards (formerly Lakeview dashboards).
 A dashboard should be showing something relevant for a human, typically some KPI on the top, and based on the story, some graph (often temporal), and we see "something happens".
 **Follow these guidelines strictly.**
 
+## Choose a Widget
+
+Use standard widgets by default. Use Vega-Lite when the required visualization cannot be expressed with standard widgets. A different aggregation, color palette, tooltip, reference line, or small multiple usually does not require a custom specification.
+
+| What needs to be shown? | Use |
+|------------------------|-----|
+| KPIs, trends, rankings, distributions, or geographic comparisons | Standard counter, line/bar, histogram/box, or map widgets |
+| Revenue bars with a margin line on a second axis | Standard `combo` |
+| Retention by cohort and elapsed period | Standard `pivot` with a color scale |
+| Task start/end times on a schedule | Standard `gantt` |
+| Delivery routes or ordered GPS tracks | Standard `path-map` |
+| A target line or the same chart repeated by region | Standard annotations or faceting; see [widget specifications](references/1-widget-specifications.md#annotations-event-markers) |
+| A bullet chart with an actual-value bar and target marker for each category | `custom-vega-viz`; see the [worked bullet example](references/6-custom-visualizations.md#example-bullet-chart) |
+| Raw observations drawn as points with a rolling-mean line overlaid | `custom-vega-viz`; see the [layered time-series example](references/6-custom-visualizations.md#example-raw-points-with-a-rolling-mean) |
+| A requested gauge, radar, or nested radial/sunburst layout | `custom-vega-viz`; see [custom chart patterns](references/6-custom-visualizations.md#more-custom-chart-patterns) |
+
+For custom charts, confirm the required marks and transforms are supported by **Vega-Lite**. It does not support every Vega example or chart type. Keep joins and business calculations in dataset SQL; the custom specification controls how the returned data is drawn.
+
 > **When a custom app fits better:** A managed AI/BI dashboard is the right tool for read-only KPIs, charts, and filters over governed tables. If the user instead needs a *custom-code interactive app* — write-back / data entry, bespoke UI or interactions beyond the dashboard grid, embedded or auth-gated workflows, or a conversational Genie/chat assistant as the primary surface — build a Databricks App instead with the `databricks-apps` skill (which brings in `databricks-app-design` for the data-screen UX). Linking an "Ask Genie" space to *this* dashboard stays here (see Linking a Genie Space below).
 
 ## Quick Reference
@@ -56,9 +74,12 @@ A dashboard should be showing something relevant for a human, typically some KPI
 | `funnel` | **1** | [2-advanced-widget-specifications.md#funnel](references/2-advanced-widget-specifications.md#funnel) |
 | `box` | **1** | [2-advanced-widget-specifications.md#box](references/2-advanced-widget-specifications.md#box) |
 | `waterfall` | **1** | [2-advanced-widget-specifications.md#waterfall](references/2-advanced-widget-specifications.md#waterfall) |
+| `gantt` (task schedules and ranges) | **1** | [2-advanced-widget-specifications.md#gantt](references/2-advanced-widget-specifications.md#gantt) |
+| `path-map` (routes and ordered tracks) | **1** | [2-advanced-widget-specifications.md#path-map](references/2-advanced-widget-specifications.md#path-map) |
 | `filter-single-select`, `filter-multi-select`, `filter-date-range-picker` | **2** | [3-filters.md#filter-widget-structure](references/3-filters.md#filter-widget-structure) |
+| `filter-date-picker`, `filter-text-entry` | **2** | [date picker](references/3-filters.md#single-date-picker), [text entry](references/3-filters.md#text-entry-filter) |
 | `range-slider` | **2** | [3-filters.md#range-slider-numeric-range-filter](references/3-filters.md#range-slider-numeric-range-filter) |
-| `custom-vega-viz` (Vega-Lite: matrix/grid, radar, gauge, sunburst, network — only when no built-in fits) | **1** | [6-custom-visualizations.md#custom-vega-viz](references/6-custom-visualizations.md#custom-vega-viz) |
+| `custom-vega-viz` (Vega-Lite custom visualization) | **1** | [6-custom-visualizations.md](references/6-custom-visualizations.md) |
 
 > Cohort retention charts are built as a `pivot` with a color-scale cell style — there is no `cohort` widget type. See pivot in [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md).
 
@@ -252,7 +273,7 @@ Important: ALWAYS add a space or `\n` at the end of each `queryLines` value as t
 - `queryLines`: Array of strings, NOT `"query": "string"`. Elements are **joined verbatim** with no separator — end each line with ` ` or `\n` (or strip `-- comments`). A line ending in `-- comment` with no newline swallows the next line.
 - Widgets: INLINE in `layout[].widget`, NOT a separate `"widgets"` array
 - `pageType`: Required on every page (`PAGE_TYPE_CANVAS` or `PAGE_TYPE_GLOBAL_FILTERS`)
-- Query binding: `query.fields[].name` must exactly match `encodings.*.fieldName`
+- Query binding: chart, table, counter, and custom-viz `query.fields[].name` values must exactly match their `encodings.*.fieldName` values. Filters have widget-specific bindings; range sliders expose `MIN`/`MAX` query fields for one underlying `fieldName`, and parameter-bound date filters use `query.parameters`.
 
 ### Theme & Color (always set this — it makes or breaks the dashboard)
 
@@ -345,9 +366,9 @@ Apply unless user specifies otherwise:
 |------------------------|-----------|
 | **Start here** — full working dashboard template | [4-examples.md](references/4-examples.md) |
 | Any widget (text, counter, table, chart) | [1-widget-specifications.md](references/1-widget-specifications.md) |
-| Advanced charts (area, scatter/Bubble, combo (Line+Bar), Choropleth map) | [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
+| Advanced charts (area, scatter/bubble, combo, Gantt, choropleth/path maps) | [2-advanced-widget-specifications.md](references/2-advanced-widget-specifications.md) |
 | Dashboard with filters (global or page-level) | [3-filters.md](references/3-filters.md) |
-| A chart type that isn't built in (matrix/grid, radar, gauge, sunburst, network) — custom **Vega-Lite** viz | [6-custom-visualizations.md](references/6-custom-visualizations.md) |
+| Custom Vega-Lite widgets (layered charts, bullet, gauge, radar, sunburst) | [6-custom-visualizations.md](references/6-custom-visualizations.md) |
 | Debugging a broken dashboard | [5-troubleshooting.md](references/5-troubleshooting.md) |
 
 ---
@@ -364,7 +385,7 @@ Apply unless user specifies otherwise:
 - **Queries must use bare table names only** — no catalog, no schema prefix. Example: `FROM orders`, never `FROM gold.orders` or `FROM main.gold.orders`. The catalog and schema come from the `--dataset-catalog` and `--dataset-schema` flags at creation time. These flags only fill in missing parts — they do NOT override any catalog/schema written in the query.
 - SELECT must include all dimensions needed by widgets and all derived columns via `AS` aliases
 - Put ALL business logic (CASE/WHEN, COALESCE, ratios) into the dataset SELECT with explicit aliases
-- **Contract rule**: Every widget `fieldName` must exactly match a dataset column or alias
+- **Contract rule for visualizations**: For chart, table, counter, and custom-viz widgets, every `fieldName` must match its corresponding `query.fields[].name`; that query field's expression references dataset columns or aliases. Use the filter-specific contracts in [3-filters.md](references/3-filters.md), including range-slider and parameter-binding exceptions.
 - **Add ORDER BY** when visualization depends on data order:
   - Time series: `ORDER BY date` for chronological display
   - Rankings/Top-N: `ORDER BY metric DESC LIMIT 10` for "Top 10" charts
@@ -406,8 +427,10 @@ Either way, widgets reference the measure by name:
 ### 2) WIDGET FIELD EXPRESSIONS
 
 > **CRITICAL: Field Name Matching Rule**
-> The `name` in `query.fields` MUST exactly match the `fieldName` in `encodings`.
+> For chart, table, counter, and custom-viz widgets, each selected `name` in `query.fields` MUST exactly match its `fieldName` in `encodings`.
 > If they don't match, the widget shows "no selected fields to visualize" error!
+
+For `custom-vega-viz`, also match `spec.encodings.fields[].fieldName` to the Vega-Lite input `field` names. Set `spec.data.queryName` to the widget query name. The inner Vega-Lite spec reads `data.name: "databricks_query"` and is stored as a **JSON string** in `spec.jsonSpec.spec`. Read [6-custom-visualizations.md](references/6-custom-visualizations.md) before generating a custom widget.
 
 **Correct pattern for aggregations:**
 ```json
@@ -436,6 +459,8 @@ Allowed expressions in widget queries (you CANNOT use CAST or other SQL in expre
 ```
 
 If you need conditional logic or multi-field formulas, compute a derived column in the dataset SQL first.
+
+Some widgets support additional expressions: Gantt can use `FIRST(...)` for status fields, and geometry map bindings require `ST_ASGEOJSON(...)`. See the corresponding widget reference for these shapes.
 
 ### 3) SPARK SQL PATTERNS
 
@@ -515,8 +540,8 @@ Before deploying, verify:
 3. All rows sum to width=12 with no gaps
 4. KPIs use height 3-4, charts use height 5-6
 5. Chart dimensions have reasonable cardinality (≤8 for colors/groups)
-6. All widget fieldNames match dataset columns exactly
-7. **Field `name` in query.fields matches `fieldName` in encodings exactly** (e.g., both `"sum(spend)"`)
+6. All widget query expressions reference existing dataset columns or aliases
+7. **Visualization field bindings match exactly**: for charts, tables, counters, and custom viz, each `query.fields[].name` matches its encoding `fieldName` (for example, both `"sum(spend)"`). Validate filters against their widget-specific contracts instead.
 8. Counter datasets: use `disaggregated: true` for 1-row datasets, `disaggregated: false` with aggregation for multi-row
 9. **Percent values must be 0-1 for `number-percent` format** (0.865 displays as "86.5%", don't forget to set the format). If data is 0-100, either divide by 100 in SQL or use `number` format instead.
 10. SQL uses Spark syntax (date_sub, not INTERVAL)

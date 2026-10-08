@@ -23,7 +23,7 @@ describe('Feature Name', () => {
 - Use `describe` blocks to group related tests
 - Use `it` for individual test cases
 - Use `expect` for assertions
-- Tests run with `npm test` (runs `vitest run`)
+- Run `<pm> run test` (runs `vitest run`)
 
 ❌ **Do not write unit tests for:**
 - SQL files under `config/queries/` - little value in testing static SQL
@@ -95,5 +95,5 @@ await expect(page.getByText('Revenue').first()).toBeVisible();
 
 **For extended E2E tests:**
 - Create separate test files in `tests/` directory (e.g., `tests/user-flow.spec.ts`)
-- Use `npm run test:e2e` to run all Playwright tests
+- Run `<pm> run test:e2e` to run all Playwright tests
 - Keep complex user flows, interactions, and edge cases out of the smoke test

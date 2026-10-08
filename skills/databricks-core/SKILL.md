@@ -15,6 +15,7 @@ Core skill for Databricks CLI, authentication, and data exploration.
 For specific products, use dedicated skills:
 - **databricks-jobs** - Lakeflow Jobs development and deployment
 - **databricks-pipelines** - Lakeflow Spark Declarative Pipelines (batch and streaming data pipelines)
+- **databricks-serverless** - Compute choice for jobs and pipelines (serverless, performance mode, classic fallback)
 - **databricks-apps** - Full-stack TypeScript app development and deployment
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
 - **databricks-model-serving** - Model Serving endpoint management and inference

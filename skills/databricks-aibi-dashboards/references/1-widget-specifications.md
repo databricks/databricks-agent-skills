@@ -28,6 +28,9 @@ Core widget types for AI/BI dashboards. For advanced visualizations (area, scatt
 | scatter | 3 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
 | combo | 1 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
 | choropleth-map | 1 | [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md) |
+| gantt | 1 | [2-advanced-widget-specifications.md#gantt](2-advanced-widget-specifications.md#gantt) |
+| path-map | 1 | [2-advanced-widget-specifications.md#path-map](2-advanced-widget-specifications.md#path-map) |
+| custom-vega-viz | 1 | [6-custom-visualizations.md](6-custom-visualizations.md) |
 | filter-* | 2 | [3-filters.md](3-filters.md) |
 
 ---
@@ -390,7 +393,7 @@ Inside `mappings[].color`, use a **bare hex string** (`"#FF0000"`) — that's th
 
 ### Annotations (event markers)
 
-Mark an event on a time-series chart — release, holiday, incident — with a vertical line. Works on `line`, `area`, `bar`, `combo`, and `forecast-line`.
+Use `vertical-line` annotations for events on the x-axis and `horizontal-line` annotations for thresholds on the y-axis. Built-in reference lines do not require a custom Vega-Lite widget. Constant and custom annotations are supported on area, bar, box, combo, heatmap, histogram, line, scatter, and waterfall charts; forecast-line also supports constant event markers.
 
 ```json
 "spec": {
@@ -410,7 +413,49 @@ Mark an event on a time-series chart — release, holiday, incident — with a v
 }
 ```
 
-Multiple annotations are allowed. For non-datetime axes: `"dataType": "STRING"` for categorical, `"INTEGER"` / `"DECIMAL"` for numeric (NOT `"NUMBER"` — silently dropped). `dataValue` is always a **string**, even for numeric types: `{"dataValue": "48", "dataType": "INTEGER"}`.
+For a numeric target, add a horizontal annotation to the same `spec.annotations` array:
+
+```json
+{
+  "type": "horizontal-line",
+  "encodings": {
+    "y": {"dataValue": "100", "dataType": "INTEGER"},
+    "label": {"value": "Target"},
+    "color": {"value": "#2272B4"}
+  }
+}
+```
+
+Multiple annotations are allowed. Constant `dataValue` is serialized as a string; its `dataType` must be `INTEGER`, `DOUBLE`, `DECIMAL`, `DATE`, or `DATETIME`. Categorical `STRING` positions and the type name `NUMBER` are not supported.
+
+The [chart configuration docs](https://docs.databricks.com/aws/en/dashboards/manage/visualizations/#annotations) also describe aggregate reference lines (`avg`, `min`, `max`) and custom field-driven lines. Aggregate lines are supported on area, bar, box, line, and scatter, except with 100% stack layouts. Custom field-driven lines need their own query binding; do not substitute a field name into `dataValue`.
+
+### Faceting and Additional Tooltips
+
+For small multiples, use a standard chart's `spec.facet` alongside `encodings`. Add the facet dimension to `query.fields` so each panel gets its own grouped data:
+
+```json
+{
+  "facet": {
+    "type": "wrap",
+    "fieldName": "region",
+    "scale": {"type": "categorical"},
+    "layout": {"column": {"type": "count", "value": 2}}
+  }
+}
+```
+
+This repeats the chart by region with shared axes. It does not require generating a separate widget per region or switching to Vega-Lite.
+
+On charts that support additional tooltip fields, add them to `spec.encodings.extra` and `query.fields`:
+
+```json
+{
+  "extra": [{"fieldName": "sum(order_count)", "displayName": "Orders"}]
+}
+```
+
+The example requires a matching query field such as ``{"name": "sum(order_count)", "expression": "SUM(`order_count`)"}``. Preserve the chart's aggregation grain when choosing extra fields. See [chart configuration](https://docs.databricks.com/aws/en/dashboards/manage/visualizations/) for per-chart availability.
 
 ---
 

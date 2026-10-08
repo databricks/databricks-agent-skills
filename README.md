@@ -133,6 +133,7 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-spark-structured-streaming** — Spark Structured Streaming patterns.
 - **databricks-synthetic-data-gen** — Realistic synthetic / test data with Faker.
 - **databricks-unity-catalog** — Unity Catalog system tables for lineage, audit, and billing.
+- **databricks-unity-gateway** — Governed AI model, MCP, and model provider services in Unity Catalog.
 - **databricks-unstructured-pdf-generation** — Generate synthetic PDFs for RAG.
 - **databricks-zerobus-ingest** — Zerobus streaming ingest patterns.
 

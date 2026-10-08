@@ -15,6 +15,8 @@ skill merges two bodies of knowledge and binds them to implementation:
 - **Notation** — make comparable things look comparable; honest scales; scenario marks → `references/ibcs-notation.md`
 - **Implementation** — the exact AppKit components, hooks, and tokens to use → `references/appkit-cheatsheet.md`
 
+For package scripts and project-local CLI tools, use the [parent skill's package-manager selection and command placeholders](../databricks-apps/SKILL.md).
+
 Design advice that doesn't name a real component is incomplete. Always end at a component plan.
 
 ## When to use / when NOT
