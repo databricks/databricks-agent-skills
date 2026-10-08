@@ -68,7 +68,7 @@ databricks apps init --name <APP_NAME> --features genie \
 # 5. Set local env + develop
 cd <APP_NAME>
 echo "DATABRICKS_GENIE_SPACE_ID=<SPACE_ID>" >> server/.env
-npm install && npm run dev
+<pm> install && <pm> run dev
 ```
 
 **Do not guess** `--set` flags — always derive from `databricks apps manifest`.

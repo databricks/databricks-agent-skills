@@ -11,6 +11,19 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
+**Package manager — resolve this before any install or command below:**
+
+Databricks Apps officially supports **npm** and **pnpm** only.
+
+1. Detect the project's manager, in priority order: project instructions → `package.json`'s `packageManager` field → lockfile (`pnpm-lock.yaml` → pnpm, `package-lock.json` → npm).
+2. If signals conflict, or if an unsupported manager (yarn, bun, etc.) is detected, stop and ask the user which manager to use before proceeding.
+3. Only if none is established, default to **pnpm**.
+
+Throughout this skill and its guides, substitute what you resolved:
+- `<pm>` → that manager, for installs and package scripts (`<pm> install`, `<pm> run typegen`).
+
+`<pm>` is a documentation placeholder, not a shell variable — expand it, don't type it.
+
 **Is this even a Databricks App?** Don't assume an app is the only way to show data. For a simple "dashboard with a few charts" and no app-specific need, the managed **AI/BI (Lakeview) dashboard** is the simpler path → use the `databricks-aibi-dashboards` skill, not this one. Reach for a custom Databricks App only when the user needs something AI/BI can't give them — bespoke interactivity/components, write-back, embedded or auth-gated workflows, a Genie/chat surface inside the app — or explicitly asks for an app. If it's genuinely ambiguous, surface both options (managed AI/BI dashboard vs custom app) and let the user choose instead of defaulting to an app. Once an app is the right call, it's fine for this skill to favor an app-based dashboard, and `databricks-app-design` covers building it well.
 
 **For data UI design (required for any data-displaying app)**: once you've confirmed the user wants a custom-code app (not a managed AI/BI dashboard — see above), if the app shows ANY data — a KPI/overview page, report, chart, table, query results, OR a **conversational / chat / Genie natural-language assistant** — you MUST use the `databricks-app-design` skill (alongside this one) to decide layout, charts, KPIs, semantic color, required states, and AI-result trust, and map them to AppKit components. This includes chat/Genie apps, not just static data views — if in doubt, use it.
@@ -44,7 +57,7 @@ Build apps that deploy to Databricks Apps platform.
 - **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
 - **Smoke test selectors**: use only Playwright locator APIs — `getByRole`, `getByText`, `getByPlaceholder`, `getByLabel`. `getByLabelText` does not exist in Playwright (it is a React Testing Library method) and throws `TypeError` at runtime. See [testing guide](references/testing.md) or `npx playwright codegen`.
 - **Smoke test data**: keep result sets under the 1 MB analytics-event payload cap. Queries returning thousands of rows cause `INVALID_REQUEST: Event exceeds max size of 1048576 bytes` and `net::ERR_ABORTED`, leaving every asserted UI element absent. Use `LIMIT` or an aggregated query (e.g. `COUNT(*) GROUP BY status`) — never raw row dumps.
-- **AppKit version**: never override the `@databricks/appkit` or `@databricks/appkit-ui` version in `package.json` — `databricks apps init` sets the correct version. Do not run `npm install @databricks/appkit@<version>` unless explicitly asked by the user. If you need a different version, re-scaffold with `databricks apps init --version <version>`.
+- **AppKit version**: never override the `@databricks/appkit` or `@databricks/appkit-ui` version in `package.json` — `databricks apps init` sets the correct version. Do not install a different version of either package unless explicitly asked by the user. If you need a different version, re-scaffold with `databricks apps init --version <version>`.
 - **Authentication**: covered by parent `databricks-core` skill.
 - **AppKit API surface**: before writing code that calls AppKit APIs (`createApp`, plugin shapes, `useAnalyticsQuery`, `useMetricView`, etc.), run `npx @databricks/appkit docs <section>` and use the actual signature. Training data has stale shapes; a single invented signature fails `tsc --noEmit` during validate. The docs ship with the installed AppKit and are the authoritative source.
 - **TypeScript casts**: never use `as unknown as <T>` double-assertions — `appkit lint` enforces `no-double-type-assertion` and one violation fails the entire validate step. Instead: narrow with Zod (`z.infer<typeof schema>`), use a runtime type guard, or write a typed mapper function. If a query result needs reshaping, type the row schema via queryKey types rather than casting.
@@ -55,7 +68,7 @@ Build apps that deploy to Databricks Apps platform.
 - `config/metric-views/definitions.json` — governed UC Metric View bindings (optional; see [Metric Views](references/appkit/metric-views.md))
 - `server/server.ts` — backend entry (`onPluginsReady` + Express routes)
 - `tests/smoke.spec.ts` — smoke test (⚠️ MUST UPDATE selectors for your app)
-- `client/src/appKitTypes.d.ts` — auto-generated types (`npm run typegen`)
+- `client/src/appKitTypes.d.ts` — auto-generated types (`<pm> run typegen`)
 
 ## Project Structure (after `databricks apps init --features lakebase`)
 - `server/server.ts` — backend with Lakebase pool + Express routes
@@ -104,7 +117,7 @@ After the user chooses:
 **Analytics apps** (`--features analytics`):
 
 1. Create SQL files in `config/queries/`
-2. Run `npm run typegen` — verify all queries show ✓
+2. Run `<pm> run typegen` — verify all queries show ✓
 3. Read `client/src/appKitTypes.d.ts` to see generated types
 4. **THEN** write `App.tsx` using the generated types
 5. Update `tests/smoke.spec.ts` selectors
@@ -137,13 +150,13 @@ After completing the decision gate above, use this routing table:
 
 TypeScript/React framework with type-safe SQL queries and built-in components.
 
-**Official Documentation** — the source of truth for all API details:
+**Official Documentation** — the source of truth for all API details. Use the project-local `appkit` CLI from the installed `@databricks/appkit` package:
 
 ```bash
-npx @databricks/appkit docs                              # ← ALWAYS start here to see available pages
-npx @databricks/appkit docs <query>                      # view a section by name or doc path
-npx @databricks/appkit docs --full                       # full index with all API entries
-npx @databricks/appkit docs "appkit-ui API reference"    # example: section by name
+npx @databricks/appkit docs                            # ← ALWAYS start here to see available pages
+npx @databricks/appkit docs <query>                    # view a section by name or doc path
+npx @databricks/appkit docs --full                     # full index with all API entries
+npx @databricks/appkit docs "appkit-ui API reference"   # example: section by name
 npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc file
 ```
 
@@ -166,7 +179,7 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
    - **requiredByTemplate**: If **true**, that plugin is **mandatory** for this template — do **not** add it to `--features` (it is included automatically); you must still supply all of its required resources via `--set`. If **false** or absent, the plugin is **optional** — add it to `--features` only when the user's prompt indicates they want that capability (e.g. analytics/SQL), and then supply its required resources via `--set`.
    - **Resources**: Each plugin has `resources.required` and `resources.optional` (arrays). Each item has `resourceKey` and `fields` (object: field name → description/env). Use `--set <plugin>.<resourceKey>.<field>=<value>` for each required resource field of every plugin you include.
 
-2. **Scaffold** (DO NOT use `npx`; use the CLI only):
+2. **Scaffold** (use the Databricks CLI only):
    ```bash
    databricks apps init --name <NAME> --features <plugin1>,<plugin2> \
      --set <plugin1>.<resourceKey>.<field>=<value> \

@@ -38,6 +38,9 @@ These errors occur when the JSON structure is wrong:
 - Filters: `version: 2`
 - Bar/Line/Pie/Area/Scatter charts: `version: 3`
 - Combo/Choropleth-map: `version: 1`
+- Gantt: `version: 1`; bind `rows`, `range.start`, and `range.end`
+- Path map: `version: 1`; bind `encodings.path` and an `order` field for point sequences
+- Custom Vega-Lite: `widgetType: "custom-vega-viz"`, `version: 1`; see [6-custom-visualizations.md](6-custom-visualizations.md#limits-and-troubleshooting) for the JSON-string wrapper and field binding.
 
 **Text widget errors:**
 - Text widgets must NOT have a `spec` block
@@ -46,8 +49,8 @@ These errors occur when the JSON structure is wrong:
 
 **Table widget errors:**
 - Use `version: 2` (NOT 1 or 3)
-- Column objects only need `fieldName` and `displayName`
-- Do NOT add `type`, `numberFormat`, or other column properties
+- Start with `fieldName` and `displayName`; add supported formatting and cell options from [Column-level options](1-widget-specifications.md#column-level-options)
+- Use the documented `format` property, not legacy `type` or `numberFormat` keys
 
 **Counter widget errors:**
 - Use `version: 2` (NOT 3)
@@ -69,7 +72,7 @@ These errors occur when the JSON structure is wrong:
 
 ## Filter shows "Invalid widget definition"
 
-- Check `widgetType` is one of: `filter-multi-select`, `filter-single-select`, `filter-date-range-picker`
+- Check `widgetType` is one of: `filter-multi-select`, `filter-single-select`, `filter-date-range-picker`, `filter-date-picker`, `filter-text-entry`, `range-slider`
 - **DO NOT** use `widgetType: "filter"` - this is invalid
 - Verify `spec.version` is `2`
 - Ensure `queryName` in encodings matches the query `name`
@@ -135,5 +138,5 @@ If you change the chart's aggregation grain (weekly → monthly), update **both*
 ## Annotations not appearing on chart
 
 - `annotations` is a sibling of `encodings` inside `spec`, not nested inside it.
-- Each annotation needs `type: "vertical-line"`, `encodings.x.dataValue` matching the chart's x-axis type, and a matching `dataType` (`DATETIME` / `STRING` / `NUMBER`).
-- Annotations are only rendered on time-series chart types (`line`, `area`, `bar`, `combo`, `forecast-line`). Pie / pivot / map ignore them.
+- For constant annotations, use `vertical-line` with `encodings.x` or `horizontal-line` with `encodings.y`. Serialize `dataValue` as a string and choose a matching numeric or temporal `dataType`: `INTEGER`, `DOUBLE`, `DECIMAL`, `DATE`, or `DATETIME`.
+- Annotation support depends on the chart and annotation mode; it is not limited to time-series charts. See [Annotations](1-widget-specifications.md#annotations-event-markers). Pie / pivot / map do not use chart annotations.
