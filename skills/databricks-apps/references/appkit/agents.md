@@ -18,7 +18,11 @@ User (browser) ── POST /api/agents/chat (SSE) ──▶ agents plugin ──
                        analytics.query, files.*, genie.*, MCP, sub-agents
 ```
 
-Agents are **discovered from disk** — one folder per agent under `server/agents/<id>/`, holding `agent.md` (markdown) or `agent.ts` (code). The agent id **is the folder name** — no map to maintain. Tool calls run through the caller's OBO token, so SQL executes as the requesting user and file access respects Unity Catalog ACLs.
+Agents are **discovered from disk** — one folder per agent under `server/agents/<id>/`, holding `agent.md` (markdown) or `agent.ts` (code). The agent id **is the folder name** — no map to maintain. Plugin-toolkit tool calls (`plugin:<name>`) run through the caller's OBO token, so SQL executes as the requesting user and file access respects Unity Catalog ACLs. A hand-rolled `tool({ execute })` you write yourself runs as the app **service principal**, the same as before: its `execute` receives no `req`, so there is no way to run it as the user.
+
+**By default (mixed mode), the agent's own model call runs as the app's service principal, not the user.** `agents/databricks.ts` builds the model/serving client from the environment (service-principal) credentials via `createWorkspaceClient()`, even while the HTTP handler runs in user scope. So in the default mode only the tool calls consume the user's scopes: an existing agents app does **not** need a `model-serving` user scope, and the model call keeps working with narrow or empty `user_api_scopes`.
+
+**Full-user mode:** `agents({ auth: "on-behalf-of-user" })` (also settable on `createAgent(...)` or in `agent.md` frontmatter) runs the model **and** every tool as the user. Sub-agents inherit it and never widen back to the service principal. With no usable user token the request fails closed with a 401; it never silently falls back to the service principal.
 
 ## Model backend — decide first
 
