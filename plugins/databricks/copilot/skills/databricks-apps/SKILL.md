@@ -139,6 +139,7 @@ After completing the decision gate above, use this routing table:
 - **Read/write persistent data (users, orders, CRUD state)**: Use Lakebase via Express routes in `onPluginsReady` — see [Lakebase Guide](references/appkit/lakebase.md)
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
+- **Call a foundation model / UC model service (`system.ai.*`)**: Declare a `uc_securable` (`MODEL_SERVICE`) resource and call the service name on `/ai-gateway/mlflow/v1` — see [Unity Catalog model services](references/appkit/model-serving.md#unity-catalog-model-services) and the `databricks-unity-gateway` skill (not `serving()`, which takes serving-endpoint names)
 - **AI agent that *calls tools* (SQL, files, Genie, MCP), delegates to sub-agents, or streams a multi-turn chat with human-in-the-loop approval**: Use the `agents()` plugin (import from `@databricks/appkit/beta`, **beta**) — see [Agents Guide](references/appkit/agents.md)
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER add custom endpoints to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`
@@ -195,6 +196,15 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
    - **Discovery**: Use the parent `databricks-core` skill to resolve IDs (e.g. warehouse: `databricks warehouses list --profile <PROFILE>` or `databricks experimental aitools tools get-default-warehouse --profile <PROFILE>`).
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
+
+**Execution identity (auth mode)** requires **databricks CLI `>= v1.20.0`** (the first release with the auth-mode feature; it is not in `v1.19.0` or earlier). On CLIs without it these flags do not exist; every resource is bound to the service principal and the flags below must not be used. By default every resource is still bound to the service principal (SP), and omitting these flags produces exactly the same output as before.
+
+- `--auth-mode obo|sp` sets the app-wide default. `sp` is the default. `--auth-mode obo` applies only to resources that **can** run on behalf of the user; resources that cannot (e.g. `secret`, Lakebase) stay on the SP and the CLI prints a note listing them. `--auth-mode both` is not valid at the app level.
+- `--set <plugin>.<resourceKey>.authMode=obo|sp|both` sets one resource's identity and overrides the app-wide default. `both` is only valid here, per resource.
+- Setting an explicit `authMode` on a resource that cannot run OBO is an **error** (the CLI names the resource and the fix).
+- The interactive auth prompt (Service principal / On behalf of user / Mixed) appears **only** in the fully interactive flow. Passing `--features` or `--set` means no prompt and the default SP.
+
+What each mode emits, and the `databricks apps validate` OBO checks, are in the [Platform Guide](references/platform-guide.md#execution-identity-per-resource). **Default to SP; choose OBO only when the app must enforce the viewing user's own permissions** (row-level or per-user data access). Mixed is common, e.g. an analytics warehouse OBO plus a job as SP.
 
 **Scaffolding Rules Protocol** — `databricks apps manifest` may emit `scaffolding.rules` at the template level (top-level `scaffolding.rules`) and on individual plugins (`plugins[].scaffolding.rules`). Each block has `must` / `should` / `never` arrays of short directive strings. Consume them as follows:
 

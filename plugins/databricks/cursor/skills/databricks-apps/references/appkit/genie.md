@@ -170,7 +170,7 @@ resources:
   apps:
     app:
       user_api_scopes:
-        - dashboards.genie
+        - genie
       resources:
         - name: genie-space
           genie_space:
@@ -298,6 +298,6 @@ The plugin mounts SSE endpoints under `/api/genie`:
 | `plugin "genie" has no resource with key "..."` | Wrong `--set` flags during scaffold | Always derive resource keys from `databricks apps manifest` |
 | Chat collapses or renders poorly | No explicit height on container | Give the parent a fixed height |
 | Duplicate routes or import confusion | Old local Genie proxy file | Remove it — use `genie` from `@databricks/appkit` |
-| `does not have required scopes: genie` | Missing API scope | Confirm `user_api_scopes` includes `dashboards.genie` in `databricks.yml` and redeploy |
+| `does not have required scopes: genie` | Missing API scope | Confirm `user_api_scopes` includes `genie` in `databricks.yml` and redeploy |
 | Genie space not found | Wrong space ID | Verify space ID matches the value on the Genie space **About** tab |
 | `valueFrom` mismatch | `app.yaml` value doesn't match `databricks.yml` | `valueFrom` in `app.yaml` must exactly match the resource `name` in `databricks.yml` |

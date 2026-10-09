@@ -10,6 +10,8 @@
 - App Kit automatically executes queries against configured Databricks warehouse
 - Benefits: Built-in caching, proper connection pooling, better performance
 
+**Execution identity by file name:** a plain `<key>.sql` file runs as the **service principal** (shared cache); a `<key>.obo.sql` file runs as the **requesting user** (OBO, per-user cache), so results respect that user's own Databricks permissions. The query key is the **bare name** either way: `spend_summary.obo.sql` is still referenced as `spend_summary`. OBO requires `sql` in `user_api_scopes`.
+
 ## Type Generation
 
 For full type generation details, see: `npx @databricks/appkit docs ./docs/development/type-generation.md`

@@ -18,6 +18,27 @@ import { MyInterface, MyType } from './types';
 
 For server configuration, see: `npx @databricks/appkit docs ./docs/plugins.md`
 
+## Execution identity: service principal vs user (OBO)
+
+Server-side, AppKit uses the **service principal by default**. Open a caller scope only when an operation must run with the requesting user's Databricks permissions. The app-level `appkit.asUser(req)` API requires **`@databricks/appkit` `>= 0.84.0`** (`databricks apps init --version latest` installs it).
+
+```typescript
+// Block form: everything inside runs as the user; prefer this for handlers doing multiple ops:
+const orders = await appkit.asUser(req).run((kit) => kit.analytics.query("orders"));
+
+// One-call shorthand:
+await appkit.asUser(req).analytics.query("orders");
+
+// No caller scope → runs as the service principal:
+await appkit.analytics.query("metrics");
+```
+
+- The service principal is the default whenever no user scope is open.
+- **Fail-closed:** in production an OBO call with no usable user token rejects. It never silently falls back to the service principal (the only fallback is the documented `NODE_ENV=development` dev mode).
+- `plugin.asUser(req)` (e.g. `appkit.files("uploads").asUser(req)`) is **deprecated** but still works, with a one-time deprecation warning. New code should use `appkit.asUser(req)`.
+- OBO requires the resource's scope in `user_api_scopes`; see [Platform Guide](../platform-guide.md#user_api_scopes-names).
+- SQL query files: a `<key>.obo.sql` file runs as the user (per-user cache); a plain `<key>.sql` runs as the SP. See [SQL Queries](sql-queries.md). Agent execution identity is covered in [Agents](agents.md).
+
 ## useAnalyticsQuery Hook
 
 **ONLY use when displaying data in a custom way that isn't a chart or table.** For charts/tables, pass `queryKey` directly to the component — don't double-fetch. Charts also accept a `format` option (`"json"` | `"arrow"` | `"auto"`, default `"auto"`) to control the data transfer format.

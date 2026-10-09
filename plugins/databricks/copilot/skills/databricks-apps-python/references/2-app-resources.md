@@ -12,7 +12,8 @@ Databricks Apps integrate with platform resources via managed connections. Use r
 |----------|-------------|-------------|----------|
 | SQL warehouse | `sql-warehouse` | Can use, Can manage | Querying Delta tables |
 | Lakebase database | `database` | Can connect and create | Low-latency transactional data |
-| Model serving endpoint | `serving-endpoint` | Can view, Can query, Can manage | AI/ML inference |
+| Model serving endpoint | `serving-endpoint` | Can view, Can query, Can manage | AI/ML inference on custom and external endpoints (and built-in foundation-model endpoints until the workspace moves to UC model services) |
+| UC model service | `model` | Execute | UC-native model serving (`system.ai.<model>` or `catalog.schema.name`); declare a resource of type `uc_securable` (`securable_type: MODEL_SERVICE`) and inject with `valueFrom: <resource-name>`, which resolves to the service FQN |
 | Secret | `secret` | Can read, Can write, Can manage | API keys, tokens |
 | Unity Catalog volume | `volume` | Can read, Can read and write | File storage |
 | Vector search index | `vector-search-index` | Can select | Semantic search |
@@ -97,6 +98,8 @@ response = requests.post(
 )
 result = response.json()
 ```
+
+> **Built-in foundation-model endpoints are migrating to Unity Catalog model services.** Built-in pay-per-token `databricks-*` foundation-model endpoints are being retired in favor of Unity Catalog model services (`catalog.schema.name` / `system.ai.<model>`). After the workspace enables **Enforce Unity Gateway**, an app calling a retired endpoint on `/serving-endpoints/<name>/invocations` gets **HTTP 403 PERMISSION_DENIED** from the model-serving proxy: `"Querying pay-per-token foundation model endpoint '<name>' is disabled for this workspace. Please use Unity Gateway."` (the console UI phrases it as `"...is no longer available. Use Unity Catalog model services."`). Custom, external-model, and MPS-backed serving endpoints keep the `serving-endpoint` resource and `/serving-endpoints/<name>/invocations`. To migrate, declare the model service as a `uc_securable` resource (`securable_type: MODEL_SERVICE`, `permission: EXECUTE`) — on deploy the app's service principal gets `EXECUTE`, plus `USE CATALOG` / `USE SCHEMA` on the parents when needed — inject it with `valueFrom: <resource-name>` (the env var resolves to the service's full name, e.g. `system.ai.<model>`), and pass that name as `model` on the `/ai-gateway/mlflow/v1` path. For query APIs, permissions outside Apps, and migrating other clients, use the **`databricks-unity-gateway`** skill. On Azure Government, Azure China, and AWS GovCloud/DoD, `system.ai.<model>` isn't available yet — keep the legacy `databricks-<model>` endpoint there.
 
 ### SDK Pattern
 

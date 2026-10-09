@@ -35,7 +35,8 @@ resources:
 | Resource Type | Default Permission | Notes |
 |---------------|-------------------|-------|
 | SQL Warehouse | CAN_USE | Minimum for query execution |
-| Model Serving Endpoint | CAN_QUERY | For inference calls |
+| Model Serving Endpoint | CAN_QUERY | For inference calls on custom and external endpoints (and built-in foundation-model endpoints until the workspace moves to UC model services) |
+| UC Model Service | EXECUTE | Declare as a `uc_securable` resource (`securable_type: MODEL_SERVICE`); grants the app SP `EXECUTE`, plus `USE CATALOG` / `USE SCHEMA` on the parents when needed. The `serving_endpoint`/`CAN_QUERY` resource remains for custom, external, and MPS-backed serving endpoints |
 | Vector Search Index (UC) | SELECT | UC securable of type TABLE |
 | Volume (UC) | READ_VOLUME | Via UC securable |
 | Secret Scope | READ | Deploying user needs MANAGE on the scope |
@@ -89,17 +90,49 @@ env:
 
 **SP auth** is auto-configured — `WorkspaceClient()` picks up injected env vars.
 
-**OBO** requires extracting the token from request headers and declaring scopes:
+**Default to SP.** Choose OBO only when the app must enforce the viewing user's own permissions: row-level or per-user data access, where each user must see only what their own Databricks grants allow. A mixed app is common: e.g. an analytics warehouse accessed OBO plus a job triggered as the SP.
+
+**OBO** requires extracting the token from request headers and declaring the resource's scope in `user_api_scopes`.
+
+### `user_api_scopes` names
+
+API scopes:
 
 | Scope | Purpose |
 |-------|---------|
-| `sql` | Query SQL warehouses |
-| `dashboards.genie` | Manage Genie spaces |
-| `files.files` | Manage files/directories |
-| `iam.access-control:read` | Read permissions (default) |
-| `iam.current-user:read` | Read current user info (default) |
+| `ai-functions` | AI functions |
+| `ai-gateway` | AI Gateway |
+| `apps` | App-to-app access |
+| `files` | Files / UC Volumes |
+| `genie` | Genie spaces |
+| `model-serving` | Model serving endpoints |
+| `postgres` | Lakebase (always bound to the SP, not OBO; see below) |
+| `sql` | Query SQL warehouses (`sql:restricted-query` for read-only) |
+| `vector-search` | Vector search indexes |
+
+SDK scopes accept a `:read` modifier to restrict access to GET endpoints (e.g. `catalog.tables:read`): `catalog.catalogs`, `catalog.connections`, `catalog.schemas`, `catalog.tables`, `workspace.workspace`.
+
+When no scopes are requested, the platform assigns an identity-only default set that permits no data or compute access: `iam.access-control:read`, `iam.current-user:read`.
+
+`dashboards.genie` → `genie`, `files.files` → `files`, and `serving.serving-endpoints` → `model-serving` are **deprecated aliases** that are still accepted; prefer the short names above. In OBO mode the CLI emits the short canonical names; the legacy SP fallback block still emits the long aliases.
+
+Full authoritative list: the Databricks Apps auth docs "Supported scopes" section (`docs/dev-tools/databricks-apps/auth`).
 
 ⚠️ Databricks blocks access outside approved scopes even if the user has permission.
+
+### Execution identity per resource
+
+Each resource is accessed by one of three identities, set at scaffold time (see the `--auth-mode` / per-resource `authMode` flags in the parent `SKILL.md` scaffolding section):
+
+- **`sp`** (default): the app binds the resource in `databricks.yml` and `app.yaml` injects the env var via `valueFrom`. The SP is granted the resource permission on deploy.
+- **`obo`**: no binding; `app.yaml` injects the resource id as a literal `value:`, and the resource's scope is added to `user_api_scopes`. Calls made in a user scope run with the requesting user's permissions. With no usable user token the call fails closed in production, it never silently falls back to the service principal.
+- **`both`**: the binding **and** the scope, so the resource can be used as either identity.
+
+`secret`, Lakebase (`database` / `postgres`), and MLflow (`experiment`) resources are **always** bound to the service principal and cannot run OBO, even under `--auth-mode obo`. The Lakebase thread store and catalog-backed agent skills likewise always run as the service principal.
+
+`databricks apps validate` checks OBO wiring: an OBO resource's scope must appear in `user_api_scopes`, and an app-only resource (e.g. `secret`) cannot be set to OBO.
+
+> **Limitation:** an OBO resource id is emitted as a single literal in `app.yaml`, so it cannot vary per bundle target. Use `sp` (or `both`) if the resource id must differ across targets.
 
 ## Deployment Workflow
 
@@ -174,3 +207,4 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
 | 504 Gateway Timeout | Request exceeded 120s | Use WebSockets for long operations |
 | `user token passthrough not enabled` | The app doesn't declare `user_api_scopes`, or the requested scope isn't allowed in the workspace | Declare `user_api_scopes` on the app — user authorization is GA and on by default, no admin toggle. Confirm the scope is allowed (admins can restrict which scopes apps may request). See [Databricks Apps auth docs](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth#user-authorization) |
+| `403` on a foundation model: `"...is disabled for this workspace. Please use Unity Gateway."` (console UI: `"...is no longer available. Use Unity Catalog model services."`) | The workspace enabled Enforce Unity Gateway: the app called a retired built-in `databricks-*` pay-per-token endpoint, or queried a provisioned-throughput foundation-model endpoint directly (`"...provisioned throughput ... directly is disabled..."`) | Declare a `uc_securable` (`securable_type: MODEL_SERVICE`, `EXECUTE`) resource for the model service, inject it with `valueFrom`, and call the resolved full name as `model` — see [Model Serving](appkit/model-serving.md#unity-catalog-model-services). For a PT endpoint, first create a model service that references it. Custom and external endpoints aren't affected by this migration, so a 403 on one has a different cause. |

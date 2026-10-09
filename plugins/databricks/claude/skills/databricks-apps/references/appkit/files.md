@@ -292,7 +292,7 @@ resources:
   apps:
     my_app:
       user_api_scopes:
-        - files.files        # Needed when using .asUser(req) programmatic API
+        - files        # Needed when using .asUser(req) programmatic API
       resources:
         - name: uploads-volume
           volume:

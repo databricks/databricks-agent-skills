@@ -208,6 +208,7 @@ demo.launch(server_name="0.0.0.0", server_port=port)
 
 **Databricks tips**:
 - Natural fit for model serving endpoint integration — pairs with the `databricks-python-sdk` skill
+- Unity Catalog model services: the `/serving-endpoints/<name>/invocations` call above targets a legacy endpoint only when `<name>` is a built-in `databricks-*` pay-per-token foundation model. Those are being retired for Unity Catalog **model services** (`catalog.schema.name` / `system.ai.<model>`); once the workspace enables Enforce Unity Gateway, a retired built-in endpoint returns **HTTP 403** `"...is disabled for this workspace. Please use Unity Gateway."`. Custom, external, and MPS-backed serving endpoints keep this path. See the model-service note in [2-app-resources.md](2-app-resources.md), and the **`databricks-unity-gateway`** skill for query APIs and permissions.
 - Use `gr.ChatInterface` for conversational AI demos
 - Use `gr.Blocks` for complex multi-component layouts
 
