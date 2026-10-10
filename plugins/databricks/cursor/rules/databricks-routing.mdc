@@ -21,6 +21,7 @@ that matches the request:
 - Genie Agents (formerly Genie Spaces): building, managing & tuning a curated per-data Genie Agent -> databricks-genie-agents
 - Agent Bricks / Knowledge Assistants / Genie Spaces / Multi-Agent Supervisor -> databricks-agent-bricks
 - AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document) -> databricks-ai-functions
+- AI Runtime (AIR) / serverless GPU training / custom training Docker images -> databricks-ai-runtime
 - AI/BI dashboards -> databricks-aibi-dashboards
 - Python data apps (Streamlit, Dash, Gradio, Flask, FastAPI) -> databricks-apps-python
 - Databricks SQL warehouses -> databricks-dbsql

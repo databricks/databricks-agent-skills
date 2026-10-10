@@ -29,7 +29,7 @@
       "version": "0.2.0"
     },
     "databricks-ai-runtime": {
-      "description": "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` workload YAML, passing hyperparameters and secrets, checking run status, listing/cancelling runs, streaming a run's logs and watching its progress, custom Docker image setup, and environment configuration.",
+      "description": "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` worklo...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -37,8 +37,8 @@
         "assets/databricks.svg",
         "docker-images.md"
       ],
-      "repo_dir": "experimental",
-      "version": "0.2.0"
+      "repo_dir": "skills",
+      "version": "0.2.1"
     },
     "databricks-aibi-dashboards": {
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries...",
@@ -556,20 +556,41 @@
       "version": "0.1.0"
     },
     "databricks-zerobus-ingest": {
-      "description": "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC.",
+      "description": "Push records from apps, services, devices, or scripts directly into Unity Catalog Delta tables with Zerobus Ingest: SDKs (Python, TypeScript, Go, Java, Rust, C++, .NET), REST, OTLP, MQTT, Arrow Fli...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/1-setup-and-authentication.md",
-        "references/2-python-client.md",
-        "references/3-multilanguage-clients.md",
-        "references/4-protobuf-schema.md",
-        "references/5-operations-and-limits.md"
+        "examples/grpc_client.py",
+        "examples/mqtt_producer.py",
+        "references/arrow-flight.md",
+        "references/authentication.md",
+        "references/build-from-source.md",
+        "references/choose-an-interface.md",
+        "references/databricks-apps.md",
+        "references/go-sdk.md",
+        "references/grpc-api.md",
+        "references/how-it-works.md",
+        "references/java-sdk.md",
+        "references/kafka.md",
+        "references/migration-from-kafka-compatible-systems.md",
+        "references/mqtt.md",
+        "references/networking.md",
+        "references/new-to-databricks.md",
+        "references/observability.md",
+        "references/other-sdks.md",
+        "references/performance.md",
+        "references/protobuf-schema.md",
+        "references/python-sdk.md",
+        "references/recovery.md",
+        "references/rest.md",
+        "references/schema-management.md",
+        "references/troubleshooting.md",
+        "references/typescript-sdk.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "spark-python-data-source": {
       "description": "Build custom Python data sources for Apache Spark using the PySpark DataSource API \u2014 batch and streaming readers/writers for external systems. Use this skill whenever someone wants to connect Spark to an external system (database, API, message queue, custom protocol), build a Spark connector or plugin in Python, implement a DataSourceReader or DataSourceWriter, pull data from or push data to a system via Spark, or work with the PySpark DataSource API in any way. Even if they just say \"read from X in Spark\" or \"write DataFrame to Y\" and there's no native connector, this skill applies.",

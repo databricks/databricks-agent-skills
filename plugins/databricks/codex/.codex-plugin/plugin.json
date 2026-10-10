@@ -25,6 +25,7 @@
     "vector-search",
     "agent-bricks",
     "ai-functions",
+    "ai-runtime",
     "aibi-dashboards",
     "apps-python",
     "dbsql",
