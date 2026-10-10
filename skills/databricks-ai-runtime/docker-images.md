@@ -3,9 +3,9 @@
 Build a custom Docker image when your training workload needs a CUDA
 extension (flash-attn, apex, xformers, custom kernels), a non-standard
 framework, or any system-level dependency that doesn't fit a plain
-`pip install`. Reference the resulting image from the workload YAML via
-`environment.docker_image.url` and register it once with Databricks (see the
-last section).
+`pip install`. Push the resulting image to Databricks Artifact Registry in
+the workload's workspace, then reference its Unity Catalog name as
+`environment.unity_catalog_image` (see [Push and run](#push-and-run)).
 
 Two paths:
 
@@ -386,14 +386,48 @@ decide whether it applies to your workload.
 
 ---
 
-## Register and run
+## Push and run
 
-Custom images must be **registered** with Databricks before a workload can run
-them (one-time per image; the platform pulls and caches it). Follow the current
-registration procedure in the Artifact Registry docs:
-https://docs.databricks.com/aws/en/artifact-registry/
+Custom images must be stored in **Databricks Artifact Registry in the same
+workspace** where you submit the workload. Use Databricks CLI **1.19.0 or
+newer** for custom images and the `databricks air images push` helper.
 
-Reference the registered image in the workload YAML:
+Before pushing:
+
+- Ask a workspace admin to enable the **AI Runtime Beta Features** and
+  **Databricks Artifact Registry** previews.
+- Create or select a Unity Catalog catalog and schema, and obtain the
+  privileges to push and read images. Follow the
+  [Artifact Registry setup guide](https://docs.databricks.com/aws/en/artifact-registry/get-started).
+- Install and start Docker locally. Images must use `linux/amd64` and be
+  under 20 GB.
+- Configure a workspace OAuth profile for Docker authentication:
+  `databricks auth login --profile <profile>`.
+
+Build the image and push it with the CLI helper:
+
+```bash
+docker build --platform linux/amd64 -t my-training-image:v1 .
+databricks air images push \
+  --profile <profile> \
+  --source my-training-image:v1 \
+  --catalog main \
+  --schema ml \
+  --artifact training:v1
+```
+
+The helper authenticates Docker, tags the image, and pushes it; it does not
+build the image or submit a workload. Replace the destination catalog, schema,
+and artifact with your own. It prints the Unity Catalog image name, here
+`main.ml.training:v1`. For an image from another registry, authenticate Docker
+to that source registry first if it is private, then pass its full URI as
+`--source`. See the
+[image push guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/cli/image-push)
+and `databricks air images push --help` for options. Manual Docker tagging and
+pushing through the Artifact Registry setup guide is also supported.
+
+Reference the pushed image as `<catalog>.<schema>.<image>:<tag>` in the
+workload YAML; do not include a registry hostname:
 
 ```yaml
 experiment_name: my-training-job
@@ -401,10 +435,22 @@ compute:
   num_accelerators: 1
   accelerator_type: GPU_1xA10
 environment:
-  docker_image:
-    url: <registry>/<repo>:<tag>
+  unity_catalog_image: main.ml.training:v1
 command: |-
   python /app/train.py --epochs 5
 ```
 
-Use absolute paths in `command:` — see the WORKDIR section above.
+Do not set `environment.version` or `environment.dependencies` with
+`environment.unity_catalog_image`; install all dependencies in the Dockerfile.
+Use absolute paths in `command:` for code baked into the image — see the
+WORKDIR section above. To upload code separately, use `code_source.root_path`
+with CLI 1.20.0 or newer, or the equivalent nested snapshot format on an older
+CLI, and run it from `$CODE_SOURCE_PATH`. Both formats are shown in
+[SKILL.md](SKILL.md#workload-yaml).
+
+Validate and submit using the same workspace profile used to push the image:
+
+```bash
+databricks air run --file workload.yaml --dry-run -p <profile>
+databricks air run --file workload.yaml -p <profile>
+```

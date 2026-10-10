@@ -36,7 +36,7 @@ Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/
     └── databricks.png               # required: icon (Codex marketplace)
 ```
 
-**`SKILL.md`** is what every coding agent (Claude Code, Cursor, Codex CLI, OpenCode, Copilot, Antigravity) reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`.
+**`SKILL.md`** is what every coding agent reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`.
 
 **`agents/openai.yaml`** is Codex CLI's plugin-marketplace metadata format: `display_name`, `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt`. It controls how the skill renders in Codex's in-app marketplace. Other agents ignore this file. The repo ships it for every skill so the manifest is a single feed for all agents.
 

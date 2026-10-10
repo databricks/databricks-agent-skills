@@ -1,7 +1,7 @@
 interface:
   display_name: "Databricks Zerobus Ingest"
-  short_description: "Build Zerobus Ingest clients for near real-time data ingestion into Databricks Delta tables via gRPC."
+  short_description: "Build producers that push records into Unity Catalog Delta tables with the Zerobus Ingest SDKs or REST API, and verify the rows landed."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
-  default_prompt: "Use $databricks-zerobus-ingest for build zerobus ingest clients for near real-time data ingestion into databricks delta tables via grpc."
+  default_prompt: "Use $databricks-zerobus-ingest to stream application events, telemetry, or IoT data from a service into a Databricks Delta table with the Zerobus SDKs or REST API, or to choose between Zerobus, OTLP, Apache Kafka-compatible producer APIs, MQTT, and other ingestion paths."

@@ -60,6 +60,10 @@ Promoted skills include `databricks-ai-functions`, `databricks-agent-bricks`,
 `databricks-zerobus-ingest`. `databricks-data-discovery` (Genie One data
 discovery / NL data Q&A / SQL generation) was also promoted to stable.
 
+[`databricks-ai-runtime`](../skills/databricks-ai-runtime/) (AI Runtime GPU
+training workloads and custom Docker images) now lives in stable
+and installs by default.
+
 Earlier experimental copies of `databricks-bundles`, `databricks-lakebase-autoscale`,
 and `databricks-config` were merged into the stable
 [`databricks-dabs`](../skills/databricks-dabs/),

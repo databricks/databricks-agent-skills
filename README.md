@@ -1,7 +1,7 @@
 # Databricks AI Tools
 
 Build on Databricks with AI coding agents such as Claude Code, Cursor, Codex,
-and GitHub Copilot.
+GitHub Copilot, and many others.
 
 This repository provides the skills and agent plugins for Databricks AI Tools.
 Skills give your agent Databricks-specific guidance for building apps, jobs,
@@ -29,12 +29,10 @@ but end up loaded by the same agents — pick whichever fits your workflow.
 databricks aitools install
 ```
 
-The CLI auto-detects your coding agent(s) and installs the stable skills to the
-right location:
-
-- **Claude Code** → `~/.claude/skills/`
-- **Cursor**, **Codex CLI**, **OpenCode**, **GitHub Copilot**, **Antigravity**
-  → their respective skill directories
+The CLI auto-detects your coding agent(s) and installs the stable skills into
+each agent's own skills directory. For example, Claude Code skills are
+installed in `~/.claude/skills/`. Run `databricks aitools --help` for the
+current list of supported agents.
 
 For finer control, use the `aitools skills install` subcommand directly — it
 accepts a positional skill name and an `--experimental` flag (see the
@@ -119,6 +117,7 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-vector-search** — Vector Search endpoints + indexes for RAG and semantic search.
 - **databricks-agent-bricks** — Agent Bricks: Knowledge Assistants, Genie Spaces, Multi-Agent Supervisor.
 - **databricks-ai-functions** — Built-in AI Functions (ai_query, ai_classify, ai_extract, ai_parse_document, ai_forecast) in SQL and PySpark.
+- **databricks-ai-runtime** — AI Runtime (`air`) CLI for serverless GPU training workloads and custom Docker images.
 - **databricks-aibi-dashboards** — AI/BI dashboards with a SQL-validation workflow.
 - **databricks-apps-python** — Python data apps (Streamlit, Dash, Gradio, Flask, FastAPI, Reflex); prefers AppKit for new apps.
 - **databricks-dbsql** — Databricks SQL warehouse patterns.
