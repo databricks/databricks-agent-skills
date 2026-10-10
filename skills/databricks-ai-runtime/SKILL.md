@@ -1,9 +1,9 @@
 ---
 name: databricks-ai-runtime
 description: "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` workload YAML, passing hyperparameters and secrets, checking run status, listing/cancelling runs, streaming a run's logs and watching its progress, custom Docker image setup, and environment configuration."
-compatibility: Requires the Databricks CLI with the `air` command. See the [installation guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/cli/installation) to get started.
+compatibility: Requires the Databricks CLI with the air command. Flattened code_source requires CLI 1.20.0 or newer; older CLIs can use the nested snapshot format documented below. See the [installation guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/cli/installation).
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # Databricks AI Runtime (`databricks air`)
@@ -30,12 +30,20 @@ covers workflow and the few things the help does not spell out.
 
 ## Session setup
 
-Confirm the command is available and list your Databricks config profiles:
+Check the CLI version, confirm the command is available, and list your
+Databricks config profiles:
 
 ```bash
+databricks version
 databricks air --help
 databricks auth profiles --skip-validate    # available Databricks config profiles
 ```
+
+The examples use flattened `code_source` fields, available in
+[Databricks CLI 1.20.0 and newer](https://github.com/databricks/cli/releases/tag/v1.20.0).
+On an older CLI, use the equivalent nested snapshot format shown under
+[Workload YAML](#workload-yaml). CLI 1.20.0 and newer accept both formats.
+Do not mix nested and flattened fields in the same configuration.
 
 Pass `-p <profile>` on every command. Add `-o json` for scripted/programmatic
 calls so you get a structured envelope instead of human text:
@@ -79,9 +87,7 @@ environment:
   dependencies:
     - mlflow
 code_source:
-  type: snapshot
-  snapshot:
-    root_path: "."                   # snapshot this dir; extracted to $CODE_SOURCE_PATH on each node
+  root_path: "."                     # relative to workload.yaml; extracted to $CODE_SOURCE_PATH on each node
 command: |-
   cd "$CODE_SOURCE_PATH"
   python train.py
@@ -91,6 +97,21 @@ Submit with `databricks air run --file workload.yaml -p <profile>`. Field
 details live in `databricks air run -h config.<field>` (the authoritative
 source). Today's accelerator types are `GPU_1xA10` and `GPU_8xH100`; confirm
 with `databricks air run -h config.compute`.
+
+For an older CLI, replace only the `code_source` block above with:
+
+```yaml
+code_source:
+  type: snapshot
+  snapshot:
+    root_path: "."
+```
+
+The values and behavior are the same: add `type: snapshot` under `code_source`
+and put all snapshot fields (`root_path`, and any `remote_volume`, `git`, or
+`include_paths`) inside `code_source.snapshot`. Keep the rest of the workload
+unchanged. Check `databricks air run -h config.code_source` for the fields
+supported by the installed CLI.
 
 ## Configuring the workload
 
@@ -214,8 +235,11 @@ Your `command:` runs **once per node**, so per-process ranks (`RANK`,
 
 3. **Pre-flight the referenced resources** so the job does not die on startup:
    confirm every `secrets` scope/key exists (`databricks secrets list-scopes` /
-   `list-secrets <scope>`), and if `environment.docker_image` is set, that the
-   image is registered with Databricks (see [docker-images.md](docker-images.md)).
+   `list-secrets <scope>`), and if `environment.unity_catalog_image` is set,
+   that the image has been pushed to Databricks Artifact Registry in the same
+   workspace and the submitting identity can read it (see
+   [docker-images.md](docker-images.md)). Do not combine a custom image with
+   `environment.version` or `environment.dependencies`.
 
 4. **Dry-run before submitting.** This validates the config without launching:
    ```bash
@@ -288,4 +312,5 @@ kernels), or dependencies that do not fit `environment.dependencies`.
 - Using Databricks-provided base images
 - Dockerfile patterns
 - Pre-build compatibility checklist (CUDA/driver, PyTorch, NCCL, EFA/RDMA)
-- Registering images with Databricks
+- Pushing images with `databricks air images push` and running them with
+  `environment.unity_catalog_image`
