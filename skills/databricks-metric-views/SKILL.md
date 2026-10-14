@@ -23,7 +23,7 @@ Use this skill when:
 
 ## First: can this even be a metric view? (decision gate)
 
-**Before authoring, confirm the measure re-aggregates at query time.** Additive `SUM`/`COUNT`, a `COUNT(DISTINCT)` that recomputes per cell, `MEASURE()` ratios (divide last), and supported **window measures** (trailing / cumulative / period-over-period — [Pattern 8](references/create-patterns.md#pattern-8-window-measures-experimental-version-01)) all re-aggregate correctly and are valid metric-view measures; this list is not exhaustive. The gate below is about *disqualifying* shapes — if **any** of the following hold, it is **not** a metric view: author a **governed Unity Catalog SQL function** instead (build it with `databricks-dbsql`) and expose it to Genie as a trusted registered SQL function (Design Priorities surface #11), rather than forcing it into a view or a pre-aggregated helper view:
+**Before authoring, confirm the measure re-aggregates at query time.** Additive `SUM`/`COUNT`, a `COUNT(DISTINCT)` that recomputes per cell, `MEASURE()` ratios (divide last), and supported **window measures** (trailing / cumulative / period-over-period — [Pattern 8](references/create-patterns.md#pattern-8-window-measures)) all re-aggregate correctly and are valid metric-view measures; this list is not exhaustive. The gate below is about *disqualifying* shapes — if **any** of the following hold, it is **not** a metric view: author a **governed Unity Catalog SQL function** instead (build it with `databricks-dbsql`) and expose it to Genie as a trusted registered SQL function (Design Priorities surface #11), rather than forcing it into a view or a pre-aggregated helper view:
 
 - **Non-additive at the queried grain** — summing it across a dimension double-counts. Distinct-entity counts are the classic trap: an entity appearing under two attribute values is **one** entity, not two, so a per-cell distinct count must not be summed across an arbitrary multi-attribute cross.
 - **Computed per-entity, then aggregated**, where the per-entity step isn't a sum/count/ratio-of-sums — e.g. a per-entity min/max across two periods, or a threshold on a per-entity distinct count.
@@ -102,6 +102,6 @@ See the official [metric view bundle example](https://github.com/databricks/bund
 - [Metric Views Documentation](https://docs.databricks.com/metric-views/)
 - [YAML Syntax Reference](https://docs.databricks.com/metric-views/data-modeling/syntax)
 - [Joins](https://docs.databricks.com/metric-views/data-modeling/joins)
-- [Window Measures](https://docs.databricks.com/metric-views/data-modeling/window-measures) (Experimental)
+- [Window Measures](https://docs.databricks.com/uc-semantics/metric-views/advanced-techniques#window-measures)
 - [Materialization](https://docs.databricks.com/metric-views/materialization)
 - [MEASURE() Function](https://docs.databricks.com/sql/language-manual/functions/measure)

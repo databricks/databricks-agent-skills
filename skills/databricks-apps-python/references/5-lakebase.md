@@ -142,6 +142,6 @@ asyncpg
 
 ## Notes
 
-- Lakebase is in **Public Preview**
+- Lakebase is generally available
 - Each app gets its own PostgreSQL role with `Can connect and create` permission
 - Lakebase is ideal alongside SQL warehouse: use Lakebase for app state, SQL warehouse for analytics

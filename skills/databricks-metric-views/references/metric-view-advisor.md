@@ -370,7 +370,7 @@ After building suggestions from existing sources, identify what's NOT yet covere
 
 Present this gap analysis alongside the suggestions so the user sees both what you recommend AND what additional coverage they could add.
 
-**Window measures:** only suggest when the user specifically asks — see [Pattern 8](create-patterns.md#pattern-8-window-measures-experimental-version-01) for `version`/DBR requirements.
+**Window measures:** only suggest when the user specifically asks — see [Pattern 8](create-patterns.md#pattern-8-window-measures) for the syntax.
 
 **Formatting guidelines:** apply the design best practices in this file — the dimension/measure patterns and metadata-priority rules in [Step 2](#step-2--analyze-the-inputs) — and the composability / semantic-metadata / join rules in [`create-patterns.md`](create-patterns.md). In short: atomic measures first then compose, humanize raw codes, include raw + truncated time dimensions, prefer fewer richer views, and fill `comment`/`display_name`/`synonyms` for Genie.
 

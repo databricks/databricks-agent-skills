@@ -14,7 +14,7 @@ Key characteristics:
 
 ### Requirements
 
-- **Compute**: Unity Catalog-enabled **Serverless** SQL warehouse
+- **Compute**: Unity Catalog-enabled **Pro or Serverless** SQL warehouse (Classic/Standard warehouses are not supported)
 - **Region**: Serverless SQL warehouse support must be available in your region
 - **Permissions**:
   - Creator needs: `SELECT` on base tables, `USE CATALOG`, `USE SCHEMA`, `CREATE TABLE`, `CREATE MATERIALIZED VIEW`
@@ -115,6 +115,8 @@ AS SELECT * FROM catalog.schema.daily_aggregates;
 ```
 
 Valid intervals: 1-72 hours, 1-31 days, 1-8 weeks. A Databricks Job is automatically created for scheduled refreshes.
+
+**Prefer `SCHEDULE` inline**: For simple daily/weekly cadences, include the `SCHEDULE` clause directly in the `CREATE MATERIALIZED VIEW` statement rather than creating a separate Databricks Job. Use Job-Based Orchestration (option 4 below) only when you need to integrate with existing job pipelines or require complex orchestration.
 
 #### 3. Event-Driven Refresh (TRIGGER ON UPDATE)
 
@@ -230,7 +232,7 @@ Default timeout is **2 days** if no warehouse timeout is configured. After chang
 | **Syntax** | Standard `CREATE MATERIALIZED VIEW` | `CREATE OR REFRESH MATERIALIZED VIEW` with `PRIVATE` option |
 | **Private MVs** | Not supported | `PRIVATE` keyword for pipeline-scoped views |
 | **Refresh trigger** | Schedule, trigger-on-update, manual, or job-based | Pipeline update (manual or scheduled) |
-| **Compute** | Serverless SQL warehouse (creation); serverless pipeline (refresh) | Pipeline compute (serverless or classic) |
+| **Compute** | Pro or Serverless SQL warehouse (creation); serverless pipeline (refresh) | Pipeline compute (serverless or classic) |
 | **Data quality** | Not supported | Expectations supported |
 | **Best for** | Standalone MVs, BI dashboard acceleration, simple ETL | Complex multi-table pipelines, orchestrated transformations |
 

@@ -1,6 +1,6 @@
 # Database connectors
 
-SQL Server (cloud and on-prem) is the GA database connector. Postgres CDC, MySQL CDC, query-based variants, and Foreign Catalog connectors are Public Preview — production-supported but covered briefly here; see the [connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) for their setup until deep coverage lands in a follow-up.
+SQL Server (cloud and on-prem) is the GA database connector. Postgres CDC, MySQL CDC, query-based variants, and Foreign Catalog connectors are Public Preview — production-supported but covered briefly here; see the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for their setup until deep coverage lands in a follow-up.
 
 ---
 
@@ -134,7 +134,7 @@ The gateway compute itself runs on Databricks-managed VPC infrastructure inside 
 
 ## Public Preview database connectors (brief)
 
-The following are production-supported but ship more pattern variance than SQL Server. Use the [connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) for current setup steps:
+The following are production-supported but ship more pattern variance than SQL Server. Use the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for current setup steps:
 
 - **Postgres CDC, MySQL CDC** — same gateway pattern as SQL Server; logical decoding (Postgres) or binlog (MySQL) replaces CT/CDC.
 - **Oracle / Teradata / SQL Server / Postgres / MySQL query-based** — no gateway; the connector issues periodic queries instead of reading a change feed. Trade-off: simpler, but higher source load and no per-event history.

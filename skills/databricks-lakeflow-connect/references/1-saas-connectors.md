@@ -82,7 +82,7 @@ GA4 ingestion goes **via BigQuery** — Lakeflow Connect reads from the GA4 BigQ
 
 - **Auth**: OAuth U2M.
 - **Source objects**: HubSpot CRM objects (Contacts, Companies, Deals, Tickets, etc.) plus engagements. Check the connector reference for the current object list.
-- **Status caveat**: status may differ by region — check the [connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) to confirm GA in your region before relying on production SLAs.
+- **Status caveat**: status may differ by region — check the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) to confirm GA in your region before relying on production SLAs.
 
 ---
 

@@ -80,6 +80,8 @@ export default createAgent({                 // id = folder name "support"
 });
 ```
 
+**Image generation:** a code-agent tool that calls an image model is in [Image Generation](image-generation.md).
+
 **Markdown vs code:** markdown for prompt + plugin tools (most agents). Code when you need inline `tool()` logic, sub-agents (`agents: { ... }`), or `DatabricksAdapter.fromSupervisorApi`.
 
 **Tools are opt-in.** An agent with no declared `tools:` gets an **empty** tool index — auto-inherit is **off by default** (turn on per-origin with `agents({ autoInheritTools: { file: true } })`, and even then only tools the plugin author marked `autoInheritable` and non-mutating spread in). Any plugin whose tools you reference must be registered in `createApp({ plugins: [...] })` — scaffold it into `--features` (see below), or the plugin throws at setup with an `Available: …` list.

@@ -94,7 +94,7 @@ for await (const status of etl.runAndWait({ startDate: "2025-01-01" })) {
 }
 ```
 
-Read methods (`lastRun`, `listRuns`, `getRun`, `getRunOutput`, `getJob`) and `cancelRun` follow the same `ExecutionResult<T>` shape. Reads cache for 60s with 3 retries. `runAndWait` has a 600s server-side cap, but **client-facing requests are bounded by the Apps platform's 120s reverse-proxy timeout** (see [Platform Guide](../platform-guide.md), "HTTP Proxy & Streaming"). For runs longer than ~120s, use `runNow` and poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests instead of streaming.
+Read methods (`lastRun`, `listRuns`, `getRun`, `getRunOutput`, `getJob`) and `cancelRun` follow the same `ExecutionResult<T>` shape. Reads cache for 60s with 3 retries. `runAndWait` has a 600s server-side cap, but **client-facing requests are bounded by the Apps proxy timeouts**: 60s without response headers on Spaces apps, 300s total (see [Platform Guide](../platform-guide.md), "HTTP Proxy & Streaming"). For runs longer than ~60s, use `runNow` and poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests instead of streaming.
 
 ### Execution context
 
@@ -102,7 +102,7 @@ All operations run as the **app's service principal**. The resource binding in `
 
 ## HTTP Endpoints
 
-Routes mount at `/api/jobs/:jobKey/...` — full route list, request bodies, and SSE frame shape via `npx @databricks/appkit docs Jobs plugin`. The streaming endpoint (`POST /api/jobs/:jobKey/run?stream=true`) emits `data: <json>` events terminated by a blank line (`\n\n`), where the JSON is `{ status, timestamp, run }`; **clients must buffer until `\n\n` and reassemble across chunk boundaries** before parsing. `runAndWait` (server-side) honors `req.signal` and aborts cleanly on client disconnect — but the platform's 120s reverse-proxy cap applies regardless.
+Routes mount at `/api/jobs/:jobKey/...` — full route list, request bodies, and SSE frame shape via `npx @databricks/appkit docs Jobs plugin`. The streaming endpoint (`POST /api/jobs/:jobKey/run?stream=true`) emits `data: <json>` events terminated by a blank line (`\n\n`), where the JSON is `{ status, timestamp, run }`; **clients must buffer until `\n\n` and reassemble across chunk boundaries** before parsing. `runAndWait` (server-side) honors `req.signal` and aborts cleanly on client disconnect — but the platform's proxy timeouts apply regardless.
 
 ## Resource Requirements
 
@@ -136,6 +136,6 @@ Verify exact `--set` keys and resource shape via `databricks apps manifest --pro
 | `Unknown job key "X"` | Job env var not set or misspelled | Check `DATABRICKS_JOB_X` is set in `app.yaml` or `server/.env` |
 | 400 with Zod issues on `runNow` | Params don't match the per-job `params` schema | Fix the input or relax the schema |
 | `dbt` job rejects params | `dbt` task type accepts no parameters | Trigger with no params, or remove `taskType: "dbt"` |
-| 504 / timeout on `runAndWait` | Run exceeds the platform's 120s reverse-proxy timeout (server-side cap is 600s but the proxy cuts first) | Switch to `runNow` + poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests; raising `waitTimeout` does not help |
+| 502 / 504 / timeout on `runAndWait` | Run exceeds the Apps proxy timeout (60s without response headers on Spaces apps, 300s total; server-side cap is 600s but the proxy cuts first) | Switch to `runNow` + poll `getRun` (or `GET /api/jobs/:jobKey/status`) from separate short-lived requests; raising `waitTimeout` does not help |
 | SSE events arrive split / unparseable | Client not reassembling `data:` frames across chunks | Buffer until `\n\n`, then parse — see streaming pattern above |
 | `result.data` is undefined | `result.ok` was false but the caller skipped the check | Always branch on `result.ok` before reading `result.data` |

@@ -43,6 +43,7 @@ Build apps that deploy to Databricks Apps platform.
 | Using Lakebase (OLTP database) | [Lakebase Guide](references/appkit/lakebase.md) |
 | Adding Genie chat / Genie-powered apps | [Genie Guide](references/appkit/genie.md) — follow the Genie agent workflow below |
 | Using Model Serving (ML inference) | [Model Serving Guide](references/appkit/model-serving.md) |
+| Generating or editing images (text-to-image, image-to-image) | [Image Generation Guide](references/appkit/image-generation.md) |
 | Hosting an AI agent (tool-using chatbot, **beta**) | [Agents Guide](references/appkit/agents.md) — import from `@databricks/appkit/beta` |
 | Typed data contracts (proto-first design) | [Proto-First Guide](references/appkit/proto-first.md) and [Plugin Contracts](references/appkit/proto-contracts.md) |
 | Managing files in UC Volumes | [Files Guide](references/appkit/files.md) |
@@ -140,6 +141,7 @@ After completing the decision gate above, use this routing table:
 - **Natural language query interface over tables (Genie)**: Use `genie()` plugin — see [Genie Guide](references/appkit/genie.md)
 - **Call ML model endpoint**: Use `serving()` plugin — see [Model Serving Guide](references/appkit/model-serving.md)
 - **Call a foundation model / UC model service (`system.ai.*`)**: Declare a `uc_securable` (`MODEL_SERVICE`) resource and call the service name on `/ai-gateway/mlflow/v1` — see [Unity Catalog model services](references/appkit/model-serving.md#unity-catalog-model-services) and the `databricks-unity-gateway` skill (not `serving()`, which takes serving-endpoint names)
+- **Generate or edit images from a prompt**: streaming Express route (or an `agents` tool for chat UIs) + native `fetch` to an image-capable Foundation Model — see [Image Generation Guide](references/appkit/image-generation.md)
 - **AI agent that *calls tools* (SQL, files, Genie, MCP), delegates to sub-agents, or streams a multi-turn chat with human-in-the-loop approval**: Use the `agents()` plugin (import from `@databricks/appkit/beta`, **beta**) — see [Agents Guide](references/appkit/agents.md)
 - **Trigger or monitor a Lakeflow Job from the app**: Use the `jobs()` plugin — see [Jobs Guide](references/appkit/jobs.md)
 - **⚠️ NEVER add custom endpoints to run SELECT queries against the warehouse** — always use SQL files in `config/queries/`

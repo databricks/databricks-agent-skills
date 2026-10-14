@@ -186,15 +186,18 @@ project) vs legacy `database` (provisioned instance) resource key, and the exact
 
 ## HTTP Proxy & Streaming
 
-The Databricks Apps reverse proxy enforces a **120-second per-request timeout** (NOT configurable).
+The Databricks Apps proxies enforce request timeouts that you can't configure. They depend on the app type, as measured on E2 Dogfood:
 
-| Behavior | Detail |
-|----------|--------|
-| 504 in app logs? | **No** — the error is generated at the proxy. App logs show nothing. |
-| SSE streaming | Responses may be **buffered** and delivered in chunks, not token-by-token |
-| WebSockets | Bypass the 120s limit — working but undocumented |
+| | Plain response (headers sent only when done) | Streamed response (headers first, then bytes at least every ~10s) | WebSocket |
+|--|--|--|--|
+| Container (classic) app | OK up to 300s, then `504 upstream request timeout` | OK up to 300s, then the stream is cut | No cap seen: a reply after 400s, 400s fully idle, and 700s with heartbeats all worked |
+| Spaces app (behind the Apps gateway) | **`502` HTML page if no response headers within 60s** | OK up to 300s, then the stream is cut | **Upgrade fails with `503`** (`upstream connect error … connection termination`) |
 
-For long-running agent interactions, use **WebSockets** instead of SSE.
+- **Anything that may take over 60s, stream it.** Flush headers immediately and write a heartbeat (an SSE comment or a blank NDJSON line) every ~10s. Once headers are out, the status is `200`, so report errors in the body. The AppKit `agents` plugin's `/api/agents/chat` and the image generation route ([Image Generation](appkit/image-generation.md)) work this way.
+- **Over 5 minutes:** start the work, return an id, and poll from short requests.
+- **Timeout errors never reach app logs.** The proxy generates them, and the error body is HTML or plain text, not JSON.
+- **SSE streaming:** responses may be **buffered** and delivered in chunks, not token-by-token.
+- **WebSockets** escape the 300s cap on Container apps, but their upgrade failed on a Spaces app (tested with a non-browser client). Don't rely on them unless the app is Container-only, and prefer streamed HTTP.
 
 ## Common Errors
 
@@ -205,6 +208,6 @@ For long-running agent interactions, use **WebSockets** instead of SSE.
 | `File is larger than 10485760 bytes` | Bundled dependencies | Use requirements.txt / package.json |
 | OBO scopes missing after deploy | Destructive update wiped them | Re-apply scopes after each deploy |
 | `${var.xxx}` appears literally in env | Variables not resolved in config | Use literal values, not bundle variables |
-| 504 Gateway Timeout | Request exceeded 120s | Use WebSockets for long operations |
+| `502` HTML page after ~60s (Spaces apps), `504` after 300s | Proxy request timeout (see [HTTP Proxy & Streaming](#http-proxy--streaming)) | Stream the response with heartbeats; for work over 5 minutes, start it and poll |
 | `user token passthrough not enabled` | The app doesn't declare `user_api_scopes`, or the requested scope isn't allowed in the workspace | Declare `user_api_scopes` on the app — user authorization is GA and on by default, no admin toggle. Confirm the scope is allowed (admins can restrict which scopes apps may request). See [Databricks Apps auth docs](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth#user-authorization) |
 | `403` on a foundation model: `"...is disabled for this workspace. Please use Unity Gateway."` (console UI: `"...is no longer available. Use Unity Catalog model services."`) | The workspace enabled Enforce Unity Gateway: the app called a retired built-in `databricks-*` pay-per-token endpoint, or queried a provisioned-throughput foundation-model endpoint directly (`"...provisioned throughput ... directly is disabled..."`) | Declare a `uc_securable` (`securable_type: MODEL_SERVICE`, `EXECUTE`) resource for the model service, inject it with `valueFrom`, and call the resolved full name as `model` — see [Model Serving](appkit/model-serving.md#unity-catalog-model-services). For a PT endpoint, first create a model service that references it. Custom and external endpoints aren't affected by this migration, so a 403 on one has a different cause. |

@@ -10,7 +10,7 @@ parent: databricks-core
 # Databricks AI Functions
 
 > **Official Docs:** https://docs.databricks.com/large-language-models/ai-functions
-> Individual function reference: https://docs.databricks.com/sql/language-manual/functions/
+> Individual function reference: https://docs.databricks.com/sql/language-manual/sql-ref-functions-builtin
 
 ## Overview
 

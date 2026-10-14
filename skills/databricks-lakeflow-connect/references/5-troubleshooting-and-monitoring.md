@@ -46,7 +46,7 @@ For event-log table conventions (filtering by `event_type`, joining with metrics
 When the event log doesn't explain a failure:
 
 1. **Public docs hub** — [Lakeflow Connect overview](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect) covers concepts and links to per-connector pages.
-2. **Connector reference** — [per-connector setup](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) is the canonical source for current auth, limits, and supported objects per source.
+2. **Connector reference** — [per-connector setup](https://docs.databricks.com/ingestion/lakeflow-connect/) is the canonical source for current auth, limits, and supported objects per source.
 3. **Workspace support** — file a support case from Help -> Contact Support inside the workspace; attach the pipeline ID and a relevant `event_log` extract.
 
 For monitoring patterns beyond event-log queries (dashboards, alerting on pipeline state, SLAs), see **databricks-pipelines**.

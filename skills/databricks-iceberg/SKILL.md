@@ -33,7 +33,7 @@ Databricks provides multiple ways to work with Apache Iceberg: native managed Ic
 | **External Iceberg Reads (Uniform)** | Delta table that auto-generates Iceberg metadata — read as Iceberg externally, write as Delta internally |
 | **Compatibility Mode** | UniForm variant for streaming tables and materialized views in SDP pipelines |
 | **Iceberg REST Catalog (IRC)** | Unity Catalog's built-in REST endpoint implementing the Iceberg REST Catalog spec — lets external engines (Spark, PyIceberg, Snowflake) access UC-managed Iceberg data |
-| **Iceberg v3** | Next-gen format (Beta, DBR 17.3+) — deletion vectors, VARIANT type, row lineage |
+| **Iceberg v3** | Next-gen format (DBR 18 LTS+) — deletion vectors, VARIANT type, row lineage |
 
 ---
 
@@ -148,5 +148,5 @@ SET TBLPROPERTIES (
 - **[UniForm](https://docs.databricks.com/delta/uniform.html)** — Delta Universal Format
 - **[Iceberg REST Catalog](https://docs.databricks.com/external-access/iceberg)** — IRC endpoint and external engine access
 - **[Compatibility Mode](https://docs.databricks.com/external-access/compatibility-mode)** — UniForm for streaming tables and MVs
-- **[Iceberg v3](https://docs.databricks.com/iceberg/iceberg-v3)** — next-gen format features (Beta)
-- **[Foreign Tables](https://docs.databricks.com/query-data/foreign-tables.html)** — reading external catalog data
+- **[Iceberg v3](https://docs.databricks.com/iceberg/iceberg-v3)** — next-gen format features
+- **[Foreign Tables](https://docs.databricks.com/tables/foreign)** — reading external catalog data

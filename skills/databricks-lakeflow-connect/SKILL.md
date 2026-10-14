@@ -56,7 +56,7 @@ Lakeflow Connect ships connectors at multiple release stages. **GA** and **Publi
 
 ### GA connectors
 
-Full coverage in this skill.
+Full coverage in this skill, except rows whose Reference is a public docs page.
 
 | Source | Type | Auth | Reference |
 |--------|------|------|-----------|
@@ -66,17 +66,17 @@ Full coverage in this skill.
 | Google Analytics 4 | SaaS pull (via BigQuery) | Service-account JSON | [1-saas-connectors.md](references/1-saas-connectors.md) |
 | HubSpot | SaaS pull | OAuth | [1-saas-connectors.md](references/1-saas-connectors.md) |
 | Confluence | SaaS pull | OAuth | [1-saas-connectors.md](references/1-saas-connectors.md) |
+| NetSuite | SaaS pull | Token-based authentication (TBA) | [NetSuite connector docs](https://docs.databricks.com/ingestion/lakeflow-connect/netsuite) |
+| Dynamics 365 | SaaS pull (via Azure Synapse Link) | OAuth U2M | [Dynamics 365 connector docs](https://docs.databricks.com/ingestion/lakeflow-connect/d365) |
 | SQL Server (cloud) | Database CDC | DB user + change tracking / CDC | [2-database-connectors.md](references/2-database-connectors.md) |
 | SQL Server (on-prem) | Database CDC | DB user + ExpressRoute / Direct Connect | [2-database-connectors.md](references/2-database-connectors.md) |
 
 ### Public Preview connectors
 
-Production-supported. Configuration may evolve before GA. Deep coverage is being added incrementally; until then, see the [public connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) for current setup steps.
+Production-supported. Configuration may evolve before GA. Deep coverage is being added incrementally; until then, see the [public connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for current setup steps.
 
 | Source | Type | Auth |
 |--------|------|------|
-| NetSuite | SaaS pull | OAuth |
-| Dynamics 365 | SaaS pull | OAuth |
 | PostgreSQL CDC | Database CDC | DB user + gateway |
 | MySQL CDC | Database CDC | DB user + gateway |
 | Oracle / Teradata / SQL Server / PG / MySQL (query-based) | Database query | DB user |
@@ -85,7 +85,7 @@ Production-supported. Configuration may evolve before GA. Deep coverage is being
 
 ### Beta and Private Preview
 
-Early-access connectors are not production-supported. The list changes month to month; check the [public connector reference](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors) for current availability.
+Early-access connectors are not production-supported. The list changes month to month; check the [public connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for current availability.
 
 For the Lakeflow-Connect-vs-Auto-Loader-vs-Federation-vs-Delta-Sharing decision, see [4-ingestion-decision-tree.md](references/4-ingestion-decision-tree.md).
 
@@ -256,5 +256,5 @@ For common errors and their fixes — duplicate-key violations, watermark / curs
 ## Resources
 
 - [Lakeflow Connect public docs hub](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect)
-- [Connector reference (per-connector setup)](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/connectors)
+- [Connector reference (per-connector setup)](https://docs.databricks.com/ingestion/lakeflow-connect/)
 - [Pricing](https://www.databricks.com/product/pricing/lakeflow-connect)
