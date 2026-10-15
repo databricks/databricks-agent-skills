@@ -6,7 +6,7 @@ in Databricks Apps. This is a working example extracted from databricksters-chec
 
 Features:
 - Validated dual-mode auth (OAuth M2M in Apps, PAT for local dev)
-- OpenAI SDK wired to Databricks serving endpoints
+- OpenAI SDK wired to Databricks model services (Unity Gateway) or serving endpoints
 - Token caching with expiry check
 - Multi-turn chat with conversation history
 - Viewer identity display
@@ -14,28 +14,56 @@ Features:
 
 Local Development:
     export DATABRICKS_TOKEN="dapi..."
-    export DATABRICKS_SERVING_BASE_URL="https://<workspace>/serving-endpoints"
-    export DATABRICKS_MODEL="<endpoint-name>"  # See databricks-model-serving
+    # Preferred: a Unity Catalog model service (built-in foundation models)
+    export DATABRICKS_SERVING_BASE_URL="https://<workspace>/ai-gateway/mlflow/v1"
+    export DATABRICKS_MODEL="system.ai.claude-sonnet-4-5"  # See databricks-unity-gateway
     streamlit run fm-minimal-chat.py
 
+    # Alternatively, a Model Serving endpoint (custom or external models):
+    #   DATABRICKS_SERVING_BASE_URL="https://<workspace>/serving-endpoints"
+    #   DATABRICKS_MODEL="<endpoint-name>"  # See databricks-model-serving
+
 Databricks Apps Deployment:
-    1. Create app.yaml:
+    1. Declare the model service as an app resource in databricks.yml. On deploy,
+       the app's service principal is granted EXECUTE on it (plus USE CATALOG /
+       USE SCHEMA when needed):
+       resources:
+         apps:
+           foundation_chat:
+             name: foundation-chat
+             source_code_path: ./
+             resources:
+               - name: model
+                 uc_securable:
+                   securable_type: MODEL_SERVICE
+                   permission: EXECUTE
+                   securable_full_name: system.ai.claude-sonnet-4-5
+
+    2. Create app.yaml and inject the resource with valueFrom (it resolves to the
+       model service's full name):
        command: ["streamlit", "run", "fm-minimal-chat.py"]
        env:
          - name: DATABRICKS_SERVING_BASE_URL
-           value: "https://<workspace>/serving-endpoints"
+           value: "https://<workspace>/ai-gateway/mlflow/v1"
          - name: DATABRICKS_MODEL
-           value: "<endpoint-name>"  # See databricks-model-serving
+           valueFrom: model
 
-    2. Create requirements.txt:
+       For a Model Serving endpoint instead, declare a `serving_endpoint` resource
+       (CAN_QUERY), set the base URL to .../serving-endpoints, and use
+       `valueFrom: <that resource's name>` for DATABRICKS_MODEL.
+
+    3. Create requirements.txt:
        streamlit>=1.38,<2.0
        openai>=1.30,<2.0
-       requests>=2.31,<3.0  # Needed for endpoint validation and OAuth fallback
+       requests>=2.31,<3.0  # Needed for model validation and OAuth fallback
 
-    3. Deploy:
-       databricks apps create foundation-chat --source-code-path .
-
-    4. Add service principal via UI for OAuth M2M auth
+    4. Deploy the bundle, then start the app (deploy alone leaves it stopped
+       unless the app sets lifecycle.started: true):
+       databricks bundle deploy
+       databricks bundle run foundation_chat
+       The Apps runtime injects the service principal's DATABRICKS_CLIENT_ID /
+       DATABRICKS_CLIENT_SECRET for OAuth M2M; no manual service-principal setup
+       is needed.
 """
 
 import time

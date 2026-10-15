@@ -4,13 +4,22 @@ import threading
 import time
 from collections.abc import MutableMapping as MutableMappingABC
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, MutableMapping, Tuple
+from typing import Any, Callable, Dict, Literal, MutableMapping, Tuple
 from urllib.parse import urlsplit
 
 from openai import OpenAI
 
 CACHE_KEY = "dbx_oauth"
 VALIDATION_TTL_SECONDS = 300
+
+# Supported base-URL surfaces. `/serving-endpoints` targets a Model Serving
+# endpoint by name; `/ai-gateway/mlflow/v1` targets a Unity Catalog model
+# service by its full name (e.g. system.ai.claude-sonnet-4-5).
+ApiSurface = Literal["serving-endpoints", "unity-gateway"]
+API_SURFACE_BY_PATH: Dict[str, ApiSurface] = {
+    "/serving-endpoints": "serving-endpoints",
+    "/ai-gateway/mlflow/v1": "unity-gateway",
+}
 
 
 class DatabricksLLMConfigError(RuntimeError):
@@ -23,6 +32,7 @@ class DatabricksLLMConfig:
     workspace_host: str
     model: str
     auth_mode: str
+    api_surface: ApiSurface
 
 
 _token_lock = threading.Lock()
@@ -48,11 +58,18 @@ def _normalize_host(raw_host: str) -> str:
     return f"{parts.scheme}://{parts.netloc}"
 
 
-def _normalize_serving_base_url(raw_url: str) -> str:
+def _normalize_serving_base_url(raw_url: str) -> Tuple[str, str, ApiSurface]:
+    """Return (normalized_base_url, workspace_host, api_surface).
+
+    Accepts a base URL ending in either `/serving-endpoints` (Model Serving
+    endpoint) or `/ai-gateway/mlflow/v1` (Unity Catalog model service).
+    """
     value = (raw_url or "").strip()
     if not value:
         raise DatabricksLLMConfigError(
-            "DATABRICKS_SERVING_BASE_URL must be set to https://<workspace-host>/serving-endpoints."
+            "DATABRICKS_SERVING_BASE_URL must be set to https://<workspace-host>"
+            "/ai-gateway/mlflow/v1 (UC model service) or https://<workspace-host>"
+            "/serving-endpoints (Model Serving endpoint)."
         )
     if not value.startswith(("http://", "https://")):
         value = "https://" + value
@@ -60,18 +77,20 @@ def _normalize_serving_base_url(raw_url: str) -> str:
     if not parts.scheme or not parts.netloc:
         raise DatabricksLLMConfigError(f"Invalid DATABRICKS_SERVING_BASE_URL: {raw_url!r}")
     path = parts.path.rstrip("/")
-    if path != "/serving-endpoints":
+    api_surface = API_SURFACE_BY_PATH.get(path)
+    if api_surface is None:
         raise DatabricksLLMConfigError(
-            "DATABRICKS_SERVING_BASE_URL must end with /serving-endpoints for the target workspace."
+            "DATABRICKS_SERVING_BASE_URL must end with /ai-gateway/mlflow/v1 (UC "
+            "model service) or /serving-endpoints (Model Serving endpoint)."
         )
-    return f"{parts.scheme}://{parts.netloc}/serving-endpoints"
+    workspace_host = f"{parts.scheme}://{parts.netloc}"
+    return f"{workspace_host}{path}", workspace_host, api_surface
 
 
 def get_databricks_llm_config() -> DatabricksLLMConfig:
-    serving_base_url = _normalize_serving_base_url(
+    serving_base_url, workspace_host, api_surface = _normalize_serving_base_url(
         os.environ.get("DATABRICKS_SERVING_BASE_URL", "")
     )
-    workspace_host = serving_base_url[: -len("/serving-endpoints")]
 
     configured_host = os.environ.get("DATABRICKS_HOST", "").strip()
     if configured_host:
@@ -82,9 +101,14 @@ def get_databricks_llm_config() -> DatabricksLLMConfig:
             )
 
     model = os.environ.get("DATABRICKS_MODEL", "").strip()
+    if api_surface == "unity-gateway":
+        # list-model-services returns names as model-services/<catalog>.<schema>.<service>.
+        model = model.removeprefix("model-services/")
     if not model:
         raise DatabricksLLMConfigError(
-            "DATABRICKS_MODEL must be set to a serving endpoint available in the workspace."
+            "DATABRICKS_MODEL must be set to a UC model service full name (e.g. "
+            "system.ai.claude-sonnet-4-5) for the Unity Gateway surface, or a serving "
+            "endpoint name for the serving-endpoints surface."
         )
 
     client_id = os.environ.get("DATABRICKS_CLIENT_ID", "").strip()
@@ -106,6 +130,7 @@ def get_databricks_llm_config() -> DatabricksLLMConfig:
         workspace_host=workspace_host,
         model=model,
         auth_mode=auth_mode,
+        api_surface=api_surface,
     )
 
 
@@ -229,6 +254,61 @@ def get_databricks_bearer_token(
         return str(access_token)
 
 
+def _server_message(response: Any) -> str:
+    try:
+        message = response.json().get("message", "")
+    except Exception:
+        message = response.text
+    return f" Server response: {str(message)[:200]}" if message else ""
+
+
+def _raise_if_invalid_credentials(response: Any, config: DatabricksLLMConfig) -> None:
+    # Outside /ai-gateway/*, an invalid or expired token is a 403 rather than a 401.
+    if response.status_code == 401 or (
+        response.status_code == 403 and "Invalid access token" in response.text
+    ):
+        raise DatabricksLLMConfigError(
+            f"Databricks rejected the credentials for {config.workspace_host} "
+            f"(HTTP {response.status_code}). Check that DATABRICKS_TOKEN or the "
+            "service principal credentials are valid and not expired."
+        )
+
+
+def _validate_model_service(
+    config: DatabricksLLMConfig, headers: Dict[str, str], requests: Any
+) -> None:
+    """Fail fast on a mistyped UC model service name (e.g. system.ai.<model>)."""
+    service_url = f"{config.workspace_host}/api/2.1/unity-catalog/model-services/{config.model}"
+    try:
+        response = requests.get(service_url, headers=headers, timeout=30)
+    except Exception as exc:
+        raise DatabricksLLMConfigError(
+            f"Could not validate DATABRICKS_MODEL={config.model!r} in workspace "
+            f"{config.workspace_host}: {type(exc).__name__}: {str(exc)[:200]}"
+        ) from exc
+    if response.status_code == 404:
+        raise DatabricksLLMConfigError(
+            f"DATABRICKS_MODEL={config.model!r} is not a model service in workspace "
+            f"{config.workspace_host}. List them with "
+            "`databricks ai-gateway list-model-services --parent schemas/system.ai` "
+            "for built-in models, or `--parent schemas/<catalog>.<schema>` for custom "
+            "services."
+        )
+    _raise_if_invalid_credentials(response, config)
+    if response.status_code == 403:
+        raise DatabricksLLMConfigError(
+            f"Permission denied for DATABRICKS_MODEL={config.model!r} in workspace "
+            f"{config.workspace_host} (HTTP 403). The caller needs EXECUTE on the "
+            "model service, plus USE CATALOG and USE SCHEMA on its parent catalog "
+            f"and schema.{_server_message(response)}"
+        )
+    if response.status_code >= 400:
+        raise DatabricksLLMConfigError(
+            f"Failed to validate DATABRICKS_MODEL={config.model!r} in workspace "
+            f"{config.workspace_host} (HTTP {response.status_code}).{_server_message(response)}"
+        )
+
+
 def validate_databricks_llm_config(
     cache: MutableMapping[str, Any] | None = None,
 ) -> DatabricksLLMConfig:
@@ -242,6 +322,11 @@ def validate_databricks_llm_config(
     requests = _requests_module()
     token = get_databricks_bearer_token(cache=cache)
     headers = {"Authorization": f"Bearer {token}"}
+
+    if config.api_surface == "unity-gateway":
+        _validate_model_service(config, headers, requests)
+        _validation_cache[cache_key] = int(time.time()) + VALIDATION_TTL_SECONDS
+        return config
     endpoint_url = f"{config.workspace_host}/api/2.0/serving-endpoints/{config.model}"
     try:
         response = requests.get(endpoint_url, headers=headers, timeout=30)
@@ -277,10 +362,11 @@ def validate_databricks_llm_config(
             f"{config.workspace_host}. Available endpoints include: {available_text}."
         )
 
+    _raise_if_invalid_credentials(response, config)
     if response.status_code >= 400:
         raise DatabricksLLMConfigError(
             f"Failed to validate DATABRICKS_MODEL={config.model!r} in workspace "
-            f"{config.workspace_host} (HTTP {response.status_code})."
+            f"{config.workspace_host} (HTTP {response.status_code}).{_server_message(response)}"
         )
 
     _validation_cache[cache_key] = int(time.time()) + VALIDATION_TTL_SECONDS
