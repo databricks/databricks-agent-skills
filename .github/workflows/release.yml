@@ -32,8 +32,8 @@ jobs:
   gate:
     if: github.repository == 'databricks/databricks-agent-skills'
     runs-on:
-      group: databricks-protected-runner-group
-      labels: linux-ubuntu-latest
+      group: databricks-ghec-public-repos-runner-group-small
+      labels: linux-ubuntu-latest-public-2core-8gb
     permissions:
       contents: read
     outputs:
@@ -69,8 +69,8 @@ jobs:
     needs: gate
     if: needs.gate.outputs.should_release == 'true'
     runs-on:
-      group: databricks-protected-runner-group
-      labels: linux-ubuntu-latest
+      group: databricks-ghec-public-repos-runner-group-small
+      labels: linux-ubuntu-latest-public-2core-8gb
     # release-is holds the DECO-SDK-Tagging GitHub App credentials below.
     environment: "release-is"
     permissions:
