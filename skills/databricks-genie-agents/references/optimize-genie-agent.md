@@ -7,6 +7,7 @@ Reference for improving a Genie Agent iteratively through approved, benchmark-dr
 - Never mutate underlying tables, views, Metric Views, schemas, or source data.
 - Keep SQL inspection read-only and bounded.
 - Make one focused tuning pass at a time. Do not mix benchmark repair or pruning with Genie tuning in the same pass.
+- Do not tune against, or accept a fix based on, a benchmark that is too small or dominated by easy questions. Recommend benchmark repair that adds representative, non-trivial questions — including reworded variants of the target failure pattern — with validated ground truth.
 - Do not copy benchmark questions, answer SQL, or evaluation-note wording into sample questions, snippets, examples, or text instructions.
 - Benchmarks evaluate quality; they do not teach Genie by themselves.
 - Benchmark questions are shared definitions; Chat or Agent scoring is determined by benchmark execution mode.
@@ -29,6 +30,8 @@ Reference for improving a Genie Agent iteratively through approved, benchmark-dr
 3. **Benchmark execution target** — Chat, Agent, or mixed (infer from existing benchmarks if present; ask if ambiguous)
 
 If the Agent has no benchmarks, ask the user whether to bootstrap them before starting — do not begin a tuning pass without a baseline.
+
+If the user has already described the benchmark (size, difficulty, coverage), apply [Benchmark Integrity](#benchmark-integrity) in your first response and flag any gaps — do not wait for the Agent identifier to raise them. When answering with an advisory plan, order it: benchmark review → repair lever → staged evaluation gates.
 
 ### Step 2 — Determine the benchmark execution target
 
@@ -431,12 +434,13 @@ After comparing reports, add an explicit keep/revise/rollback decision:
 - New syntax/access/eval issues:
 - Benchmark or infra exclusions:
 - Leakage review:
+- Generalization check (held-out variants):
 - Decision: KEEP / REVISE / ROLL BACK
 - Reason:
 - Rollback action, if needed:
 ```
 
-Keep the candidate only when it improves the valid benchmark score or fixes the target cluster without unacceptable regressions. Roll back or revise when the candidate only shifts failures, creates new syntax/infra issues, or depends on benchmark leakage.
+Keep the candidate only when it improves the valid benchmark score or fixes the target cluster without unacceptable regressions, and the fix also holds on reworded variants of the target pattern that were not used as tuning evidence. Roll back or revise when the candidate only shifts failures, creates new syntax/infra issues, or depends on benchmark leakage.
 
 ## Iteration Reflection
 

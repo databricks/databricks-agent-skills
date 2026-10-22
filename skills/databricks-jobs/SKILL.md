@@ -1,15 +1,18 @@
 ---
 name: databricks-jobs
-description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation.
+description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation. For compute (serverless, performance mode, classic), also use databricks-serverless.
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 parent: databricks-core
 ---
 
 # Lakeflow Jobs Development
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands.
+
+**Compute**: jobs run on serverless by default. Before you choose compute or write any cluster setting, use the
+`databricks-serverless` skill; it decides serverless or classic and the performance mode.
 
 Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Asset Bundles (DABs), Python SDK, or CLI.
 
@@ -32,29 +35,8 @@ databricks bundle init default-python --config-file <(echo '{"project_name": "my
 
 - `project_name`: letters, numbers, underscores only
 
-After scaffolding, create `CLAUDE.md` and `AGENTS.md` in the project directory. These files are essential to provide agents with guidance on how to work with the project. Use this content:
-
-```
-# Declarative Automation Bundles Project
-
-This project uses Declarative Automation Bundles (formerly Databricks Asset Bundles) for deployment.
-
-## Prerequisites
-
-Install the Databricks CLI (>= v0.288.0) if not already installed:
-- macOS: `brew tap databricks/tap && brew install databricks`
-- Linux: `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh`
-- Windows: `winget install Databricks.DatabricksCLI`
-
-Verify: `databricks -v`
-
-## For AI Agents
-
-Read the `databricks-core` skill for CLI basics, authentication, and deployment workflow.
-Read the `databricks-jobs` skill for job-specific guidance.
-
-If skills are not available, install them: `databricks aitools install`
-```
+`bundle init` also creates an `AGENTS.md` in the project. Customize that file for the project
+instead of creating new agent instruction files.
 
 ## Project Structure
 
@@ -87,6 +69,7 @@ resources:
         - task_key: extract
           notebook_task:
             notebook_path: ../src/notebooks/extract.py
+      # no cluster block = serverless; compute details: databricks-serverless
 ```
 
 ### Python SDK
@@ -188,59 +171,19 @@ tasks:
 
 ## Compute Configuration
 
-### Job Clusters (recommended)
+Serverless is the default. Leave out cluster settings (`job_clusters`, `new_cluster`, `job_cluster_key`,
+`existing_cluster_id`); a notebook, Python script, wheel or JAR task without them runs on serverless.
+SQL tasks, and the SQL of dbt tasks, run on a SQL warehouse (`warehouse_id`, see
+[Task Types](references/task-types.md)); a pipeline task runs on the pipeline's own compute
+(`serverless: true` in the pipeline), and the job's `performance_target` sets its mode.
+If creating or running the job fails because serverless is not available in the workspace, put the
+whole job on classic and say so (job clusters for the tasks that run on job compute).
 
-Define reusable cluster configurations shared across tasks:
-
-```yaml
-job_clusters:
-  - job_cluster_key: shared_cluster
-    new_cluster:
-      spark_version: "15.4.x-scala2.12"
-      node_type_id: "i3.xlarge"
-      num_workers: 2
-      spark_conf:
-        spark.speculation: "true"
-
-tasks:
-  - task_key: my_task
-    job_cluster_key: shared_cluster
-    notebook_task:
-      notebook_path: ../src/notebook.py
-```
-
-### Autoscaling Clusters
-
-```yaml
-new_cluster:
-  spark_version: "15.4.x-scala2.12"
-  node_type_id: "i3.xlarge"
-  autoscale:
-    min_workers: 2
-    max_workers: 8
-```
-
-### Existing Cluster
-
-```yaml
-tasks:
-  - task_key: my_task
-    existing_cluster_id: "0123-456789-abcdef12"
-    notebook_task:
-      notebook_path: ../src/notebook.py
-```
-
-### Serverless Compute
-
-For notebook and Python tasks, omit cluster configuration to use serverless:
-
-```yaml
-tasks:
-  - task_key: serverless_task
-    notebook_task:
-      notebook_path: ../src/notebook.py
-    # No cluster config = serverless
-```
+For everything else about compute, **use the `databricks-serverless` skill**: the performance mode
+(`performance_target`), libraries (`environments`), existing code that may not run on serverless, and
+the few workloads that need a classic cluster. If that skill is not installed, run
+`databricks aitools install`. Either way, set `performance_target` on every job: `STANDARD` to optimize
+cost, `PERFORMANCE_OPTIMIZED` when the job is time-sensitive, interactive, or other workloads depend on it.
 
 ## Job Parameters
 
@@ -386,19 +329,20 @@ uv run pytest
 
 | Issue | Solution |
 |-------|----------|
-| Job cluster startup slow | Use job clusters with `job_cluster_key` for reuse across tasks |
+| Serverless job startup slow | `performance_target: PERFORMANCE_OPTIMIZED`; see databricks-serverless |
 | Task dependencies not working | Verify `task_key` references match exactly in `depends_on` |
 | Schedule not triggering | Check `pause_status: UNPAUSED` and valid timezone |
 | File arrival not detecting | Ensure path has proper permissions and uses cloud storage URL |
 | Table update trigger missing events | Verify Unity Catalog table and proper grants |
 | Parameter not accessible | Use `dbutils.widgets.get()` in notebooks |
 | `admins` group error | Cannot modify admins permissions on jobs |
-| Serverless task fails | Ensure task type supports serverless (notebook, Python) |
+| Serverless task fails | See the Common Issues of databricks-serverless (libraries, RDD code, DBFS mounts) |
 
 ## Related Skills
 
 - **databricks-dabs** — DABs configuration patterns shared by jobs and pipelines
 - **databricks-pipelines** — SDP (formerly DLT) pipelines triggered by `pipeline_task`
+- **databricks-serverless** — compute decisions: serverless, performance mode, classic fallback
 
 ## Documentation
 

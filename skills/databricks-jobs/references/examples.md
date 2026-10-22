@@ -37,15 +37,9 @@ resources:
         - name: env
           default: "${bundle.target}"
 
-      # Shared cluster for all tasks
-      job_clusters:
-        - job_cluster_key: etl_cluster
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 4
-            spark_conf:
-              spark.sql.shuffle.partitions: "200"
+      # Serverless: no cluster block. STANDARD optimizes cost; use PERFORMANCE_OPTIMIZED if the job
+      # is time-sensitive, interactive, or other workloads depend on it.
+      performance_target: STANDARD
 
       # Email notifications
       email_notifications:
@@ -57,21 +51,18 @@ resources:
       tasks:
         # Extract from source systems
         - task_key: extract_orders
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/extract_orders.py
             base_parameters:
               load_date: "{{job.parameters.load_date}}"
 
         - task_key: extract_customers
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/extract_customers.py
             base_parameters:
               load_date: "{{job.parameters.load_date}}"
 
         - task_key: extract_products
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/extract_products.py
 
@@ -81,7 +72,6 @@ resources:
             - task_key: extract_orders
             - task_key: extract_customers
             - task_key: extract_products
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/transform_facts.py
             base_parameters:
@@ -91,7 +81,6 @@ resources:
         - task_key: load_warehouse
           depends_on:
             - task_key: transform_facts
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/load_warehouse.py
 
@@ -100,7 +89,6 @@ resources:
           depends_on:
             - task_key: load_warehouse
           run_if: ALL_SUCCESS
-          job_cluster_key: etl_cluster
           notebook_task:
             notebook_path: ../src/notebooks/validate_data.py
 
@@ -117,7 +105,7 @@ resources:
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import (
     Task, NotebookTask, Source,
-    JobCluster, ClusterSpec,
+    PerformanceTarget,
     CronSchedule, PauseStatus,
     JobEmailNotifications,
     JobParameterDefinition
@@ -136,16 +124,7 @@ job = w.jobs.create(
         JobParameterDefinition(name="load_date", default="{{start_date}}"),
         JobParameterDefinition(name="env", default="prod")
     ],
-    job_clusters=[
-        JobCluster(
-            job_cluster_key="etl_cluster",
-            new_cluster=ClusterSpec(
-                spark_version="15.4.x-scala2.12",
-                node_type_id="i3.xlarge",
-                num_workers=4
-            )
-        )
-    ],
+    performance_target=PerformanceTarget.STANDARD,  # cost-optimized; PERFORMANCE_OPTIMIZED if time-sensitive
     email_notifications=JobEmailNotifications(
         on_failure=["data-team@example.com"],
         on_success=["data-team@example.com"]
@@ -153,7 +132,6 @@ job = w.jobs.create(
     tasks=[
         Task(
             task_key="extract_orders",
-            job_cluster_key="etl_cluster",
             notebook_task=NotebookTask(
                 notebook_path="/Workspace/etl/extract_orders",
                 source=Source.WORKSPACE,
@@ -162,7 +140,6 @@ job = w.jobs.create(
         ),
         Task(
             task_key="extract_customers",
-            job_cluster_key="etl_cluster",
             notebook_task=NotebookTask(
                 notebook_path="/Workspace/etl/extract_customers",
                 source=Source.WORKSPACE
@@ -174,7 +151,6 @@ job = w.jobs.create(
                 {"task_key": "extract_orders"},
                 {"task_key": "extract_customers"}
             ],
-            job_cluster_key="etl_cluster",
             notebook_task=NotebookTask(
                 notebook_path="/Workspace/etl/transform_facts",
                 source=Source.WORKSPACE
@@ -183,7 +159,6 @@ job = w.jobs.create(
         Task(
             task_key="load_warehouse",
             depends_on=[{"task_key": "transform_facts"}],
-            job_cluster_key="etl_cluster",
             notebook_task=NotebookTask(
                 notebook_path="/Workspace/etl/load_warehouse",
                 source=Source.WORKSPACE
@@ -290,6 +265,9 @@ resources:
             op: GREATER_THAN
             value: 1800  # Alert if > 30 min
 
+      # Serverless. STANDARD optimizes cost; use PERFORMANCE_OPTIMIZED if files must be processed within minutes
+      performance_target: STANDARD
+
       email_notifications:
         on_failure:
           - "data-alerts@example.com"
@@ -300,12 +278,6 @@ resources:
         - task_key: process_incoming
           notebook_task:
             notebook_path: ../src/notebooks/process_incoming_files.py
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            autoscale:
-              min_workers: 2
-              max_workers: 10
 ```
 
 ### Table Update Trigger Example
@@ -358,7 +330,9 @@ resources:
         - name: experiment_name
           default: "/Shared/experiments/sales_forecast"
 
-      # GPU cluster for training
+      # Serverless for every CPU task. Training uses a GPU cluster here; serverless GPU compute
+      # is the alternative where it offers the GPU type you need.
+      performance_target: STANDARD
       job_clusters:
         - job_cluster_key: gpu_cluster
           new_cluster:
@@ -368,16 +342,11 @@ resources:
             aws_attributes:
               first_on_demand: 1
 
-        - job_cluster_key: cpu_cluster
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 4
-
       # ML environment
       environments:
         - environment_key: ml_env
           spec:
+            environment_version: "4"
             dependencies:
               - mlflow>=2.10.0
               - scikit-learn>=1.4.0
@@ -387,7 +356,6 @@ resources:
       tasks:
         # Data preparation
         - task_key: prepare_training_data
-          job_cluster_key: cpu_cluster
           environment_key: ml_env
           notebook_task:
             notebook_path: ../src/ml/prepare_training_data.py
@@ -398,7 +366,6 @@ resources:
         - task_key: engineer_features
           depends_on:
             - task_key: prepare_training_data
-          job_cluster_key: cpu_cluster
           environment_key: ml_env
           notebook_task:
             notebook_path: ../src/ml/engineer_features.py
@@ -419,7 +386,6 @@ resources:
         - task_key: evaluate_model
           depends_on:
             - task_key: train_model
-          job_cluster_key: cpu_cluster
           environment_key: ml_env
           notebook_task:
             notebook_path: ../src/ml/evaluate_model.py
@@ -429,7 +395,6 @@ resources:
           depends_on:
             - task_key: evaluate_model
           run_if: ALL_SUCCESS
-          job_cluster_key: cpu_cluster
           environment_key: ml_env
           notebook_task:
             notebook_path: ../src/ml/deploy_model.py
@@ -441,7 +406,7 @@ resources:
 
 ## Multi-Environment Deployment
 
-Job configuration with environment-specific settings.
+Bundle targets with environment-specific settings. Jobs go in `resources/*.yml`, as in the examples above.
 
 ### databricks.yml
 
@@ -481,50 +446,6 @@ targets:
       service_principal_name: "production-sp"
 ```
 
-### resources/jobs.yml
-
-```yaml
-resources:
-  jobs:
-    data_pipeline:
-      name: "[${bundle.target}] Data Pipeline"
-
-      # Only schedule in prod
-      schedule:
-        quartz_cron_expression: "0 0 6 * * ?"
-        timezone_id: "UTC"
-        pause_status: ${if(bundle.target == "prod", "UNPAUSED", "PAUSED")}
-
-      # Environment-specific cluster sizing
-      job_clusters:
-        - job_cluster_key: main_cluster
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: ${if(bundle.target == "prod", "i3.2xlarge", "i3.xlarge")}
-            num_workers: ${if(bundle.target == "prod", 8, 2)}
-
-      email_notifications:
-        on_failure:
-          - ${var.notification_email}
-
-      tasks:
-        - task_key: process_data
-          job_cluster_key: main_cluster
-          notebook_task:
-            notebook_path: ../src/notebooks/process_data.py
-            base_parameters:
-              env: "${bundle.target}"
-              catalog: "${bundle.target}_catalog"
-
-      permissions:
-        - level: CAN_VIEW
-          group_name: "data-analysts"
-        - level: CAN_MANAGE_RUN
-          group_name: "data-engineers"
-        - level: CAN_MANAGE
-          service_principal_name: "deployment-sp"
-```
-
 ---
 
 ## Streaming Job
@@ -559,25 +480,12 @@ resources:
         on_streaming_backlog_exceeded:
           - "streaming-alerts@example.com"
 
-      webhook_notifications:
-        on_failure:
-          - id: "pagerduty-streaming-alerts"
-        on_streaming_backlog_exceeded:
-          - id: "slack-streaming-channel"
-
       tasks:
         - task_key: stream_processor
           notebook_task:
             notebook_path: ../src/notebooks/stream_processor.py
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "i3.xlarge"
-            autoscale:
-              min_workers: 2
-              max_workers: 16
-            spark_conf:
-              spark.databricks.streaming.statefulOperator.asyncCheckpoint.enabled: "true"
-              spark.sql.streaming.stateStore.providerClass: "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
+          # Serverless continuous job: the stream uses .trigger(availableNow=True) and the job's
+          # continuous trigger starts the next run. State store tuning is managed on serverless.
 ```
 
 ---

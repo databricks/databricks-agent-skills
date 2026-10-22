@@ -389,36 +389,52 @@ Task(
 
 ## Spark JAR Task
 
-Run Scala/Java JAR files on Spark.
+Run Scala/Java JAR files on Spark. On serverless, the JAR comes from a job environment
+(`java_dependencies`), not from task `libraries`.
 
 ### DABs YAML
 
 ```yaml
+environments:
+  - environment_key: jar_env
+    spec:
+      environment_version: "5"
+      java_dependencies:
+        - /Volumes/catalog/schema/libs/my-app.jar
+
 tasks:
   - task_key: run_jar
+    environment_key: jar_env
     spark_jar_task:
       main_class_name: "com.example.Main"
       parameters:
         - "--env"
         - "prod"
-    libraries:
-      - jar: /Volumes/catalog/schema/libs/my-app.jar
 ```
 
 ### Python SDK
 
 ```python
-from databricks.sdk.service.jobs import Task, SparkJarTask
+from databricks.sdk.service.compute import Environment
+from databricks.sdk.service.jobs import JobEnvironment, SparkJarTask, Task
+
+environments = [
+    JobEnvironment(
+        environment_key="jar_env",
+        spec=Environment(
+            environment_version="5",
+            java_dependencies=["/Volumes/catalog/schema/libs/my-app.jar"]
+        )
+    )
+]
 
 Task(
     task_key="run_jar",
+    environment_key="jar_env",
     spark_jar_task=SparkJarTask(
         main_class_name="com.example.Main",
         parameters=["--env", "prod"]
-    ),
-    libraries=[
-        {"jar": "/Volumes/catalog/schema/libs/my-app.jar"}
-    ]
+    )
 )
 ```
 
