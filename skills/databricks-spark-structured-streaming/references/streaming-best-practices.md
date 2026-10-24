@@ -38,7 +38,7 @@ spark.readStream \
     .load("/path/to/data")
 ```
 
-[Auto Loader File Notification Mode](https://docs.databricks.com/ingestion/auto-loader/file-notification-mode.html)
+[Auto Loader File Notification Mode](https://docs.databricks.com/ingestion/cloud-object-storage/auto-loader/file-notification-mode)
 
 ### 3. Disable S3 Versioning
 

@@ -70,6 +70,9 @@ Full coverage in this skill, except rows whose Reference is a public docs page.
 | Dynamics 365 | SaaS pull (via Azure Synapse Link) | OAuth U2M | [Dynamics 365 connector docs](https://docs.databricks.com/ingestion/lakeflow-connect/d365) |
 | SQL Server (cloud) | Database CDC | DB user + change tracking / CDC | [2-database-connectors.md](references/2-database-connectors.md) |
 | SQL Server (on-prem) | Database CDC | DB user + ExpressRoute / Direct Connect | [2-database-connectors.md](references/2-database-connectors.md) |
+| MySQL (integrated CDC pipeline, no gateway) | Database CDC | DB user | [MySQL integrated CDC pipeline docs](https://docs.databricks.com/ingestion/lakeflow-connect/mysql-integrated-pipeline) |
+| Oracle / Teradata / SQL Server / PG / MySQL (query-based) | Database query | DB user | [Query-based connectors docs](https://docs.databricks.com/ingestion/lakeflow-connect/query-based-overview) |
+| Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog) | Database query | Foreign Catalog | [Query-based connectors docs](https://docs.databricks.com/ingestion/lakeflow-connect/query-based-overview) |
 
 ### Public Preview connectors
 
@@ -78,9 +81,7 @@ Production-supported. Configuration may evolve before GA. Deep coverage is being
 | Source | Type | Auth |
 |--------|------|------|
 | PostgreSQL CDC | Database CDC | DB user + gateway |
-| MySQL CDC | Database CDC | DB user + gateway |
-| Oracle / Teradata / SQL Server / PG / MySQL (query-based) | Database query | DB user |
-| Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog) | Database query | Foreign Catalog |
+| MySQL CDC (gateway-based) | Database CDC | DB user + gateway |
 | SFTP | File pull | Key / password |
 
 ### Beta and Private Preview

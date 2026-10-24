@@ -561,7 +561,7 @@ if result.final_eval_score > result.initial_eval_score:
 
 ### Automation
 
-The loop can be orchestrated as a Databricks job using Asset Bundles:
+The loop can be orchestrated as a Databricks job using Declarative Automation Bundles:
 
 1. SMEs label agent outputs through the MLflow Labeling Session UI
 2. The pipeline detects new labels and pulls traces with both SME feedback and baseline LLM judge scores

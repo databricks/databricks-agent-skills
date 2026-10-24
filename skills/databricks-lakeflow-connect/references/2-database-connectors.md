@@ -1,6 +1,6 @@
 # Database connectors
 
-SQL Server (cloud and on-prem) is the GA database connector. Postgres CDC, MySQL CDC, query-based variants, and Foreign Catalog connectors are Public Preview — production-supported but covered briefly here; see the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for their setup until deep coverage lands in a follow-up.
+SQL Server (cloud and on-prem) is the GA database connector covered in full here. The MySQL integrated CDC pipeline, query-based variants, and Foreign Catalog connectors are also GA; Postgres CDC and gateway-based MySQL CDC are Public Preview. The others are production-supported but covered briefly here; see the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for their setup until deep coverage lands in a follow-up.
 
 ---
 
@@ -132,12 +132,13 @@ The gateway compute itself runs on Databricks-managed VPC infrastructure inside 
 
 ---
 
-## Public Preview database connectors (brief)
+## Other database connectors (brief)
 
 The following are production-supported but ship more pattern variance than SQL Server. Use the [connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) for current setup steps:
 
-- **Postgres CDC, MySQL CDC** — same gateway pattern as SQL Server; logical decoding (Postgres) or binlog (MySQL) replaces CT/CDC.
-- **Oracle / Teradata / SQL Server / Postgres / MySQL query-based** — no gateway; the connector issues periodic queries instead of reading a change feed. Trade-off: simpler, but higher source load and no per-event history.
-- **Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog)** — Lakeflow Connect creates the foreign catalog and materializes the queried subset to Delta. Most useful for warehouse-to-lakehouse migration scenarios.
+- **Postgres CDC, gateway-based MySQL CDC** (Public Preview): same gateway pattern as SQL Server; logical decoding (Postgres) or binlog (MySQL) replaces CT/CDC.
+- **MySQL integrated CDC pipeline** (GA): one pipeline combines extraction and application, so no separate ingestion gateway is needed ([docs](https://docs.databricks.com/ingestion/lakeflow-connect/mysql-integrated-pipeline)).
+- **Oracle / Teradata / SQL Server / Postgres / MySQL query-based** (GA): no gateway; the connector issues periodic queries instead of reading a change feed. Trade-off: simpler, but higher source load and no per-event history.
+- **Snowflake / Redshift / Synapse / BigQuery (Foreign Catalog)** (GA): Lakeflow Connect creates the foreign catalog and materializes the queried subset to Delta. Most useful for warehouse-to-lakehouse migration scenarios.
 
 Deep coverage for these connectors will land as they stabilize.

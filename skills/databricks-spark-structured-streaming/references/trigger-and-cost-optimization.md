@@ -17,7 +17,7 @@ df.writeStream \
     .trigger(availableNow=True) \
     .start("/delta/target")  # Process all, then stop
 
-# Schedule via Databricks Jobs: Every 15 minutes
+# Schedule via Lakeflow Jobs: Every 15 minutes
 # Cost: ~$20/day for 100 tables on 8-core cluster
 ```
 
@@ -53,7 +53,7 @@ df.writeStream \
     .trigger(availableNow=True) \
     .start("/delta/target")
 
-# Schedule via Databricks Jobs:
+# Schedule via Lakeflow Jobs:
 # - Every 15 minutes: Near real-time
 # - Every 4 hours: Batch-style
 
@@ -244,7 +244,7 @@ df.writeStream \
     .trigger(availableNow=True) \
     .start()  # Process all, then stop
 
-# Schedule via Databricks Jobs:
+# Schedule via Lakeflow Jobs:
 # - Every 15 minutes: Near real-time
 # - Every 4 hours: Batch-style
 # Same code, different schedule

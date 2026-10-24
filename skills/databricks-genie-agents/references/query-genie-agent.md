@@ -43,7 +43,7 @@ Expected response time: simple aggregations ~30s, complex joins ~60–120s, larg
 
 ## Agent Mode API
 
-> **Canonical reference:** https://docs.databricks.com/en/genie-agents/api — fetch this when the request format below stops working; the doc has the authoritative schema and current examples.
+> **Canonical reference:** https://docs.databricks.com/api/genie/v1/agent-mode-create-response — fetch this when the request format below stops working; the doc has the authoritative schema and current examples.
 > **Status:** Beta — requires preview enrollment "Agent Mode APIs for Genie Agents". The endpoint may change without notice.
 
 The Agent mode API streams the full agent response — reasoning plan, SQL executions, and synthesized final answer — as Server-Sent Events. Use it when you need more than a generated SQL statement: synthesis validation, multi-step analysis, and Agent-mode benchmark assessment.

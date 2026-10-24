@@ -37,7 +37,7 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 | `sc.accumulator` | `sc\.accumulator\(` | Blocker | `df.agg(F.sum("col"))` or `df.count()` | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | `spark.sparkContext` | `spark\.sparkContext` | Blocker | Use `spark` (SparkSession) directly | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | `sqlContext` | `sqlContext\.` | Blocker | `spark.sql(query)` or `spark.table(name)` | [Spark Connect](https://docs.databricks.com/en/spark/connect-vs-classic) |
-| `sc.hadoopConfiguration` | `sc\.hadoopConfiguration` or `hadoopConfiguration\.set\(` | Blocker | Use UC external locations — no credential configs needed | [UC External Locations](https://docs.databricks.com/en/connect/unity-catalog/external-locations.html) |
+| `sc.hadoopConfiguration` | `sc\.hadoopConfiguration` or `hadoopConfiguration\.set\(` | Blocker | Use UC external locations — no credential configs needed | [UC External Locations](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
 | `SparkContext.getOrCreate()` | `SparkContext\.getOrCreate\(\)` | Blocker | Not supported — `RuntimeError: Only remote Spark sessions using Databricks Connect are supported`. Replace with `spark.createDataFrame()` or `spark.range()` for data setup. | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | `sc.setLogLevel` | `sc\.setLogLevel\(` | Info | Remove — log level is managed automatically | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | `sc.getConf` | `sc\.getConf` | Warning | `spark.conf.get("config.name")` | [Spark Connect](https://docs.databricks.com/en/spark/connect-vs-classic) |
@@ -71,15 +71,15 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 | DBFS paths (persistent) | `dbfs:/` or `"/dbfs/` | Blocker | Replace with `/Volumes/<your_catalog>/schema/volume/path` | [Volumes](https://docs.databricks.com/en/volumes/volume-files) |
 | DBFS temp paths | `dbfs:/tmp/`, `"/dbfs/tmp/`, paths with `cache`/`scratch`/`temp` | Warning | Use `/tmp/` or `/local_disk0/tmp/` (local driver disk) instead of Volumes for temp files | [Volumes](https://docs.databricks.com/en/volumes/volume-files) |
 | FUSE mount paths | `file:///dbfs/` | Warning | Replace persistent paths with `/Volumes/...`; replace temp paths with `/local_disk0/tmp/` | [Volumes](https://docs.databricks.com/en/volumes/volume-files) |
-| DBFS mounts (Spark) | `dbfs:/mnt/` | Blocker | Create UC external location + external volume | [External Locations](https://docs.databricks.com/en/connect/unity-catalog/external-locations.html) |
+| DBFS mounts (Spark) | `dbfs:/mnt/` | Blocker | Create UC external location + external volume | [External Locations](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
 | DBFS mounts (Python) | `/dbfs/mnt/` | Blocker | Replace with `/Volumes/catalog/schema/volume/` | [Volumes](https://docs.databricks.com/en/volumes/volume-files) |
-| Mount creation | `dbutils\.fs\.mount\(` | Blocker | Create UC external location + external volume | [External Locations](https://docs.databricks.com/en/connect/unity-catalog/external-locations.html) |
+| Mount creation | `dbutils\.fs\.mount\(` | Blocker | Create UC external location + external volume | [External Locations](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
 | Hive Metastore tables | `hive_metastore\.` | Warning | Migrate to UC or use HMS Federation | [UC Upgrade](https://docs.databricks.com/en/data-governance/unity-catalog/upgrade/) |
 | Two-level namespace | `spark\.table\("[^.]+\.[^.]+"\)` (exactly 2 levels) | Warning | Add catalog prefix: `spark.table("catalog.schema.table")` | [UC Upgrade](https://docs.databricks.com/en/data-governance/unity-catalog/upgrade/) |
 | `CREATE DATABASE`/`CREATE SCHEMA` without `USE CATALOG` | `CREATE\s+(DATABASE|SCHEMA)\s+(?!IF)` without preceding `USE CATALOG` or 3-level qualification | Blocker | Prepend `spark.sql("USE CATALOG <your_catalog>")` at notebook start before any CREATE statements | [UC Upgrade](https://docs.databricks.com/en/data-governance/unity-catalog/upgrade/) |
-| IAM instance profiles | `instance_profile_arn` or `iam.*instance.profile` | Warning | Use UC external locations + storage credentials | [Storage Credentials](https://docs.databricks.com/en/connect/unity-catalog/storage-credentials.html) |
-| Hive SerDe tables | `STORED AS` with non-Delta formats, `ROW FORMAT SERDE` | Blocker | Migrate to Delta tables in UC | [Delta Migration](https://docs.databricks.com/en/delta/migrate-from-other-formats.html) |
-| Direct S3/ADLS access | `s3://` or `abfss://` in `spark.read`/`spark.write` without UC | Warning | Use UC external locations for governed access | [External Locations](https://docs.databricks.com/en/connect/unity-catalog/external-locations.html) |
+| IAM instance profiles | `instance_profile_arn` or `iam.*instance.profile` | Warning | Use UC external locations + storage credentials | [Storage Credentials](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
+| Hive SerDe tables | `STORED AS` with non-Delta formats, `ROW FORMAT SERDE` | Blocker | Migrate to Delta tables in UC | [Delta Migration](https://docs.databricks.com/ingestion/data-migration) |
+| Direct S3/ADLS access | `s3://` or `abfss://` in `spark.read`/`spark.write` without UC | Warning | Use UC external locations for governed access | [External Locations](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
 
 ## Category C: Streaming
 
@@ -88,8 +88,8 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 | ProcessingTime trigger | `\.trigger\(processingTime` | Blocker | `.trigger(availableNow=True)` + set batch size limits | [Triggers](https://docs.databricks.com/en/structured-streaming/triggers.html) |
 | Continuous trigger | `\.trigger\(continuous` | Blocker | Migrate to Spark Declarative Pipelines (SDP) continuous mode | [SDP Serverless](https://docs.databricks.com/en/ldp/serverless) |
 | Missing trigger | `\.writeStream` without `.trigger(` nearby | Blocker | Add `.trigger(availableNow=True)` — Spark defaults to `ProcessingTime("0 seconds")` | [Triggers](https://docs.databricks.com/en/structured-streaming/triggers.html) |
-| Kafka source | `format\("kafka"\)` | Info | Works with AvailableNow; use `maxOffsetsPerTrigger` for batch size control | [Kafka](https://docs.databricks.com/en/structured-streaming/kafka.html) |
-| Auto Loader | `format\("cloudFiles"\)` | Info | Works; use `cloudFiles.maxFilesPerTrigger` (note prefix) | [Auto Loader](https://docs.databricks.com/en/ingestion/cloud-files/) |
+| Kafka source | `format\("kafka"\)` | Info | Works with AvailableNow; use `maxOffsetsPerTrigger` for batch size control | [Kafka](https://docs.databricks.com/connect/streaming/kafka) |
+| Auto Loader | `format\("cloudFiles"\)` | Info | Works; use `cloudFiles.maxFilesPerTrigger` (note prefix) | [Auto Loader](https://docs.databricks.com/ingestion/cloud-object-storage/auto-loader) |
 | `forEachBatch` | `\.foreachBatch\(` | Info | Works on serverless with AvailableNow trigger | [Triggers](https://docs.databricks.com/en/structured-streaming/triggers.html) |
 
 ## Category D: Configuration
@@ -102,7 +102,7 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 | `%run` with relative paths | `%run\s+\.\/` or `%run\s+\.\.\/` | Warning | Relative `%run` paths may not resolve in serverless job tasks. Inline the notebook (<500 lines) or use `dbutils.notebook.run("<absolute_workspace_path>", timeout)` | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | Docker containers | `docker` in cluster config | Blocker | Use Environments for libraries; keep on classic if OS-level customization is required | [Limitations](https://docs.databricks.com/en/compute/serverless/limitations) |
 | Cluster policies | `cluster_policy_id` | Info | Use budget policies for cost attribution | [Budget Policies](https://docs.databricks.com/en/admin/usage/budget-policies.html) |
-| Environment variables in init scripts | `export\s+\w+=` in init scripts | Warning | Use `dbutils.widgets` or job parameters | [Job Parameters](https://docs.databricks.com/en/jobs/settings.html) |
+| Environment variables in init scripts | `export\s+\w+=` in init scripts | Warning | Use `dbutils.widgets` or job parameters | [Job Parameters](https://docs.databricks.com/jobs/configure-job) |
 | Executor count/memory configs | `spark\.executor\.(instances|memory|cores)` | Info | Remove — serverless auto-scales and auto-tunes | [Serverless Compute](https://docs.databricks.com/en/compute/serverless/) |
 | Driver memory configs | `spark\.driver\.memory` | Info | Remove — serverless REPL default is 8 GB (high-memory option available) | [Serverless Compute](https://docs.databricks.com/en/compute/serverless/) |
 | AQE configs | `spark\.sql\.adaptive\.` | Info | Remove — AQE is always enabled and auto-tuned on serverless | [Serverless Best Practices](https://docs.databricks.com/en/compute/serverless/best-practices) |
@@ -127,7 +127,7 @@ Scan user code for the regex/grep patterns below. When a match is found, report 
 | Pattern | Grep/Regex | Severity | Fix | Docs |
 |---------|-----------|----------|-----|------|
 | VPC peering | VPC peering in workspace network config | Blocker | Create NCCs, get stable IPs, allowlist on resource firewalls | [Serverless Networking](https://docs.databricks.com/en/security/network/serverless-network-security/) |
-| Direct cloud storage access | `s3://` or `abfss://` without UC | Warning | Use UC external locations for governed access | [External Locations](https://docs.databricks.com/en/connect/unity-catalog/external-locations.html) |
+| Direct cloud storage access | `s3://` or `abfss://` without UC | Warning | Use UC external locations for governed access | [External Locations](https://docs.databricks.com/connect/unity-catalog/cloud-storage) |
 | Hardcoded IP addresses | IP addresses in connection strings | Warning | Verify connectivity from serverless network; use NCCs if private resources | [Serverless Networking](https://docs.databricks.com/en/security/network/serverless-network-security/) |
 
 ## Category G: Sizing and Debugging

@@ -862,9 +862,9 @@ Multi-statement transactions (MST) allow grouping multiple SQL statements into a
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Single-table transactions | GA | Delta Lake default; every DML statement is atomic |
-| Multi-statement transactions (SQL scripting) | Preview | `BEGIN ATOMIC...END` blocks |
+| Multi-statement transactions (SQL scripting) | GA | `BEGIN ATOMIC...END` blocks |
 | Multi-statement transactions (Python connector) | Preview | `connection.autocommit = False` pattern |
-| Cross-table transactions | Preview | Atomic updates across multiple Delta tables |
+| Cross-table transactions | GA | Atomic updates across multiple managed Delta or Iceberg tables |
 
 ### SQL Scripting Atomic Blocks
 
@@ -880,7 +880,7 @@ END;
 
 If any statement fails, all changes are rolled back.
 
-> **Note:** Tables used in `BEGIN ATOMIC` blocks must have the `catalogManaged` table feature enabled. Create tables with `TBLPROPERTIES ('delta.feature.catalogManaged' = 'supported')`. Existing tables cannot be upgraded in place — they must be recreated with this property.
+> **Note:** Tables used in `BEGIN ATOMIC` blocks must have the `catalogManaged` table feature enabled. Create tables with `TBLPROPERTIES ('delta.feature.catalogManaged' = 'supported')`. Existing managed tables can be upgraded in place with `ALTER TABLE ... SET TBLPROPERTIES ('delta.feature.catalogManaged' = 'supported')` (Databricks Runtime 18.0 and above).
 
 ### Python Connector Transaction API
 
@@ -1001,7 +1001,7 @@ connection.set_transaction_isolation(TRANSACTION_ISOLATION_LEVEL_REPEATABLE_READ
 | EXECUTE IMMEDIATE (basic) | 14.3 | GA |
 | EXECUTE IMMEDIATE (expressions, nested) | 17.3 | GA |
 | Recursive CTE LIMIT ALL | 17.2 | GA |
-| Multi-statement Transactions | Varies | Preview |
+| Multi-statement Transactions | Varies | GA (Python connector: Preview) |
 | Row-level Concurrency | 14.2 | GA |
 
 ---

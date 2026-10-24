@@ -558,4 +558,4 @@ A metric view is the right home for a measure only when it **re-aggregates corre
 
 ## Limitations
 
-For spec-level limits (no Delta Sharing, no data profiling, `ALTER VIEW` removing UC comments), see [`create-patterns.md` §Common Issues](create-patterns.md#common-issues). Advisor-specific note: the multi-source analysis in Step 2 may surface PII-tagged columns — always flag and exclude them unless the user explicitly approves exposure.
+For spec-level limits (OpenSharing requirements, no data profiling, `ALTER VIEW` removing UC comments), see [`create-patterns.md` §Common Issues](create-patterns.md#common-issues). Advisor-specific note: the multi-source analysis in Step 2 may surface PII-tagged columns — always flag and exclude them unless the user explicitly approves exposure.

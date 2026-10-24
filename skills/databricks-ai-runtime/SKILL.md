@@ -1,7 +1,7 @@
 ---
 name: databricks-ai-runtime
 description: "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` workload YAML, passing hyperparameters and secrets, checking run status, listing/cancelling runs, streaming a run's logs and watching its progress, custom Docker image setup, and environment configuration."
-compatibility: Requires the Databricks CLI with the air command. Flattened code_source requires CLI 1.20.0 or newer; older CLIs can use the nested snapshot format documented below. See the [installation guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/cli/installation).
+compatibility: Requires the Databricks CLI with the air command. Flattened code_source requires CLI 1.20.0 or newer; older CLIs can use the nested snapshot format documented below. See the [installation guide](https://docs.databricks.com/dev-tools/cli/install).
 metadata:
   version: "0.2.1"
 ---

@@ -458,6 +458,6 @@ See [Pattern 7](#pattern-7-materialized-metric-view) for a code example. **Requi
 | **DBR version error** | `version: 1.1` requires DBR 17.2+; `version: 0.1` requires DBR 16.4+. `synonyms`/`display_name`/`format` need DBR 17.3+ |
 | **Materialization not working** | Serverless compute must be enabled; check pipeline state in Workflows → Pipelines |
 | **`format:` block deploy error** | Every `format:` block requires a `type:` discriminator |
-| **No Delta Sharing** | Metric views cannot be shared via Delta Sharing |
+| **Sharing metric views** | Share them with OpenSharing (formerly Delta Sharing) to Databricks recipients only; recipients query them on serverless compute. See [Add metric views to a share](https://docs.databricks.com/opensharing/create-share#metric-views) |
 | **No data profiling** | Data profiling is not supported on metric views |
 | **`ALTER VIEW` removes UC comments** | Always include `comment` fields in the YAML to preserve them across replacements |

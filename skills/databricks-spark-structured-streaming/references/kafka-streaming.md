@@ -142,7 +142,7 @@ df_bronze.writeStream \
     .trigger(availableNow=True) \
     .start("/delta/bronze_events")  # Process all available, then stop
 
-# In Databricks Jobs:
+# In Lakeflow Jobs:
 # - Schedule: Every 4 hours
 # - Cluster: Fixed size (no autoscaling for streaming)
 # - Same streaming code, batch-style execution

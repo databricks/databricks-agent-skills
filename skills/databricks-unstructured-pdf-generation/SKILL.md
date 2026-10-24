@@ -55,7 +55,7 @@ databricks fs cp -r --overwrite ./raw_data/pdf dbfs:/Volumes/my_catalog/my_schem
 
 ## Step 4: Generate Test Questions
 
-Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Assistant (KA) or Multi-Agent Supervisor (MAS) evaluation. It's fine for this file to be uploaded to the volume alongside the PDFs — downstream agents can use it:
+Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Assistant (KA) or Supervisor Agent (formerly Multi-Agent Supervisor, MAS) evaluation. It's fine for this file to be uploaded to the volume alongside the PDFs — downstream agents can use it:
 
 ```json
 {

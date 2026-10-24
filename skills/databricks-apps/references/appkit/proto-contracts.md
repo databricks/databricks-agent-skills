@@ -128,7 +128,7 @@ Each migration is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT
 ## Jobs / Compute Contract
 
 **No plugin manifest** — Jobs are invoked via `@databricks/sdk-experimental`
-**Resource**: Databricks Jobs API
+**Resource**: Jobs API
 **Auth**: Workspace token or OAuth
 
 ### Boundary: What the jobs module owns

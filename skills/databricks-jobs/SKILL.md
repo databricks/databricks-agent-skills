@@ -14,7 +14,7 @@ parent: databricks-core
 **Compute**: jobs run on serverless by default. Before you choose compute or write any cluster setting, use the
 `databricks-serverless` skill; it decides serverless or classic and the performance mode.
 
-Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Asset Bundles (DABs), Python SDK, or CLI.
+Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Declarative Automation Bundles (DABs), Python SDK, or CLI.
 
 ## Reference Files
 
@@ -57,7 +57,7 @@ my-job-project/
 
 ## Quick Start
 
-### Asset Bundles (DABs) — recommended
+### Declarative Automation Bundles (DABs) — recommended
 
 ```yaml
 # resources/jobs.yml
@@ -269,7 +269,7 @@ databricks jobs cancel-run 67890
 databricks jobs delete 12345
 ```
 
-### Asset Bundle Operations
+### Declarative Automation Bundle Operations
 
 ```bash
 # Validate configuration
@@ -349,5 +349,5 @@ uv run pytest
 - [Lakeflow Jobs](https://docs.databricks.com/jobs)
 - [Task types](https://docs.databricks.com/jobs/configure-task)
 - [Declarative Automation Bundles](https://docs.databricks.com/dev-tools/bundles/)
-- [Jobs API Reference](https://docs.databricks.com/api/workspace/jobs)
+- [Jobs API Reference](https://docs.databricks.com/api/jobs/v2/job)
 - [Bundle Examples Repository](https://github.com/databricks/bundle-examples)

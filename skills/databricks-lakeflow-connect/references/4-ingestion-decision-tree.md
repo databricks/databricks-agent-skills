@@ -25,7 +25,7 @@ Pick the row that matches your source type and constraint.
 | Cloud object storage (S3, ADLS, GCS) with files | Yes | Auto Loader | **databricks-pipelines** |
 | SaaS file repo (SharePoint, Google Drive, SFTP) | Yes | Lakeflow Connect | [public connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/) |
 | Application or device pushing events at you | Yes (push, not pull) | Zerobus Ingest | **databricks-zerobus-ingest** |
-| Another lakehouse / partner data product offering a Delta share | Yes (accept, not build) | Delta Sharing | [docs](https://docs.databricks.com/aws/en/delta-sharing/) |
+| Another lakehouse / partner data product offering a Delta share | Yes (accept, not build) | Delta Sharing | [docs](https://docs.databricks.com/opensharing) |
 | None of the above | — | Hand-rolled Structured Streaming or `read_files` from object storage | **databricks-spark-structured-streaming** |
 
 ---
@@ -124,5 +124,5 @@ A few situations where you'll reach for one of the alternatives:
 - [Connector reference](https://docs.databricks.com/ingestion/lakeflow-connect/)
 - [Auto Loader docs](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/)
 - [Lakehouse Federation docs](https://docs.databricks.com/aws/en/query-federation/)
-- [Delta Sharing docs](https://docs.databricks.com/aws/en/delta-sharing/)
+- [Delta Sharing docs](https://docs.databricks.com/opensharing)
 - [Pricing](https://www.databricks.com/product/pricing)

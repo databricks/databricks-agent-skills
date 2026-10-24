@@ -6,7 +6,7 @@ A model service is a Unity Catalog securable in a schema that routes inference r
 
 - [Model services](https://docs.databricks.com/aws/en/ai-gateway/model-services)
 - [Inference-table requirements](https://docs.databricks.com/aws/en/ai-gateway/inference-tables)
-- [Create a model service](https://docs.databricks.com/aws/en/ai-gateway/create-model-services)
+- [Create a model service](https://docs.databricks.com/ai-gateway/model-services)
 
 ## Resource names
 

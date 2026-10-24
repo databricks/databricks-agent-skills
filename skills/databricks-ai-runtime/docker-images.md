@@ -422,7 +422,7 @@ and artifact with your own. It prints the Unity Catalog image name, here
 `main.ml.training:v1`. For an image from another registry, authenticate Docker
 to that source registry first if it is private, then pass its full URI as
 `--source`. See the
-[image push guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/cli/image-push)
+[image push guide](https://docs.databricks.com/machine-learning/ai-runtime/connecting/cli/image-push)
 and `databricks air images push --help` for options. Manual Docker tagging and
 pushing through the Artifact Registry setup guide is also supported.
 

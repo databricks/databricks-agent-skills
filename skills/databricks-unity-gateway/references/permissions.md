@@ -13,8 +13,8 @@ A caller needs all three privileges:
 | Parent schema | `USE SCHEMA` |
 | Model service, model provider service, or MCP service | `EXECUTE` |
 
-The caller also needs the workspace entitlement required to query: **Workspace access**, or
-**Consumer access** when the account has enabled Consumer access to Unity Gateway.
+The caller also needs the workspace entitlement required to query: **Workspace access** or
+**Consumer access**.
 
 Callers do not need access to a model provider service's stored provider credential or a
 MCP service's source connection. Granting access to those dependencies can bypass the

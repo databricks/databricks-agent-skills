@@ -110,7 +110,7 @@ When migrating from workspace-scoped Model Serving endpoints to Unity Catalog-sc
 - [Open Responses specification](https://www.openresponses.org/specification)
 - [Open Responses provider behavior on Databricks](https://docs.databricks.com/aws/en/machine-learning/model-serving/query-open-responses-models)
 - [Query model provider services](https://docs.databricks.com/aws/en/ai-gateway/query-model-provider-services)
-- [Model service requirements and grants](https://docs.databricks.com/aws/en/ai-gateway/create-model-services)
+- [Model service requirements and grants](https://docs.databricks.com/ai-gateway/model-services)
 - [Model provider service governance](https://docs.databricks.com/aws/en/ai-gateway/govern-model-provider-services)
 - [Routing and fallbacks](https://docs.databricks.com/aws/en/ai-gateway/configure-traffic-splitting)
 - [Rate limits](https://docs.databricks.com/aws/en/ai-gateway/rate-limits)

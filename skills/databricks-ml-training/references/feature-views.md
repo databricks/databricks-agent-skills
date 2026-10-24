@@ -1,10 +1,10 @@
 # Feature Views
 
-> **Public Preview** (rolled out June 2026). Requires `databricks-feature-engineering>=0.16.0` and **Databricks Runtime 17.0 ML or above**, on **serverless OR a classic cluster**. Workspace admins enable it on the **Previews** page.
+> **Generally available.** Requires `databricks-feature-engineering>=0.16.0` and **Databricks Runtime 17.0 ML or above**, on **serverless OR a classic cluster**.
 >
 > **Verified end-to-end on 0.16.0 / serverless DBR 17.3 ML (2026-06)**: batch + streaming Feature Views, training sets, offline + online (Lakebase) materialization. Notes flagged **[Verified 0.16.0]** below were confirmed against that release.
 >
-> Docs: [Feature Views](https://docs.databricks.com/aws/en/machine-learning/feature-store/declarative-apis) · [Materialize Feature Views](https://docs.databricks.com/aws/en/machine-learning/feature-store/materialized-features)
+> Docs: [Feature Views](https://docs.databricks.com/machine-learning/feature-store/feature-views) · [Materialize Feature Views](https://docs.databricks.com/machine-learning/feature-store/materialized-features)
 
 A **Feature View** declares *what* a feature is — "7-day rolling average of `amount` per `user_id`" — and lets Databricks compute it point-in-time for training, materialize it to Delta (offline) and/or Lakebase (online), and keep it fresh. Batch (Delta) and streaming (Kafka) sources use the same `Feature` object and the same `fe.create_training_set(features=...)` → `fe.log_model(training_set=...)` → `fe.score_batch()` path as the standard API in [feature-store.md](feature-store.md).
 
@@ -218,7 +218,7 @@ fe.materialize_features(
 
 Define features off a **Kafka** event stream for real-time use cases. Streaming features materialize to the **online store only** (no offline), advertise ~**200ms p99** freshness to serving, and auto-maintain a Delta **ingestion table** that doubles as the offline copy for training.
 
-**Constraints (Public Preview):**
+**Constraints:**
 - **Kafka only**, **JSON-serialized** messages; provide the schema directly as JSON Schema (Confluent/Glue schema registries are not formally supported — but pipelines can read topics governed by one if you supply the schema).
 - **`RollingWindow` only** for streaming aggregations.
 - Operators limited to **`Count`, `Avg`, `Sum`, `StddevPop`, `Max`, `Min`, `Last`**.
@@ -393,7 +393,7 @@ client.predict(endpoint=ENDPOINT_NAME, inputs={"dataframe_records": [{"user_id":
 
 ## Migrating from the beta API → Feature Views
 
-Beta features were registered as **both** a `Feature` object and a same-named UC function; Public Preview Feature Views exist **only** as a `Feature` object. Per the [Feature Views API reference](https://docs.databricks.com/aws/en/machine-learning/feature-store/declarative-api-reference): "Existing beta features must be migrated before **July 22, 2026**."
+Beta features were registered as **both** a `Feature` object and a same-named UC function; Feature Views exist **only** as a `Feature` object.
 
 ```python
 # Find beta Feature Views that still need migration (optionally scope to a catalog/schema).
@@ -410,9 +410,9 @@ Re-create migrated features with `create_feature()` / `register_feature()` and r
 
 | Trap | Fix |
 |---|---|
-| `create_pipeline()` not found / deprecated | `create_pipeline()` is **deprecated and not supported for Feature Views (Public Preview)**. Use `materialize_features()`, the canonical materialization API. |
+| `create_pipeline()` not found / deprecated | `create_pipeline()` is **deprecated and not supported for Feature Views**. Use `materialize_features()`, the canonical materialization API. |
 | `create_kafka_config()` rejected server-side (`BadRequest: CreateKafkaConfig is no longer supported`) | Beta streaming entry point. Use `create_stream()` + `StreamSource(full_name=...)` — see [Streaming features](#streaming-features). |
-| `ContinuousWindow` import fails | Renamed to `RollingWindow`. Per the [Feature Views API reference](https://docs.databricks.com/aws/en/machine-learning/feature-store/declarative-api-reference): "`RollingWindow` was previously named `ContinuousWindow`. If you are migrating from an earlier SDK version, update your imports accordingly." |
+| `ContinuousWindow` import fails | Renamed to `RollingWindow`. Per the [Feature Views API reference](https://docs.databricks.com/machine-learning/feature-store/feature-views-api-reference): "`RollingWindow` was previously named `ContinuousWindow`. If you are migrating from an earlier SDK version, update your imports accordingly." |
 
 ---
 
@@ -420,7 +420,7 @@ Re-create migrated features with `create_feature()` / `register_feature()` and r
 
 | Trap | Fix |
 |---|---|
-| Feature View calls fail on an unsupported runtime | Public Preview requires **DBR 17.0 ML+** with `databricks-feature-engineering>=0.16.0`, on **serverless or classic** compute. |
+| Feature View calls fail on an unsupported runtime | Feature Views require **DBR 17.0 ML+** with `databricks-feature-engineering>=0.16.0`, on **serverless or classic** compute. |
 | `time_window=` passed to `create_feature()` | The window now lives **inside** `AggregationFunction(operator=..., time_window=...)`; `create_feature` has no `time_window` arg |
 | `entity` / `timeseries_column` set on `DeltaTableSource` | They belong on the `Feature` / `create_feature()` call; the source only carries table + optional `filter_condition` / `transformation_sql` |
 | `RollingWindow` batch feature won't materialize | `RollingWindow` is point-in-time (training) for batch and **streaming-only** for materialization; use `Tumbling`/`Sliding` to materialize batch features |

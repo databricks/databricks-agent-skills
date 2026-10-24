@@ -148,7 +148,7 @@ Trigger limitations:
 
 #### 4. Job-Based Orchestration
 
-Integrate refreshes into existing Databricks Jobs using SQL task types:
+Integrate refreshes into existing Lakeflow Jobs using SQL task types:
 
 ```sql
 -- In a Databricks Job SQL task

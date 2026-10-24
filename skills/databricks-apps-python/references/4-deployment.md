@@ -1,8 +1,8 @@
 # Deploying Databricks Apps
 
-**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/deploy · https://docs.databricks.com/dev-tools/bundles/apps-tutorial (Asset Bundles form)
+**Docs**: https://docs.databricks.com/dev-tools/databricks-apps/deploy · https://docs.databricks.com/dev-tools/bundles/apps-tutorial (Declarative Automation Bundles form)
 
-Three deployment options: Databricks CLI (simplest), Asset Bundles (multi-environment), or CLI commands (programmatic).
+Three deployment options: Databricks CLI (simplest), Declarative Automation Bundles (multi-environment), or CLI commands (programmatic).
 
 ---
 
@@ -78,7 +78,7 @@ databricks apps deploy <app-name> \
 
 ---
 
-## Option 2: Databricks Asset Bundles (DABs)
+## Option 2: Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles)
 
 **Best for**: multi-environment deployments (dev/staging/prod), version-controlled infrastructure.
 

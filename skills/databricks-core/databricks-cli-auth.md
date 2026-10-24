@@ -523,5 +523,5 @@ databricks workspace export /Users/<username> --format SOURCE --profile <PROFILE
 
 ## References
 
-- [Databricks CLI Authentication Documentation](https://docs.databricks.com/en/dev-tools/auth.html)
-- [OAuth 2.0 with Databricks](https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0)
+- [Databricks CLI Authentication Documentation](https://docs.databricks.com/dev-tools/auth)
+- [Authorize user access to Databricks with OAuth](https://docs.databricks.com/dev-tools/auth/oauth-u2m)

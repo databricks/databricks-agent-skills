@@ -6,7 +6,7 @@ Calls any Model Serving endpoint by name — a **built-in Databricks foundation 
 
 | Parameter | Type | Runtime | Description |
 |---|---|---|---|
-| `endpoint` | STRING literal | — | Foundation Model or custom endpoint name. Never guess — use exact names below or from the [supported-models docs](https://docs.databricks.com/machine-learning/foundation-models/supported-models.html). |
+| `endpoint` | STRING literal | — | Foundation Model or custom endpoint name. Never guess — use exact names below or from the [supported-models docs](https://docs.databricks.com/machine-learning/foundation-model-apis/supported-models). |
 | `request` | STRING or STRUCT | — | Prompt string for chat models; STRUCT for custom ML endpoints |
 | `returnType` | DDL schema (optional) | 15.2+ | Structures the parsed response like `from_json` |
 | `failOnError` | BOOLEAN (optional, default `true`) | 15.3+ | `false` → returns `STRUCT{response, errorMessage}` instead of raising. **Always set in batch.** |

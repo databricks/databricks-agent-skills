@@ -38,7 +38,7 @@ exploration). If it isn't installed, use the AI-tool commands below and
      v1.0.0 floor check is not enough: follow the Update / repair procedures to install the
      latest stable, which satisfies any skill's floor.
    - Note: In sandboxed environments (Cursor IDE, containers), install commands write outside the workspace and may be blocked. Present the install command to the user and ask them to run it in their own terminal.
-   - **Exception:** If CLI installation is blocked (sandboxed containers, restricted environments), ask the user whether to fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the [Databricks REST API docs](https://docs.databricks.com/api/workspace/introduction).
+   - **Exception:** If CLI installation is blocked (sandboxed containers, restricted environments), ask the user whether to fall back to direct REST API calls using `DATABRICKS_HOST` and `DATABRICKS_TOKEN` environment variables if present in the shell. See the [Databricks REST API docs](https://docs.databricks.com/api/workspace/).
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)

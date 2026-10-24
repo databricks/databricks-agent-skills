@@ -266,6 +266,6 @@ The term "continuous" has different meanings in different contexts:
 
 - Structured Streaming triggers: https://docs.databricks.com/en/structured-streaming/triggers.html
 - Serverless streaming: https://docs.databricks.com/en/compute/serverless/
-- Auto Loader: https://docs.databricks.com/en/ingestion/cloud-files/
-- Kafka integration: https://docs.databricks.com/en/structured-streaming/kafka.html
+- Auto Loader: https://docs.databricks.com/ingestion/cloud-object-storage/auto-loader
+- Kafka integration: https://docs.databricks.com/connect/streaming/kafka
 - Spark Declarative Pipelines: https://docs.databricks.com/en/ldp/serverless

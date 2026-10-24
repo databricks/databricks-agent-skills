@@ -84,7 +84,7 @@ done
 
 After migration, update `databricks.yml` with the new space IDs under the target's `genie_space_ids` variable.
 
-## Databricks Asset Bundles (DABs)
+## Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles)
 
 To manage Genie Agents as code in a DAB, reference the space ID in `databricks.yml` and use the export/import pattern above in CI/CD pipelines. Store `genie_agent.json` in version control alongside the bundle.
 

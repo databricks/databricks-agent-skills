@@ -173,7 +173,7 @@ WITH (
 );
 ```
 
-The IAM role must trust the Databricks account's IAM role. See the [UC documentation](https://docs.databricks.com/en/connect/unity-catalog/storage-credentials.html) for the trust policy.
+The IAM role must trust the Databricks account's IAM role. See the [UC documentation](https://docs.databricks.com/connect/unity-catalog/cloud-storage/s3/s3-external-location-manual) for the trust policy.
 
 #### Step 2: Create an External Location
 
@@ -264,8 +264,8 @@ Use this checklist when planning a serverless networking migration:
 ## Documentation
 
 - Serverless networking: https://docs.databricks.com/en/security/network/serverless-network-security/
-- Network Connectivity Configurations: https://docs.databricks.com/en/security/network/serverless-network-security/serverless-firewall
-- Private Link (AWS): https://docs.databricks.com/en/security/network/serverless-network-security/serverless-private-link
-- Private Link (Azure): https://docs.databricks.com/en/security/network/serverless-network-security/serverless-private-link-azure
-- UC storage credentials: https://docs.databricks.com/en/connect/unity-catalog/storage-credentials.html
-- UC external locations: https://docs.databricks.com/en/connect/unity-catalog/external-locations.html
+- Network Connectivity Configurations: https://docs.databricks.com/security/network/serverless-network-security/serverless-firewall-config
+- Private Link (AWS): https://docs.databricks.com/security/network/serverless-network-security/pl-aws-resources
+- Private Link (Azure): https://learn.microsoft.com/en-us/azure/databricks/security/network/serverless-network-security/serverless-private-link
+- UC storage credentials: https://docs.databricks.com/connect/unity-catalog/cloud-storage
+- UC external locations: https://docs.databricks.com/connect/unity-catalog/cloud-storage

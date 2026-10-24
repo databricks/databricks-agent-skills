@@ -245,7 +245,7 @@ When to reach for Feature Engineering (either flavor) instead of a plain Delta t
 Two flavors, one train/score path (`create_training_set` → `fe.log_model` → `fe.score_batch`):
 
 - **`FeatureLookup` API** — you own the feature tables (compute, write, refresh); bind them to a training set via `FeatureLookup` + `FeatureEngineeringClient`. Reach for it when the features already exist as Delta tables or you want direct control over how they are computed. See **[references/feature-store.md](references/feature-store.md)**.
-- **Feature Views** (declarative, Public Preview, `databricks-feature-engineering>=0.16.0`) — Databricks owns compute, materialization (Delta offline + Lakebase online), and refresh from a spec you declare (`create_feature` over `DeltaTableSource`; `RollingWindow`/`SlidingWindow`/`TumblingWindow`; `create_stream` for Kafka features). Reach for it when the feature is a formula you want Databricks to keep fresh. See **[references/feature-views.md](references/feature-views.md)**.
+- **Feature Views** (declarative, GA, `databricks-feature-engineering>=0.16.0`) — Databricks owns compute, materialization (Delta offline + Lakebase online), and refresh from a spec you declare (`create_feature` over `DeltaTableSource`; `RollingWindow`/`SlidingWindow`/`TumblingWindow`; `create_stream` for Kafka features). Reach for it when the feature is a formula you want Databricks to keep fresh. See **[references/feature-views.md](references/feature-views.md)**.
 
 ---
 
@@ -271,7 +271,7 @@ Endpoint-lifecycle gotchas (readiness two-state, version-swap, Serving-UI SP fil
 | [references/custom-pyfunc.md](references/custom-pyfunc.md) | Single end-to-end custom pyfunc example: artifacts, signature, code_paths, log → register → deploy → query. |
 | [references/genai-agents.md](references/genai-agents.md) | Custom LangGraph `ResponsesAgent` with UC Function + Vector Search tools. `create_text_output_item` gotcha and the `resources=[...]` passthrough-auth list. For no-code agents prefer **databricks-agent-bricks**. |
 | [references/feature-store.md](references/feature-store.md) | Feature Engineering in Unity Catalog (standard `FeatureLookup` API): `FeatureEngineeringClient`, `create_table` with `timeseries_column`, `FeatureLookup` with point-in-time joins, `fe.log_model` with lineage, `fe.score_batch` (replaces `spark_udf` for FE models), and Lakebase online store via `publish_table`. Requires `databricks-feature-engineering>=0.16.0`. |
-| [references/feature-views.md](references/feature-views.md) | Feature Views (declarative Feature Engineering, Public Preview): `create_feature` over `DeltaTableSource`, `RollingWindow`/`SlidingWindow`/`TumblingWindow` aggregations, `materialize_features` (offline + online), streaming features off Kafka via `create_stream`, point-in-time training sets, and the Feature Serving Endpoint. Requires `databricks-feature-engineering>=0.16.0`. |
+| [references/feature-views.md](references/feature-views.md) | Feature Views (declarative Feature Engineering, GA): `create_feature` over `DeltaTableSource`, `RollingWindow`/`SlidingWindow`/`TumblingWindow` aggregations, `materialize_features` (offline + online), streaming features off Kafka via `create_stream`, point-in-time training sets, and the Feature Serving Endpoint. Requires `databricks-feature-engineering>=0.16.0`. |
 
 ## Related skills
 

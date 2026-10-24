@@ -64,6 +64,6 @@ After Step 1.5 completes for a multi-source workload, verify the enumeration cov
 
 ## Documentation
 
-- Databricks Asset Bundles: https://docs.databricks.com/en/dev-tools/bundles/index.html
-- `databricks workspace export-dir`: https://docs.databricks.com/dev-tools/cli/workspace-commands.html
-- `databricks fs cp`: https://docs.databricks.com/dev-tools/cli/fs-commands.html
+- Declarative Automation Bundles: https://docs.databricks.com/dev-tools/bundles/
+- `databricks workspace export-dir`: https://docs.databricks.com/dev-tools/cli/reference/workspace-commands
+- `databricks fs cp`: https://docs.databricks.com/dev-tools/cli/reference/fs-commands

@@ -99,9 +99,9 @@ See the official [metric view bundle example](https://github.com/databricks/bund
 
 ## Resources
 
-- [Metric Views Documentation](https://docs.databricks.com/metric-views/)
-- [YAML Syntax Reference](https://docs.databricks.com/metric-views/data-modeling/syntax)
-- [Joins](https://docs.databricks.com/metric-views/data-modeling/joins)
+- [Metric Views Documentation](https://docs.databricks.com/uc-semantics/metric-views)
+- [YAML Syntax Reference](https://docs.databricks.com/uc-semantics/metric-views/yaml-reference)
+- [Joins](https://docs.databricks.com/uc-semantics/metric-views/basic-modeling)
 - [Window Measures](https://docs.databricks.com/uc-semantics/metric-views/advanced-techniques#window-measures)
-- [Materialization](https://docs.databricks.com/metric-views/materialization)
+- [Materialization](https://docs.databricks.com/uc-semantics/metric-views/materialization)
 - [MEASURE() Function](https://docs.databricks.com/sql/language-manual/functions/measure)

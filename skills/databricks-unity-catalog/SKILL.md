@@ -242,7 +242,7 @@ These governance areas are intentionally **out of scope for v0.3.0** and planned
 
 ## Resources
 
-- [Unity Catalog Privileges & Securable Objects](https://docs.databricks.com/data-governance/unity-catalog/manage-privileges/privileges.html)
-- [Unity Catalog System Tables](https://docs.databricks.com/administration-guide/system-tables/)
-- [Audit Log Reference](https://docs.databricks.com/administration-guide/account-settings/audit-logs.html)
-- [Manage External Locations and Storage Credentials](https://docs.databricks.com/connect/unity-catalog/index.html)
+- [Unity Catalog Privileges & Securable Objects](https://docs.databricks.com/data-governance/unity-catalog/access-control/privileges-reference)
+- [Unity Catalog System Tables](https://docs.databricks.com/admin/system-tables)
+- [Audit Log Reference](https://docs.databricks.com/admin/account-settings/audit-logs)
+- [Manage External Locations and Storage Credentials](https://docs.databricks.com/connect/unity-catalog/cloud-storage)

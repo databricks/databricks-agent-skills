@@ -113,4 +113,4 @@ For more details, see [Zerobus quotas and limits](https://docs.databricks.com/in
 
 - [Zerobus Concepts](https://docs.databricks.com/ingestion/zerobus-concepts)
 - [Zerobus Ingest Quotas](https://docs.databricks.com/ingestion/zerobus-quotas)
-- [Delta Lake Liquid Clustering](https://docs.databricks.com/en/delta/liquid-clustering.html)
+- [Delta Lake Liquid Clustering](https://docs.databricks.com/tables/clustering)

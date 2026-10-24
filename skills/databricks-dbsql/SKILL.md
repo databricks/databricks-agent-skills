@@ -27,7 +27,7 @@ parent: databricks-core
 | SQL Scripting | `BEGIN...END`, `DECLARE`, `IF/WHILE/FOR` | DBR 16.3+ | [references/sql-scripting.md](references/sql-scripting.md) |
 | Stored Procedures | `CREATE PROCEDURE`, `CALL` | DBR 17.0+ | [references/sql-scripting.md](references/sql-scripting.md) |
 | Recursive CTEs | `WITH RECURSIVE` | DBR 17.0+ | [references/sql-scripting.md](references/sql-scripting.md) |
-| Transactions | `BEGIN ATOMIC...END` | Preview | [references/sql-scripting.md](references/sql-scripting.md) |
+| Transactions | `BEGIN ATOMIC...END` | GA | [references/sql-scripting.md](references/sql-scripting.md) |
 | Materialized Views | `CREATE MATERIALIZED VIEW` | Pro/Serverless | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |
 | Temp Tables | `CREATE TEMPORARY TABLE` | All | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |
 | Pipe Syntax | `\|>` operator | DBR 16.1+ | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) |

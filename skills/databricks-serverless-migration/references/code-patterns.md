@@ -776,9 +776,9 @@ result = spark.sql(f"SELECT * FROM transactions WHERE date >= '{target_date}'")
 - Serverless limitations: https://docs.databricks.com/en/compute/serverless/limitations
 - Spark Connect vs classic: https://docs.databricks.com/en/spark/connect-vs-classic
 - UC Volumes: https://docs.databricks.com/en/volumes/volume-files
-- UC external locations: https://docs.databricks.com/en/connect/unity-catalog/external-locations.html
+- UC external locations: https://docs.databricks.com/connect/unity-catalog/cloud-storage
 - UC upgrade guide: https://docs.databricks.com/en/data-governance/unity-catalog/upgrade/
 - Serverless dependencies: https://docs.databricks.com/en/compute/serverless/dependencies
 - Lakehouse Federation: https://docs.databricks.com/en/query-federation/
 - Query Profile: https://docs.databricks.com/en/sql/user/queries/query-profile.html
-- PySpark data sources: https://docs.databricks.com/en/pyspark/datasource.html
+- PySpark data sources: https://docs.databricks.com/pyspark/datasources

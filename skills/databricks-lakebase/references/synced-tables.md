@@ -90,7 +90,7 @@ databricks postgres delete-synced-table "synced_tables/<UC_CATALOG>.<SCHEMA>.<TA
 
 Deletes the sync pipeline and the UC table entry. The Postgres table remains and must be dropped manually if no longer needed (`DROP TABLE <schema>.<table>`).
 
-> **DABs:** The bundle schema includes `synced_database_tables`, but it maps to a deprecated Terraform resource (`databricks_database_synced_database_table`) that fails on current Lakebase. **Do not use `synced_database_tables` in DABs.** DAB support via `postgres_synced_tables` is blocked on Terraform provider work and not yet available — use the CLI commands above instead.
+> **DABs:** The bundle schema includes `synced_database_tables`, but it maps to a deprecated Terraform resource (`databricks_database_synced_database_table`) that fails on current Lakebase. **Do not use `synced_database_tables` in DABs.** For DABs, use the `postgres_synced_tables` resource (Beta, CLI v1.0.0 or later; see [bundle resources](https://docs.databricks.com/dev-tools/bundles/resources#postgres_synced_tables)), or use the CLI commands above.
 
 ## Example: Sync NYC Taxi Data to Lakebase
 

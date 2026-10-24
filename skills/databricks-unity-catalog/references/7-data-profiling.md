@@ -302,6 +302,6 @@ LIMIT 100;
 
 ## Resources
 
-- [Data Quality Monitoring Documentation](https://docs.databricks.com/data-quality-monitoring/)
+- [Data Quality Monitoring Documentation](https://docs.databricks.com/data-governance/unity-catalog/data-quality-monitoring)
 - [Data Quality SDK Reference](https://databricks-sdk-py.readthedocs.io/en/stable/workspace/dataquality/data_quality.html)
 - [Legacy Lakehouse Monitors SDK Reference](https://databricks-sdk-py.readthedocs.io/en/stable/workspace/catalog/lakehouse_monitors.html)

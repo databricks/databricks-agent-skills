@@ -90,4 +90,4 @@ Collect logs, timestamps, then check [Zerobus overview](https://docs.databricks.
 ## Sources
 
 - [Zerobus Concepts](https://docs.databricks.com/ingestion/zerobus-concepts)
-- [Databricks Support](https://docs.databricks.com/en/support/index.html)
+- [Databricks Support](https://docs.databricks.com/resources/support)

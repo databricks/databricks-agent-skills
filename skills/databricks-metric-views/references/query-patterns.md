@@ -177,7 +177,7 @@ FROM by_asset;
 
 ### Rule 2: Prefer a pre-built composed measure over reconstructing the logic
 
-If a measure already encodes per-dimension branching, use it directly instead of rebuilding the `CASE` logic in the query. For example, if `blended_spread` is defined to apply `zdm3yr` for loans and `OAS` for other asset types internally, a request for "average spread" should be `MEASURE(blended_spread)` — not a hand-written `CASE WHEN asset_type = 'Loan' ...`. This is the query-side counterpart to [composing measures with `MEASURE()`](https://docs.databricks.com/metric-views/data-modeling/composability).
+If a measure already encodes per-dimension branching, use it directly instead of rebuilding the `CASE` logic in the query. For example, if `blended_spread` is defined to apply `zdm3yr` for loans and `OAS` for other asset types internally, a request for "average spread" should be `MEASURE(blended_spread)` — not a hand-written `CASE WHEN asset_type = 'Loan' ...`. This is the query-side counterpart to [composing measures with `MEASURE()`](https://docs.databricks.com/uc-semantics/metric-views/advanced-techniques#composability).
 
 ```sql
 -- ✅ CORRECT: the measure already encodes the per-asset-type logic

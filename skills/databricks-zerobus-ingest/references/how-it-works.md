@@ -102,7 +102,7 @@ The in-flight buffer is bounded by a configurable in-flight record limit. **Inge
 | **Memory** | The in-flight buffer holds every unacknowledged record **in memory**, up to the in-flight limit. Size the limit to your record size and the memory available, especially in containers |
 | **Lifetime** | A stream is **long-lived**. Open it once and reuse it for the life of the process; don't open a stream per request or per record |
 | **Shutdown** | Call `flush()` then `close()` (or just `close()`, which flushes) before the process exits, so buffered records become durable. Records still in the buffer when the process dies were never acknowledged |
-| **Runtimes** | Servers, workers, containers, Databricks Jobs, Apps, and serverless compute (Python). Not edge runtimes that forbid native code; use REST there |
+| **Runtimes** | Servers, workers, containers, Lakeflow Jobs, Apps, and serverless compute (Python). Not edge runtimes that forbid native code; use REST there |
 
 ### Non-blocking ingestion
 
