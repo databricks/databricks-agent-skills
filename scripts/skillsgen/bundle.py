@@ -6,12 +6,13 @@ Each provider gets its own self-contained, fully generated folder:
     ├── claude/    .claude-plugin/plugin.json + skills/ + commands/ + hooks/(hooks.json, router+context+auth, _routing_data.json)
     ├── codex/     .codex-plugin/plugin.json  + skills/ + hooks/(codex-hooks.json, router+context+auth, _routing_data.json) + assets/
     ├── copilot/   .github/plugin/plugin.json + skills/ + hooks.json + hooks/(context+auth)
-    └── cursor/    .cursor-plugin/plugin.json + skills/ + commands/ + rules/ + hooks/(cursor-hooks.json, context+auth)
+    ├── cursor/    .cursor-plugin/plugin.json + skills/ + commands/ + rules/ + hooks/(cursor-hooks.json, context+auth)
+    └── antigravity/ plugin.json + skills/ + rules/ + assets/ + LICENSE + NOTICE
 
 Each catalog's scoped source points at one of these subfolders, so an install
 fetches only that provider's payload (and only what it actually uses — e.g. no
-router script where the router isn't wired, top-level assets only for Codex's
-interface logo). It is a copy/transform of the editable source (skills/, the
+router script where the router isn't wired, top-level assets only for provider
+logos). It is a copy/transform of the editable source (skills/, the
 hook scripts, rules/, assets/) plus this provider's generated plugin.json and
 rendered commands. Everything under plugins/ is generated.
 
@@ -31,13 +32,15 @@ from skillsgen.common import BUNDLE_DIR, _serialize_plugin_json
 from skillsgen.discovery import is_publishable_path
 from skillsgen.plugins import (
     _GENERATED_README,
+    build_antigravity_plugin,
     build_claude_plugin,
     build_codex_plugin,
     build_copilot_plugin,
     build_cursor_plugin,
 )
+from skillsgen.routing import render_routing_rule
 
-PROVIDERS = ("claude", "codex", "copilot", "cursor")
+PROVIDERS = ("claude", "codex", "copilot", "cursor", "antigravity")
 
 # Any hooks/*.py referenced by a wiring file, regardless of env-var prefix.
 _HOOK_PY_RE = re.compile(r"hooks/[\w.-]+\.py")
@@ -53,6 +56,7 @@ def _provider_specs() -> dict:
         "codex":   {"plugin": build_codex_plugin,   "commands": False, "rules": False, "assets": True},
         "copilot": {"plugin": build_copilot_plugin, "commands": False, "rules": False, "assets": False},
         "cursor":  {"plugin": build_cursor_plugin,  "commands": True,  "rules": True,  "assets": False},
+        "antigravity": {"plugin": build_antigravity_plugin, "commands": False, "rules": False, "assets": False},
     }
 
 
@@ -101,34 +105,43 @@ def expected_bundle(repo_root: Path, meta: dict) -> dict:
     for provider, spec in specs.items():
         target = meta["targets"][provider]
         base = f"{BUNDLE_DIR}/{provider}"
-        manifest_dir = target["dir"]
+        manifest_dir = (Path(base) / target["dir"]).as_posix()
 
         # Generated plugin.json + the do-not-edit marker.
-        expected[f"{base}/{manifest_dir}/plugin.json"] = _serialize_plugin_json(
+        expected[f"{manifest_dir}/plugin.json"] = _serialize_plugin_json(
             spec["plugin"](meta)
         ).encode()
-        expected[f"{base}/{manifest_dir}/README.md"] = _GENERATED_README.encode()
+        if target["dir"] != ".":
+            expected[f"{manifest_dir}/README.md"] = _GENERATED_README.encode()
 
         # skills/ (copy of the root source).
         for src_abs, rel in _iter_copy(repo_root, "skills"):
             expected[f"{base}/{rel}"] = src_abs.read_bytes()
 
         # hooks/: this provider's wiring + referenced scripts (+ routing data).
-        for rel, data in _provider_hook_files(repo_root, provider, target["hooks_render"]["out"]).items():
-            expected[f"{base}/{rel}"] = data
+        if render := target.get("hooks_render"):
+            for rel, data in _provider_hook_files(repo_root, provider, render["out"]).items():
+                expected[f"{base}/{rel}"] = data
 
         # commands/: rendered from the templated source (Claude/Cursor only).
         if spec["commands"]:
             for fname, text in render_command_files(repo_root, provider).items():
                 expected[f"{base}/commands/{fname}"] = text.encode()
 
-        # rules/ (Cursor) and assets/ (Codex interface logo): copies of source.
+        # Root rules/ contains only the Cursor format and its documentation.
         if spec["rules"]:
             for src_abs, rel in _iter_copy(repo_root, "rules"):
                 expected[f"{base}/{rel}"] = src_abs.read_bytes()
         if spec["assets"]:
             for src_abs, rel in _iter_copy(repo_root, "assets"):
                 expected[f"{base}/{rel}"] = src_abs.read_bytes()
+
+        if provider == "antigravity":
+            expected[f"{base}/rules/databricks-routing.md"] = render_routing_rule(
+                meta, provider
+            ).encode()
+            for rel in ("LICENSE", "NOTICE", "assets/databricks.png"):
+                expected[f"{base}/{rel}"] = (repo_root / rel).read_bytes()
 
     return expected
 

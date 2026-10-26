@@ -11,8 +11,8 @@ first:
 ## Orientation for changes to the plugin itself
 
 - **Edit the source, not the output.** `metaplugin/plugin.meta.json` is the
-  single source of truth for the plugin across all four targets (Claude Code,
-  Codex, GitHub Copilot, Cursor). See
+  single source of truth for the plugin across all five targets (Claude Code,
+  Codex, GitHub Copilot, Cursor, Antigravity). See
   [`metaplugin/README.md`](./metaplugin/README.md) for the full list of what is
   generated from it and what stays hand-edited.
 - **The generator** lives in [`scripts/skillsgen/`](./scripts/skillsgen/) (a
@@ -25,7 +25,12 @@ first:
   adding a hook").
 - **Never hand-edit generated files** (the per-target `plugin.json` /
   `marketplace.json`, the `hooks/*-hooks.json` wiring, `hooks/_routing_data.json`,
-  `rules/databricks-routing.mdc`, `manifest.json`, and the entire
-  `plugins/databricks/` bundle — a generated copy of the source). CI re-renders
+  `rules/databricks-routing.mdc`,
+  `manifest.json`, and the entire `plugins/databricks/` bundle — a generated copy
+  of the source). CI re-renders
   them and fails on any drift, including a bundle that does not match a fresh
   build. Edit the source and run `scripts/skills.py generate`.
+
+- **Antigravity** generates shared skills and a native `model_decision` routing
+  rule directly in its bundle. See [`docs/antigravity.md`](./docs/antigravity.md)
+  for local testing. Runtime validation is pending.

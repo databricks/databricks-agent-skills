@@ -33,6 +33,8 @@ on:
       - 'skills/**'
       - 'experimental/**'
       - 'assets/**'
+      - 'LICENSE'
+      - 'NOTICE'
       - 'metaplugin/plugin.meta.json'
       - 'scripts/**'
       - 'hooks/**'

@@ -1,4 +1,4 @@
-"""Prompt-router data and Cursor rule generation from the meta routing block."""
+"""Prompt-router data and provider rules generated from the meta routing block."""
 
 import json
 import re
@@ -9,13 +9,12 @@ from skillsgen.discovery import iter_skill_dirs
 
 
 # ---------------------------------------------------------------------------
-# Routing (prompt-router data + Cursor rule, generated from meta "routing")
+# Routing (prompt-router data + provider rules, generated from meta "routing")
 # ---------------------------------------------------------------------------
 #
 # The product-skill routing table lives once in plugin.meta.json "routing".
-# Both the prompt router's instruction (rendered into hooks/_routing_data.json,
-# which the router loads) and the Cursor rule (rules/databricks-routing.mdc) are
-# rendered from that single table, so the two routing tables cannot drift.
+# The prompt router's instruction (hooks/_routing_data.json) and the Cursor and
+# Antigravity rules are rendered from that table so routing stays consistent.
 
 def _routing_rows(meta: dict) -> list[str]:
     """The shared product-skill table rows ('- <label> -> <skill><note>')."""
@@ -32,17 +31,29 @@ def render_routing_instruction(meta: dict) -> str:
     return routing["instruction_preamble"] + "\n" + rows + routing["instruction_closing"]
 
 
-def render_routing_rule(meta: dict) -> str:
-    """The Cursor Apply-Intelligently rule (rules/databricks-routing.mdc) text."""
+def render_routing_rule(meta: dict, provider: str = "cursor") -> str:
+    """Render a provider's rule frontmatter around the shared routing table."""
     routing = meta["routing"]
     preamble = "\n".join(routing["rule_preamble"])
     closing = "\n".join(routing["rule_closing"])
     rows = "\n".join(_routing_rows(meta))
-    return (
-        "---\n"
-        f"description: {routing['rule_description']}\n"
-        "alwaysApply: false\n"
-        "---\n"
+    if provider == "cursor":
+        frontmatter = (
+            "---\n"
+            f"description: {routing['rule_description']}\n"
+            "alwaysApply: false\n"
+            "---\n"
+        )
+    elif provider == "antigravity":
+        frontmatter = (
+            "---\n"
+            "trigger: model_decision\n"
+            f"description: {json.dumps(routing['rule_description'])}\n"
+            "---\n"
+        )
+    else:
+        raise ValueError(f"Unsupported routing rule provider: {provider}")
+    return frontmatter + (
         "\n"
         f"{preamble}\n"
         "\n"

@@ -62,6 +62,7 @@ from skillsgen.plugins import (
     build_codex_plugin,
     build_copilot_plugin,
     build_cursor_plugin,
+    build_antigravity_plugin,
     build_claude_marketplace,
     build_copilot_marketplace,
     build_codex_marketplace,

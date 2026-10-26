@@ -69,7 +69,7 @@ python3 scripts/skills.py validate
 
 ### CI
 
-`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), the `plugins/**` bundle, `hooks/**`, the command dirs, or `rules/**`. Validation enforces:
+`.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), the `plugins/**` bundle, `hooks/**`, the command dirs, `rules/**`, `LICENSE`, or `NOTICE`. Validation enforces:
 
 - Every skill has `agents/openai.yaml`.
 - Every skill ships `assets/databricks.svg` + `assets/databricks.png` byte-identical to the repo-root source.
@@ -77,7 +77,7 @@ python3 scripts/skills.py validate
   exist in the repo, so CLI installs from `main` cannot 404 on stale entries.
 - `manifest.json` matches what `scripts/skills.py generate` would produce (stable skills' `repo_dir` stays `skills`; the CLI files-channel fetches the root `skills/`).
 - Every stable skill has a `plugin.meta.json` "skills" entry (and vice versa).
-- Every target's `plugin.json` + each root `marketplace.json` catalog is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the four targets).
+- Every target's `plugin.json` + each root `marketplace.json` catalog is byte-identical to what the generator produces from `plugin.meta.json` (no drift across the five targets).
 - The whole `plugins/databricks/` per-provider bundle matches a fresh build of the source — no missing, stale, hand-edited, or extra file.
 - Every catalog source is scoped to its provider subfolder `plugins/databricks/<provider>` (never a whole-repo `"./"`).
 
@@ -85,9 +85,10 @@ If validation fails the error tells you which file is missing or stale; the fix 
 
 ## Plugin metadata (`metaplugin/plugin.meta.json`)
 
-The repo ships one logical plugin to four targets (Claude Code, Codex, Copilot,
-Cursor), each with its own marketplace catalog. All cross-target plugin
-metadata, version, name, description, author, license, keywords, per-target
+The repo ships one logical plugin to five targets (Claude Code, Codex, Copilot,
+Cursor, Antigravity). The first four have marketplace catalogs; Antigravity
+generates a native directory for local testing. All cross-target plugin
+metadata, name, description, author, license, keywords, per-target
 display names, the scoped-source config (`marketplace.source`), and
 hook/command/rule wiring, lives once in **`metaplugin/plugin.meta.json`**.
 `scripts/skills.py generate` renders it into a **per-provider** bundle under
@@ -99,6 +100,7 @@ scoped source at *its own* provider subfolder (`ref: main`):
   - `plugins/databricks/codex/`    — `.codex-plugin/plugin.json` + `skills/` + `hooks/` + `assets/`
   - `plugins/databricks/copilot/`  — `.github/plugin/plugin.json` + `skills/` + `hooks/`
   - `plugins/databricks/cursor/`   — `.cursor-plugin/plugin.json` + `skills/` + `commands/` + `rules/` + `hooks/`
+  - `plugins/databricks/antigravity/` — root `plugin.json` + `skills/` + native `rules/` + `assets/` + `LICENSE` + `NOTICE`
 - root catalogs: `.claude-plugin/marketplace.json`, `.github/plugin/marketplace.json`,
   `.agents/plugins/marketplace.json`, `.cursor-plugin/marketplace.json`
 
@@ -119,11 +121,14 @@ keywords_tail`, in the insertion order of the `skills` map. The plugin `name` is
 `databricks` for every target and is load-bearing (it keys Cursor/Claude
 installs); the generator never emits a different value.
 
-The `routing` block in `plugin.meta.json` is also generated output: the
-product-skill table there is rendered into both the prompt router's data
-(`hooks/_routing_data.json`, which `hooks/databricks-router.py` loads) and the
-Cursor rule (`rules/databricks-routing.mdc`), so the two routing tables cannot
-drift. Add a product skill and CI fails until it has a `routing.table` row.
+The product-skill table in `plugin.meta.json`'s `routing` block is rendered into
+the prompt router's data (`hooks/_routing_data.json`, which
+`hooks/databricks-router.py` loads), the Cursor rule
+(`rules/databricks-routing.mdc`), and the Antigravity rule
+(`plugins/databricks/antigravity/rules/databricks-routing.md`), so the routing
+tables cannot drift. The Antigravity rule is rendered directly into its bundle;
+the root `rules/` directory remains specific to Cursor.
+Add a product skill and CI fails until it has a `routing.table` row.
 Regenerate the same way: edit `metaplugin/plugin.meta.json`, run `scripts/skills.py generate`.
 
 The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,
@@ -204,9 +209,9 @@ dispatch (it takes no inputs). It:
    and the `plugins/databricks/` bundle stamped with the release version, then
    advances `version.meta.json` (`current_version` becomes the released version;
    `next_version` is bumped to the next patch).
-3. Validates the regenerated tree, commits it to `main` as the DECO-SDK-Tagging
-   App (on the ruleset bypass list), creates the annotated `vX.Y.Z` tag, and cuts
-   the GitHub release.
+3. Validates the regenerated tree, commits it to `main` as the
+   DECO-SDK-Tagging App (on the ruleset bypass list), creates the annotated
+   `vX.Y.Z` tag, and cuts the GitHub release.
 
 So a release is one dispatch and the version is auto-numbered. To cut a **minor
 or major** instead of a patch, set `next_version` in `version.meta.json` (e.g. to
@@ -218,7 +223,7 @@ or major** instead of a patch, set `next_version` in `version.meta.json` (e.g. t
   marketplace keys updates on the `version` field in `plugin.json`, so a release
   that ships without bumping it leaves marketplace clients on the cached copy.
   That is why the bumped version is committed to `main` (in `version.meta.json`
-  and the four `plugin.json`).
+  and the five `plugin.json`).
 - `version.meta.json` is the version source for generation. `scripts/skills.py
   generate` / `validate` read `current_version` from it; if it is absent they fall
   back to the version already committed in `plugin.json`, and fail loudly if no
@@ -233,6 +238,10 @@ or major** instead of a patch, set `next_version` in `version.meta.json` (e.g. t
 - After releasing, open a follow-up PR to update
   [`cli-compat.json`](#version-resolution-in-databricks-cli) in the CLI repo so
   `databricks aitools install` resolves to the new version.
+
+See [Antigravity development](docs/antigravity.md) for local generation and
+archive packaging. Antigravity runtime validation is pending; automatic ZIP
+release assets and the README installation entry are deferred until it passes.
 
 ## Version resolution in Databricks CLI
 

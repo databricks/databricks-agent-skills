@@ -3,8 +3,8 @@
 # `metaplugin/` — the plugin source
 
 `plugin.meta.json` in this folder is the **single source of truth** for the
-Databricks plugin across all four targets (Claude Code, Codex, GitHub Copilot,
-Cursor). This is the one place to edit cross-target plugin metadata. After
+Databricks plugin across all five targets (Claude Code, Codex, GitHub Copilot,
+Cursor, Antigravity). This is the one place to edit cross-target plugin metadata. After
 editing, run:
 
 ```bash
@@ -23,10 +23,11 @@ each provider's `plugin.json`.
 CI re-renders all of these in memory and fails on any drift, so edits to them
 are reverted:
 
-- **The per-provider bundles**: `plugins/databricks/{claude,codex,copilot,cursor}/`.
+- **The per-provider bundles**: `plugins/databricks/{claude,codex,copilot,cursor,antigravity}/`.
   Each is self-contained — its `plugin.json`, a copy of `skills/`, the hook wiring
   + scripts it uses, and (only where applicable) `commands/`, `rules/`, `assets/`.
-  Every agent fetches its own provider subfolder (scoped).
+  Marketplace catalogs fetch their own provider subfolder. Antigravity generates
+  a native directory for local testing; runtime validation is pending.
 - **Marketplace catalogs** (at the repo root): `.claude-plugin/marketplace.json`,
   `.github/plugin/marketplace.json`, `.agents/plugins/marketplace.json`,
   `.cursor-plugin/marketplace.json` (Cursor's is new). Each points a scoped source
@@ -37,8 +38,10 @@ are reverted:
   so generation doesn't collide). The bundle renames each into the path its
   provider auto-discovers: `hooks/hooks.json` for Claude, Codex, and Cursor;
   root `hooks.json` for Copilot.
-- **Prompt routing**: `hooks/_routing_data.json` and `rules/databricks-routing.mdc`
-  (both rendered from the one `routing` table, so they cannot drift)
+- **Prompt routing**: `hooks/_routing_data.json`, `rules/databricks-routing.mdc`
+  (Cursor), and `plugins/databricks/antigravity/rules/databricks-routing.md`,
+  rendered from one `routing` table. The Antigravity rule is rendered directly
+  into its bundle, keeping the root `rules/` directory specific to Cursor.
 - **Rendered commands**: each provider's command files, rendered from the
   templated `commands/*.md` source into its bundle folder
 - **Skill manifest**: `manifest.json` (stable skills' `repo_dir` stays `skills`;

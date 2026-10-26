@@ -50,12 +50,15 @@ python3 scripts/skills.py validate     # check metadata + icons + manifest + plu
 ## Plugin manifests (generated from `metaplugin/plugin.meta.json`)
 
 Each agent fetches its own **per-provider** bundle under
-`plugins/databricks/<provider>/` (`claude/`, `codex/`, `copilot/`, `cursor/`).
+`plugins/databricks/<provider>/` (`claude/`, `codex/`, `copilot/`, `cursor/`, `antigravity/`).
 Every folder is fully generated and self-contained, holding only what that
 provider uses: its `plugin.json`, a copy of `skills/`, the hook wiring it needs
 (plus the referenced `*.py` scripts and, where the router is wired, `_routing_data.json`),
-and — only where applicable — `commands/` (Claude, Cursor), `rules/` (Cursor),
-and `assets/` (Codex's interface logo). At the repo root, four `marketplace.json`
+and — only where applicable — `commands/` (Claude, Cursor), `rules/` (Cursor and
+Antigravity), and `assets/` (Codex and Antigravity logos). Antigravity uses a root
+`plugin.json`, ships `LICENSE` and `NOTICE`, and has no hooks. It is distributed
+as a generated directory for local testing; see [docs/antigravity.md](./docs/antigravity.md).
+At the repo root, four `marketplace.json`
 catalogs (`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`,
 `.cursor-plugin/` — Cursor's is new) each point a **scoped source** at *its own*
 provider subfolder (`plugins/databricks/<provider>`), so an install fetches only
@@ -65,11 +68,11 @@ lives. The bundles, the catalogs, every
 `manifest.json` are all **generated** from
 [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json) (and the templated
 `commands/` source) by `scripts/skills.py generate`. **Do not hand-edit them** —
-edit the source and regenerate. (Each generated manifest dir carries a `README.md`
+edit the source and regenerate. (Generated manifest subdirectories carry a `README.md`
 marker; `plugins/**` is marked `linguist-generated` so the bundle stays out of
 review noise.) CI (`validate`) fails on any drift, including a bundle that does
-not match a fresh build. The version lives only in `metaplugin/plugin.meta.json`
-and propagates to all four targets. Adding a stable skill requires an entry in
+not match a fresh build. The release version lives in `metaplugin/version.meta.json`
+and propagates to all five targets. Adding a stable skill requires an entry in
 the `skills` map (with a `keyword`).
 
 Everything under `plugins/` is generated, committed, and drift-checked (it is not
@@ -84,10 +87,12 @@ The generator itself lives in `scripts/skillsgen/` (a package split by concern:
 plugins, routing, hooks, validators, ...); `scripts/skills.py` is a thin façade
 that re-exports it and is the CLI entry point.
 
-The `routing` block in `metaplugin/plugin.meta.json` is generated too: it renders the
+The `routing` block in `metaplugin/plugin.meta.json` renders the
 prompt router's data (`hooks/_routing_data.json`, loaded by
-`hooks/databricks-router.py`) and the Cursor rule
-(`rules/databricks-routing.mdc`) from one table. Do not hand-edit those; edit
+`hooks/databricks-router.py`), the Cursor rule (`rules/databricks-routing.mdc`),
+and the Antigravity rule (`plugins/databricks/antigravity/rules/databricks-routing.md`)
+from one table. The Antigravity rule is rendered directly into its bundle.
+Do not hand-edit those; edit
 `metaplugin/plugin.meta.json` and regenerate. CI fails if a product skill has no routing row.
 
 The four hook-wiring files (`hooks/hooks.json`, `codex-hooks.json`,

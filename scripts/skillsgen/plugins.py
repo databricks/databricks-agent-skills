@@ -16,8 +16,8 @@ from skillsgen.discovery import iter_skill_dirs
 # Plugin manifests (generated from plugin.meta.json for every target)
 # ---------------------------------------------------------------------------
 #
-# One logical plugin ships to four targets (Claude Code, Codex, Copilot,
-# Cursor) plus a marketplace catalog for three of them. Every target used to
+# One logical plugin ships to five targets (Claude Code, Codex, Copilot,
+# Cursor, Antigravity), with marketplace catalogs for the first four. Every target used to
 # keep a hand-edited copy of the same plugin-level metadata (version,
 # description, keywords, author, ...) and they drifted: version duplicated 4x,
 # Codex missing the app-design keyword, Cursor's description stale. plugin.meta.json
@@ -117,6 +117,25 @@ def build_cursor_plugin(meta: dict) -> dict:
         "skills": "./skills/",
         "commands": target["commands"],
         "rules": target["rules"],
+    }
+
+
+def build_antigravity_plugin(meta: dict) -> dict:
+    target = meta["targets"]["antigravity"]
+    # skills/ is auto-discovered. The manifest's "skills" field adds EXTRA
+    # directories, so declaring the standard directory could load it twice.
+    return {
+        "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+        "name": meta["name"],
+        "displayName": target["displayName"],
+        "description": meta["description"],
+        "version": require_version(meta),
+        "author": meta["author"],
+        "homepage": meta["homepage"],
+        "repository": meta["repository"],
+        "license": meta["license"],
+        "keywords": build_keywords(meta),
+        "logo": target["logo"],
     }
 
 

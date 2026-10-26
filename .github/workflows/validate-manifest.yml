@@ -6,6 +6,8 @@ on:
       - 'skills/**'
       - 'experimental/**'
       - 'assets/**'
+      - 'LICENSE'
+      - 'NOTICE'
       - 'scripts/**'
       - 'manifest.json'
       - 'metaplugin/**'

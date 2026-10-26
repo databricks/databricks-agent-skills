@@ -91,6 +91,7 @@ class GeneratedHooksTest(unittest.TestCase):
             skills.build_codex_plugin,
             skills.build_copilot_plugin,
             skills.build_cursor_plugin,
+            skills.build_antigravity_plugin,
         ):
             self.assertNotIn("hooks", builder(self.meta))
 

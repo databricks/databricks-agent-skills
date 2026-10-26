@@ -205,11 +205,10 @@ the routing table when a prompt is Databricks-related, independent of an open
 Cursor bug that currently drops hook `additional_context`. Native skill
 selection also helps.
 
-> **Distribution parity (follow-up).** The plugin marketplace ships the whole
-> repo (`marketplace.json` `source: "./"`), so commands and hooks come with it.
-> `databricks aitools install` currently packages only `skills/`, so CLI-install
-> users don't yet get commands/hooks. Closing that gap is tracked as CLI-side
-> work.
+> **Distribution parity (follow-up).** Each plugin bundle includes its provider's
+> supported components. `databricks aitools install` currently packages only
+> `skills/`, so CLI-install users don't yet get commands/hooks. Closing that gap
+> is tracked as CLI-side work.
 
 ## Structure
 
@@ -290,14 +289,16 @@ The manifest is consumed by the CLI to discover available skills.
 
 ### Plugin manifest management
 
-The repo ships one plugin to four targets (Claude Code, Codex, Copilot, Cursor).
-Every agent fetches the built `plugins/databricks/` bundle (a generated copy of
-the source plus the four per-target `plugin.json`); four `marketplace.json`
-catalogs at the repo root each point a scoped source at it (tracking `main`). The
-bundle, the catalogs, the four `plugin.json`, and `manifest.json` are all
+The repo ships one plugin to five targets (Claude Code, Codex, Copilot, Cursor,
+Antigravity), with a separate bundle at `plugins/databricks/<provider>/` for each
+target. Four `marketplace.json` catalogs at the repo root each point a scoped
+source at their provider's bundle (tracking `main`). The Antigravity provider is
+available for [local testing](docs/antigravity.md); runtime validation is pending.
+The bundles, the catalogs, the five `plugin.json` files,
+and `manifest.json` are all
 **generated** from a single source of truth,
 [`metaplugin/plugin.meta.json`](./metaplugin/plugin.meta.json), by `scripts/skills.py`. Do not
-hand-edit the generated files (each generated directory also carries a
+hand-edit the generated files (generated manifest subdirectories also carry a
 `README.md` saying so, and `plugins/**` is marked `linguist-generated`) — edit
 `metaplugin/plugin.meta.json` and regenerate:
 
@@ -306,14 +307,17 @@ python3 scripts/skills.py generate   # regenerates manifest.json + all plugin ma
 python3 scripts/skills.py validate   # CI check: fails on any drift
 ```
 
-`metaplugin/plugin.meta.json` owns the version (one value, propagated to all four targets),
-name, description, keywords, author/license, per-target display names and
-hook/command/rule wiring, and the skill-to-keyword map. Adding a stable skill
+`metaplugin/version.meta.json` owns the release version, propagated to all five
+targets. `metaplugin/plugin.meta.json` owns the name, description, keywords,
+author/license, per-target display names and hook/command/rule wiring, and the
+skill-to-keyword map. Adding a stable skill
 means adding it to the `skills` map there (with a `keyword`); CI fails if a
 shipped skill has no entry. The same source also drives prompt routing: its
 `routing` block is rendered into the prompt router's data
-(`hooks/_routing_data.json`) and the Cursor routing rule
-(`rules/databricks-routing.mdc`) from one table, so they can't drift. See
+(`hooks/_routing_data.json`), the Cursor routing rule
+(`rules/databricks-routing.mdc`), and the Antigravity routing rule
+(`plugins/databricks/antigravity/rules/databricks-routing.md`) from one table,
+so they can't drift. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for the full field reference.
 
 ## Security

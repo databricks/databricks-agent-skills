@@ -108,6 +108,7 @@ class GeneratedPluginsTest(unittest.TestCase):
                 skills.build_codex_plugin,
                 skills.build_copilot_plugin,
                 skills.build_cursor_plugin,
+                skills.build_antigravity_plugin,
             )
         }
         self.assertEqual(versions, {self.meta["version"]})
@@ -120,6 +121,7 @@ class GeneratedPluginsTest(unittest.TestCase):
             skills.build_codex_plugin,
             skills.build_copilot_plugin,
             skills.build_cursor_plugin,
+            skills.build_antigravity_plugin,
         ):
             self.assertEqual(build(self.meta)["name"], "databricks")
 
@@ -524,6 +526,8 @@ class BundleTest(unittest.TestCase):
         # build can run, then build the bundle.
         for d in self._SRC_DIRS:
             shutil.copytree(_REPO / d, root / d)
+        for name in ("LICENSE", "NOTICE"):
+            shutil.copyfile(_REPO / name, root / name)
         skills.generate_bundle(root, self.meta)
         return root
 
@@ -589,6 +593,8 @@ class BundleTest(unittest.TestCase):
             root = Path(d)
             for dd in self._SRC_DIRS:
                 shutil.copytree(_REPO / dd, root / dd)
+            for name in ("LICENSE", "NOTICE"):
+                shutil.copyfile(_REPO / name, root / name)
             noise = root / "skills" / "databricks-core" / "__pycache__"
             noise.mkdir(parents=True, exist_ok=True)
             (noise / "x.pyc").write_text("x")
@@ -659,6 +665,8 @@ class GenerateAllTest(unittest.TestCase):
     def _seed(self, root: Path) -> Path:
         for d in self._SRC_DIRS:
             shutil.copytree(_REPO / d, root / d)
+        for name in ("LICENSE", "NOTICE"):
+            shutil.copyfile(_REPO / name, root / name)
         return root
 
     def _meta_at(self, version: str) -> dict:
