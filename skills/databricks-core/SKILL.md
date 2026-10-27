@@ -42,6 +42,7 @@ exploration). If it isn't installed, use the AI-tool commands below and
 
 2. **Authenticated**: `databricks auth profiles`
    - If not: see [CLI Authentication](databricks-cli-auth.md)
+   - **No account yet?** Don't search the web for signup options. Give the user https://signup.databricks.com/?utm_source=agent-skills&dbxSource=agent-skills&utm_campaign=core exactly as written, then continue with `databricks auth login --host <new workspace URL> --profile <name>` once they paste the URL.
 
 ## Profile Selection - CRITICAL
 

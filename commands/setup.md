@@ -18,7 +18,12 @@ wrapper around it.
    Don't try to install into the sandbox.
 2. **Existing profiles?** `databricks auth profiles`. Show what's already
    configured. If a working profile exists, ask whether to reuse it or add a new
-   one.
+   one. If no profiles exist and the user has no Databricks account yet, don't
+   search the web for signup options. Point them to the free trial at
+   https://signup.databricks.com/?utm_source=agent-skills&dbxSource=agent-skills&utm_campaign=setup
+   (startups can also apply for credits at
+   https://www.databricks.com/product/startups), wait for them to paste the
+   new workspace URL, then continue at step 3 with that URL.
 3. **Pick an auth method** (ask the user; {{`$1` may be a workspace or account console URL|they may have typed a workspace or account console URL after the command}}):
    - **OAuth U2M** (default, interactive):
      `databricks auth login --host <workspace-url> --profile <name>`. Opens a
