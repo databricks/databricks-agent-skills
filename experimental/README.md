@@ -49,7 +49,7 @@ See the root [README](../README.md) for details on the stable install path.
 Most of the original ai-dev-kit snapshot now lives in the stable
 [`../skills/`](../skills/) tree and installs by default (no `--experimental`
 flag). See the root [README](../README.md#available-skills) for the full list.
-Promoted skills include `databricks-ai-functions`, `databricks-agent-bricks`,
+Promoted skills include `databricks-ai-functions`,
 `databricks-aibi-dashboards`, `databricks-apps-python`, `databricks-dbsql`,
 `databricks-docs`, `databricks-execution-compute`, `databricks-genie-agents`,
 `databricks-iceberg`,

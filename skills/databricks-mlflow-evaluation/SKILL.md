@@ -161,6 +161,6 @@ See `GOTCHAS.md` for complete list.
 
 - **[databricks-docs](../databricks-docs/SKILL.md)** - General Databricks documentation reference
 - **databricks-model-serving** - Deploying models and agents to serving endpoints
-- **[databricks-agent-bricks](../databricks-agent-bricks/SKILL.md)** - Building agents that can be evaluated with this skill
+- **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)** - Building no-code agents (tables + documents) that can be evaluated with this skill
 - **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** - SDK patterns used alongside MLflow APIs
 - **[databricks-unity-catalog](../databricks-unity-catalog/SKILL.md)** - Unity Catalog tables for managed evaluation datasets

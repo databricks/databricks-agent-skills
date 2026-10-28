@@ -1,6 +1,6 @@
 ---
 name: databricks-unstructured-pdf-generation
-description: "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for Knowledge Assistant) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
+description: "Build RAG / unstructured-document evaluation datasets and demo documents (e.g. for a Genie Agent with an attached volume) on Databricks: generate synthetic PDFs locally, upload to Unity Catalog volumes, and pair each document with test questions for retrieval evaluation."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
@@ -47,7 +47,7 @@ Skips files where PDF exists and is newer than HTML. Use `--force` to reconvert 
 
 ## Step 3: Upload to Volume
 
-`databricks fs` requires the `dbfs:` scheme prefix even for UC Volume paths. `-r` copies the *contents* of the source directory into the target (the source directory name is not preserved), so name the target `raw_data/pdf` explicitly to keep the PDFs in their own folder on the volume. They land under `raw_data/pdf/` — i.e. `dbfs:/Volumes/my_catalog/my_schema/raw_data/pdf/report.pdf` — so a Knowledge Assistant or ingest pipeline can point at that single folder.
+`databricks fs` requires the `dbfs:` scheme prefix even for UC Volume paths. `-r` copies the *contents* of the source directory into the target (the source directory name is not preserved), so name the target `raw_data/pdf` explicitly to keep the PDFs in their own folder on the volume. They land under `raw_data/pdf/` — i.e. `dbfs:/Volumes/my_catalog/my_schema/raw_data/pdf/report.pdf` — so an ingest pipeline can point at that single folder. **For a Genie Agent, upload to a dedicated managed volume instead** (e.g. `dbfs:/Volumes/my_catalog/my_schema/docs/`), because Genie indexes the *whole* volume, not a subfolder (see [databricks-genie-agents § Documents](../databricks-genie-agents/references/create-genie-agent.md#documents-uc-volumes)).
 
 ```bash
 databricks fs cp -r --overwrite ./raw_data/pdf dbfs:/Volumes/my_catalog/my_schema/raw_data/pdf
@@ -55,7 +55,7 @@ databricks fs cp -r --overwrite ./raw_data/pdf dbfs:/Volumes/my_catalog/my_schem
 
 ## Step 4: Generate Test Questions
 
-Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Assistant (KA) or Supervisor Agent (formerly Multi-Agent Supervisor, MAS) evaluation. It's fine for this file to be uploaded to the volume alongside the PDFs — downstream agents can use it:
+Create `./raw_data/pdf/pdf_eval_questions.json` with questions for evaluating a Genie Agent (or a legacy Knowledge Assistant) over the PDFs. **Keep it out of a volume attached to a Genie Agent**: the whole volume is indexed, so the answers would leak into the agent's context (upload the PDFs before writing it, or `databricks fs rm` it from that volume):
 
 ```json
 {
@@ -70,17 +70,17 @@ Create `./raw_data/pdf/pdf_eval_questions.json` with questions for Knowledge Ass
 }
 ```
 
-This JSON can be used to build KA test cases and validate retrieval accuracy.
+Use it to build Agent-mode test cases (or Genie benchmarks) and validate retrieval accuracy.
 
 ## Document Content Guidelines
 
-When generating documents for Knowledge Assistant testing or demos:
+When generating documents for Genie Agent (document Q&A) testing or demos:
 
 - **Multi-page documents**: Each PDF should be several pages with substantial content
 - **Specific error codes and solutions**: Include product-specific error codes, causes, and resolution steps
 - **Technical details**: API endpoints, configuration parameters, version numbers, specific commands
 - **Simple CSS**: Keep styling minimal for fast HTML creation and reliable PDF conversion
-- **Queryable facts**: Include details a KA must read the document to answer (not general knowledge)
+- **Queryable facts**: Include details the agent must read the document to answer (not general knowledge)
 
 **Good document types:**
 - Product user manuals with troubleshooting sections

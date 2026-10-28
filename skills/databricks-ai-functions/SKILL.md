@@ -1,9 +1,9 @@
 ---
 name: databricks-ai-functions
-description: "Use Databricks built-in AI Functions (ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse → prep_search → index → query)."
+description: "Use Databricks built-in AI Functions (ai_classify, ai_decide, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_prep_search, ai_query, ai_forecast) to add AI capabilities directly to SQL and PySpark pipelines without managing model endpoints. Also covers document parsing and building custom RAG pipelines (parse → prep_search → index → query)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 parent: databricks-core
 ---
 
@@ -26,6 +26,7 @@ The **Function** column links to the in-repo deep reference (full options, schem
 |---|---|---|---|---|---|
 | [`ai_analyze_sentiment`](references/1-task-functions.md#ai_analyze_sentiment) | Sentiment scoring | `content STRING` | `STRING` — `positive`/`negative`/`neutral`/`mixed`, or `NULL` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_analyze_sentiment) |
 | [`ai_classify`](references/1-task-functions.md#ai_classify) | Fixed-label routing | `content STRING\|VARIANT`, `labels` (2–500), `[options MAP]` | `VARIANT` — `{response:[label], error_message}` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_classify) |
+| [`ai_decide`](references/1-task-functions.md#ai_decide) | Evaluate questions (boolean / choice / score) over text or structured data | `state STRING\|VARIANT`, `questions STRING` (JSON), `[options MAP]` | `VARIANT` — `{response:{answers}, metadata, error_message}` | Beta; admin-gated via Previews | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_decide) |
 | [`ai_extract`](references/1-task-functions.md#ai_extract) | Entity / field extraction | `content STRING\|VARIANT`, `schema STRING` (JSON), `[options MAP]` | `VARIANT` — `{response:{…}, error_message, metadata}` | ≤256 fields, ≤12 nesting levels | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_extract) |
 | [`ai_fix_grammar`](references/1-task-functions.md#ai_fix_grammar) | Grammar correction | `content STRING` | `STRING` (corrected) | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_fix_grammar) |
 | [`ai_gen`](references/1-task-functions.md#ai_gen) | Free-form generation | `prompt STRING` | `STRING` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_gen) |
@@ -169,6 +170,7 @@ Then enable CDF (`ALTER TABLE parsed_chunks SET TBLPROPERTIES (delta.enableChang
 |---|---|
 | `ai_parse_document` not found | Requires DBR **17.3+**. Check cluster runtime. |
 | `ai_prep_search` not found | Requires DBR **18.2+** (serverless env v3+). |
+| `ai_decide` not found / unavailable | **Beta** — a workspace admin must enable it on the **Previews** page. Requires Databricks SQL (not SQL Classic) or DBR **15.4 LTS+**. |
 | `explode()` fails on a VARIANT | `explode` needs ARRAY — cast first: `explode(variant_get(prep, '$.document.contents', 'ARRAY<VARIANT>'))`. |
 | Embedding the wrong RAG column | Embed `chunk_to_embed` (context-enriched); return `chunk_to_retrieve` to the LLM. |
 | `ai_forecast` fails | Requires **Pro or Serverless** SQL warehouse — not available on Classic or Starter. |

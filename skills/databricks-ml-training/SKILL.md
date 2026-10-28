@@ -232,7 +232,7 @@ When sklearn/XGBoost autolog isn't enough — custom preprocessing, multiple sub
 
 Hand-rolled `ResponsesAgent` (LangGraph + UC Function tools + Vector Search retrieval) — see **[references/genai-agents.md](references/genai-agents.md)**.
 
-Prefer no-code authoring via [databricks-agent-bricks](../databricks-agent-bricks/SKILL.md) (Knowledge Assistants, Supervisor Agents) unless the user explicitly needs a custom LangGraph agent.
+Prefer no-code authoring via [databricks-genie-agents](../databricks-genie-agents/SKILL.md) (tables + documents in UC volumes; replaces the legacy Knowledge Assistant / Supervisor Agent) unless the user explicitly needs a custom LangGraph agent.
 
 ---
 
@@ -269,14 +269,14 @@ Endpoint-lifecycle gotchas (readiness two-state, version-swap, Serving-UI SP fil
 | File | Contents |
 |---|---|
 | [references/custom-pyfunc.md](references/custom-pyfunc.md) | Single end-to-end custom pyfunc example: artifacts, signature, code_paths, log → register → deploy → query. |
-| [references/genai-agents.md](references/genai-agents.md) | Custom LangGraph `ResponsesAgent` with UC Function + Vector Search tools. `create_text_output_item` gotcha and the `resources=[...]` passthrough-auth list. For no-code agents prefer **databricks-agent-bricks**. |
+| [references/genai-agents.md](references/genai-agents.md) | Custom LangGraph `ResponsesAgent` with UC Function + Vector Search tools. `create_text_output_item` gotcha and the `resources=[...]` passthrough-auth list. For no-code agents prefer **databricks-genie-agents**. |
 | [references/feature-store.md](references/feature-store.md) | Feature Engineering in Unity Catalog (standard `FeatureLookup` API): `FeatureEngineeringClient`, `create_table` with `timeseries_column`, `FeatureLookup` with point-in-time joins, `fe.log_model` with lineage, `fe.score_batch` (replaces `spark_udf` for FE models), and Lakebase online store via `publish_table`. Requires `databricks-feature-engineering>=0.16.0`. |
 | [references/feature-views.md](references/feature-views.md) | Feature Views (declarative Feature Engineering, GA): `create_feature` over `DeltaTableSource`, `RollingWindow`/`SlidingWindow`/`TumblingWindow` aggregations, `materialize_features` (offline + online), streaming features off Kafka via `create_stream`, point-in-time training sets, and the Feature Serving Endpoint. Requires `databricks-feature-engineering>=0.16.0`. |
 
 ## Related skills
 
 - **[databricks-model-serving](../databricks-model-serving/SKILL.md)** — serving-endpoint lifecycle (create, query, update-config, version-swap, AI Gateway, Foundation Model API endpoints).
-- **[databricks-agent-bricks](../databricks-agent-bricks/SKILL.md)** — no-code Knowledge Assistants and Supervisor Agents. Prefer this over hand-rolling agents.
+- **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)**: no-code agents over tables + documents (replaces legacy Knowledge Assistants / Supervisor Agents). Prefer this over hand-rolling agents.
 - **[databricks-mlflow-evaluation](../databricks-mlflow-evaluation/SKILL.md)** — evaluate model/agent quality before promoting `@prod`.
 - **[databricks-vector-search](../databricks-vector-search/SKILL.md)** — vector indexes used as retrieval tools in agents.
 - **[databricks-jobs](../databricks-jobs/SKILL.md)** — async deploy pattern (`--no-wait`, TASK run_id trap).

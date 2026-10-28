@@ -3,7 +3,7 @@ name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create data apps, analytics tools, or custom interactive visualizations. A plain \"create a dashboard\" request means a managed AI/BI (Lakeview) dashboard → use databricks-aibi-dashboards, not this skill. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.3"
+  version: "0.1.4"
 parent: databricks-core
 ---
 
@@ -55,9 +55,7 @@ Build apps that deploy to Databricks Apps platform.
 
 - **App name**: Platform App resource names allow up to 30 lowercase letters, numbers, and hyphens (no underscores). For AppKit projects created with `databricks apps init`, keep the base name to 26 characters because its development workflow adds a `dev-` prefix. DABs does not add that prefix.
 - **Validation**: `databricks apps validate --profile <PROFILE>` before deploying.
-- **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md).
-- **Smoke test selectors**: use only Playwright locator APIs — `getByRole`, `getByText`, `getByPlaceholder`, `getByLabel`. `getByLabelText` does not exist in Playwright (it is a React Testing Library method) and throws `TypeError` at runtime. See [testing guide](references/testing.md) or `npx playwright codegen`.
-- **Smoke test data**: keep result sets under the 1 MB analytics-event payload cap. Queries returning thousands of rows cause `INVALID_REQUEST: Event exceeds max size of 1048576 bytes` and `net::ERR_ABORTED`, leaving every asserted UI element absent. Use `LIMIT` or an aggregated query (e.g. `COUNT(*) GROUP BY status`) — never raw row dumps.
+- **Smoke tests** (AppKit only): ALWAYS update `tests/smoke.spec.ts` selectors BEFORE running validation. Default template checks for "Minimal Databricks App" heading and "hello world" text — these WILL fail in your custom app. See [testing guide](references/testing.md) (selector APIs, the 1 MB result-size cap).
 - **AppKit version**: never override the `@databricks/appkit` or `@databricks/appkit-ui` version in `package.json` — `databricks apps init` sets the correct version. Do not install a different version of either package unless explicitly asked by the user. If you need a different version, re-scaffold with `databricks apps init --version <version>`.
 - **Authentication**: covered by parent `databricks-core` skill.
 - **AppKit API surface**: before writing code that calls AppKit APIs (`createApp`, plugin shapes, `useAnalyticsQuery`, `useMetricView`, etc.), run `npx @databricks/appkit docs <section>` and use the actual signature. Training data has stale shapes; a single invented signature fails `tsc --noEmit` during validate. The docs ship with the installed AppKit and are the authoritative source.
@@ -199,32 +197,13 @@ npx @databricks/appkit docs ./docs/plugins/analytics.md  # example: specific doc
 
 **DO NOT guess** plugin names, resource keys, or property names — always derive them from `databricks apps manifest` output. Example: if the manifest shows plugin `analytics` with a required resource `resourceKey: "sql-warehouse"` and `fields: { "id": ... }`, include `--set analytics.sql-warehouse.id=<ID>`.
 
-**Execution identity (auth mode)** requires **databricks CLI `>= v1.20.0`** (the first release with the auth-mode feature; it is not in `v1.19.0` or earlier). On CLIs without it these flags do not exist; every resource is bound to the service principal and the flags below must not be used. By default every resource is still bound to the service principal (SP), and omitting these flags produces exactly the same output as before.
+**Execution identity (auth mode)**: `--auth-mode obo|sp` (app default) and per-resource `--set <plugin>.<resourceKey>.authMode=obo|sp|both` need **databricks CLI `>= v1.20.0`**; omit them on older CLIs (everything binds to the service principal). **Default to SP; choose OBO only when the app must enforce the viewing user's own permissions** (row-level or per-user data access). Flag rules, errors, and what each mode emits: [Platform Guide](references/platform-guide.md#execution-identity-per-resource).
 
-- `--auth-mode obo|sp` sets the app-wide default. `sp` is the default. `--auth-mode obo` applies only to resources that **can** run on behalf of the user; resources that cannot (e.g. `secret`, Lakebase) stay on the SP and the CLI prints a note listing them. `--auth-mode both` is not valid at the app level.
-- `--set <plugin>.<resourceKey>.authMode=obo|sp|both` sets one resource's identity and overrides the app-wide default. `both` is only valid here, per resource.
-- Setting an explicit `authMode` on a resource that cannot run OBO is an **error** (the CLI names the resource and the fix).
-- The interactive auth prompt (Service principal / On behalf of user / Mixed) appears **only** in the fully interactive flow. Passing `--features` or `--set` means no prompt and the default SP.
-
-What each mode emits, and the `databricks apps validate` OBO checks, are in the [Platform Guide](references/platform-guide.md#execution-identity-per-resource). **Default to SP; choose OBO only when the app must enforce the viewing user's own permissions** (row-level or per-user data access). Mixed is common, e.g. an analytics warehouse OBO plus a job as SP.
-
-**Scaffolding Rules Protocol** — `databricks apps manifest` may emit `scaffolding.rules` at the template level (top-level `scaffolding.rules`) and on individual plugins (`plugins[].scaffolding.rules`). Each block has `must` / `should` / `never` arrays of short directive strings. Consume them as follows:
-
-1. **Gather** — for every plugin in your final `--features` list AND every plugin with `requiredByTemplate: true`, read `plugins[].scaffolding.rules`. Union those with the top-level template `scaffolding.rules` into one working set, tagged by source (template vs `<plugin>`).
-2. **Precedence** — manifest rules override the directives baked into this skill. Where the manifest is silent on a topic, this skill's content is the floor.
-3. **Phase ordering** — rules whose text begins with `Before init` MUST be executed before `databricks apps init`. Rules beginning with `After init` MUST be executed after init completes (e.g. migrations, typegen, connectivity checks). Rules without a phase prefix apply throughout the scaffold/develop loop.
-4. **Conflict detection** — if a plugin `must` rule contradicts a template `never` rule on the same target (or vice versa), STOP and ask the user which to follow before proceeding. Do not silently pick one. Treat `must` vs `never` on the same action as a conflict; `should` is advisory and does not block.
-5. **Reporting** — before running `databricks apps init`, surface the merged working set to the user grouped by phase (Before init / After init / Always) and by severity (must / should / never), so the active guardrails are explicit.
+**Scaffolding Rules Protocol**: if `databricks apps manifest` emits `scaffolding.rules` (template-level and per plugin, as `must` / `should` / `never`), they override this skill. Run `Before init` rules before `databricks apps init` and `After init` rules after it; if a plugin `must` contradicts a template `never` on the same target, STOP and ask the user. Gather, precedence, and reporting steps: [AppKit Overview § Scaffolding Rules Protocol](references/appkit/overview.md#scaffolding-rules-protocol).
 
 **READ [AppKit Overview](references/appkit/overview.md)** for project structure, workflow, and pre-implementation checklist.
 
-**Genie Agent Workflow** — when the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
-
-1. Ask which Unity Catalog tables the app should query (fully qualified: `catalog.schema.table`).
-2. Ask whether to reuse an existing Genie space or create a new one.
-3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Guide](references/appkit/genie.md) for syntax and serialized space format).
-4. If reusing: discover existing spaces with `databricks genie list-spaces --profile <PROFILE>` and let the user pick.
-5. Scaffold or wire the space ID into the app — derive `--set` keys from `databricks apps manifest`.
+**Genie Agent Workflow**: for a Genie-powered app, ask which UC tables to query and whether to reuse or create a space; don't start by asking for a Genie Space ID. Steps: [Genie Guide § Agent workflow](references/appkit/genie.md#agent-workflow-tables-first).
 
 Read the [Genie Guide](references/appkit/genie.md) for configuration, SSE endpoints, and frontend integration.
 

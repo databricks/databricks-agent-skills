@@ -26,7 +26,7 @@ Read this before writing code when the source might not need an SDK, when the ru
 | **Vector** | `databricks_zerobus` sink | Vector docs |
 | **Telegraf** | `outputs.zerobus` plugin (1.40+) | Telegraf docs |
 | **Cribl Stream** | Databricks Zerobus destination | Cribl docs |
-| **Columnar batches** (Parquet, Arrow, DataFrames) | Arrow Flight (Python, Rust, Java, Go cgo, C++, TypeScript; [per SDK](../SKILL.md#sdks-record-formats-and-working-examples)) | GA |
+| **Columnar batches** (Parquet, Arrow, DataFrames) | Arrow Flight (Python, Rust, Java, Go cgo, C++, TypeScript; [per SDK](#sdks-record-formats-and-working-examples)) | GA |
 
 If none fit, continue to Step 3.
 
@@ -63,6 +63,23 @@ There are two kinds of SDK:
 | **.NET** | No | 8+ | Yes (Linux musl+glibc, Windows). macOS: [build from source](build-from-source.md#net) | No | |
 
 **Ask if precompiled binaries are allowed.** If `pip install` downloads `.tar.gz` and fails building, no wheel matches the platform ([build-from-source.md](build-from-source.md)).
+
+## SDKs: record formats and working examples
+
+Which record formats each SDK supports, from the SDK repo's [Ingestion APIs table](https://github.com/databricks/zerobus-sdk/tree/main#ingestion-apis) (the source of truth; check it for newer releases). Don't attach a release status to an SDK; use this table. **When the user asks how to do something specific in one language** (Protobuf, Arrow, batching, async, a particular API), open that SDK's examples folder for a working program before writing code. Most folders split by record format (`json/`, `proto/`, `arrow/`).
+
+| SDK | JSON / Protobuf | Avro (Beta) | Arrow Flight | Working examples |
+|-----|-----------------|-------------|--------------|------------------|
+| Python | Available | Beta | Available since 1.8.0 | [python/examples](https://github.com/databricks/zerobus-sdk/tree/main/python/examples) (sync and async: JSON, Protobuf, Arrow, Avro, identity federation) |
+| Rust | Available | Beta | Available since 2.8.0 | [rust/examples](https://github.com/databricks/zerobus-sdk/tree/main/rust/examples) |
+| Go (cgo) | Available | In development | Available since 1.6.0 | [go/examples](https://github.com/databricks/zerobus-sdk/tree/main/go/examples) |
+| Pure Go | Available | In development | Not available | [purego/examples](https://github.com/databricks/zerobus-sdk/tree/main/purego/examples) |
+| TypeScript | Available | In development | Available since 1.3.0 | [typescript/examples](https://github.com/databricks/zerobus-sdk/tree/main/typescript/examples) |
+| Java | Available | In development | Available since 1.6.0 | [java/examples](https://github.com/databricks/zerobus-sdk/tree/main/java/examples) (`legacy/` uses the deprecated factory methods; prefer the others) |
+| C++ | Available | In development | Available since 0.3.0 | [cpp/examples](https://github.com/databricks/zerobus-sdk/tree/main/cpp/examples) |
+| .NET (C#) | Available | In development | Not available | [dotnet/examples](https://github.com/databricks/zerobus-sdk/tree/main/dotnet/examples) |
+
+Pure C isn't in the table: it doesn't send data yet (its [example](https://github.com/databricks/zerobus-sdk/tree/main/purec/examples) validates inputs only), so don't use it to deliver data.
 
 ## Sources
 - [Zerobus API protocols](https://docs.databricks.com/ingestion/zerobus-api-protocols)

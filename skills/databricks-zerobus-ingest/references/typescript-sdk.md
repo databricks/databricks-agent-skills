@@ -2,7 +2,7 @@
 
 Read this when the producer is **Node.js** (TypeScript or JavaScript). The SDK loads a native library, so edge runtimes need [REST](rest.md) instead.
 
-**Record formats:** JSON, Protobuf, and Arrow Flight ([SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples)).
+**Record formats:** JSON, Protobuf, and Arrow Flight ([choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples)).
 
 **Runtime Requirements:**
 - Node.js 16 or higher

@@ -2,6 +2,40 @@
 
 Core widget types for AI/BI dashboards. For advanced visualizations (area, scatter, choropleth map, combo), see [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md).
 
+
+## Widget Index (Version + Where Documented)
+
+> **Wrong version = broken widget!** This is the #1 cause of dashboard errors.
+
+| Widget Type | Version | Documented in |
+|-------------|---------|---------------|
+| text (markdown, no spec block) | N/A | [this file](#text-headersdescriptions) |
+| `counter` (KPI + sparkline + comparison) | **2** | [this file](#counter-kpi) |
+| `table` | **2** | [this file](#table) |
+| `bar`, `line` | **3** | [this file](#line--bar-charts) |
+| `pie` | **3** | [this file](#pie-chart) |
+| `symbol-map` (lat/lon point map) | **2** | [this file](#symbol-map-bubble-map) |
+| `area` | **3** | [2-advanced-widget-specifications.md#area-chart](2-advanced-widget-specifications.md#area-chart) |
+| `scatter` | **3** | [2-advanced-widget-specifications.md#scatter-plot--bubble-chart](2-advanced-widget-specifications.md#scatter-plot--bubble-chart) |
+| `combo` (bar+line, dual-axis) | **1** | [2-advanced-widget-specifications.md#combo-chart-bar--line](2-advanced-widget-specifications.md#combo-chart-bar--line) |
+| `choropleth-map` (regions colored by value) | **1** | [2-advanced-widget-specifications.md#choropleth-map](2-advanced-widget-specifications.md#choropleth-map) |
+| `forecast-line` (with `AI_FORECAST` SQL) | **1** | [2-advanced-widget-specifications.md#forecast-line-with-ai_forecast](2-advanced-widget-specifications.md#forecast-line-with-ai_forecast) |
+| `pivot` (with conditional cell rules) | **3** | [2-advanced-widget-specifications.md#pivot](2-advanced-widget-specifications.md#pivot) |
+| `histogram` (with `bin(col, binWidth=N)`) | **3** | [2-advanced-widget-specifications.md#histogram](2-advanced-widget-specifications.md#histogram) |
+| `sankey` | **1** | [2-advanced-widget-specifications.md#sankey](2-advanced-widget-specifications.md#sankey) |
+| `heatmap` | **3** | [2-advanced-widget-specifications.md#heatmap](2-advanced-widget-specifications.md#heatmap) |
+| `funnel` | **1** | [2-advanced-widget-specifications.md#funnel](2-advanced-widget-specifications.md#funnel) |
+| `box` | **1** | [2-advanced-widget-specifications.md#box](2-advanced-widget-specifications.md#box) |
+| `waterfall` | **1** | [2-advanced-widget-specifications.md#waterfall](2-advanced-widget-specifications.md#waterfall) |
+| `gantt` (task schedules and ranges) | **1** | [2-advanced-widget-specifications.md#gantt](2-advanced-widget-specifications.md#gantt) |
+| `path-map` (routes and ordered tracks) | **1** | [2-advanced-widget-specifications.md#path-map](2-advanced-widget-specifications.md#path-map) |
+| `filter-single-select`, `filter-multi-select`, `filter-date-range-picker` | **2** | [3-filters.md#filter-widget-structure](3-filters.md#filter-widget-structure) |
+| `filter-date-picker`, `filter-text-entry` | **2** | [date picker](3-filters.md#single-date-picker), [text entry](3-filters.md#text-entry-filter) |
+| `range-slider` | **2** | [3-filters.md#range-slider-numeric-range-filter](3-filters.md#range-slider-numeric-range-filter) |
+| `custom-vega-viz` (Vega-Lite custom visualization) | **1** | [6-custom-visualizations.md](6-custom-visualizations.md) |
+
+> Cohort retention charts are built as a `pivot` with a color-scale cell style — there is no `cohort` widget type. See pivot in [2-advanced-widget-specifications.md](2-advanced-widget-specifications.md).
+
 ## Widget Naming and Display
 
 - `widget.name`: alphanumeric + hyphens + underscores ONLY (max 60 characters)

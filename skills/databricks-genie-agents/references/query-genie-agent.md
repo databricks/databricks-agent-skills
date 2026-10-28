@@ -52,6 +52,7 @@ The Agent mode API streams the full agent response — reasoning plan, SQL execu
 
 | Use case | API to use |
 |----------|-----------|
+| **Document questions** (Agent has a volume) | Agent mode API: the Conversation API ignores volumes |
 | Validate synthesis, multi-step analysis, or hard benchmark questions | Agent mode API — see below |
 | Simple conversational follow-ups, quick SQL validation | Conversation API (`start-conversation` / `get-message`) — see above |
 | Native benchmark scoring (Chat mode only) | `genie-create-eval-run` — does **not** support Agent mode |
@@ -82,7 +83,7 @@ Auth resolves from the profile — no manual token handling needed.
 |-----------|-----------------|
 | `response.created` | `conversation_id` — save this for follow-ups |
 | `reasoning` | Agent's reasoning step / investigation plan |
-| `function_call` | SQL query the agent decided to execute (`arguments.sql`) |
+| `function_call` | Tool call: `execute_sql` (`arguments.sql`) or `search_context_files` (document search) |
 | `function_call_output` | Query result as a markdown table |
 | `message` | Final synthesized answer (`content[].text`) |
 | `response.completed` | Terminal — full `response` object |
@@ -116,6 +117,22 @@ for event in stream:
         if sql:
             print(sql)
 ```
+
+### Documents & raw HTTP
+
+Document answers come back in the final `message` as markdown with `[n](url)` citations, url = `…/explore/data/volumes/<cat>/<sch>/<vol>?o=<workspace-id>&filePreviewPath=<file>.pdf` (SQL results cite the Genie chat instead). A mixed question runs `execute_sql` + `search_context_files` in one turn. `response.failed` with `error.code = "volume_content_search_failed"` means indexing isn't done yet; retry later ([create-genie-agent.md § Documents](create-genie-agent.md#documents-uc-volumes)).
+
+No CLI/SDK command creates a response yet; use the client above or raw HTTP (SSE):
+
+```bash
+curl -sN -X POST "$HOST/api/2.0/genie/agents/$SPACE_ID/responses" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -H "Accept: text/event-stream" \
+  -d '{"input":[{"type":"message","role":"user","content":[{"type":"input_text","text":"What is the defective-item return window?"}]}]}'
+# optional body fields: "conversation_id" (follow-up), "enable_viz": true,
+# "execution_mode": "STANDARD"|"FLASH" (new conversations only; changing it on a follow-up is BAD_REQUEST, and FLASH errors where not enabled)
+```
+
+Events: `response.created` → `response.output_item.added/updated/done` → `response.completed` | `response.failed`; `response.conversation_id` continues the thread, and `response.created` carries the conversation and response ids needed to cancel. 30-min server timeout. Disconnecting does **not** cancel; use `databricks genie genie-cancel-response SPACE_ID CONVERSATION_ID RESPONSE_ID` (the stream then ends with `response.completed` whose status is `cancelled`).
 
 ### Agent-mode benchmark evaluation loop
 

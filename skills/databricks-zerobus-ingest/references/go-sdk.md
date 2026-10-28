@@ -2,7 +2,7 @@
 
 Read this when the producer is written in **Go**. Pick the variant: **CGO** (`go/`, Go 1.21+) for prebuilt libraries, or **pure Go** (`purego/`, Go 1.25+) when precompiled binaries or cgo aren't allowed.
 
-**Record formats:** JSON and Protobuf in both variants; Arrow Flight in cgo only ([SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples), from the SDK README's Ingestion APIs table).
+**Record formats:** JSON and Protobuf in both variants; Arrow Flight in cgo only ([choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples), from the SDK README's Ingestion APIs table).
 
 For the non-blocking pattern, see [SKILL.md#step-4-build-the-producer](../SKILL.md#step-4-build-the-producer). Go methods queue and return: **cgo** uses `IngestRecordOffset(payload)` with `[]byte` or `string` (select JSON with `options.RecordType = zerobus.RecordTypeJson`); **pure Go** uses `IngestJSONOffset([]byte)` for JSON and `IngestRecordOffset([]byte)` for Protobuf. Both: `Flush()` at the boundary, `Close()` at shutdown. Pure Go has ack callbacks with `WithAckCallback`; CGO documents no callback.
 

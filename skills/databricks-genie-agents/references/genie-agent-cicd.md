@@ -1,28 +1,25 @@
 # Genie Agent CI/CD
 
-Reference for export, import, cross-workspace migration, batch migration, and CI/CD workflows for Genie Agents. For the `serialized_space` field shapes used in these operations, see [serialized-space.md](serialized-space.md).
+Reference for export, import, cross-workspace migration, batch migration, and CI/CD workflows for Genie Agents. For the `serialized_space` field shapes, see [create-genie-agent.md § serialized_space Format](create-genie-agent.md#serialized_space-format).
 
 ## Export & Import
 
-**Convention:** `genie_agent.json` always holds the **parsed** agent object (not a JSON-string-encoded blob), so it's readable and editable. Stringify it with `jq -c '.' | jq -Rs '.'` at each use site. `jq -r '.serialized_space | fromjson'` on export strips the outer quoting so the file is already a parsed object.
+**Convention:** `genie_agent.json` holds the **parsed** agent object (not a JSON-string-encoded blob), so it's readable and editable. Pass it as a compact JSON string (`jq -c`) to the `SERIALIZED_SPACE` positional (create) or the `--serialized-space` flag (update). `jq -r '.serialized_space | fromjson'` on export strips the outer quoting so the file is already a parsed object.
 
 ```bash
 # Export: extract serialized_space AND unwrap it to a parsed object on disk
 databricks genie get-space SPACE_ID --include-serialized-space -o json \
   | jq '.serialized_space | fromjson' > genie_agent.json
 
-# Import / clone
+# Import / clone (WAREHOUSE_ID + serialized_space positional; rest are flags)
 databricks workspace mkdirs /Workspace/Users/you@company.com/genie_spaces
-databricks genie create-space --json "{
-  \"warehouse_id\": \"WAREHOUSE_ID\",
-  \"title\": \"Sales Analytics\",
-  \"description\": \"Migrated agent\",
-  \"parent_path\": \"/Workspace/Users/you@company.com/genie_spaces\",
-  \"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')
-}"
+databricks genie create-space WAREHOUSE_ID "$(jq -c . genie_agent.json)" \
+  --title "Sales Analytics" \
+  --description "Migrated agent" \
+  --parent-path /Workspace/Users/you@company.com/genie_spaces
 
-# Update an existing agent with a new config
-databricks genie update-space SPACE_ID --json "{\"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')}"
+# Update an existing agent with a new config (--serialized-space is a full replacement)
+databricks genie update-space SPACE_ID --serialized-space "$(jq -c . genie_agent.json)"
 ```
 
 **Permissions required:**
@@ -48,16 +45,15 @@ python3 -c "import sys; p=sys.argv[1]; s=open(p).read(); open(p,'w').write(s.rep
 
 # Import to target workspace
 DATABRICKS_CONFIG_PROFILE=target_profile \
-  databricks genie create-space --json "{
-    \"warehouse_id\": \"TARGET_WAREHOUSE_ID\",
-    \"title\": \"Sales Analytics\",
-    \"description\": \"Migrated agent\",
-    \"parent_path\": \"/Workspace/Users/you@company.com/genie_spaces\",
-    \"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')
-  }"
+  databricks genie create-space TARGET_WAREHOUSE_ID "$(jq -c . genie_agent.json)" \
+    --title "Sales Analytics" \
+    --description "Migrated agent" \
+    --parent-path /Workspace/Users/you@company.com/genie_spaces
 ```
 
 Use `DATABRICKS_CONFIG_PROFILE=profile_name` to target different workspaces per operation.
+
+**Agents with documents:** the remap also rewrites `/Volumes/<catalog>/...` paths, but the files don't move. Create the managed volume in the target and upload the files first; `create-space` then indexes it (wait for indexing before validating, see [create-genie-agent.md § Documents](create-genie-agent.md#documents-uc-volumes)).
 
 ## Batch Migration
 
@@ -74,11 +70,9 @@ for SPACE_ID in id1 id2 id3; do
 
   # Import
   TITLE=$(databricks genie get-space "$SPACE_ID" -o json | jq -r '.title')
-  SS=$(cat "genie_${SPACE_ID}.json" | jq -c '.')
-  databricks genie create-space --json "$(jq -n \
-    --arg title "$TITLE" \
-    --arg ss "$SS" \
-    '{"warehouse_id": "TARGET_WAREHOUSE_ID", "title": $title, "parent_path": "/Workspace/Users/you@company.com/genie_spaces", "serialized_space": $ss}')"
+  databricks genie create-space TARGET_WAREHOUSE_ID "$(jq -c . "genie_${SPACE_ID}.json")" \
+    --title "$TITLE" \
+    --parent-path /Workspace/Users/you@company.com/genie_spaces
 done
 ```
 

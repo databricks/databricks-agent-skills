@@ -1,385 +1,333 @@
 # Create Genie Agent
 
-Design-time reference for creating a focused Genie Agent. Follow the Workflow top to bottom — the embedded gates tell you when to pause and ask the user. Apply the design using the CLI Reference at the bottom.
+Everything needed to create (or update) a focused Genie Agent: the workflow, the
+`serialized_space` payload format, and the CLI. Work top to bottom.
 
 ## Rules
 
-These apply throughout — never deviate regardless of what the user asks:
-
-- Use only bounded read-only SQL: `SELECT`, `WITH`, `SHOW`, `DESCRIBE`, `EXPLAIN`, `information_schema`.
-- Never mutate Unity Catalog objects or data (`CREATE`, `ALTER`, `DROP`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `COPY INTO`).
-- Do not create or alter Metric Views here — use the `databricks-metric-views` skill for that.
-- Do not create or update a live Genie Agent without explicit user approval.
-- Do not invent business definitions, joins, fiscal calendars, or metric formulas — ask the user.
-- Do not add benchmark SQL without checking it with read-only execution or `EXPLAIN` first.
+- Read-only SQL only while profiling: `SELECT`, `WITH`, `SHOW`, `DESCRIBE`, `EXPLAIN`, `information_schema`. Never mutate UC objects or data.
+- Don't create/alter Metric Views here — that's the `databricks-metric-views` skill.
+- Business definitions, joins, fiscal calendars, and metric formulas come from evidence (the data, table/column comments, docs, or the user), not guesses. Where you have to assume one, state the assumption in the design so the user can correct it.
 
 ## Workflow
 
-### Step 1 — Gather requirements ⛔ Gate
+### Step 1 — Pin down what you know
 
-**Ask the user for all of the following before doing anything else. Do not profile data, write JSON, or run any CLI command until you have items 1–4 at minimum.**
+A good Agent needs:
 
-1. **Target audience** — who will use this Agent and what is their domain fluency?
-2. **Agent purpose** — what business area or data domain does it cover?
-3. **3–5 real business questions** — concrete questions users will ask (not generic examples)
-4. **Known data sources** — catalog/schema/table names or keywords to search for
-5. **Terminology and KPI definitions** — business terms, fiscal conventions, default filters
-6. **Benchmark intent** — should this Agent be evaluated? Chat mode, Agent mode, or none?
+- **Target audience** — who uses it and their domain fluency (shapes description, synonyms, and how much explanation the instructions carry).
+- **Purpose** — the business area / data domain it covers.
+- **Data sources** — the tables / Metric Views (identifiers or keywords to find them), plus any documents (a UC volume, see [Documents](#documents-uc-volumes)).
+- **Real business questions** — a few concrete questions users will actually ask.
+- **Domain context** — terminology, KPI definitions, fiscal conventions, default filters.
 
-If the user provides partial information, ask for what is missing rather than assuming.
+Profiling (Step 2) fills whatever's missing:
 
-### Step 2 — Discover or confirm data
+- **Given the sources + questions** → use them; profile lightly to validate against the data, then design.
+- **Discovering (demo / unfamiliar catalog)** → profile first, then derive sample questions and `example_question_sqls` from what you find; confirm the direction with the user when it matters.
 
-Use provided identifiers when available; otherwise search/browse workspace data using terms from the requirements, synonyms, abbreviations, and likely fact/dimension naming patterns. Recommend a focused source set (see [Agent Sizing](#agent-sizing)) and explain how each source maps to the business questions.
+Ask the user only for what you can't get from the request or profiling.
 
-### Step 3 — Metric View check ⛔ Gate
+### Step 2 — Profile the data (as much as you need)
 
-**Before profiling, check whether the source set is raw tables/views with questions that center on reusable KPIs or business metrics (revenue, margin, conversion rate, etc.).**
+How deep depends on Step 1: light validation when the questions are given, deeper exploration when you're discovering the domain. Profile enough to understand **what the data actually contains** — so your sample questions and example SQL are grounded in real columns and values, not guesses.
 
-If yes: **stop and recommend building a governed Metric View first** using the `databricks-metric-views` skill. State the benefit (consistent definitions, less duplicated SQL, better Genie reasoning). Ask the user to decide, and **pause this workflow until they answer.** Only proceed with raw tables if the user declines or the questions require raw-detail access.
+Start with `discover-schema` — one call returns columns, types, sample rows, null counts, and row count:
 
-If the source already includes Metric Views, or the user confirms raw tables: continue to Step 4.
-
-### Step 4 — Inspect and profile in phases
-
-Read Unity Catalog metadata first, then bounded SQL — see [Data Profiling](#data-profiling) — to identify source purpose, row counts, grain, freshness, comments, columns, data types, null/empty/constant columns, categorical values, measures, sensitive/noisy fields, likely relationships, and usage/lineage signals.
-
-### Step 5 — Inspect Metric View semantics
-
-For Metric Views, inspect available measures, dimensions, filters, joins, time dimensions, comments, display names, synonyms, and formatting before adding extra Genie context. Prefer governed Metric View semantics over duplicated SQL logic.
-
-### Step 6 — Assess readiness
-
-Score each business question High/Medium/Low confidence — see [Readiness Assessment](#readiness-assessment). Mark unsupported questions and upstream semantic model gaps explicitly. Do not proceed to design with Low-confidence questions unresolved.
-
-### Step 7 — Design Agent surfaces
-
-Design in priority order, structured context first — see [Design Priorities](#design-priorities). Two rules to call out:
-- **Build `column_configs` during creation** — an Agent created without it ships with no per-column descriptions, synonyms, format assistance, entity matching, or hidden fields.
-- **Qualify every column reference** in SQL snippets and example SQL — see [Qualify Columns In SQL](#qualify-columns-in-sql).
-
-### Step 8 — Review draft
-
-Check against [Static Health Checks](#static-health-checks) and [Anti-Patterns](#anti-patterns) before proposing changes.
-
-### Step 9 — Present and get approval ⛔ Gate
-
-**Present the full proposed Agent configuration to the user for review. Do not run `create-space` or `update-space` until the user explicitly approves.**
-
-## Agent Sizing
-
-- **Hard limit:** 30 tables/views/Metric Views per Genie Agent.
-- **Practical guidance:** keep Agents focused — the tighter the domain, the better Genie performs. Aim well under the limit; 5 or fewer objects is a good starting target, both for the initial source set (Workflow step 2) and as a recommended ceiling before feasibility review (step 3).
-- Organize Agents by **business domain/subdomain**, not by report. A domain (e.g. "Marketing") maps to an Agent; if a domain is broad, split by subdomain (e.g. "Online Marketing").
-- If a domain approaches 30 items, split it into multiple Agents by subdomain.
-- Assign domain/subdomain tags to both Genie Agents and their underlying tables/Metric Views for discoverability and observability.
-- Optional: mirror the hierarchy in Unity Catalog — one schema per domain or subdomain.
-
-## Data Profiling
-
-Use workspace metadata first, then run focused read-only SQL only when metadata is not enough. Prefer Databricks-native metadata first, then bounded read-only SQL where it improves the plan.
-
-### Phased Inspection
-
-1. **Structure.** Confirm each table/view/Metric View, comments, columns, data types, constraints, and sample rows with a narrow selected column list.
-2. **Quality and usage.** Profile nulls, empty strings, constants, distinct counts, casing issues, boolean-as-string values, sensitive/noisy columns, and usage/lineage when system tables are accessible.
-3. **Column profiling.** Profile only columns that affect Genie quality: dates, likely filters, categorical strings, join keys, and candidate measures.
-4. **Readiness.** Map the profiled data back to the user's 3-5 business questions and record High/Medium/Low confidence for each question (see [Readiness Assessment](#readiness-assessment)).
-
-### Required Data Signals
-
-For each table or standard view, identify row count, grain, freshness/date range, measures, dimensions, likely filters, data-quality caveats, sensitive/noisy fields, join candidates, and whether joins are supported by constraints, naming, row-count checks, query history, or user confirmation.
-
-For each Metric View, identify governed measures, dimensions, filters, joins, time dimensions, display names, synonyms, formatting, comments, valid `MEASURE()` query patterns, and upstream semantic gaps.
-
-### How To Use Findings
-
-- Hide ETL metadata, all-null columns, raw blobs, embeddings, secrets, tokens, and sensitive free text.
-- Put high-null, constant, inconsistent casing, and boolean-as-string caveats in `DATA QUALITY NOTES` only when Genie needs them.
-- Enable format assistance on useful dimensions and filters. Enable entity matching only for stable low/medium-cardinality strings users are likely to mention.
-- Use actual profiled values for example SQL parameters and benchmark literals.
-- Use query history as evidence for joins, sample questions, examples, and benchmarks. If system tables are unavailable, proceed without mentioning the failure unless it limits confidence.
-- Ask the user to confirm metric formulas, joins, fiscal/calendar rules, and default filters that are not supported by evidence.
-
-## Design Priorities
-
-Prefer structured context over broad instructions. Add surfaces in this order — the more governed the surface, the earlier it belongs, and free-text instructions are the last resort:
-
-1. **Agent description** — set **first**. States the Agent's purpose/scope and is required for multi-agent routing (supervisor agents delegate based on it).
-2. **Metric View semantic metadata** when it already owns the business definition — prefer governed Metric View semantics over duplicated SQL logic.
-3. **Focused data source selection** — keep the attached tables/views/Metric Views focused (see [Agent Sizing](#agent-sizing)).
-4. **Table, Metric View, and column descriptions** that clarify business meaning and selection boundaries. **Column-level** descriptions are set via `data_sources.tables[].column_configs[].description` — see the verified schema in [serialized-space.md → Exact Field Schemas](serialized-space.md#exact-field-schemas-verified-against-the-genie-api).
-5. **Synonyms and display names** for business terms. **Column-level** synonyms go in `column_configs[].synonyms`.
-6. **Format assistance and entity matching** (a.k.a. prompt matching) for eligible categorical strings, set per column via `column_configs[].enable_format_assistance` / `.enable_entity_matching`. Enable **selectively** — only on useful categorical dimensions and filters users name directly; never blanket-enable on IDs, hashes, free text, lat/long, or raw measures. These two toggles are **space-only** (no Metric View equivalent), so emit them even for a fully-governed Metric View source — see [serialized-space.md → column_configs](serialized-space.md#exact-field-schemas-verified-against-the-genie-api).
-7. **Hidden fields** — remove noisy technical columns from end-user context via `column_configs[].exclude`.
-8. **Join specs** for raw tables exposed together — add standard raw-table relationships only when evidence or user confirmation supports them.
-9. **SQL snippets** (SQL expressions) for reusable filters, expressions, and measures not already governed by Metric Views — see [Qualify Columns In SQL](#qualify-columns-in-sql).
-10. **Example SQL** for representative complex question patterns; instructive, not memorized benchmark answers — see [Qualify Columns In SQL](#qualify-columns-in-sql).
-11. **SQL functions** — trusted registered UC logic. Reach for a registered SQL function (not a Metric View, #2) when a measure **fails the additivity / single-pass test** — non-additive at the queried grain, selection-dependent on the user's filter, iterative, or returning a bundle of tables. The `databricks-metric-views` skill's [decision test](../../databricks-metric-views/references/metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function) has the full rule + worked examples; validate a methodology function against a reference (the [parity gate](optimize-genie-agent.md#methodology-parity-gate-upstream-of-benchmarking)) before benchmarking Genie's routing to it.
-12. **Text instructions** — **last resort**, see [Text Instructions Are A Last Resort](#text-instructions-are-a-last-resort).
-13. **Sample questions and benchmarks** — cover realistic user workflows without teaching from benchmark answers, see [Examples And Benchmarks](#examples-and-benchmarks).
-
-Surfaces 4-7 (descriptions, synonyms, format assistance/entity matching, hidden fields) are all applied **per column** through `data_sources.tables[].column_configs[]`. This array is optional, so an Agent created without it ships with none of these — build it explicitly during creation, adding one entry per column that needs tuning.
-
-### Vocabulary
-
-Genie-UI / common terms map to the surfaces above as follows:
-
-| Common term | Surface here |
-|-------------|--------------|
-| Agent description / instructions header | Agent description (#1) |
-| SQL expressions | SQL snippets (#9) |
-| SQL queries / SQL instructions / trusted/certified SQL | Example SQL (#10) |
-| SQL functions | SQL functions (#11) |
-| General instructions / notes / text instructions | Text instructions (#12) |
-
-## Text Instructions Are A Last Resort
-
-Do not use text instructions as the default place for guardrails, policies, metric logic, table-selection rules, join rules, filter rules, ranking/windowing rules, or long best-practice lists. If the proposed instruction names specific tables, Metric Views, columns, joins, filters, denominators, numerators, aliases, ranking logic, or window logic, first try to encode the rule in focused source selection, Metric View metadata, source/column descriptions, synonyms, prompt matching, format assistance, entity matching, join specs, SQL snippets, representative example SQL, SQL functions, or an upstream semantic model fix.
-
-Use text instructions only for global behavior that cannot be encoded structurally, such as broad ambiguity handling, response-quality expectations, caveats, or user-facing summary constraints. When proposing or editing text instructions, include this justification:
-
-```markdown
-## Text Instruction Justification
-
-- Exact instruction text:
-- Why structured surfaces were insufficient:
-- Intended global behavior:
-- Possible overreach or regression risk:
-- How the instruction will be reviewed or validated:
+```bash
+databricks experimental aitools tools discover-schema catalog.schema.gold_orders catalog.schema.gold_customers
 ```
 
-### Canonical Section Headers
+When metadata isn't enough, run focused probes. **Pass multiple SQL statements in one call to run them in parallel** (`-o json` is required for multi-query; results come back as a JSON array):
 
-When text instructions are warranted, use these five headers in this order (omit any that are empty):
-
-| Header | What goes here |
-|--------|----------------|
-| `## PURPOSE` | One or two bullets: the space's scope and audience. |
-| `## DISAMBIGUATION` | Clarification triggers and term-resolution rules (e.g. "'Q1' means calendar Q1 unless the user says 'fiscal Q1'"). |
-| `## DATA QUALITY NOTES` | NULL handling, known bad rows, column semantics not captured in column descriptions. |
-| `## CONSTRAINTS` | Hard guardrails: what never to show (PII columns), what not to do. |
-| `## Instructions you must follow when providing summaries` | Summary behavior: rounding rules, mandatory caveats, date-range statements. **Use this exact heading — do not paraphrase it.** |
-
-Rules:
-- Markdown `## Header` per section; dash bullets, one idea per bullet; blank line between sections.
-- No SQL inside bullets — SQL belongs in `example_question_sqls`, `sql_snippets`, or `join_specs`.
-- Keep the total under 2,000 characters.
-- Every bullet should reference a concrete asset (table, column, user phrase) or be a specific behavioral rule. Vague guidance ("be helpful") is an anti-pattern.
-
-Example:
-
-```markdown
-## PURPOSE
-- Answer questions about order revenue for FY2024 US retail orders.
-- Users are merchandising managers — assume retail/e-commerce fluency.
-
-## DISAMBIGUATION
-- When the user asks about "customer performance" without a time range, ask them to clarify the period.
-- "Q1" means calendar Q1 unless the user says "fiscal Q1".
-
-## DATA QUALITY NOTES
-- orders.order_amount is NULL for cancelled rows — filter with is_cancelled = false.
-
-## CONSTRAINTS
-- Never show PII columns (customer_email, customer_phone).
-
-## Instructions you must follow when providing summaries
-- Round percentages to two decimal places.
-- Always state the date range used in the summary.
+```bash
+databricks experimental aitools tools query --warehouse <WH> -o json \
+  "SELECT COUNT(*) AS rows, MAX(order_date) AS freshest FROM catalog.schema.gold_orders" \
+  "SELECT status, COUNT(*) FROM catalog.schema.gold_orders GROUP BY status ORDER BY 2 DESC LIMIT 20" \
+  "SELECT COUNT(DISTINCT customer_id) AS distinct_customers FROM catalog.schema.gold_orders"
 ```
 
-## Metric View Guidance
+Probe what affects answer quality (not a fixed list):
 
-Canonical, deeper rules live in the `databricks-metric-views` skill (AI-ready Metric View design — one-fact-source, base views, agent metadata — and the `MEASURE()` query rules: `CASE`+`MEASURE()` grouping, no measures in `WHERE`/`GROUP BY`). The points below are the in-product summary.
+- **Content & meaning** — what each table/column holds, sample rows, what the metrics represent.
+- **Cardinality & top values** — distinct counts and the common categorical values (drive filters + entity matching); flag null/constant columns to hide.
+- **Distributions & stats** — ranges, min/max/avg, outliers on candidate measures.
+- **Trends over time** — the date columns and the shape of key metrics across them (grounds time-based questions).
+- **Relationships** — join keys between tables and their grain, so multi-table questions resolve.
 
-- Treat Metric Views as governed semantic sources.
-- **A single fact table is sourced directly** by the Metric View — do **not** build an intermediate base view for it (add dimension joins in the Metric View's `joins` block instead). Base views are for KPIs that combine **multiple fact tables** or need nested logic the Metric View cannot express directly.
-- Do not attach underlying raw tables unless users also need raw-detail questions.
-- Do not duplicate Metric View formulas in snippets or examples unless the example teaches a query shape. The metric's *definition* (the formula) lives once in the Metric View and should be referenced via `MEASURE()`; an example may include a measure only to demonstrate a non-obvious query *shape* (e.g. CTE-then-join, ranking, time logic), never to re-derive the formula.
-- If the semantic model is wrong or missing a governed measure, dimension, join, or filter, document that as an upstream modeling issue instead of working around it with broad Genie instructions.
-- Do not use `SELECT *` against Metric Views in examples or benchmarks.
-- If a Metric View output must be combined with another source, wrap the Metric View query in a CTE before joining.
+For Metric Views, read the governed measures, dimensions, filters, joins, and `MEASURE()` patterns rather than re-deriving them.
+
+**Optional — query history as evidence.** When `system.query.history` is readable, the SQL people already run against a source is good evidence for real joins, filters, and example SQL:
+
+```bash
+databricks experimental aitools tools query --warehouse <WH> -o json \
+  "SELECT statement_text FROM system.query.history
+   WHERE statement_type = 'SELECT' AND statement_text ILIKE '%gold_orders%'
+     AND end_time > current_timestamp() - INTERVAL 30 DAYS
+   ORDER BY end_time DESC LIMIT 20"
+```
+
+Keep the source set **focused** — 5 or fewer is a good target, 30 is the hard limit. Organize by business domain, not by report.
+
+**Metric View check:** if the sources are raw tables and the questions center on reusable KPIs (revenue, margin, conversion rate…), a governed Metric View usually gives Genie better answers — suggest building one with the `databricks-metric-views` skill. Proceed with raw tables when they're the intended source or the questions need raw detail. Design rules that affect Genie ([metric-view-advisor.md § Genie Design Rules](../../databricks-metric-views/references/metric-view-advisor.md#genie-design-rules)): each Metric View has exactly one fact source (a single fact table is the `source`, with dimensions in its `joins`; a base view only for multi-fact or nested KPIs), and the Agent gets the Metric View, not its base view.
+
+### Step 3 — Build the space and create
+
+Assemble the `serialized_space` from the [surfaces below](#agent-surfaces), grounding sample questions and example SQL in the real columns/values from Step 2, then create with the [CLI](#cli).
+
+**Two things to get right** (the rest of the surfaces are ordinary fields):
+
+- **Populate `column_configs`.** It's optional and starts empty — an Agent without it ships with no per-column descriptions, synonyms, entity matching, or hidden fields. This is where most of the answer-quality tuning lives; build one entry per column that matters.
+- **`enable_entity_matching` / `enable_format_assistance` are selective.** Turn them on only for categorical dimensions and filters users name directly — not on IDs, hashes, free text, lat/long, or raw measures.
+
+## Agent Surfaces
+
+Use whichever fit the sources — a Metric View Agent skips joins/snippets; a single-table Agent skips joins. Prefer governed surfaces (Metric View semantics, descriptions, synonyms) over restating the same thing in free text. **Keep each fact in one surface**: a definition stated in a column description, a snippet, and a text instruction drifts and conflicts.
+
+- **Agent description** — set one; it tells users and calling agents what the Agent covers.
+- **Metric View semantics** — when a Metric View owns the definition, reference it via `MEASURE()`; don't re-derive its formulas.
+- **Per-column context** (`column_configs[]`, one entry per column): `description`, `synonyms`, `enable_format_assistance` / `enable_entity_matching` (selective — see above), `exclude` to hide noisy technical columns.
+- **Join specs** — define a join when there's real evidence: a declared **foreign key** (`information_schema` / `DESCRIBE`), a PK/FK match confirmed by a cardinality check while profiling, a join seen in query history, or explicit user confirmation. Don't infer a join from column-name coincidence alone.
+- **SQL snippets** — reusable filters/expressions/measures a Metric View doesn't already govern (often none for a well-modeled Metric View).
+- **SQL functions** — trusted registered UC logic. Use one (not a Metric View) when a measure **fails the additivity / single-pass test**: non-additive at the queried grain, dependent on the user's filter selection, iterative, or returning a bundle of tables ([decision test](../../databricks-metric-views/references/metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function)). Clear the [methodology parity gate](improve-genie-agent.md#methodology-parity-gate) before benchmarking routing to it.
+- **Example SQL** — one instructive example per distinct query *shape* (aggregate, group-by, time window, ratio/`MEASURE()`, ranking, CTE-then-join). Adapt the Step 2 probe queries and query-history samples to real columns/values; don't invent SQL.
+- **Text instructions** — global behavior that isn't tied to one column: disambiguation rules, business caveats, summary/formatting expectations. Prefer a structured surface when the rule maps cleanly to one (a column synonym, a filter snippet), but instructions are a normal part of a solid room. When fixing a specific failure they're the last lever ([improve-genie-agent.md § Failure → lever](improve-genie-agent.md#failure--lever)). Max one `text_instructions` item.
+- **Volumes** (`data_sources.volumes[]`): documents; the `description` says what's in them and when to use them (routing vs the tables). Setup, indexing, and limits: [Documents](#documents-uc-volumes).
+- **Sample questions** — realistic questions users will ask; ground them in what the data can actually answer. (Benchmarks are a tuning-time concern — see [improve-genie-agent.md](improve-genie-agent.md).)
+
+**Run every example SQL, snippet, and join before it goes in the payload** — execute it read-only (or `EXPLAIN` it) and confirm it succeeds and returns sensible rows. Use real profiled values for literals and parameter defaults. Qualify every column — see [Qualify Columns In SQL](#qualify-columns-in-sql).
 
 ## Qualify Columns In SQL
 
-**Always prefix every column reference with its source name** in SQL snippets (SQL expressions) and join specs — never emit a bare backtick-quoted column. Use the table/Metric View identifier's last segment (its implicit alias) or an explicit table alias:
+**Prefix every column with its source name** in `sql_snippets` and `join_specs` — a bare backtick column raises `Table name or alias is required for column` when Genie composes it into a larger statement. Use the identifier's last segment (implicit alias) or an explicit alias; prefix inside subqueries too:
 
 ```sql
 -- ✅ qualified
-global_sales_assets_metrics.`Trade Date` = LAST_DAY(global_sales_assets_metrics.`Trade Date`)
-MEASURE(global_sales_assets_metrics.`Gross Sales (ex Cash Management)`) / <Avg AUM>
-global_sales_assets_metrics.`Trade Date` > (SELECT MAX(global_sales_assets_metrics.`Trade Date`) FROM main.gcg.global_sales_assets_metrics)  -- prefix inside subqueries too
+gold_orders.`order_date` = LAST_DAY(gold_orders.`order_date`)
+MEASURE(gold_orders.`total_revenue`)
 
--- ❌ bare (raises the error)
-`Trade Date` = LAST_DAY(`Trade Date`)
-MEASURE(`Gross Sales (ex Cash Management)`)
+-- ❌ bare → raises the error
+`order_date` = LAST_DAY(`order_date`)
 ```
 
-Unqualified columns in these surfaces raise **`Table name or alias is required for column`** when Genie composes a snippet/expression into a larger statement. Qualifying is always safe — it works for a single-table or single-Metric-View Agent and is **required** once multiple tables are joined. Prefix columns inside subqueries too; the table's implicit alias is the final segment of its qualified name. Do **not** prefix non-column tokens — string literals, `<placeholder>` markers, `:param_name` parameters, and conceptual CTE-result names (e.g. `Current Period / Prior Period`) stay as-is.
+Don't prefix non-columns: string literals, `<placeholders>`, `:params`, and CTE-result names stay as-is.
 
-## Examples And Benchmarks
+## serialized_space Format
 
-There is no fixed minimum count for SQL snippets, example SQL, or benchmarks — size each by **coverage**, not a quota. Manufacturing filler to hit a number competes with governed surfaces and violates the [Design Priorities](#design-priorities) order.
+`serialized_space` is a JSON string (version 2). Keep it as a **parsed** object in a local `genie_agent.json` file (readable, editable); the CLI stringifies it at create/update time.
 
-- **SQL snippets:** add only for reusable filters/expressions/measures the Metric View does not already govern. When the source is a well-modeled Metric View, **zero is often correct** — do not re-derive governed formulas as snippets.
-- **Example SQL:** cover the distinct *query shapes* the Agent's questions require — e.g. simple aggregate, group-by-dimension, time filter/window, ratio/`MEASURE()` composition, ranking, and CTE-then-join — rather than a target count. One good example per shape beats many near-duplicates.
-- **Benchmarks:** add ground truth per the intended execution mode (checked SQL for Chat, evaluation notes for Agent). No minimum applies at creation; if the Agent is intended for later eval-driven tuning, aim toward the **≥30 valid-item** bar in `optimize-genie-agent.md` (e.g. 2-4 phrasings per core question) so a benchmark-repair pass is not needed first.
-- Qualify every column in snippets and join specs — see [Qualify Columns In SQL](#qualify-columns-in-sql).
-- Validate every example SQL, benchmark SQL, snippet, and join with read-only execution or `EXPLAIN` when possible.
-- Use real profiled values for parameter defaults, benchmark literals, and sample question wording.
-- Parameterized examples may use `:param_name`, but every parameter needs a description, type hint, and real default value.
-- Benchmarks should be concrete and hardcoded, not parameterized.
-- Avoid zero-row benchmark SQL unless the benchmark explicitly tests empty results.
-- Keep sample questions user-facing, example SQL instructive, and benchmarks evaluative. Do not copy benchmark questions or benchmark answer SQL into examples.
+> **Canonical API reference:** https://docs.databricks.com/genie-agents/conversation-api — fetch it for the authoritative schema; the detail below may lag.
 
-## Readiness Assessment
+| Top-level key | Contents |
+|-----|----------|
+| `version` | `2` |
+| `config` | `sample_questions` shown in the UI |
+| `data_sources` | `tables` and/or `metric_views` — each has a fully-qualified `identifier` + optional `description[]` / `column_configs`; `volumes` — each `{path: "/Volumes/cat/sch/vol", description: [...]}` |
+| `instructions` | `example_question_sqls`, `text_instructions`, `join_specs`, `sql_snippets` |
+| `benchmarks` | evaluation Q&A (top-level, **not** under `instructions`): `{"questions": [{"id", "question": [..], "answer": [{"format": "SQL", "content": ["<sql>"]}]}]}`; full schema in [improve-genie-agent.md](improve-genie-agent.md#benchmark-repair--pruning) |
 
-Before proposing a live change, score each business question on High/Medium/Low confidence across these dimensions:
+### Full example
 
-- **Semantic coverage:** measures, dimensions, filters, and time fields exist.
-- **Data quality and freshness:** important fields are populated, current, typed, and have usable values.
-- **Modelability:** grain and join paths are supported by evidence or user confirmation.
-- **GenAI context readiness:** descriptions, synonyms, display names, and prompt matching choices map business language to data.
+```json
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {"id": "10000000000000000000000000000001", "question": ["What is our on-time performance this week?"]}
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "catalog.ops.gold_otp_summary",
+        "column_configs": [
+          {"column_name": "flight_date", "description": ["Scheduled departure date."]},
+          {"column_name": "region", "enable_format_assistance": true, "enable_entity_matching": true, "synonyms": ["area", "market"]},
+          {"column_name": "internal_batch_id", "exclude": true}
+        ]
+      }
+    ]
+  },
+  "instructions": {
+    "example_question_sqls": [
+      {"id": "20000000000000000000000000000001", "question": ["What is our on-time performance?"], "sql": ["SELECT flight_date, ROUND(SUM(on_time_count) * 100.0 / SUM(total_flights), 1) AS otp_pct FROM catalog.ops.gold_otp_summary WHERE flight_date >= date_sub(current_date(), 7) GROUP BY flight_date ORDER BY flight_date"]}
+    ],
+    "text_instructions": [
+      {"id": "30000000000000000000000000000001", "content": ["OTP target is 85%.", "'This week' means flight_date >= date_sub(current_date(), 7)."]}
+    ]
+  }
+}
+```
 
-Roll those dimensions up into one confidence level per question:
+### Field rules (the API is strictly validated)
 
-- **High:** all required sources, fields, values, and join/metric definitions are supported.
-- **Medium:** answerable with caveats, missing descriptions, uncertain filters, or user-confirmed assumptions.
-- **Low:** missing source, measure, dimension, time field, join path, or governed metric definition.
+- **Unique 32-char lowercase hex `id`** (no hyphens) on every item in `sample_questions`, `example_question_sqls`, `text_instructions`, `join_specs`, all `sql_snippets` sub-arrays, and `benchmarks.questions`. Question IDs unique across `sample_questions` + `benchmarks.questions` combined; instruction IDs unique across `text_instructions` + `example_question_sqls` + `join_specs` + all `sql_snippets` sub-arrays combined.
+- **Text fields are arrays of strings** — `question`, `sql`, `content` (not plain strings).
+- **Sort order:** id-keyed arrays sorted by `id`; `data_sources.tables`/`metric_views` by `identifier`; `column_configs` by `column_name`.
+- **`text_instructions` ≤ 1 item.** **`data_sources.tables` ≤ 30.** **`volumes` ≤ 10**, MANAGED volumes only, whole volume indexed. Per-string field ≤ 25,000 chars; total JSON ≤ 3.5 MB.
+- Common errors → cause: `sample_question.id must be provided` (missing hex id); `Expected an array for <field>` (string where an array is required); `must be sorted by id`; `Unknown field 'benchmarks'` (nested under `instructions` instead of top-level).
 
-Do not present Low-confidence questions as fully supported. Add data, revise the question, ask for confirmation, or mark the draft with limitations.
+### column_configs sub-fields
 
-## Static Health Checks
+| Sub-field | Type | Purpose |
+|-----------|------|---------|
+| `column_name` | string | required key |
+| `description` | string[] | column business description |
+| `synonyms` | string[] | terms that map to this column |
+| `enable_format_assistance` | bool | selectively, on useful categorical dimensions |
+| `enable_entity_matching` | bool | stable low/medium-cardinality strings users name |
+| `exclude` | bool | hide from end-user context |
 
-Check the draft for:
+### join_specs / sql_snippets shapes
 
-- A space description that states purpose and scope (required for multi-agent routing).
-- A focused source set, ideally 5 or fewer at first.
-- Descriptions that state business purpose and grain.
-- Hidden ingestion, audit, hash, raw JSON, embedding, and sensitive free-text fields.
-- Prompt matching only on useful eligible categorical strings.
-- Joins supported by constraints, naming, row-count checks, or user confirmation.
-- No long rulebook-style text instructions.
-- Text instructions only for global behavior that cannot be encoded structurally, with adapted justification when proposed or edited.
-- Example SQL that teaches reusable patterns, not memorized test questions.
-- Example SQL parameters with real defaults and descriptions.
-- Benchmarks with ground truth appropriate to the intended execution mode: checked SQL for deterministic Chat-style questions, evaluation notes for Agent-style multi-step analysis, and both when a deterministic question also needs full-response judging. Cover sources, filters, measures, joins, time logic, answer shapes, evidence quality, and response synthesis as applicable.
+```json
+{"join_specs": [
+  {"id": "<32-hex>", "left": {"identifier": "samples.tpch.customer", "alias": "customer"}, "right": {"identifier": "samples.tpch.orders", "alias": "orders"}, "sql": ["`customer`.`c_custkey` = `orders`.`o_custkey`", "--rt=FROM_RELATIONSHIP_TYPE_ONE_TO_MANY--"]}
+]}
+```
+`sql` is a two-element array: join condition + relationship tag (`_ONE_TO_MANY--`, `_MANY_TO_ONE--`, `_ONE_TO_ONE--`, `_MANY_TO_MANY--`).
+
+```json
+{"sql_snippets": {
+  "measures":    [{"id": "<32-hex>", "alias": "total_revenue", "display_name": "Total Revenue", "sql": ["SUM(orders.order_amount)"], "synonyms": ["revenue"]}],
+  "filters":     [{"id": "<32-hex>", "display_name": "High value orders", "sql": ["orders.order_amount > 1000"]}],
+  "expressions": [{"id": "<32-hex>", "alias": "order_year", "display_name": "Order Year", "sql": ["YEAR(orders.order_date)"]}]
+}}
+```
+Empty `sql` arrays are rejected. Qualify all columns (above).
+
+### Python helper (generates ids + sort order)
+
+Starter for a single **table** source. For a Metric View source, put the identifier in `data_sources.metric_views` instead of `.tables` (same entry shape); for multiple sources, append to the relevant array.
+
+```python
+import json, uuid
+
+def newid(): return uuid.uuid4().hex
+
+def build_serialized_space(table_identifier, sample_questions=None, instruction_rules=None,
+                           example_sqls=None, column_configs=None) -> str:
+    table = {"identifier": table_identifier}
+    if column_configs:
+        table["column_configs"] = sorted(column_configs, key=lambda c: c["column_name"])
+    payload = {"version": 2, "data_sources": {"tables": [table]}}   # metric_views: [...] for a Metric View source
+    if sample_questions:
+        payload.setdefault("config", {})["sample_questions"] = sorted(
+            [{"id": newid(), "question": [q]} for q in sample_questions], key=lambda x: x["id"])
+    instructions = {}
+    if instruction_rules:
+        instructions["text_instructions"] = [{"id": newid(), "content": list(instruction_rules)}]
+    if example_sqls:
+        instructions["example_question_sqls"] = sorted(
+            [{"id": newid(), "question": [q], "sql": [s]} for q, s in example_sqls], key=lambda x: x["id"])
+    if instructions:
+        payload["instructions"] = instructions
+    return json.dumps(payload, indent=2)
+```
+
+## CLI
+
+`WAREHOUSE_ID` and the serialized space are **positional**; `title`/`description`/`parent-path` are flags — no hand-escaped JSON string.
+
+```bash
+# Resolve a warehouse (auto-detect, or list and ask if none is running)
+databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
+
+# parent_path must exist first, or create-space fails with "Tree node does not exist"
+databricks workspace mkdirs /Workspace/Users/you@company.com/genie_spaces
+
+# Create — capture the returned space_id (field is `space_id`)
+SPACE_ID=$(databricks genie create-space WAREHOUSE_ID "$(jq -c . genie_agent.json)" \
+  --title "Sales Analytics" \
+  --description "Explore sales data" \
+  --parent-path /Workspace/Users/you@company.com/genie_spaces \
+  -o json | jq -r '.space_id')
+
+# Inspect / list
+databricks genie get-space "$SPACE_ID" --include-serialized-space
+databricks genie list-spaces
+
+# Update (--serialized-space is a full replacement)
+databricks genie update-space SPACE_ID --serialized-space "$(jq -c . genie_agent.json)"
+
+# Delete
+databricks genie trash-space SPACE_ID
+
+# Tag for resource tracking (beta CLI surface — ignore if it fails)
+databricks workspace-entity-tag-assignments create-tag-assignment \
+  geniespaces SPACE_ID ai_generated_source --tag-value databricks-agent-skills || true
+```
+
+Export unwraps the stored space back to a parsed object: `databricks genie get-space SPACE_ID --include-serialized-space -o json | jq '.serialized_space | fromjson' > genie_agent.json`. For export/import and cross-workspace migration, see [genie-agent-cicd.md](genie-agent-cicd.md).
+
+## Documents (UC volumes)
+
+List a UC volume in `data_sources.volumes[]`. `create-space` and `update-space` **start content indexing automatically** (Databricks parses and indexes the files; there's no enable call). A volume-only Agent is valid (the KA case); tables + a volume answers both kinds of question in one turn (the Supervisor case). Added, changed, or removed files are re-indexed automatically (about 5 minutes); meanwhile the Agent keeps answering from the files already indexed.
+
+```bash
+# 1. Dedicated MANAGED volume (external and My Files volumes aren't indexed) + upload
+databricks volumes create CATALOG SCHEMA docs MANAGED
+databricks fs cp -r ./pdfs dbfs:/Volumes/CATALOG/SCHEMA/docs/
+```
+
+```json
+{
+  "version": 2,
+  "data_sources": {
+    "tables":  [{"identifier": "cat.sch.returns", "description": ["One row per product return."]}],
+    "volumes": [{"path": "/Volumes/cat/sch/docs",
+                 "description": ["Returns-policy handbook, packaging SOP, post-incident reviews (PDF). Cite the document."]}]
+  },
+  "instructions": {"text_instructions": [{"id": "<32-hex>", "content": [
+    "Counts / refunds: query the tables. Policy, procedure, incident questions: search the documents and cite the file."]}]}
+}
+```
+
+To add documents to an **existing** Agent, export its config first (`get-space SPACE_ID --include-serialized-space -o json | jq '.serialized_space | fromjson' > genie_agent.json`), add `volumes[]` next to the existing sources, then `update-space`: it's a full replacement, so a volume-only payload drops the tables.
+
+```bash
+# 2. Create (or: update-space SPACE_ID --serialized-space ...); either one starts indexing
+SPACE_ID=$(databricks genie create-space WAREHOUSE_ID "$(jq -c . genie_agent.json)" --title "Returns" -o json | jq -r .space_id)
+```
+
+3. **Wait for indexing** (about 5 minutes, even for a few small PDFs). There's no public status API: send a probe document question in Agent mode and retry every minute or so while it fails with `volume_content_search_failed` ("content search isn't ready"). One good answer shows search works, not that every file is indexed, so before an eval give it a few more minutes or probe one question per file.
+4. **Ask in Agent mode.** The chat-mode Conversation API (`start-conversation`) ignores volumes and answers that it can't find the content. Call and response format: [query-genie-agent.md § Agent Mode API](query-genie-agent.md#agent-mode-api).
+
+- **Routing = the volume `description` + one text instruction** saying what's in the documents and when to use them instead of the tables. This replaces the KA instructions and the Supervisor tool descriptions.
+- **Requirements:** a workspace admin enables the Beta preview *Analyze Files in Volumes with Genie Agents* (and *Agent Mode APIs for Genie Agents* for API access). The region needs Agent mode, Lakebase, `ai_parse_document`, and Foundation Model APIs; not on AWS GovCloud; some regions (Mumbai, Singapore, Canada Central, São Paulo) need cross-Geo processing enabled by an account admin.
+- **Permissions:** the Agent runs as the asking user, so every user needs `READ VOLUME` plus the *Workspace access* and *Databricks SQL access* entitlements; account-only users can't use it during the Beta. An app service principal also needs `CAN RUN` on the Agent.
+- **Limits:** the **whole volume** is indexed (you can't pick a subfolder), so use a volume that holds only the documents, without eval JSON or scratch files. 10 volumes per Agent, 250 per workspace, 10,000 files per volume; files over 100 MB or 500 pages are skipped. Types: PDF, DOC/DOCX, PPT/PPTX, MD, TXT, JPG/JPEG/PNG/TIFF/TIF. For Google Drive or SharePoint content, attach an MCP connector instead of copying files into a volume.
+- **Evaluate document answers with benchmarks:** a document question has no SQL answer, so write it as a benchmark with `"answer": [{"format": "SQL", "content": []}]` and the expected fact as its `evaluation_note` (e.g. from a `pdf_eval_questions.json`) (schema: [improve-genie-agent.md § Benchmark repair & pruning](improve-genie-agent.md#benchmark-repair--pruning)). `genie-create-eval-run` only runs chat mode, so it can't score document answers (they come back `NEEDS_REVIEW`); run those questions through the [Agent-mode loop](query-genie-agent.md#agent-mode-benchmark-evaluation-loop) and grade each answer against its note.
+- **Billing:** parsing is billed as AI Functions (`ai_parse_document`); answering as Genie usage.
+
+Docs: [Analyze files in volumes with a Genie Agent](https://docs.databricks.com/genie-agents/volumes).
 
 ## Anti-Patterns
 
 | Anti-pattern | Why it fails | Fix |
 |--------------|--------------|-----|
-| Both the base view AND the Metric View in the same Agent | Genie sees unaggregated rows and must re-derive aggregation logic | Remove the base view from the Agent once a Metric View exists on top of it |
-| Adding 10 measures at once before testing | Can't isolate which one broke Genie's reasoning | Add and validate one at a time (see `optimize-genie-agent.md`'s incremental build loop) |
-| Genie Agent with no description | Multi-agent routing fails silently | Always set an Agent description |
-| Complex `CASE` chains in saved example SQL | Increases Genie's reasoning load on similar questions | Simplify to `WHERE` filters; lean on composed measures |
-| Bare (unqualified) columns in SQL snippets or example SQL | Raises `Table name or alias is required for column` when Genie composes the snippet | See [Qualify Columns In SQL](#qualify-columns-in-sql) |
-| Prompt matching / format assistance / entity matching blanket-enabled on every column | Wastes context on IDs, hashes, free text, and raw measures | Enable selectively, only on useful categorical dimensions and filters (see [Design Priorities](#design-priorities)) |
-| Assuming a governed Metric View source means no `column_configs` are needed | Format assistance and entity matching have no Metric View equivalent — they live only in space `column_configs`, so the space ships with both off | Still emit `column_configs` enabling them on the categorical dimensions users name directly, even for an MV source |
+| No Agent description | Users and calling agents can't tell what it covers | Set a description |
+| Adding many measures / sources at once before testing | Can't isolate which one broke Genie's answers | Add and validate one at a time; re-run the affected questions after each |
+| Both a base view AND its Metric View in one Agent | Genie sees unaggregated rows, re-derives the aggregation | Attach only the Metric View |
+| Bare (unqualified) columns in snippets / join specs | `Table name or alias is required for column` | [Qualify Columns In SQL](#qualify-columns-in-sql) |
+| Blanket format assistance / entity matching on every column | Wastes context on IDs, hashes, free text | Enable selectively on categorical dimensions users name |
+| Long rulebook in `text_instructions` | Genie reasons over prose instead of structured context | Encode in metadata / snippets / examples; keep instructions global-only |
+| Duplicating a Metric View formula in a snippet | Two sources of truth, they drift | Reference via `MEASURE()`; snippet only for a non-obvious query shape |
 
-## Output
-
-Provide:
-
-- The Genie Agent title or draft title.
-- The data sources included and why each belongs.
-- Per-question readiness confidence and data gaps.
-- Important metadata, prompt matching, join, snippet, example, sample question, and benchmark choices.
-- Benchmark execution target and field strategy when benchmarks are included.
-- Any assumptions or user confirmations needed before live creation or update.
-- The read-only validation performed and any limitations.
-- Any Metric View recommendation made for raw-table sources and the user's decision.
-
-## CLI Reference
-
-### Warehouse Selection
-
-Always resolve the warehouse before creating or updating. Use the auto-detected default unless the user specifies one:
-
-```bash
-# Auto-detect the best available warehouse
-databricks experimental aitools tools get-default-warehouse --profile <PROFILE>
-# → returns warehouse_id to use in create-space / update-space
-```
-
-If the workspace has no running warehouse, list available ones and ask the user to choose:
-
-```bash
-databricks warehouses list --profile <PROFILE>
-```
-
-### Profiling Data Sources
-
-Use `discover-schema` as the default — one call returns columns, types, sample rows, null counts, and row count:
-
-```bash
-databricks experimental aitools tools discover-schema catalog.schema.gold_sales catalog.schema.gold_customers
-```
-
-Probe cardinality, ranges, and top categorical values:
-
-```bash
-databricks experimental aitools tools query --warehouse <WH> "SELECT region, COUNT(*) FROM catalog.schema.table GROUP BY region ORDER BY 2 DESC LIMIT 20"
-```
-
-Fan out independent probes in parallel using `statement submit` + `get`:
-
-```bash
-SIDS=()
-for q in "$@"; do
-  SIDS+=( "$(databricks experimental aitools tools statement submit --warehouse "$WH" "$q" | jq -r .statement_id)" )
-done
-for s in "${SIDS[@]}"; do databricks experimental aitools tools statement get "$s"; done
-```
-
-### Creating and Updating
-
-```bash
-# Ensure parent_path exists first — create-space fails with "Tree node does not exist" otherwise
-databricks workspace mkdirs /Workspace/Users/you@company.com/genie_spaces
-
-# Create from a local genie_agent.json file
-databricks genie create-space --json "{
-  \"warehouse_id\": \"WAREHOUSE_ID\",
-  \"title\": \"Sales Analytics\",
-  \"description\": \"Explore sales data\",
-  \"parent_path\": \"/Workspace/Users/you@company.com/genie_spaces\",
-  \"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')
-}"
-
-# List all Genie Agents
-databricks genie list-spaces
-
-# Get agent details
-databricks genie get-space SPACE_ID --include-serialized-space
-
-# Update agent config
-databricks genie update-space SPACE_ID --json "{\"serialized_space\": $(cat genie_agent.json | jq -c '.' | jq -Rs '.')}"
-
-# Delete
-databricks genie trash-space SPACE_ID
-
-# Tag for resource tracking
-databricks workspace-entity-tag-assignments create-tag-assignment \
-  geniespaces SPACE_ID ai_generated_source --tag-value databricks-agent-skills || true
-```
-
-For `serialized_space` field shapes, constraints, and the Python helper see [serialized-space.md](serialized-space.md).
-
-### Troubleshooting
+## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| `sample_question.id must be provided` | Add 32-char hex UUID `id` to each sample question |
-| `Expected an array for question` | Use `"question": ["text"]` not `"question": "text"` |
-| Field shape errors (`START_OBJECT`, `must be sorted by id`, `Unknown field`) | See [serialized-space.md §Exact Field Schemas](serialized-space.md#exact-field-schemas-verified-against-the-genie-api) |
-| No warehouse available | Create a SQL warehouse or provide `warehouse_id` |
-| Wrong or empty answers | Add `example_question_sqls` and `text_instructions` — see Design Priorities above |
+| `sample_question.id must be provided` | Add a 32-char hex `id` to each item |
+| `Expected an array for question` | Use `"question": ["text"]`, not `"question": "text"` |
+| `must be sorted by id` / `Unknown field 'benchmarks'` | Sort id-keyed arrays; put `benchmarks` at top level |
+| No warehouse available | Create one, or pass `--warehouse` / `WAREHOUSE_ID` |
+| `volume_content_search_failed` / document questions unanswered | Indexing not done yet, or asked via chat mode; see [Documents](#documents-uc-volumes) |
+| Wrong or empty answers | See [improve-genie-agent.md](improve-genie-agent.md) |
 
 ## See Also
 
-- **[diagnose-genie-agent.md](diagnose-genie-agent.md)** / **[optimize-genie-agent.md](optimize-genie-agent.md)** — diagnose and tune the Agent after creation.
-- **[genie-agent-cicd.md](genie-agent-cicd.md)** — export, import, cross-workspace migration.
 - **[query-genie-agent.md](query-genie-agent.md)** — validate the Agent via the Conversation API.
-- **`databricks-metric-views`** — AI-ready Metric View design and `MEASURE()` query rules. Use existing Metric Views as governed sources here; when sources are raw tables for reusable KPIs, recommend creating a Metric View with this skill and confirm with the user first.
+- **[improve-genie-agent.md](improve-genie-agent.md)** — inspect, diagnose, benchmark, and tune the Agent after creation.
+- **[genie-agent-cicd.md](genie-agent-cicd.md)** — export, import, cross-workspace migration.
+- **`databricks-metric-views`** — build governed Metric Views to use as sources here.

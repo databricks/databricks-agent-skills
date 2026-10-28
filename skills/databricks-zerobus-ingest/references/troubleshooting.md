@@ -6,9 +6,10 @@ Read this when **anything fails or data is missing**. Match the symptom to a row
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Connection refused` | Wrong endpoint/port | Verify: `<workspace-id>.zerobus.<region>.cloud.databricks.com:443` |
-| `401 Unauthorized` | Bad credentials | Regenerate SP OAuth secret; verify client ID/secret |
-| `Error 4024 / authorization_details` | SP missing grants | Grant `USE CATALOG`, `USE SCHEMA`, `MODIFY` + `SELECT` on table (not inherited) |
+| `Connection refused` or timeout | Wrong endpoint/port, or blocked egress | Verify: `<workspace-id>.zerobus.<region>.cloud.databricks.com:443` (the endpoint's cloud, region, and workspace ID), then the egress firewall on 443 ([networking.md](networking.md)) |
+| `401 Unauthorized` / auth or token errors | Bad credentials, or the OAuth endpoint is unreachable | Regenerate SP OAuth secret; verify client ID/secret, and that the workspace URL's OAuth endpoint is reachable ([authentication.md](authentication.md)) |
+| REST calls fail with 401 after about an hour | The OAuth token expired | Cache the token and refresh before expiry, and retry once on 401 ([authentication.md](authentication.md#table-scoped-tokens-rest-kafka-mqtt-grpc)) |
+| `Error 4024 / authorization_details` | SP missing grants | Grant `USE CATALOG`, `USE SCHEMA`, `MODIFY` + `SELECT` **directly on the table**; inherited schema grants and `ALL PRIVILEGES` aren't enough |
 | `TLS handshake failed` | TLS issue | Use TLS on 443; firewall allows HTTPS |
 
 ## Schema and Data
@@ -27,18 +28,25 @@ Read this when **anything fails or data is missing**. Match the symptom to a row
 | **Throughput plateau** | Hit per-stream quota | Open more streams; throughput scales with stream count ([performance.md#quotas](performance.md#quotas)). |
 | **Throughput plateau at 10 GB/s** | Hit the default per-table quota | Contact your Databricks account team to raise it. |
 | **Ingest calls stall or block** | The in-flight buffer is full: acks aren't keeping up (network, per-stream quota) | Expected backpressure. Check connectivity and quota, then add streams. Don't add waits ([how-it-works.md](how-it-works.md#how-the-sdk-processes-records)) |
-| **Throughput far below the per-stream quota** | Per-record `wait_for_offset()` or per-record `flush()` | Use batching: `ingest_record_offset()` in a loop, then `flush()` once. |
+| **Throughput far below the per-stream quota** / slow producer | Per-record `wait_for_offset()` or per-request `flush()` | Use batching: `ingest_record_offset()` in a loop, then `flush()` once; observe acks with a callback instead of blocking, then add streams ([performance.md](performance.md)). |
 | **Memory usage growing** | The in-flight buffer holds unacknowledged records in memory | Lower the in-flight limit (`max_inflight_records` in Python; `max_inflight_requests` on the Rust builder), and check that acks keep up ([how-it-works.md](how-it-works.md#how-the-sdk-processes-records)) |
 
 ## Data Visibility
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
+| **Stream failed permanently** | Non-retryable error, or recovery exhausted | Rescue unacked records and recreate the stream ([recovery.md](recovery.md)) |
 | **Ack received but no rows in table** | Durable is not queryable | Wait about 5 seconds after the ack, then query the table. This is expected behavior. |
 | **No rows after 30 seconds** | Ingestion may have failed | Verify the table schema matches the records, then check `errors` in `system.lakeflow.zerobus_ingest` ([observability.md](observability.md)). |
 | **Duplicate rows** | At-least-once delivery with retries | Usually fine to keep. If the use case needs unique rows, see [how-it-works.md#delivery-and-duplicates](how-it-works.md#delivery-and-duplicates). |
 
 ## SDK-Specific Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `pip install` builds from a `.tar.gz` and fails (Alpine, glibc older than 2.34) | No wheel for the platform | Build from source with a Rust toolchain ([build-from-source.md](build-from-source.md)), or use a pure SDK |
+| Precompiled binaries not allowed (policy, platform, cgo disabled) | The SDK loads a prebuilt native core | Use a pure SDK: **Rust** or **pure Go** (`purego`). Pure C doesn't send data yet ([choose-an-interface.md](choose-an-interface.md)) |
+| SDK fails to load on an edge runtime | The runtime can't load native libraries | Switch to REST ([rest.md](rest.md)) |
 
 ### Python
 

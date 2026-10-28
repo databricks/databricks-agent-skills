@@ -303,4 +303,4 @@ Before writing implementation code:
 
 ## References
 
-- [Plugin Contract Details](references/plugin-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs
+- [Plugin Contract Details](proto-contracts.md) — proto↔plugin type mappings for files, lakebase, jobs

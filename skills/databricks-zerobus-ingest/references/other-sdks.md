@@ -6,7 +6,7 @@ Use environment variables from [authentication.md](authentication.md): `ZEROBUS_
 
 For the non-blocking pattern (queue, use ack callbacks where available, `flush()` at the boundary, `close()` at shutdown), see [SKILL.md#step-4-build-the-producer](../SKILL.md#step-4-build-the-producer).
 
-Record formats per SDK (JSON, Protobuf, Avro, Arrow Flight) and the examples folders are in [SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples).
+Record formats per SDK (JSON, Protobuf, Avro, Arrow Flight) and the examples folders are in [choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples).
 
 ## Rust
 

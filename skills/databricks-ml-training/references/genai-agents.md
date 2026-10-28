@@ -1,6 +1,6 @@
 # Custom GenAI agents with MLflow ResponsesAgent
 
-Edge case. **For most demos, use [databricks-agent-bricks](../../databricks-agent-bricks/SKILL.md)** — pre-built Knowledge Assistants and Supervisor Agents wire up Genie + KAs + tools without any agent code. Hand-roll a `ResponsesAgent` only when you need a custom orchestration the supervisor can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
+Edge case. **For most demos, use [databricks-genie-agents](../../databricks-genie-agents/SKILL.md)**: one Genie Agent with tables + a documents volume answers SQL + document questions without any agent code (replaces the legacy Knowledge Assistant / Supervisor Agent). Hand-roll a `ResponsesAgent` only when you need a custom orchestration Genie can't express (custom routing logic, multi-step plans, agent that calls another agent over HTTP).
 
 ## What ResponsesAgent is
 

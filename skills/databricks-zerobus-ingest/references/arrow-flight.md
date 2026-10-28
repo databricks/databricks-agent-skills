@@ -10,7 +10,7 @@ Read this when the producer has **columnar data** (Arrow tables, Parquet files, 
 | | Need ack callbacks → use JSON/Protobuf (Arrow doesn't support callbacks) |
 | | Edge runtimes → **REST** ([rest.md](rest.md)) |
 
-**Status:** the Apache Arrow format is **GA**. SDKs with Arrow Flight: Python, Rust, Java, Go (cgo), C++, TypeScript; versions in [SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples).
+**Status:** the Apache Arrow format is **GA**. SDKs with Arrow Flight: Python, Rust, Java, Go (cgo), C++, TypeScript; versions in [choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples).
 
 ## How it works
 - **One stream, one table.** Uses the same Zerobus endpoint, OAuth flow, and headers as JSON/Protobuf. Wire protocol is Arrow Flight `DoPut` over gRPC.

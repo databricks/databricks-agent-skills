@@ -1,8 +1,25 @@
 # Custom Visualizations with Vega-Lite
 
-Use standard widgets by default. Use a custom visualization when the required marks, layers, or layout cannot be expressed with standard widgets. Examples include bullet, gauge, radar, sunburst, and radial charts. These are Vega-Lite specifications inside a `custom-vega-viz` widget, not separate widget types. Standard charts remain appropriate for ordinary comparisons, trends, target annotations, and small multiples; see [Choose a Widget](../SKILL.md#choose-a-widget).
+Use standard widgets by default. Use a custom visualization when the required marks, layers, or layout cannot be expressed with standard widgets. Examples include bullet, gauge, radar, sunburst, and radial charts. These are Vega-Lite specifications inside a `custom-vega-viz` widget, not separate widget types. Standard charts remain appropriate for ordinary comparisons, trends, target annotations, and small multiples; see [Widget catalog](../SKILL.md#widget-catalog).
 
 This reference covers the [widget contract](#widget-contract), a [bullet chart](#example-bullet-chart), [raw points with a rolling mean](#example-raw-points-with-a-rolling-mean), [other custom patterns](#more-custom-chart-patterns), and [cross-filtering](#cross-filtering). Custom Viz accepts Vega-Lite grammar, not arbitrary Vega, HTML, JS, or D3.
+
+
+## Standard widget or custom Vega-Lite?
+
+Use standard widgets by default; use Vega-Lite only when the visualization can't be expressed with them. Common cases:
+
+| What needs to be shown? | Use |
+|------------------------|-----|
+| KPIs, trends, rankings, distributions, or geographic comparisons | Standard counter, line/bar, histogram/box, or map widgets |
+| Revenue bars with a margin line on a second axis | Standard `combo` |
+| Retention by cohort and elapsed period | Standard `pivot` with a color scale |
+| Task start/end times on a schedule | Standard `gantt` |
+| Delivery routes or ordered GPS tracks | Standard `path-map` |
+| A target line or the same chart repeated by region | Standard annotations or faceting; see [widget specifications](1-widget-specifications.md#annotations-event-markers) |
+| A bullet chart with an actual-value bar and target marker for each category | `custom-vega-viz`; see the [worked bullet example](#example-bullet-chart) |
+| Raw observations drawn as points with a rolling-mean line overlaid | `custom-vega-viz`; see the [layered time-series example](#example-raw-points-with-a-rolling-mean) |
+| A requested gauge, radar, or nested radial/sunburst layout | `custom-vega-viz`; see [custom chart patterns](#more-custom-chart-patterns) |
 
 ## Widget Contract
 

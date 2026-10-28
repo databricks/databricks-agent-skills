@@ -12,6 +12,16 @@ Use Genie when your app needs a **natural language query interface** over Unity 
 | Genie | Natural language queries over tables | Genie Space → SQL Warehouse |
 | Multiple | Combine plugins as needed | Mix of the above |
 
+## Agent workflow (tables first)
+
+When the user wants a Genie-powered app, do **not** start by asking for a Genie Space ID. Instead:
+
+1. Ask which Unity Catalog tables the app should query (fully qualified: `catalog.schema.table`).
+2. Ask whether to reuse an existing Genie space or create a new one.
+3. If creating: discover the warehouse, then create the space with `databricks genie create-space` (see [Genie Space Creation](#genie-space-creation) for syntax and serialized space format).
+4. If reusing: discover existing spaces with `databricks genie list-spaces --profile <PROFILE>` and let the user pick.
+5. Scaffold or wire the space ID into the app — derive `--set` keys from `databricks apps manifest`.
+
 ## Architecture
 
 ```text

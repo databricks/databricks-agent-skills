@@ -32,7 +32,7 @@ An agent needs an LLM. Two paths; pick before scaffolding:
 |--|---|---|
 | Setup | Bind a **streaming-capable** chat endpoint | Zero endpoint — runs on Databricks AI Gateway |
 | How | `DATABRICKS_SERVING_ENDPOINT_NAME` (or per-agent `endpoint:` / `model:`) | `model: DatabricksAdapter.fromSupervisorApi({ model: "..." })` |
-| Best for | Custom / self-hosted models; full JS tool code | Fastest start; **hosted tools** (Genie, UC functions, Knowledge Assistants, apps) with no tool code |
+| Best for | Custom / self-hosted models; full JS tool code | Fastest start; **hosted tools** (Genie, UC functions, Knowledge Assistants (legacy; prefer a Genie Agent with a volume), apps) with no tool code |
 | Tools | Function tools, MCP, sub-agents, hosted tools all work | **Only** `supervisorTools.*` reach the model — function tools, MCP, and local sub-agents are ignored (registration-time warning) |
 
 **(A) must be a streaming endpoint.** Foundation Model APIs (Claude, Llama, GPT) and chat-style endpoints stream and work out of the box. A single-JSON `pyfunc` / `sklearn` endpoint does **not** stream — pointing an agent at it fails on the first turn with `Response body is null — streaming not supported`. Use **`databricks-model-serving`** to pick or create a streaming endpoint. (For a non-streaming custom model, use the `serving` plugin's `/invoke` + `useServingInvoke` instead — that is not an agent.)
@@ -127,7 +127,7 @@ echo "DATABRICKS_SERVING_ENDPOINT_NAME=<STREAMING_ENDPOINT>" >> server/.env
 |---|---|---|
 | `agents-serving-endpoint` | `DATABRICKS_SERVING_ENDPOINT_NAME` | Default streaming LLM (backend A) |
 | `agents-mlflow-experiment` | `MLFLOW_EXPERIMENT_ID` | Trace agent turns + tool calls to MLflow (no-op when unset) |
-| `agents-skills` | `DATABRICKS_VOLUME_AGENT_SKILLS` | UC Volume of catalog [Skills](#skills) (read-only, service principal) |
+| `agents-skills` | `DATABRICKS_VOLUME_AGENT_SKILLS` | UC Volume of catalog [Skills](#skills-agent-runtime-skills) (read-only, service principal) |
 
 The scaffold generates a starter `server/agents/<id>/agent.md` and a chat page. Replace the agent's instructions and tools before validating.
 

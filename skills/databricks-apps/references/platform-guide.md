@@ -122,7 +122,18 @@ Full authoritative list: the Databricks Apps auth docs "Supported scopes" sectio
 
 ### Execution identity per resource
 
-Each resource is accessed by one of three identities, set at scaffold time (see the `--auth-mode` / per-resource `authMode` flags in the parent `SKILL.md` scaffolding section):
+Setting it at scaffold time (`databricks apps init`):
+
+**Execution identity (auth mode)** requires **databricks CLI `>= v1.20.0`** (the first release with the auth-mode feature; it is not in `v1.19.0` or earlier). On CLIs without it these flags do not exist; every resource is bound to the service principal and the flags below must not be used. By default every resource is still bound to the service principal (SP), and omitting these flags produces exactly the same output as before.
+
+- `--auth-mode obo|sp` sets the app-wide default. `sp` is the default. `--auth-mode obo` applies only to resources that **can** run on behalf of the user; resources that cannot (e.g. `secret`, Lakebase) stay on the SP and the CLI prints a note listing them. `--auth-mode both` is not valid at the app level.
+- `--set <plugin>.<resourceKey>.authMode=obo|sp|both` sets one resource's identity and overrides the app-wide default. `both` is only valid here, per resource.
+- Setting an explicit `authMode` on a resource that cannot run OBO is an **error** (the CLI names the resource and the fix).
+- The interactive auth prompt (Service principal / On behalf of user / Mixed) appears **only** in the fully interactive flow. Passing `--features` or `--set` means no prompt and the default SP.
+
+**Default to SP; choose OBO only when the app must enforce the viewing user's own permissions** (row-level or per-user data access). Mixed is common, e.g. an analytics warehouse OBO plus a job as SP.
+
+Each resource is accessed by one of three identities:
 
 - **`sp`** (default): the app binds the resource in `databricks.yml` and `app.yaml` injects the env var via `valueFrom`. The SP is granted the resource permission on deploy.
 - **`obo`**: no binding; `app.yaml` injects the resource id as a literal `value:`, and the resource's scope is added to `user_api_scopes`. Calls made in a user scope run with the requesting user's permissions. With no usable user token the call fails closed in production, it never silently falls back to the service principal.

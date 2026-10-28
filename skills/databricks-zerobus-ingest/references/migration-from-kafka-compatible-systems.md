@@ -17,7 +17,7 @@ Zerobus suits **producer-to-lake pipelines** with one primary consumer. Migratio
 | Pathway | Code change | Throughput | Ordering | Status | Use when |
 |---------|-------------|-----------|----------|--------|----------|
 | **A: Repoint Kafka producers** to the Apache Kafka-compatible endpoint | Producer config + a token callback | Good; tune batching. Default Beta quota 50,000 messages/s per workspace | Kafka partition ordering doesn't carry over (the endpoint is one logical partition) | Beta | Producers use stock Kafka clients and send JSON |
-| **B: Move producers to a Zerobus SDK** | Replace the Kafka client with the SDK | Highest (gRPC, per-stream quotas) | Per stream | Every SDK ([SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples)) | You control the producer code and want throughput, callbacks, and built-in recovery |
+| **B: Move producers to a Zerobus SDK** | Replace the Kafka client with the SDK | Highest (gRPC, per-stream quotas) | Per stream | Every SDK ([choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples)) | You control the producer code and want throughput, callbacks, and built-in recovery |
 | **C: Debezium Server** | Config only | High | Per stream | Debezium 3.7+ | CDC via Kafka |
 | **D: Keep Kafka** | - | - | - | - | Multi-consumer / stream processing |
 

@@ -2,7 +2,7 @@
 
 Read this when the producer runs on the **JVM** (Java 8+). Use the non-blocking ingestion pattern with `streamBuilder()`, and Java has an `AckCallback` for progress.
 
-**Record formats:** JSON, Protobuf, and Arrow Flight ([SKILL.md](../SKILL.md#sdks-record-formats-and-working-examples)).
+**Record formats:** JSON, Protobuf, and Arrow Flight ([choose-an-interface.md](choose-an-interface.md#sdks-record-formats-and-working-examples)).
 
 **Runtime Requirements:**
 - Java 8 or higher to run, JDK 11+ to build from source

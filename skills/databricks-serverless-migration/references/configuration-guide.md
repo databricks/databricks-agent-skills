@@ -349,6 +349,24 @@ In the Databricks UI:
 - **Remove** `init_scripts` — move to environment `dependencies`
 - **Remove** `num_workers`, `node_type_id`, `spark_version` — all auto-managed
 
+## Job Definition Migration: Transformation Rules
+
+Remove `job_clusters`/`new_cluster`, add `environments` with serverless spec, replace `job_cluster_key` with `environment_key`, remove `init_scripts`. See [Job Configuration Transformation](#job-configuration-transformation) for the full before/after JSON; the environment version mapping (classic DBR → `spec.client`) is in [SKILL.md](../SKILL.md#transform-job-config-from-classic-to-serverless).
+
+When migrating a job, the **job configuration JSON** must be transformed alongside notebook code. The agent should perform all of the following:
+
+**Init scripts to Serverless Environments**: Detect `init_scripts` in the job JSON. Extract all `pip install` commands and convert them to Environment `dependencies`. For OS-level packages (`apt install`/`yum install`) that have pip equivalents (e.g., `apt install python3-opencv` becomes `opencv-python`), convert them. Flag OS-level packages without pip equivalents as serverless-incompatible (Category 3).
+
+**Cluster libraries (Maven/JAR) to Environment or Volumes**: Maven coordinates for Python-wrapping JARs should be replaced with their PyPI equivalent in the Environment spec. Custom JARs on DBFS need to be moved to `/Volumes/<your_catalog>/schema/volume/` and referenced there. Custom Spark data source JARs (v1/v2) are a Category 3 blocker — flag them for classic retention.
+
+**job_clusters to serverless compute**: Remove `job_clusters` / `new_cluster` blocks entirely. Add an `environments` array with the serverless spec. Replace `job_cluster_key` in each task with `environment_key`. Remove `init_scripts`, `num_workers`, `node_type_id`, `spark_version`. See the complete example below.
+
+**spark_conf migration**: Scan all `spark.conf.set(...)` calls in the notebook and `spark_conf` entries in the job JSON. For each:
+- **Supported** (keep): `spark.sql.shuffle.partitions`, `spark.sql.session.timeZone`, `spark.sql.ansi.enabled`, `spark.sql.files.maxPartitionBytes`, `spark.sql.legacy.timeParserPolicy`, `spark.databricks.execution.timeout`
+- **Auto-tuned** (remove with comment): AQE configs, Delta auto-compact, executor/driver sizing, parallelism configs
+- **Credential configs** (remove): `fs.s3a.*`, `fs.azure.*` — replaced by UC external locations
+- Add a code comment at each removal explaining why: `# Removed: auto-tuned on serverless` or `# Removed: use UC external locations instead`
+
 ## Job Definition Migration (Complete Example)
 
 This section shows the full transformation from a classic job with init scripts, cluster libraries, and spark_conf to a serverless job with Environments.
@@ -620,3 +638,8 @@ print(run_output.error_trace)  # Full stack trace
 - Serverless best practices: https://docs.databricks.com/en/compute/serverless/best-practices
 - Serverless compute overview: https://docs.databricks.com/en/compute/serverless/
 - Databricks SDK: https://docs.databricks.com/en/dev-tools/sdk-python.html
+- Serverless notebooks: https://docs.databricks.com/compute/serverless/notebooks
+- Serverless jobs: https://docs.databricks.com/jobs/run-serverless-jobs
+- Serverless SDP: https://docs.databricks.com/ldp/serverless
+- Unity Catalog upgrade: https://docs.databricks.com/data-governance/unity-catalog/upgrade/
+- Supported Spark configs: https://docs.databricks.com/spark/conf#serverless

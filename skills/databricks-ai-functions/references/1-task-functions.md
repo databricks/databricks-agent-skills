@@ -74,6 +74,43 @@ df.withColumn(
 
 ---
 
+## `ai_decide`
+
+Answers several questions over one `state` in a **single** inference — a probability (`noul`), a label (`choice`), or a scaled score (`score`) per question, with confidence/probabilities. Combines `ai_classify` + boolean judgment + rubric scoring; no endpoint selection. Prefer one `ai_decide` over chaining separate functions.
+
+**Requires:** Databricks SQL (not SQL Classic) or DBR **15.4 LTS+** (18.2+ recommended). **Beta** — admin-enabled via **Previews**; region-restricted.
+
+**Syntax:** `ai_decide(state, questions [, options])`
+- `state`: STRING | VARIANT — text/JSON/VARIANT (e.g. from `ai_parse_document`) to reason over.
+- `questions`: STRING — **constant** JSON mapping question IDs → definitions `{type, instructions, criteria}` (`instructions`: string/object/array). Not row-varying.
+- `options`: MAP — `version`: `"1.0"` (default).
+
+Returns VARIANT `{response:{answers:{<id>:<answer>}}, metadata:{version}, error_message}`; `response` null + `error_message` set on failure.
+
+| `type` | `criteria` | Answer fields |
+|---|---|---|
+| `noul` (likelihood true) | optional `{true, false}` descriptions | `{type, probability}` — 0–1 |
+| `choice` (pick a label) | **required** 1–255 `label → description` | `{type, choice, probabilities, confidence}` |
+| `score` (rubric) | **required** array of 2–10 ordered descriptions | `{type, score, legend, probabilities, confidence}` — `score` = probability-weighted mean of indices, `0`→(n−1), fractional |
+
+```sql
+SELECT ai_decide(description, '{
+  "category":      {"type":"choice", "instructions":"Best product category?",
+                    "criteria":{"outerwear":"Jackets, coats","footwear":"Shoes, boots","accessories":"Bags, hats"}},
+  "is_waterproof": {"type":"noul",   "instructions":"Is it waterproof?"},
+  "sustainability":{"type":"score",  "instructions":"Rate material sustainability.",
+                    "criteria":["Not","Somewhat","Highly"]}
+}') AS decision
+FROM products;
+-- read: decision:response:answers:category:choice::STRING,
+--       decision:response:answers:is_waterproof:probability::DOUBLE,
+--       decision:response:answers:sustainability:score::DOUBLE
+```
+
+PySpark — pass the JSON as a literal (an apostrophe in a question would break SQL interpolation): `df.withColumn("decision", call_function("ai_decide", col("description"), lit(questions_json)))`.
+
+---
+
 ## `ai_extract`
 
 **Syntax:** `ai_extract(content, schema [, options])`

@@ -3,7 +3,7 @@ name: databricks-zerobus-ingest
 description: "Push records from apps, services, devices, or scripts directly into Unity Catalog Delta tables with Zerobus Ingest: SDKs (Python, TypeScript, Go, Java, Rust, C++, .NET), REST, OTLP, MQTT, Arrow Flight, or Apache Kafka-compatible producer APIs, with no message bus to run. Use to stream events, telemetry, logs, IoT data, CDC, or columnar batches into Databricks in near real time; connect existing collectors and log shippers (OpenTelemetry, Debezium, Vector, Telegraf, Cribl); replace a message bus that only feeds the lakehouse; or debug Zerobus auth, schema, throughput, or delivery issues."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 parent: databricks-core
 ---
 
@@ -133,50 +133,22 @@ Before the user scales up, cover schema evolution, duplicates, throughput, netwo
 - **Durable is not queryable.** Zerobus materializes acknowledged data into the Delta table as a separate step: durable in about 150 ms, queryable in about 5 seconds ([how-it-works.md](references/how-it-works.md#the-data-path)).
 - **At-least-once delivery.** Recovery or a client retry can resend records, so a few duplicates are possible. Most workloads accept them; don't add deduplication by default, and **never claim exactly-once**. If the user needs unique rows, see [how-it-works.md](references/how-it-works.md#delivery-and-duplicates).
 - **Ordering is per stream only.** No global ordering across streams ([how-it-works.md](references/how-it-works.md#ordering)).
-- **Non-blocking by default.** Ingest calls queue and return. Use **ack callbacks** to act on acks and errors while ingestion runs, `flush()` only at boundaries, and `wait_for_offset()` only in the advanced case where code must block on one record.
-- **Ingest blocks only on backpressure.** Records wait in an in-memory in-flight buffer until acked; ingest calls block only when that buffer is full ([references/how-it-works.md](references/how-it-works.md#how-the-sdk-processes-records)).
+- **Non-blocking by default** (the Step 4 ladder). Ingest calls block only on **backpressure**: records wait in an in-memory in-flight buffer until acked, and calls block only when it's full ([references/how-it-works.md](references/how-it-works.md#how-the-sdk-processes-records)).
 - **Recovery is built in.** The SDK reconnects and replays unacked records. Don't hand-roll a retry loop; custom recovery is advanced ([references/recovery.md](references/recovery.md)).
 - **TIMESTAMP columns take epoch microseconds** (an integer), not strings.
 - **Quotas are adjustable defaults**, set per stream and per table. Add streams before asking for an increase ([performance.md](references/performance.md#quotas)).
 
 ## Common issues
 
-| Symptom | Fix |
-|---------|-----|
-| Connection refused or timeout | Check the endpoint's cloud, region, and workspace ID, then the egress firewall on 443 ([networking.md](references/networking.md)) |
-| Error 4024 / `authorization_details` | Grant `MODIFY` and `SELECT` **directly on the table**; inherited schema grants and `ALL PRIVILEGES` aren't enough |
-| Auth failed or token errors | Check the client ID and secret, and that the workspace URL's OAuth endpoint is reachable ([authentication.md](references/authentication.md)) |
-| Records rejected / schema mismatch | Match field names and types to the table, or add a rescue column ([schema-management.md](references/schema-management.md)) |
-| Ack received but no rows | Wait about 5 seconds and re-query; durable isn't queryable yet |
-| Ingest calls stall | Backpressure: the in-flight buffer is full. Check network and quota, then add streams ([how-it-works.md](references/how-it-works.md#how-the-sdk-processes-records)) |
-| Stream failed permanently | Rescue unacked records and recreate the stream ([recovery.md](references/recovery.md)) |
-| Duplicate rows | Expected occasionally after retries (at-least-once delivery). Usually fine; if the use case needs unique rows, build a deduplicated table downstream ([how-it-works.md](references/how-it-works.md#delivery-and-duplicates)) |
-| Throughput plateau or slow producer | Remove any per-record `wait_for_offset()` or per-request `flush()`; ingest without blocking and observe acks with a callback; then add streams ([performance.md](references/performance.md)) |
-| `pip install` builds from a `.tar.gz` and fails (Alpine, glibc older than 2.34) | No wheel for the platform. Build from source with a Rust toolchain ([build-from-source.md](references/build-from-source.md)), or use a pure SDK |
-| Precompiled binaries not allowed (policy, platform, cgo disabled) | Use a pure SDK: **Rust** or **pure Go** (`purego`). Pure C doesn't send data yet ([choose-an-interface.md](references/choose-an-interface.md)) |
-| SDK fails to load on an edge runtime | The runtime can't load native libraries; switch to REST ([rest.md](references/rest.md)) |
-| REST calls fail with 401 after about an hour | The OAuth token expired. Cache it and refresh before expiry, and retry once on 401 ([authentication.md](references/authentication.md#table-scoped-tokens-rest-kafka-mqtt-grpc)) |
+Match the symptom in [references/troubleshooting.md](references/troubleshooting.md) (connection, auth and grants, schema, throughput, visibility, duplicates, install / native binaries). Most common: error 4024 = grants not **directly on the table**; REST 401 after about an hour = expired token.
 
 ## SDKs: record formats and working examples
 
-Which record formats each SDK supports, from the SDK repo's [Ingestion APIs table](https://github.com/databricks/zerobus-sdk/tree/main#ingestion-apis) (the source of truth; check it for newer releases). Don't attach a release status to an SDK; use this table. **When the user asks how to do something specific in one language** (Protobuf, Arrow, batching, async, a particular API), open that SDK's examples folder for a working program before writing code. Most folders split by record format (`json/`, `proto/`, `arrow/`).
-
-| SDK | JSON / Protobuf | Avro (Beta) | Arrow Flight | Working examples |
-|-----|-----------------|-------------|--------------|------------------|
-| Python | Available | Beta | Available since 1.8.0 | [python/examples](https://github.com/databricks/zerobus-sdk/tree/main/python/examples) (sync and async: JSON, Protobuf, Arrow, Avro, identity federation) |
-| Rust | Available | Beta | Available since 2.8.0 | [rust/examples](https://github.com/databricks/zerobus-sdk/tree/main/rust/examples) |
-| Go (cgo) | Available | In development | Available since 1.6.0 | [go/examples](https://github.com/databricks/zerobus-sdk/tree/main/go/examples) |
-| Pure Go | Available | In development | Not available | [purego/examples](https://github.com/databricks/zerobus-sdk/tree/main/purego/examples) |
-| TypeScript | Available | In development | Available since 1.3.0 | [typescript/examples](https://github.com/databricks/zerobus-sdk/tree/main/typescript/examples) |
-| Java | Available | In development | Available since 1.6.0 | [java/examples](https://github.com/databricks/zerobus-sdk/tree/main/java/examples) (`legacy/` uses the deprecated factory methods; prefer the others) |
-| C++ | Available | In development | Available since 0.3.0 | [cpp/examples](https://github.com/databricks/zerobus-sdk/tree/main/cpp/examples) |
-| .NET (C#) | Available | In development | Not available | [dotnet/examples](https://github.com/databricks/zerobus-sdk/tree/main/dotnet/examples) |
-
-Pure C isn't in the table: it doesn't send data yet (its [example](https://github.com/databricks/zerobus-sdk/tree/main/purec/examples) validates inputs only), so don't use it to deliver data.
+Record formats per SDK (JSON, Protobuf, Avro, Arrow Flight) and each SDK's **working examples folder**: [choose-an-interface.md § SDKs](references/choose-an-interface.md#sdks-record-formats-and-working-examples). Open its examples before writing code for a specific API. Don't attach a release status to an SDK; use that table. Pure C doesn't send data yet.
 
 ## Reference map: read only what the task needs
 
-These references hold the decisions, gotchas, and tested minimal samples for each route. For the full API surface, other record types, and the latest SDK versions, **fetch the SDK README** linked in each file's Sources (raw Markdown); for working code, use the examples folders in the table above. docs.databricks.com pages are HTML. Long runnable programs for MQTT and the raw gRPC API are in [examples/](examples/).
+These references hold the decisions, gotchas, and tested minimal samples for each route. For the full API surface, other record types, and the latest SDK versions, **fetch the SDK README** linked in each file's Sources (raw Markdown); for working code, use the examples folders listed in [choose-an-interface.md](references/choose-an-interface.md#sdks-record-formats-and-working-examples). docs.databricks.com pages are HTML. Long runnable programs for MQTT and the raw gRPC API are in [examples/](examples/).
 
 | Read | When |
 |------|------|
