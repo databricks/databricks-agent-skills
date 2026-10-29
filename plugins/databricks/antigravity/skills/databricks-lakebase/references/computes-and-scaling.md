@@ -6,17 +6,19 @@ Each Compute Unit (CU) allocates ~2 GB of RAM.
 
 | Category | Range | Notes |
 |----------|-------|-------|
-| **Autoscale** | 0.5–32 CU | Dynamic scaling (max − min <= 16 CU) |
-| **Fixed-size** | 36–112 CU | No autoscaling |
+| **Autoscale** | 0.5–64 CU | Dynamic scaling (max − min <= 16 CU) |
+| **Fixed-size** | 0.5–64 CU, or any whole number from 65 to 112 CU (larger sizes are fixed only) | No autoscaling. The Lakebase App lists only some sizes; the CLI, API, SDK and bundles accept any whole CU |
+
+**Allowed CU values:** 0.5 or a whole number. The API rejects other fractions such as 1.5 (`autoscaling limit must be an integer or 0.25 or 0.50`) and anything below 0.5 (`must be at least 0.5 CU`).
 
 | CU | RAM | Max Connections |
 |----|-----|-----------------|
-| 0.5 | ~1 GB | 104 |
-| 1 | ~2 GB | 209 |
-| 4 | ~8 GB | 839 |
-| 8 | ~16 GB | 1,678 |
-| 16 | ~32 GB | 3,357 |
-| 32+ | ~64 GB+ | 4,000 (cap) |
+| 0.5 | ~1 GB | 105 |
+| 1 | ~2 GB | 218 |
+| 4 | ~8 GB | 894 |
+| 8 | ~16 GB | 1,795 |
+| 16 | ~32 GB | 3,597 |
+| 24+ | ~48 GB+ | 3,993 (cap) |
 
 ## Endpoint Operations
 
@@ -47,21 +49,23 @@ databricks postgres delete-endpoint projects/<PROJECT_ID>/branches/<BRANCH_ID>/e
 
 ## Autoscaling Configuration
 
-- **Range:** 0.5–32 CU. **Constraint:** Max − Min <= 16 CU.
-- **Valid:** 4–20 CU, 8–16 CU, 16–32 CU. **Invalid:** 0.5–32 CU (spread of 31.5).
+- **Range:** 0.5–64 CU. **Constraint:** Max − Min <= 16 CU.
+- **Valid:** 4–20 CU, 8–24 CU, 48–64 CU. **Invalid:** 0.5–32 CU (spread of 31.5).
 - Set minimum CU large enough to cache your working set in memory.
-- Connection limits are based on the maximum CU in the autoscaling range.
+- Connection limits are based on the smaller of the **max CU** and **8 × min CU** (for example, 2–8 CU gets the 8 CU limit, but 0.5–8 CU gets the 4 CU limit).
 
 ## Scale-to-Zero
 
-Automatically suspends compute after inactivity. Default timeout: 5 minutes. Minimum: 60 seconds.
+Automatically suspends compute after inactivity. Default timeout: 24 hours. Range: 60 seconds to 7 days. Only available for computes of 32 CU or smaller (autoscaling max ≤ 32 CU).
+
+To resize a compute above 32 CU, turn off scale-to-zero in the same `update-endpoint` call: add `spec.no_suspension` to the update mask and set `"no_suspension": true`. Otherwise the update fails with `scale to 0 is not allowed for computes larger than the configured threshold`.
 
 | Branch | Default |
 |--------|---------|
-| `production` | Scale-to-zero **disabled** (always active) |
+| `production` | Scale-to-zero **enabled**, 24 h timeout (turn it off for always-on workloads) |
 | Other branches | Configurable |
 
-**Wake-up:** Compute restarts automatically in ~100ms when a connection arrives. Restarts at minimum CU. Applications should implement retry logic for the brief reactivation period.
+**Wake-up:** Compute restarts automatically within a few hundred milliseconds when a connection arrives. Restarts at minimum CU. Applications should implement retry logic for the brief reactivation period.
 
 **Session context is reset on reactivation:**
 - Temporary tables and prepared statements are lost
@@ -78,12 +82,7 @@ Automatically suspends compute after inactivity. Default timeout: 5 minutes. Min
 - All instances share the same storage layer
 - Total: 2–4 compute instances per HA endpoint
 
-**Connection strings:**
-
-| String | Format | Routes To |
-|--------|--------|-----------|
-| Primary | `{endpoint-id}.database.{region}.databricks.com` | Current primary (auto-routes after failover) |
-| Read-only | `{endpoint-id}-ro.database.{region}.databricks.com` | Readable secondaries |
+**Connection strings:** an HA endpoint has a primary host, which follows the current primary after failover, and a read-only host (`-ro` suffix) for readable secondaries, available only when *Allow access to read-only compute instances* is on. Copy both from the project's **Connect** dialog or `get-endpoint`; don't build them by hand.
 
 **Enabling HA:** Configured at the endpoint level. Run `databricks postgres create-endpoint -h` and `databricks postgres update-endpoint -h` for spec fields. Each secondary can be Read-only (serves reads) or Disabled (failover standby only).
 

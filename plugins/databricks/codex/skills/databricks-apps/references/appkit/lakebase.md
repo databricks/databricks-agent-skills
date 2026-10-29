@@ -173,15 +173,22 @@ import { z } from 'zod';
 await createApp({
   plugins: [server(), lakebase()],
   async onPluginsReady(appkit) {
-    // Schema init (runs once before server accepts requests)
-    await appkit.lakebase.query(`
-      CREATE SCHEMA IF NOT EXISTS app_data;
-      CREATE TABLE IF NOT EXISTS app_data.items (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
+    // Schema init (runs once before server accepts requests). Run the DDL only if this role may create
+    // objects in the schema (the deployed SP that owns it), or the schema does not exist yet. A least-privilege
+    // local role skips it: it cannot run CREATE, even with IF NOT EXISTS.
+    const { rows: [{ can_ddl }] } = await appkit.lakebase.query(
+      "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'app_data') THEN has_schema_privilege('app_data', 'CREATE') ELSE true END AS can_ddl"
+    );
+    if (can_ddl) {
+      await appkit.lakebase.query(`
+        CREATE SCHEMA IF NOT EXISTS app_data;
+        CREATE TABLE IF NOT EXISTS app_data.items (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `);
+    }
 
     // CRUD routes via Express
     appkit.server.extend((app) => {
@@ -220,15 +227,22 @@ await createApp({
 **Always create a custom schema** — the Service Principal cannot access any existing schemas (including `public`). It must create the schema itself to become its owner. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full permission model and deploy-first workflow. Initialize tables inside the `onPluginsReady` callback before registering routes (see CRUD pattern above):
 
 ```typescript
-// Inside onPluginsReady — runs once at startup before handling requests
-await appkit.lakebase.query(`
-  CREATE SCHEMA IF NOT EXISTS app_data;
-  CREATE TABLE IF NOT EXISTS app_data.items (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  );
-`);
+// Inside onPluginsReady — runs once at startup before handling requests.
+// Run the DDL only if this role may create objects in the schema (the deployed SP that owns it), or the schema
+// does not exist yet. A least-privilege local role skips it: it cannot run CREATE, even with IF NOT EXISTS.
+const { rows: [{ can_ddl }] } = await appkit.lakebase.query(
+  "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'app_data') THEN has_schema_privilege('app_data', 'CREATE') ELSE true END AS can_ddl"
+);
+if (can_ddl) {
+  await appkit.lakebase.query(`
+    CREATE SCHEMA IF NOT EXISTS app_data;
+    CREATE TABLE IF NOT EXISTS app_data.items (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+}
 ```
 
 ## ORM Integration (Optional)
@@ -400,9 +414,9 @@ Check the response for the `active_deployment` field. If it exists with `status.
 
 If you skip this step, the Service Principal won't own the database schema. You'll create schemas under your credentials that the SP **cannot access** after deployment. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for the full workflow and recovery steps.
 
-Lakebase project creators already have database access after the first deploy. Collaborators need `databricks_superuser` granted by the project creator via Branch Overview.
+Lakebase project creators already have database access after the first deploy. Collaborators need a role with access to the app's schema only: see the **Grant local access** SQL in the **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps**. Do **not** grant `databricks_superuser` for local development: it bypasses RLS, so local tests cannot show that row-level policies work. That role cannot run the app's schema-init DDL (`CREATE SCHEMA/TABLE IF NOT EXISTS` fails with `permission denied`), so the schema-init examples run the DDL only when the role can create objects in the schema; the deployed SP creates and migrates the schema.
 
-> **Project-owner note:** If you are the Lakebase project owner, `databricks_create_role` may fail with "role already exists" and `GRANT databricks_superuser` may fail with "permission denied to grant role" — both errors are safe to ignore; the project owner already has the necessary access.
+> **Project-owner note:** If you are the Lakebase project owner, `databricks_create_role` may fail with "role already exists". That is safe to ignore; the project owner already has the necessary access. The schema-init guard lets the project owner run DDL, so ship new tables or columns through a deploy, not a local run: a table you create locally is owned by you, and the SP cannot use it.
 
 The Lakebase env vars (`PGHOST`, `PGDATABASE`, etc.) are auto-set only when deployed. For local development, get the connection details from your endpoint and set them manually:
 
@@ -419,7 +433,7 @@ Then create `server/.env` with the values from the endpoint response:
 PGHOST=<host from endpoint>
 PGPORT=5432
 PGDATABASE=<your database name>
-PGUSER=<your service principal client ID>
+PGUSER=<your Databricks email>   # the role from "Grant local access", not the app's SP
 PGSSLMODE=require
 LAKEBASE_ENDPOINT=projects/<PROJECT_ID>/branches/<BRANCH_ID>/endpoints/<ENDPOINT_ID>
 ```
@@ -434,5 +448,5 @@ Load `server/.env` in your dev server (e.g. via `dotenv` or `node --env-file=ser
 | `permission denied for schema <name>` | Schema was created by another role (e.g. you ran locally before deploying) | Schema owned by wrong role. To preserve data: export first (`pg_dump` or temp schema copy). **Ask the user before dropping.** Then drop + redeploy. See **`databricks-lakebase`** skill's **Schema Permissions for Deployed Apps** for full steps. |
 | Works locally but `permission denied` after deploy | Local credentials created the schema; the SP cannot access schemas it does not own | Schema owned by wrong role — see row above for export + drop + redeploy steps |
 | `connection refused` | Pool not connected or wrong env vars | Check `PGHOST`, `PGPORT`, `LAKEBASE_ENDPOINT` are set |
-| `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup |
+| `relation "X" does not exist` | Tables not initialized | Run `CREATE TABLE IF NOT EXISTS` at startup. Locally as a least-privilege role, deploy the app so its SP creates the tables, then grant your role access |
 | App builds but pool fails at runtime | Env vars not set locally | Set vars in `server/.env` — see Local Development above |

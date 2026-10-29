@@ -33,6 +33,8 @@ Each row includes CDC metadata columns:
 
 Lakehouse Sync is programmable via the CLI and SDK (**Beta** — `databricks postgres *-cdf-config` / `w.postgres.*_cdf_config`, CLI >= v1.9 / databricks-sdk >= ~0.135). Creating a **CDF config** is what turns the sync on: it captures the change data feed for a Postgres schema and materializes each table as an `lb_<table>_history` Delta table in Unity Catalog with the CDC columns shown [above](#history-tables). It works at the **schema level** — one config covers all current and future tables in that schema. (The workspace UI — branch overview → "Lakehouse sync" tab → **Start Sync** — does the same thing.)
 
+> **PHI:** apply the [HIPAA gate](../SKILL.md#hipaa-gate-phi) first. This is a Beta feature: before it carries PHI, confirm that **Lakebase CDF** is listed for your region in [Regional support for features](https://docs.databricks.com/aws/en/security/privacy/hipaa). The history tables keep every change, so PHI that is written once stays in Unity Catalog after it is deleted in Postgres.
+
 **CLI** — `PARENT` is the database **resource path**, not the Postgres database name (see the gotcha below):
 
 ```bash

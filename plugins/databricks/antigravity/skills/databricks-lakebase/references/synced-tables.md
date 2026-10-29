@@ -6,6 +6,8 @@ Lakebase synced tables sync data from Unity Catalog Delta tables into Lakebase a
 
 **How it works:** Synced tables create a managed copy — a Unity Catalog table (read-only, managed by sync pipeline) and a Postgres table in Lakebase (queryable by apps). Uses managed Lakeflow Spark Declarative Pipelines.
 
+> **PHI:** apply the [HIPAA gate](../SKILL.md#hipaa-gate-phi) before you sync PHI. Unity Catalog row filters and column masks are not copied to Postgres (see [Constraints](#constraints)), so the Postgres copy needs its own grants.
+
 **Performance (per Autoscaling CU):**
 - Continuous/Triggered: ~150 rows/sec per CU
 - Snapshot: ~2,000 rows/sec per CU
@@ -183,6 +185,8 @@ If a Databricks App reads synced tables, the app's Service Principal needs expli
 Reverse direction: continuously streams changes **from** Lakebase Postgres **into** Unity Catalog Delta tables using CDC (SCD Type 2 history). Destination tables are named `lb_<table_name>_history`. Does not require external compute, pipelines, or jobs — it is a native Lakebase feature. Available on AWS, Azure, and GCP.
 
 > **Important:** Tables must reside in the `databricks_postgres` database for Lakehouse Sync to work.
+
+> **PHI:** Lakehouse Sync is Beta. Before it carries PHI, confirm that **Lakebase CDF** is listed for your region in [Regional support for features](https://docs.databricks.com/aws/en/security/privacy/hipaa), and apply the [HIPAA gate](../SKILL.md#hipaa-gate-phi).
 
 **Lakehouse Sync enablement is programmable** (Beta) — `databricks postgres create-cdf-config` / `w.postgres.create_cdf_config`, or the "Lakehouse sync" tab in the branch overview. It operates at the **schema level**: one config syncs a whole Postgres schema, so all current and future tables in it sync to Unity Catalog. See [lakehouse-sync.md](lakehouse-sync.md) for the commands and gotchas.
 

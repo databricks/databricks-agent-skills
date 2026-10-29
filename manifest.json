@@ -257,7 +257,7 @@
         "references/synced-tables.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-lakeflow-connect": {
       "description": "Build managed ingestion pipelines into Databricks using Lakeflow Connect.",
