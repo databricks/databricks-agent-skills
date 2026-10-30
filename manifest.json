@@ -304,23 +304,61 @@
       "version": "0.1.0"
     },
     "databricks-mlflow-evaluation": {
-      "description": "MLflow 3 GenAI agent evaluation.",
+      "description": "MLflow GenAI evaluation and agent improvement on Databricks.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/CRITICAL-interfaces.md",
-        "references/GOTCHAS.md",
-        "references/patterns-context-optimization.md",
-        "references/patterns-datasets.md",
-        "references/patterns-evaluation.md",
-        "references/patterns-judge-alignment.md",
-        "references/patterns-prompt-optimization.md",
-        "references/patterns-scorers.md",
-        "references/patterns-trace-analysis.md",
-        "references/patterns-trace-ingestion.md",
-        "references/user-journeys.md"
+        "references/LICENSE",
+        "references/mlflow-agent-improvement/guide.md",
+        "references/mlflow-agent-improvement/references/context-optimization.md",
+        "references/mlflow-agent-improvement/references/regression-test-suite.md",
+        "references/mlflow-evaluation/assets/evaluation_report_template.md",
+        "references/mlflow-evaluation/guide.md",
+        "references/mlflow-evaluation/references/advanced-evaluation.md",
+        "references/mlflow-evaluation/references/databricks-online-monitoring.md",
+        "references/mlflow-evaluation/references/dataset-preparation.md",
+        "references/mlflow-evaluation/references/judge-alignment.md",
+        "references/mlflow-evaluation/references/prompt-optimization.md",
+        "references/mlflow-evaluation/references/scorer-design.md",
+        "references/mlflow-evaluation/references/scorers-constraints.md",
+        "references/mlflow-evaluation/references/scorers.md",
+        "references/mlflow-evaluation/references/throughput-guide.md",
+        "references/mlflow-evaluation/references/troubleshooting.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.2.0"
+    },
+    "databricks-mlflow-tracing": {
+      "description": "MLflow tracing and observability on Databricks.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/LICENSE",
+        "references/mlflow-onboarding/guide.md",
+        "references/mlflow-trace-analysis/agents/openai.yaml",
+        "references/mlflow-trace-analysis/guide.md",
+        "references/mlflow-trace-analysis/references/cross-trace-analysis.md",
+        "references/mlflow-trace-analysis/references/session-analysis.md",
+        "references/mlflow-trace-analysis/references/trace-structure.md",
+        "references/mlflow-trace-analysis/scripts/discover_schema.sh",
+        "references/mlflow-trace-analysis/scripts/inspect_turn.sh",
+        "references/mlflow-trace-instrumentation/guide.md",
+        "references/mlflow-trace-instrumentation/references/advanced-patterns.md",
+        "references/mlflow-trace-instrumentation/references/databricks.md",
+        "references/mlflow-trace-instrumentation/references/distributed-tracing.md",
+        "references/mlflow-trace-instrumentation/references/feedback-collection.md",
+        "references/mlflow-trace-instrumentation/references/production.md",
+        "references/mlflow-trace-instrumentation/references/python.md",
+        "references/mlflow-trace-instrumentation/references/root-span-previews.md",
+        "references/mlflow-trace-instrumentation/references/typescript.md",
+        "references/mlflow-trace-metrics/guide.md",
+        "references/mlflow-trace-metrics/references/api_reference.md",
+        "references/mlflow-trace-metrics/scripts/fetch_metrics.py",
+        "references/mlflow-trace-retrieval/guide.md"
       ],
       "repo_dir": "skills",
       "version": "0.1.0"
@@ -394,6 +432,18 @@
         "examples/4-unity-catalog.py",
         "examples/5-serving-and-vector-search.py",
         "references/doc-index.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
+    },
+    "databricks-sandbox": {
+      "description": "Databricks Sandbox: on-demand serverless compute for running untrusted or agent-generated code and background tasks. Create/start/stop/delete sandboxes, run commands (synchronous execute_command_sy...",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/sdk-reference.md"
       ],
       "repo_dir": "skills",
       "version": "0.1.0"

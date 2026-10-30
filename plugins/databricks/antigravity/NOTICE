@@ -1,3 +1,17 @@
 Copyright (2025) Databricks, Inc.
 
 This Software includes software developed at Databricks (https://www.databricks.com/) and its use is subject to the included LICENSE file.
+
+The files under `skills/databricks-mlflow-evaluation/references/` are derived from
+mlflow/skills (https://github.com/mlflow/skills) at commit 6a505d8, licensed
+under the Apache License 2.0, and have been modified by Databricks. A copy of
+that license is included at `skills/databricks-mlflow-evaluation/references/LICENSE`.
+
+The files under `skills/databricks-mlflow-tracing/references/` are derived from
+mlflow/skills (https://github.com/mlflow/skills) at commit 6a505d8, licensed
+under the Apache License 2.0, and have been modified by Databricks. A copy of
+that license is included at `skills/databricks-mlflow-tracing/references/LICENSE`.
+
+The Apache 2.0 license copies identify MLflow-derived content under the two
+references/ paths listed above. They do not represent or change the license of
+other files in this repository.

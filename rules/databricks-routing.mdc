@@ -26,12 +26,14 @@ that matches the request:
 - Databricks SQL warehouses -> databricks-dbsql
 - Databricks documentation lookup (llms.txt) -> databricks-docs
 - Executing code on Databricks compute -> databricks-execution-compute
+- Databricks Sandbox: serverless sandboxes for untrusted / agent-generated code (Databricks SDK) -> databricks-sandbox
 - Local Python environment matched to Databricks compute (setup-local, Databricks Connect) -> databricks-setup-local
 - Apache Iceberg tables / UniForm / Iceberg REST Catalog -> databricks-iceberg
 - Lakeflow Connect managed ingestion connectors -> databricks-lakeflow-connect
 - Metric Views / governed metrics -> databricks-metric-views
 - ML model training -> databricks-ml-training
-- MLflow agent / GenAI evaluation -> databricks-mlflow-evaluation
+- MLflow agent evaluation / scorers / optimization -> databricks-mlflow-evaluation
+- MLflow tracing / observability / trace analysis / metrics -> databricks-mlflow-tracing
 - Python SDK / Databricks Connect / REST API -> databricks-python-sdk
 - Spark Structured Streaming -> databricks-spark-structured-streaming
 - Synthetic / test data generation (Faker) -> databricks-synthetic-data-gen

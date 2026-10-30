@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze MLflow Traces"
+  short_description: "Analyze traces, agent failures, and chat sessions"
+  default_prompt: "Analyze these MLflow traces and explain the root cause without changing code."

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Sandbox"
+  short_description: "On-demand serverless sandboxes for running untrusted or agent-generated code via the Databricks SDKs (Python, Java, Go, JavaScript)."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-sandbox for on-demand serverless sandboxes for running untrusted or agent-generated code via the Databricks SDK."
