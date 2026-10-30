@@ -280,7 +280,7 @@ For a run that is already going, stream its logs by ID:
 
 ```bash
 databricks air logs <JOB_RUN_ID> -p <profile>
-# --node N (one node), --lines N (last N lines of a finished run),
+# --node N (one node), --tail N (last N lines of a finished run),
 # --minutes N (last N minutes), --download-to DIR (save all nodes' logs)
 ```
 

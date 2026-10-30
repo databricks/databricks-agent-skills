@@ -7,7 +7,9 @@ Each provider gets its own self-contained, fully generated folder:
     ├── codex/     .codex-plugin/plugin.json  + skills/ + hooks/(codex-hooks.json, router+context+auth, _routing_data.json) + assets/
     ├── copilot/   .github/plugin/plugin.json + skills/ + hooks.json + hooks/(context+auth)
     ├── cursor/    .cursor-plugin/plugin.json + skills/ + commands/ + rules/ + hooks/(cursor-hooks.json, context+auth)
-    └── antigravity/ plugin.json + skills/ + rules/ + assets/ + LICENSE + NOTICE
+    └── antigravity/ plugin.json + skills/ + rules/ + assets/
+
+All provider bundles also include the root LICENSE and NOTICE.
 
 Each catalog's scoped source points at one of these subfolders, so an install
 fetches only that provider's payload (and only what it actually uses — e.g. no
@@ -136,12 +138,16 @@ def expected_bundle(repo_root: Path, meta: dict) -> dict:
             for src_abs, rel in _iter_copy(repo_root, "assets"):
                 expected[f"{base}/{rel}"] = src_abs.read_bytes()
 
+        for rel in ("LICENSE", "NOTICE"):
+            expected[f"{base}/{rel}"] = (repo_root / rel).read_bytes()
+
         if provider == "antigravity":
             expected[f"{base}/rules/databricks-routing.md"] = render_routing_rule(
                 meta, provider
             ).encode()
-            for rel in ("LICENSE", "NOTICE", "assets/databricks.png"):
-                expected[f"{base}/{rel}"] = (repo_root / rel).read_bytes()
+            expected[f"{base}/assets/databricks.png"] = (
+                repo_root / "assets/databricks.png"
+            ).read_bytes()
 
     return expected
 

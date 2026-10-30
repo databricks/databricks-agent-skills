@@ -9,17 +9,17 @@ parent: databricks-core
 
 # Databricks Execution & Compute
 
-Run code on Databricks. Three execution modes—choose based on workload. All examples below use the Databricks CLI; see the `databricks-core` skill for install and authentication.
+Run code on Databricks. Four execution modes—choose based on workload. Most examples below use the Databricks CLI (Databricks Sandbox is SDK-driven); see the `databricks-core` skill for install and authentication.
 
 ## Execution Mode Decision Matrix
 
-| Aspect | [Databricks Connect](references/1-databricks-connect.md) ⭐ | [Serverless Job](references/2-serverless-job.md) | [Interactive Cluster](references/3-interactive-cluster.md) |
-|--------|-------------------|----------------|---------------------|
-| **Use for** | Spark code (ETL, data gen) | Heavy processing (ML) | State across tool calls, Scala/R |
-| **Startup** | Instant | ~25-50s cold start | ~5min if stopped |
-| **State** | Within Python process | None | Via context_id |
-| **Languages** | Python (PySpark) | Python, SQL | Python, Scala, SQL, R |
-| **Dependencies** | `withDependencies()` | CLI with environments spec | Install on cluster |
+| Aspect | [Databricks Connect](references/1-databricks-connect.md) ⭐ | [Serverless Job](references/2-serverless-job.md) | [Interactive Cluster](references/3-interactive-cluster.md) | [Databricks Sandbox](../databricks-sandbox/SKILL.md) |
+|--------|-------------------|----------------|---------------------|---------------------|
+| **Use for** | Spark code (ETL, data gen) | Heavy processing (ML) | State across tool calls, Scala/R | Untrusted / agent-generated code, isolated env |
+| **Startup** | Instant | ~25-50s cold start | ~5min if stopped | ~1s (warm start) |
+| **State** | Within Python process | None | Via context_id | Home dir persisted across stop/restart |
+| **Languages** | Python (PySpark) | Python, SQL | Python, Scala, SQL, R | Any (general Linux shell) |
+| **Dependencies** | `withDependencies()` | CLI with environments spec | Install on cluster | Install in sandbox, or `spec.environment.image_uri` (UC container artifact) for a custom image |
 
 ### Decision Flow
 
@@ -34,6 +34,7 @@ Spark-based code? → Databricks Connect (fastest)
 Heavy/long-running (ML)? → Serverless Job (independent)
 Need state across calls? → Interactive Cluster (list and ask which one to use)
 Scala/R? → Interactive Cluster (list and ask which one to use)
+Untrusted / agent-generated code, or need an isolated Linux env? → Databricks Sandbox
 ```
 
 
@@ -97,6 +98,10 @@ Always use `dbutils.notebook.exit(<string>)` in the notebook — `print()` is no
 - the user explicitly asks for it.
 
 Interactive clusters are **slow to start (3-8 min)** and cost money while running. Don't start one implicitly.
+
+### Databricks Sandbox → [skill](../databricks-sandbox/SKILL.md)
+
+Isolated serverless environment for running untrusted or agent-generated code, driven through the Databricks SDK. Prefer it for agent tool-execution and ephemeral build/test environments rather than Spark workloads. See the [`databricks-sandbox`](../databricks-sandbox/SKILL.md) skill for lifecycle, command execution, and file operations.
 
 ## CLI Command Map
 
@@ -171,3 +176,4 @@ databricks warehouses delete <WAREHOUSE_ID>
 - **[databricks-synthetic-data-gen](../databricks-synthetic-data-gen/SKILL.md)** — Data generation using Spark + Faker
 - **databricks-jobs** — Production job orchestration
 - **[databricks-dbsql](../databricks-dbsql/SKILL.md)** — SQL warehouse and AI functions
+- **[databricks-sandbox](../databricks-sandbox/SKILL.md)** — Isolated serverless sandboxes for untrusted / agent-generated code

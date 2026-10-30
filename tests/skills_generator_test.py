@@ -536,6 +536,16 @@ class BundleTest(unittest.TestCase):
             root = self._seed(Path(d))
             self.assertEqual(skills.check_generated_bundle(root, self.meta), [])
 
+    def test_every_bundle_includes_root_license_and_notice(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(Path(d))
+            for provider in ("claude", "codex", "copilot", "cursor", "antigravity"):
+                for name in ("LICENSE", "NOTICE"):
+                    self.assertEqual(
+                        (root / "plugins" / "databricks" / provider / name).read_bytes(),
+                        (root / name).read_bytes(),
+                    )
+
     def test_copied_file_drift_detected(self):
         # Hand-editing a copied file inside a provider folder must fail the check.
         with tempfile.TemporaryDirectory() as d:

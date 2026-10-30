@@ -56,7 +56,7 @@ provider uses: its `plugin.json`, a copy of `skills/`, the hook wiring it needs
 (plus the referenced `*.py` scripts and, where the router is wired, `_routing_data.json`),
 and — only where applicable — `commands/` (Claude, Cursor), `rules/` (Cursor and
 Antigravity), and `assets/` (Codex and Antigravity logos). Antigravity uses a root
-`plugin.json`, ships `LICENSE` and `NOTICE`, and has no hooks. It is distributed
+`plugin.json` and has no hooks. Every provider bundle ships `LICENSE` and `NOTICE`. Antigravity is distributed
 as a generated directory for local testing; see [docs/antigravity.md](./docs/antigravity.md).
 At the repo root, four `marketplace.json`
 catalogs (`.claude-plugin/`, `.github/plugin/`, `.agents/plugins/`,
