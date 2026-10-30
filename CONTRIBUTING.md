@@ -100,7 +100,8 @@ scoped source at *its own* provider subfolder (`ref: main`):
   - `plugins/databricks/codex/`    — `.codex-plugin/plugin.json` + `skills/` + `hooks/` + `assets/`
   - `plugins/databricks/copilot/`  — `.github/plugin/plugin.json` + `skills/` + `hooks/`
   - `plugins/databricks/cursor/`   — `.cursor-plugin/plugin.json` + `skills/` + `commands/` + `rules/` + `hooks/`
-  - `plugins/databricks/antigravity/` — root `plugin.json` + `skills/` + native `rules/` + `assets/` + `LICENSE` + `NOTICE`
+  - `plugins/databricks/antigravity/` — root `plugin.json` + `skills/` + native `rules/` + `assets/`
+- Every provider bundle also includes the root `LICENSE` and `NOTICE`.
 - root catalogs: `.claude-plugin/marketplace.json`, `.github/plugin/marketplace.json`,
   `.agents/plugins/marketplace.json`, `.cursor-plugin/marketplace.json`
 

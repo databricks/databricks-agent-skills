@@ -102,6 +102,11 @@ exposes experimental skills.
 
 ## Available Skills
 
+The MLflow workflows are adapted from
+[`mlflow/skills@6a505d8`](https://github.com/mlflow/skills/tree/6a505d8f30b7fbf93533cdf4e7d88fc30d66ba8b). Use
+`databricks-mlflow-evaluation` for evaluation workflows and `databricks-mlflow-tracing`
+for tracing and observability workflows.
+
 Stable skills shipped from [`skills/`](./skills/):
 
 - **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
@@ -126,8 +131,10 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-lakeflow-connect** — Lakeflow Connect managed ingestion connectors.
 - **databricks-metric-views** — Unity Catalog Metric Views for governed metrics.
 - **databricks-ml-training** — ML model training on Databricks.
-- **databricks-mlflow-evaluation** — End-to-end agent / GenAI evaluation with MLflow.
+- **databricks-mlflow-evaluation** — MLflow agent evaluation, scorers, and quality improvement.
+- **databricks-mlflow-tracing** — MLflow tracing, trace analysis, and observability.
 - **databricks-python-sdk** — Python SDK, Databricks Connect, CLI, REST API.
+- **databricks-sandbox** — Databricks Sandbox: serverless sandboxes for untrusted/agent code; lifecycle, command execution, and files via the Databricks SDK (Python, Java, Go, JavaScript).
 - **databricks-spark-structured-streaming** — Spark Structured Streaming patterns.
 - **databricks-synthetic-data-gen** — Realistic synthetic / test data with Faker.
 - **databricks-unity-catalog** — Unity Catalog system tables for lineage, audit, and billing.
