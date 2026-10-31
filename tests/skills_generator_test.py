@@ -506,6 +506,58 @@ class SkillFrontmatterTest(unittest.TestCase):
             self.assertEqual(skills.check_skill_frontmatter(root), [])
 
 
+class SkillFileReferenceTest(unittest.TestCase):
+    def _make_skill(self, root: Path, body: str, reference: str = "") -> None:
+        skill_dir = root / "skills" / "databricks-demo"
+        (skill_dir / "references").mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: databricks-demo\ndescription: Demo.\n---\n{body}\n"
+        )
+        (skill_dir / "references" / "cheatsheet.md").write_text(reference)
+        (skill_dir / "references" / "patterns.md").write_text("")
+
+    def test_repo_skills_are_clean(self):
+        self.assertEqual(skills.check_skill_file_references(_REPO), [])
+
+    def test_bare_name_of_own_file_flagged(self):
+        # The databricks-app-design failure: agents resolved the bare name
+        # into the wrong skill.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "See `cheatsheet.md`.")
+            errors = skills.check_skill_file_references(root)
+            self.assertEqual(len(errors), 1, errors)
+            self.assertIn("'references/cheatsheet.md'", errors[0])
+
+    def test_root_and_file_relative_paths_ok(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root,
+                "See `references/cheatsheet.md` and [patterns](references/patterns.md#top).",
+                reference="Pairs with `patterns.md` and [patterns](patterns.md).",
+            )
+            self.assertEqual(skills.check_skill_file_references(root), [])
+
+    def test_broken_link_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "", reference="See [x](references/patterns.md).")
+            errors = skills.check_skill_file_references(root)
+            self.assertEqual(len(errors), 1, errors)
+            self.assertIn("link target 'references/patterns.md'", errors[0])
+
+    def test_unrelated_names_urls_and_fences_ignored(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(
+                root,
+                "Edit `server/agent.md`; see [docs](https://example.com/cheatsheet.md).\n"
+                "```\ncat cheatsheet.md `cheatsheet.md`\n```",
+            )
+            self.assertEqual(skills.check_skill_file_references(root), [])
+
+
 class BundleTest(unittest.TestCase):
     """The per-provider bundles under plugins/databricks/<provider>/."""
 

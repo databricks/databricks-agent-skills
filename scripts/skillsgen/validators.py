@@ -289,6 +289,61 @@ def check_skill_frontmatter(repo_root: Path) -> list[str]:
     return errors
 
 
+_MD_LINK_RE = re.compile(r"\]\(([^)\s]+?\.md)(?:#[^)]*)?\)")
+_MD_CODE_REF_RE = re.compile(r"`([^`\s]+?\.md)`")
+
+
+def check_skill_file_references(repo_root: Path) -> list[str]:
+    """Flag `.md` references inside a skill that point at no file.
+
+    Agents load skill files by path, so a reference they cannot turn into a
+    real path makes them guess, often into the wrong skill (a bare
+    `appkit-cheatsheet.md` in databricks-app-design was read as
+    databricks-apps/references/appkit/appkit-cheatsheet.md). Two shapes:
+
+    - a markdown link must resolve relative to the file containing it;
+    - a backticked name of one of the skill's own files must be a path that
+      resolves from the skill root or from the containing file. Backticked
+      names the skill does not ship (a user's `agent.md`, AppKit's
+      `./docs/...`) are not skill references and are skipped.
+
+    Fenced code blocks are skipped. Returns a list of error strings.
+    """
+    errors: list[str] = []
+    for skill_dir in iter_all_skill_dirs(repo_root):
+        md_files = sorted(skill_dir.rglob("*.md"))
+        own_paths_by_name: dict[str, list[str]] = {}
+        for md in md_files:
+            own_paths_by_name.setdefault(md.name, []).append(
+                md.relative_to(skill_dir).as_posix()
+            )
+        for md in md_files:
+            rel = md.relative_to(repo_root)
+            in_fence = False
+            for lineno, line in enumerate(md.read_text(encoding="utf-8").splitlines(), 1):
+                if line.lstrip().startswith("```"):
+                    in_fence = not in_fence
+                    continue
+                if in_fence:
+                    continue
+                for target in _MD_LINK_RE.findall(line):
+                    if "://" in target:
+                        continue
+                    if not (md.parent / target).resolve().is_file():
+                        errors.append(f"{rel}:{lineno}: link target '{target}' does not exist.")
+                for ref in _MD_CODE_REF_RE.findall(line):
+                    candidates = own_paths_by_name.get(Path(ref).name)
+                    if not candidates:
+                        continue
+                    if (skill_dir / ref).resolve().is_file() or (md.parent / ref).resolve().is_file():
+                        continue
+                    errors.append(
+                        f"{rel}:{lineno}: '{ref}' is not a path to a file in this skill; "
+                        f"use {' or '.join(repr(c) for c in candidates)}."
+                    )
+    return errors
+
+
 # Any hooks/*.py mentioned in a hooks wiring file, regardless of how the
 # platform prefixes the path (${CLAUDE_PLUGIN_ROOT}/, plugin-root-relative, …).
 _HOOK_PY_RE = re.compile(r"hooks/[\w.-]+\.py")

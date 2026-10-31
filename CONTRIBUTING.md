@@ -38,6 +38,8 @@ Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/
 
 **`SKILL.md`** is what every coding agent reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`.
 
+**Referencing other files**: agents load skill files by path, so write a real path, never a bare file name. Markdown links resolve relative to the file they are in (`[x](references/x.md)` from `SKILL.md`, `[y](y.md)` between references). Backticked mentions of the skill's own files use the path from the skill root (`` `references/x.md` ``). `validate` rejects references that resolve to no file.
+
 **`agents/openai.yaml`** is Codex CLI's plugin-marketplace metadata format: `display_name`, `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt`. It controls how the skill renders in Codex's in-app marketplace. Other agents ignore this file. The repo ships it for every skill so the manifest is a single feed for all agents.
 
 **`assets/databricks.{svg,png}`** are the icons referenced by `agents/openai.yaml`'s `icon_small` / `icon_large`. Identical across all skills (the Databricks logo); `scripts/skills.py` copies them in from the repo-root `/assets/`.

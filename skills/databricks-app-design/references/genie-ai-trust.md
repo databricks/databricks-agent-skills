@@ -26,11 +26,11 @@ useEffect(() => { fetch("/api/whoami").then(r => (r.ok ? r.json() : null)).then(
 ```
 **Whether queries actually run as that user (OBO) depends on config:** a default `genie()` runs as the
 app's *service principal*. To run on-behalf-of the user, declare `user_api_scopes: [dashboards.genie]`
-in `databricks.yml` (see the parent `databricks-apps` `genie.md`). Only claim OBO in the UI when that's
+in `databricks.yml` (see the parent skill's [genie.md](../../databricks-apps/references/appkit/genie.md)). Only claim OBO in the UI when that's
 wired — otherwise disclose service-principal execution (see #5).
 
 Register the plugin with `genie()` (no args); it reads `DATABRICKS_GENIE_SPACE_ID` from the env, per the
-parent `genie.md`. (Multi-space config: `npx @databricks/appkit docs ./docs/plugins/genie.md`.)
+parent skill's [genie.md](../../databricks-apps/references/appkit/genie.md). (Multi-space config: `npx @databricks/appkit docs ./docs/plugins/genie.md`.)
 
 ## 2. Show the generated SQL (never hide how the answer was produced)
 `useGenieChat` messages carry attachments with the generated query (exact shape is versioned — see

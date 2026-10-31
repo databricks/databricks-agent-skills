@@ -31,6 +31,7 @@ from skillsgen.validators import (
     check_cursor_plugin,
     check_plugin_components,
     check_routing_tables,
+    check_skill_file_references,
     check_skill_frontmatter,
 )
 
@@ -122,6 +123,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in frontmatter_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            reference_errors = check_skill_file_references(repo_root)
+            if reference_errors:
+                print(
+                    "ERROR: skill files reference paths that do not exist:",
+                    file=sys.stderr,
+                )
+                for err in reference_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 
