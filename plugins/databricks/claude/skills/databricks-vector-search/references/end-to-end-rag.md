@@ -1,4 +1,4 @@
-# End-to-End RAG with Vector Search
+# End-to-End RAG with AI Search
 
 Build a complete Retrieval-Augmented Generation pipeline: prepare documents, create a vector index, query it, and wire it into an agent.
 
@@ -48,7 +48,7 @@ databricks experimental aitools tools query --warehouse WAREHOUSE_ID "
 "
 ```
 
-## Step 2: Create Vector Search Endpoint
+## Step 2: Create AI Search Endpoint
 
 ```python
 manage_vs_endpoint(
@@ -127,7 +127,7 @@ query_vs_index(
     columns=["doc_id", "title", "content"],
     query_text="How do I govern my data?",
     num_results=3,
-    filters="category = 'governance'"
+    filter_string="category = 'governance'"
 )
 
 # Standard endpoint (if you created a Standard endpoint instead): JSON filters_json
@@ -163,6 +163,7 @@ Use `VectorSearchRetrieverTool` to wire the index into an agent deployed on Mode
 ```python
 from databricks.agents import ChatAgent
 from databricks.agents.tools import VectorSearchRetrieverTool
+from databricks.ai_search.client import AISearchClient
 from databricks.sdk import WorkspaceClient
 
 # Define the retriever tool
@@ -175,12 +176,18 @@ retriever_tool = VectorSearchRetrieverTool(
 class RAGAgent(ChatAgent):
     def __init__(self):
         self.w = WorkspaceClient()
+        # Built once and reused, as in the SDK docs: get_index makes a
+        # control-plane call, so it should not run on every turn.
+        self.index = AISearchClient().get_index(
+            endpoint_name="my-rag-endpoint",
+            index_name="catalog.schema.knowledge_base_index",
+        )
 
     def predict(self, messages, context=None):
         query = messages[-1].content
 
-        results = self.w.vector_search_indexes.query_index(
-            index_name="catalog.schema.knowledge_base_index",
+        # similarity_search returns a dict: results["result"]["data_array"]
+        results = self.index.similarity_search(
             columns=["title", "content"],
             query_text=query,
             num_results=3,
@@ -188,7 +195,7 @@ class RAGAgent(ChatAgent):
 
         context_docs = "\n\n".join(
             f"**{row[0]}**: {row[1]}"
-            for row in results.result.data_array
+            for row in results["result"]["data_array"]
         )
 
         response = self.w.serving_endpoints.query(
@@ -200,6 +207,18 @@ class RAGAgent(ChatAgent):
         )
 
         return {"content": response.choices[0].message.content}
+```
+
+Log it with [Models from Code](https://mlflow.org/docs/latest/ml/model/models-from-code/),
+which Databricks recommends for agents — pass the path to this file rather than an agent
+instance, and pin the client so the serving container has it:
+
+```python
+mlflow.pyfunc.log_model(
+    python_model="/Workspace/Users/first.last/agent.py",
+    pip_requirements=["databricks-ai-search>=0.73"],
+    resources=[...],
+)
 ```
 
 ---
@@ -238,4 +257,4 @@ Then sync — the index automatically handles deletions via Delta change data fe
 | **"Column not found in index"** | Column must be in `columns_to_sync`. Recreate index with the column included |
 | **Embeddings not computed** | Ensure `embedding_model_endpoint_name` is a valid serving endpoint |
 | **Stale results after table update** | For TRIGGERED pipelines, you must call `manage_vs_index(action="sync")` manually |
-| **Filter not working** | Standard endpoints use dict-format filters (`filters_json`), Storage-Optimized use SQL-like string filters (`filters`) |
+| **Filter not working** | Standard endpoints use dict-format filters (`filters_json`), Storage-Optimized use SQL-like string filters (`filter_string`) |

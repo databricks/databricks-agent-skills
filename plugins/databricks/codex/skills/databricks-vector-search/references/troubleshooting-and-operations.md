@@ -1,17 +1,17 @@
-# Vector Search Troubleshooting & Operations
+# AI Search Troubleshooting & Operations
 
-Operational guidance for monitoring, cost optimization, capacity planning, and migration of Databricks Vector Search resources.
+Operational guidance for monitoring, cost optimization, capacity planning, and migration of Databricks AI Search resources.
 
 ## Monitoring Endpoint Status
 
-Use `databricks vector-search-endpoints get-endpoint ENDPOINT_NAME` (CLI) or `w.vector_search_endpoints.get_endpoint()` (SDK) to check endpoint health.
+Use `databricks vector-search-endpoints get-endpoint ENDPOINT_NAME` (CLI) or `client.get_endpoint()` (SDK) to check endpoint health.
 
 ### Endpoint fields
 
 | Field | Description |
 |-------|-------------|
-| `state` | `ONLINE`, `PROVISIONING`, `OFFLINE`, `YELLOW_STATE`, `RED_STATE`, `DELETED` |
-| `message` | Human-readable status or error message |
+| `endpoint_status.state` | `ONLINE`, `PROVISIONING`, `OFFLINE`, `YELLOW_STATE`, `RED_STATE`, `DELETED` |
+| `endpoint_status.message` | Human-readable status or error message |
 | `endpoint_type` | `STANDARD` or `STORAGE_OPTIMIZED` |
 | `num_indexes` | Number of indexes hosted on this endpoint |
 | `creation_timestamp` | When the endpoint was created |
@@ -20,9 +20,13 @@ Use `databricks vector-search-endpoints get-endpoint ENDPOINT_NAME` (CLI) or `w.
 ### Example
 
 ```python
-endpoint = w.vector_search_endpoints.get_endpoint(endpoint_name="my-endpoint")
-print(f"State: {endpoint.endpoint_status.state.value}")
-print(f"Indexes: {endpoint.num_indexes}")
+from databricks.ai_search.client import AISearchClient
+
+client = AISearchClient()
+endpoint = client.get_endpoint(name="my-endpoint")
+
+print(endpoint["endpoint_status"]["state"])   # ONLINE, PROVISIONING, ...
+print(endpoint["endpoint_type"], endpoint["num_indexes"])
 ```
 
 **What to do per state:**
@@ -34,7 +38,7 @@ print(f"Indexes: {endpoint.num_indexes}")
 
 ## Monitoring Index Status
 
-Use `databricks vector-search-indexes get-index INDEX_NAME` (CLI) or `w.vector_search_indexes.get_index()` (SDK) to check index health.
+Use `databricks vector-search-indexes get-index INDEX_NAME` (CLI) or `client.get_index()` (SDK) to check index health.
 
 ### Index fields
 
@@ -50,11 +54,17 @@ Use `databricks vector-search-indexes get-index INDEX_NAME` (CLI) or `w.vector_s
 ### Example
 
 ```python
-index = w.vector_search_indexes.get_index(index_name="catalog.schema.my_index")
-if index.status.ready:
-    print("Index is ONLINE")
-else:
-    print(f"Index is NOT_READY: {index.status.message}")
+index = client.get_index(
+    endpoint_name="my-endpoint",
+    index_name="catalog.schema.my_index"
+)
+
+status = index.describe()["status"]
+print(status.get("ready"), status.get("indexed_row_count"))
+print(status.get("message"))
+
+# Or block until the index is serving:
+# index.wait_until_ready()
 ```
 
 ## Pipeline Type Trade-offs
@@ -63,18 +73,20 @@ Delta Sync indexes use a DLT pipeline to sync data from the source Delta table. 
 
 | Pipeline Type | Behavior | Cost | Best for |
 |---------------|----------|------|----------|
-| **TRIGGERED** | Manual sync via `manage_vs_index(action="sync")` | Lower — runs only when triggered | Batch updates, periodic refreshes, cost-sensitive workloads |
+| **TRIGGERED** | Manual sync via `index.sync()` | Lower — runs only when triggered | Batch updates, periodic refreshes, cost-sensitive workloads |
 | **CONTINUOUS** | Auto-syncs on source table changes | Higher — always running | Real-time freshness, applications needing up-to-date results |
 
 ### Triggering a sync
 
 ```python
-# For TRIGGERED pipelines only
-w.vector_search_indexes.sync_index(index_name="catalog.schema.my_index")
-# Check sync progress with get_index()
+index = client.get_index(
+    endpoint_name="my-vs-endpoint",
+    index_name="catalog.schema.my_index"
+)
+index.sync()
 ```
 
-**Tip:** CONTINUOUS pipelines cannot be synced manually — they sync automatically. Calling `sync_index()` on a CONTINUOUS index will raise an error.
+**Tip:** CONTINUOUS pipelines cannot be synced manually — they sync automatically. Calling `index.sync()` on a CONTINUOUS index will raise an error.
 
 ## Cost Optimization
 
@@ -95,15 +107,16 @@ w.vector_search_indexes.sync_index(index_name="catalog.schema.my_index")
 - Choose TRIGGERED pipelines for batch workloads to avoid continuous compute costs.
 
 ```python
-# Only sync the columns you actually need in query results
-delta_sync_index_spec={
-    "source_table": "catalog.schema.documents",
-    "embedding_source_columns": [
-        {"name": "content", "embedding_model_endpoint_name": "databricks-gte-large-en"}
-    ],
-    "pipeline_type": "TRIGGERED",
-    "columns_to_sync": ["id", "content", "title"]  # Exclude large unused columns
-}
+index = client.create_delta_sync_index(
+    endpoint_name="my-vs-endpoint",
+    source_table_name="catalog.schema.documents",
+    index_name="catalog.schema.my_index",
+    pipeline_type="TRIGGERED",
+    primary_key="id",
+    embedding_source_column="content",
+    embedding_model_endpoint_name="databricks-gte-large-en",
+    columns_to_sync=["id", "content", "title"]  # Exclude large unused columns
+)
 ```
 
 ## Capacity Planning
@@ -131,34 +144,35 @@ Endpoints are **immutable after creation** — you cannot change the type (Stand
 5. **Delete old indexes**, then delete the old endpoint
 
 ```python
+from databricks.ai_search.client import AISearchClient
+
+client = AISearchClient()
+
 # Step 1: Create new endpoint
-w.vector_search_endpoints.create_endpoint(
+client.create_endpoint(
     name="my-endpoint-storage-optimized",
     endpoint_type="STORAGE_OPTIMIZED"
 )
 
 # Step 2: Recreate index on new endpoint (same source table)
-w.vector_search_indexes.create_index(
-    name="catalog.schema.my_index_v2",
+index_v2 = client.create_delta_sync_index(
     endpoint_name="my-endpoint-storage-optimized",
+    source_table_name="catalog.schema.documents",
+    index_name="catalog.schema.my_index_v2",
+    pipeline_type="TRIGGERED",
     primary_key="id",
-    index_type="DELTA_SYNC",
-    delta_sync_index_spec={
-        "source_table": "catalog.schema.documents",
-        "embedding_source_columns": [
-            {"name": "content", "embedding_model_endpoint_name": "databricks-gte-large-en"}
-        ],
-        "pipeline_type": "TRIGGERED"
-    }
+    embedding_source_column="content",
+    embedding_model_endpoint_name="databricks-gte-large-en"
 )
 
-# Step 3: Trigger sync and wait for ONLINE state
-w.vector_search_indexes.sync_index(index_name="catalog.schema.my_index_v2")
+# Step 3: Trigger sync and wait until the index is serving before repointing
+index_v2.sync()
+index_v2.wait_until_ready(wait_for_updates=True)
 
 # Step 4: Update your application to use "catalog.schema.my_index_v2"
 # Step 5: Clean up old resources
-w.vector_search_indexes.delete_index(index_name="catalog.schema.my_index")
-w.vector_search_endpoints.delete_endpoint(endpoint_name="my-endpoint")
+client.delete_index(index_name="catalog.schema.my_index")
+client.delete_endpoint(name="my-endpoint")
 ```
 
 ## Expanded Troubleshooting
@@ -169,9 +183,10 @@ w.vector_search_endpoints.delete_endpoint(endpoint_name="my-endpoint")
 | **Embedding dimension mismatch** | Query vector dimensions ≠ index dimensions | Ensure your embedding model output matches the `embedding_dimension` in the index spec. |
 | **Permission errors on create** | Missing Unity Catalog privileges | User needs `CREATE TABLE` on the schema and `USE CATALOG`/`USE SCHEMA` privileges. |
 | **Index returns NOT_FOUND** | Wrong name format or index deleted | Index names must be fully qualified: `catalog.schema.index_name`. |
-| **Sync not running (TRIGGERED)** | Sync not triggered after source update | Call `manage_vs_index(action="sync")` or `w.vector_search_indexes.sync_index()` after updating source data. |
+| **Sync not running (TRIGGERED)** | Sync not triggered after source update | Call `index.sync()` after updating source data. |
 | **Endpoint NOT_FOUND** | Endpoint name typo or deleted | List all endpoints with `manage_vs_endpoint(action="list")` to verify available endpoints. |
 | **Query returns empty results** | Index not yet synced, or filters too restrictive | Check index state is ONLINE. Verify `columns_to_sync` includes queried columns. Test without filters first. |
-| **filters_json has no effect** | Using wrong filter syntax for endpoint type | Standard endpoints use dict-format filters (`filters_json` in SDK, `filters` as dict in `databricks-vectorsearch`). Storage-Optimized endpoints use SQL-like string filters (`filters` as str in `databricks-vectorsearch`). |
+| **Filters not working** | Wrong filter syntax for endpoint type | Standard endpoints use a dict: `filters={"col": "val"}`. Storage-Optimized use a SQL string: `filters="col = 'val'"`. |
 | **Quota or capacity errors** | Too many indexes or vectors | Check `num_indexes` on endpoint. Consider Storage-Optimized for higher capacity. |
 | **Upsert fails on Delta Sync** | Cannot upsert to Delta Sync indexes | Upsert/delete operations only work on Direct Access indexes. Delta Sync indexes update via their source table. |
+| **Rate limited (429 errors)** | Endpoint over capacity | Increase endpoint capacity. Implement client-side rate limiting with exponential backoff. |

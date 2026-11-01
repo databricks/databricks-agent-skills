@@ -14,7 +14,7 @@ that matches the request:
 - Asset Bundles / DABs / databricks.yml -> databricks-dabs
 - Model Serving / endpoints -> databricks-model-serving
 - Lakebase / Postgres -> databricks-lakebase
-- Vector Search / RAG -> databricks-vector-search
+- AI Search (formerly Vector Search) / RAG -> databricks-vector-search
 - Compute for new jobs and pipelines / serverless vs classic / STANDARD vs PERFORMANCE_OPTIMIZED -> databricks-serverless
 - Classic-to-serverless migration -> databricks-serverless-migration
 - Data discovery / finding & exploring data / natural-language data Q&A / SQL generation (Genie) -> databricks-data-discovery

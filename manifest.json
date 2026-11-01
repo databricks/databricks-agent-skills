@@ -585,7 +585,7 @@
       "version": "0.1.0"
     },
     "databricks-vector-search": {
-      "description": "Databricks Vector Search endpoints and indexes for RAG and semantic search; covers index types, search modes, end-to-end RAG patterns",
+      "description": "Databricks AI Search (formerly Vector Search) endpoints and indexes for RAG and semantic search; covers index types, search modes, filtering, end-to-end RAG patterns",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -597,7 +597,7 @@
         "references/troubleshooting-and-operations.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "databricks-zerobus-ingest": {
       "description": "Push records from apps, services, devices, or scripts directly into Unity Catalog Delta tables with Zerobus Ingest: SDKs (Python, TypeScript, Go, Java, Rust, C++, .NET), REST, OTLP, MQTT, Arrow Fli...",
