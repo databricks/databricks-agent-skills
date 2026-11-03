@@ -127,6 +127,34 @@ def _strip_non_databricks_urls(text):
     return _URL_RE.sub(_keep_or_blank, text)
 
 
+# Other vendors' search products contain the ambiguous "ai search" / "vector
+# search" terms. Blanking them before ambiguous matching, rather than adding a
+# suppress term, keeps "evaluate my azure ai search retriever with mlflow"
+# routing via mlflow. Words may be joined by whitespace or a hyphen, matching
+# the ambiguous term. Longer names come first within each vendor; the separator
+# can't match the letters on either side, so matching stays linear.
+_VENDOR_SEARCH_NAMES = (
+    "azure ai search",
+    "vertex ai vector search",
+    "vertex ai search",
+    "bing ai search",
+    "bing search",
+    "perplexity ai search",
+    "perplexity ai",
+    "perplexity search",
+)
+_VENDOR_SEARCH_RE = re.compile(
+    r"\b(?:"
+    + "|".join(name.replace(" ", r"(?:\s+|-)") for name in _VENDOR_SEARCH_NAMES)
+    + r")\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_vendor_search_names(text):
+    return _VENDOR_SEARCH_RE.sub(" ", text)
+
+
 _SESSION_ID_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
 
 
@@ -147,6 +175,7 @@ def check_prompt(prompt):
         return ROUTING_INSTRUCTION
     if any(p.search(prompt) for p in _SUPPRESS):
         return None
+    prompt = _strip_vendor_search_names(prompt)
     if any(p.search(prompt) for p in _AMBIGUOUS):
         return ROUTING_INSTRUCTION
     return None

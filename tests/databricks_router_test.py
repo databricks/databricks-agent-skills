@@ -62,11 +62,14 @@ class CheckPromptTest(unittest.TestCase):
         self.assertSkips("set up a sql warehouse in snowflake")
         # One-word "autoloader" (PHP/composer style) must not match.
         self.assertSkips("fix the php autoloader config")
+        # "ai search" inside another word ("openai search") must not match.
+        self.assertSkips("wire up the openai search tool")
 
     def test_ambiguous_routes_without_alternative_platform(self):
         for p in [
             "set up a model serving endpoint",
             "create a vector search index for RAG",
+            "create an AI Search index for RAG",
             "build a medallion architecture for my tables",
             "ask Genie about revenue",
         ]:
@@ -75,6 +78,56 @@ class CheckPromptTest(unittest.TestCase):
     def test_ambiguous_suppressed_by_alternative_platform(self):
         self.assertSkips("set up a model serving endpoint in sagemaker for redshift data")
         self.assertSkips("use bigquery for vector search")
+        self.assertSkips("use bigquery for ai search")
+        # Not suppressing "azure openai": it is also a Databricks model serving external-model provider.
+        self.assertRoutes("set up a model serving endpoint for an azure openai external model")
+
+    def test_vendor_search_names_only_hide_their_own_terms(self):
+        # Other vendors' search product names are blanked before ambiguous matching, so a vendor name alone
+        # doesn't route but any other ambiguous term in the prompt still does.
+        for p in [
+            "set up Azure AI Search for my docs",
+            "index my docs with Vertex AI Search",
+            "set up Vertex AI Vector Search for my embeddings",
+            "how does bing ai search work",
+            "compare perplexity ai search with google",
+            "bing search api",
+            "perplexity ai",
+            "set up Azure AI Search\nand index my docs with it",
+            "set up Azure  AI  Search for my docs",
+            "configure azure-ai-search index",
+            "configure azure ai-search",
+            "vertex ai vector-search",
+            "vertex-ai-vector-search",
+            "terraform for azurerm azure-ai-search resource",
+        ]:
+            self.assertSkips(p)
+        for p in [
+            "use mlflow to evaluate my azure ai search retriever",
+            "write a pyspark job that pushes delta table embeddings into azure ai search",
+            "set up Azure AI Search and a model serving endpoint",
+            "migrate azure ai search to vector-search",
+            "migrate azure-ai-search to vector-search",
+            "migrate azure ai search to vector search index",
+            "move from vertex ai vector search to databricks vector search",
+            "migrate pinecone/azure ai search index into an ai search index",
+            "port my vertex ai search index to vector search",
+            "compare perplexity ai with vector search",
+            "migrate azure  ai search to a vector  search index",
+            # Perplexity is also an eval metric and Bing a grounding source; only their search product names are blanked.
+            "log perplexity for my eval run in mlflow",
+            "compute perplexity on eval set with pyspark",
+            "vector search index with bing grounding",
+            # STRONG "databricks" routes regardless of the vendor name.
+            "migrate from Azure AI Search to Databricks",
+            "compare Bing AI search with Databricks AI Search",
+        ]:
+            self.assertRoutes(p)
+
+    def test_hyphenated_search_term_skips_paths_and_identifiers(self):
+        self.assertRoutes("create a vector-search index")
+        self.assertSkips("fix the bug in src/components/vector-search/List.tsx")
+        self.assertSkips("rename the ai-search-service deployment")
 
     def test_local_dev_skips(self):
         for p in [

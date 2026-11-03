@@ -122,6 +122,11 @@ Precision is tuned to avoid over-routing:
   appearing only as a GitHub/GitLab org or repo name
   (`github.com/databricks/...`) does not route. URLs whose hostname contains
   `databricks` (workspace and docs hosts) still do.
+- **Other vendors' search products** (Azure AI Search, Vertex AI (Vector)
+  Search, Bing (AI) search, Perplexity) are blanked before AMBIGUOUS matching,
+  so a vendor name alone doesn't route, but another ambiguous term in the same
+  prompt (`mlflow`, `model serving`, `vector search`) still does. The vendor
+  list lives in the router code, not in `plugin.meta.json`.
 
 These three lists, plus the injected instruction, live in
 `metaplugin/plugin.meta.json`'s `routing` block and are generated into
