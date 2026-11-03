@@ -150,7 +150,7 @@
       "\\bdelta\\s+(lake|tables?)\\b",
       "\\bdeclarative\\s+pipelines?\\b",
       "\\bmodel\\s+serving\\b",
-      "\\b(?:ai|vector)\\s+search\\b",
+      "\\b(?:ai|vector)\\s+search\\b|(?<![\\w/.-])(?:ai|vector)-search(?![\\w/-])",
       "\\bmlflow\\b",
       "\\bpyspark\\b",
       "\\bspark\\s*\\.\\s*(sql|read|write|table)\\b",
@@ -164,6 +164,7 @@
       "\\bwhere\\s+does\\s+.{1,40}\\s+(data|table|live)\\b",
       "\\binformation_schema\\b"
     ],
+    "//suppress": "Each pattern skips routing unless a strong term matched. Other vendors' search products (Azure AI Search, Vertex AI (Vector) Search, Bing (AI) search, Perplexity) are not suppress terms: the router blanks them before ambiguous matching (hooks/databricks-router.py _VENDOR_SEARCH_RE), so \"evaluate my azure ai search retriever with mlflow\" still routes via mlflow.",
     "suppress": [
       "\\bbigquery\\b",
       "\\bredshift\\b",
@@ -217,7 +218,7 @@
     "instruction_preamble": "[DATABRICKS] This request is Databricks-related. Handle it through the Databricks skills rather than ad hoc commands. Use the Skill tool to load `databricks-core` first (the parent skill: CLI, auth, profile selection, data exploration), then load the product skill that matches the request:",
     "instruction_closing": "Then follow the skill's guidance (it drives the `databricks` CLI). If no product skill fits, databricks-core alone is enough.",
     "reminder": "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks skills (databricks-core plus the matching product skill); load any that are not already loaded.",
-    "rule_description": "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.",
+    "rule_description": "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, AI Search (formerly Vector Search)/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.",
     "rule_preamble": [
       "This request is Databricks-related. Handle it through the Databricks skills",
       "rather than ad hoc commands. Load the `databricks-core` skill first (the parent:",
