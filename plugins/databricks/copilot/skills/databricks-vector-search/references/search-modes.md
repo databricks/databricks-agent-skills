@@ -1,6 +1,6 @@
 # AI Search Modes
 
-Databricks AI Search supports three search modes: **ANN** (semantic, default), **hybrid** (semantic + keyword), and **FULL_TEXT** (keyword only, beta). ANN and hybrid work with Delta Sync and Direct Access indexes.
+Databricks AI Search supports three search modes: **ANN** (semantic, default), **hybrid** (semantic + keyword), and **FULL_TEXT** (keyword only, beta). ANN and hybrid work with Delta Sync and Direct Access indexes. FULL_TEXT works on Standard and Storage-Optimized endpoints.
 
 `query_type` is case-insensitive — the backend upper-cases it before matching. This skill
 uses `"ann"` (default), `"hybrid"` and `"FULL_TEXT"` to match the docs.
@@ -34,7 +34,7 @@ results = index.similarity_search(
 
 ## Hybrid Search
 
-Hybrid search combines vector similarity (ANN) with BM25 keyword scoring. It retrieves documents that are both semantically similar *and* contain matching keywords, then merges the results.
+Hybrid search runs ANN and full-text (keyword) search in parallel, then merges the two result lists with Reciprocal Rank Fusion (RRF). It returns documents that are semantically similar, keyword matches, or both.
 
 ### When to use
 
@@ -58,11 +58,11 @@ results = index.similarity_search(
 
 | Mode | Best for | Trade-off | Choose when |
 |------|----------|-----------|-------------|
-| **ANN** (default) | Conceptual queries, paraphrases, meaning-based search | Fastest; may miss exact keyword matches | You want documents *about* a topic regardless of exact wording |
-| **hybrid** | Exact terms, codes, proper nouns, mixed-intent queries | ~2x resource usage vs ANN; max 200 results | Your queries contain specific identifiers or technical terms that must appear in results |
-| **FULL_TEXT** (beta) | Pure keyword search without vector embeddings | No semantic understanding; max 200 results | You need keyword matching only, without vector similarity |
+| **ANN** (default) | Conceptual queries, paraphrases, meaning-based search | Fastest; may miss exact keyword matches; up to 10,000 results | You want documents *about* a topic regardless of exact wording |
+| **hybrid** | Exact terms, codes, proper nouns, mixed-intent queries | About 4x the resources of ANN, so lower throughput; max 200 results | Your queries contain specific identifiers or technical terms that must appear in results |
+| **FULL_TEXT** (beta) | Pure keyword search without vector embeddings | No semantic understanding; up to 10,000 results | You need keyword matching only, without vector similarity |
 
-**Start with ANN.** Switch to hybrid if you notice relevant documents being missed because they don't share vocabulary with the query.
+**Start with ANN.** Switch to hybrid if you notice relevant documents being missed because they don't share vocabulary with the query. Load-test with the mode production will use.
 
 ## Combining Search Modes with Filters
 
@@ -103,6 +103,8 @@ results = index.similarity_search(
 )
 ```
 
+For operators and timestamp handling, see the [filtering guide](https://docs.databricks.com/aws/en/ai-search/filtering-guide).
+
 ## Using with Pre-Computed Embeddings
 
 If you compute embeddings yourself, use `query_vector` instead of `query_text` for ANN search:
@@ -116,13 +118,13 @@ results = index.similarity_search(
 )
 ```
 
-For **hybrid search with self-managed embeddings** (indexes without an associated model endpoint), you must provide **both** `query_vector` and `query_text`. The vector is used for the ANN component and the text for the BM25 keyword component:
+For **hybrid search with self-managed embeddings** (indexes without an associated model endpoint), you must provide **both** `query_vector` and `query_text`. The vector is used for the ANN component and the text for the keyword component:
 
 ```python
 # hybrid with self-managed embeddings — requires both vector AND text
 results = index.similarity_search(
     query_vector=[0.1, 0.2, 0.3, ...],  # For ANN similarity
-    query_text="executor memory error",   # For BM25 keyword matching
+    query_text="executor memory error",   # For keyword matching
     query_type="hybrid",
     columns=["id", "content"],
     num_results=10

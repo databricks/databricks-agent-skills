@@ -23,7 +23,7 @@
     "\\bdelta\\s+(lake|tables?)\\b",
     "\\bdeclarative\\s+pipelines?\\b",
     "\\bmodel\\s+serving\\b",
-    "\\b(?:ai|vector)\\s+search\\b",
+    "\\b(?:ai|vector)\\s+search\\b|(?<![\\w/.-])(?:ai|vector)-search(?![\\w/-])",
     "\\bmlflow\\b",
     "\\bpyspark\\b",
     "\\bspark\\s*\\.\\s*(sql|read|write|table)\\b",

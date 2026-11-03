@@ -8,6 +8,7 @@
 | **Sync** | Auto from Delta | Auto from Delta | Manual CRUD |
 | **Setup** | Easiest | Medium | Most control |
 | **Source** | Delta table + text | Delta table + vectors | API calls |
+| **Endpoints** | Standard, Storage-Optimized | Standard, Storage-Optimized | Standard only |
 | **Best for** | Quick start, RAG | Custom models | Real-time apps |
 
 ## Delta Sync with Managed Embeddings
@@ -19,6 +20,7 @@ Databricks automatically computes embeddings from your text column.
 - Source Delta table with:
   - Primary key column (unique identifier)
   - Text column (content to embed)
+  - Change Data Feed enabled, for Standard endpoints: `ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`
 - Embedding model endpoint (or use built-in)
 
 ### Create Index
@@ -32,11 +34,11 @@ index = client.create_delta_sync_index(
     endpoint_name="my-vs-endpoint",
     source_table_name="catalog.schema.documents",
     index_name="catalog.schema.docs_index",
-    pipeline_type="TRIGGERED",  # or "CONTINUOUS"
+    pipeline_type="TRIGGERED",  # or "CONTINUOUS" (Standard only)
     primary_key="doc_id",
     embedding_source_column="content",
     embedding_model_endpoint_name="databricks-gte-large-en",
-    columns_to_sync=["doc_id", "content", "title", "category"]
+    columns_to_sync=["doc_id", "content", "title", "category"]  # See the Storage-Optimized note in SKILL.md
 )
 ```
 
@@ -44,8 +46,8 @@ index = client.create_delta_sync_index(
 
 | Type | Behavior | Cost | Use Case |
 |------|----------|------|----------|
-| `TRIGGERED` | Manual sync via `index.sync()` | Lower | Batch updates |
-| `CONTINUOUS` | Auto-sync on changes | Higher | Real-time sync |
+| `TRIGGERED` | Manual sync via `index.sync()` | Lower | Batch updates; the only option on Storage-Optimized |
+| `CONTINUOUS` | Auto-sync on changes | Higher | Real-time sync (Standard only) |
 
 ### Source Table Example
 
@@ -56,7 +58,7 @@ CREATE TABLE catalog.schema.documents (
     content STRING,  -- Text to embed
     category STRING,
     created_at TIMESTAMP
-);
+) TBLPROPERTIES (delta.enableChangeDataFeed = true);
 ```
 
 ## Delta Sync with Self-Managed Embeddings
@@ -68,6 +70,7 @@ You pre-compute embeddings and store them in the source table.
 - Source Delta table with:
   - Primary key column
   - Embedding vector column (array of floats)
+  - Change Data Feed enabled, for Standard endpoints: `ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`
 
 ### Create Index
 
@@ -77,7 +80,7 @@ index = client.create_delta_sync_index(
     source_table_name="catalog.schema.embedded_docs",
     index_name="catalog.schema.custom_index",
     pipeline_type="TRIGGERED",
-    primary_key="id",
+    primary_key="doc_id",
     embedding_dimension=1024,  # databricks-gte-large-en output size
     embedding_vector_column="embedding"
 )
@@ -88,6 +91,7 @@ index = client.create_delta_sync_index(
 ```python
 from databricks.sdk import WorkspaceClient
 import pandas as pd
+from pyspark.sql.functions import col
 
 w = WorkspaceClient()
 
@@ -102,26 +106,30 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
 df = spark.table("catalog.schema.documents").toPandas()
 df["embedding"] = get_embeddings(df["content"].tolist())
 
-# Write back to Delta
-spark.createDataFrame(df).write.mode("overwrite").saveAsTable(
-    "catalog.schema.embedded_docs"
-)
+# Write back to Delta; Spark infers Python float lists as array<double>, so cast to match the table's ARRAY<FLOAT>
+spark.createDataFrame(df).withColumn("embedding", col("embedding").cast("array<float>")).write.mode(
+    "overwrite"
+).saveAsTable("catalog.schema.embedded_docs")
+# Standard endpoints need Change Data Feed on the source table
+spark.sql("ALTER TABLE catalog.schema.embedded_docs SET TBLPROPERTIES (delta.enableChangeDataFeed = true)")
 ```
 
 ### Source Table Example
 
 ```sql
 CREATE TABLE catalog.schema.embedded_docs (
-    id STRING,
+    doc_id STRING,
+    title STRING,
     content STRING,
-    embedding ARRAY<FLOAT>,  -- Pre-computed embedding
-    metadata STRING
-);
+    category STRING,
+    created_at TIMESTAMP,
+    embedding ARRAY<FLOAT>  -- Pre-computed embedding
+) TBLPROPERTIES (delta.enableChangeDataFeed = true);
 ```
 
 ## Direct Access Index
 
-Full control over vector data via CRUD API. No Delta table sync.
+Full control over vector data via CRUD API. No Delta table sync. Standard endpoints only; Storage-Optimized rejects `DIRECT_ACCESS`.
 
 ### Requirements
 
@@ -203,12 +211,12 @@ Start here:
 ├─ Do you have pre-computed embeddings?
 │   ├─ Yes → Do you want auto-sync from Delta?
 │   │         ├─ Yes → Delta Sync (Self-Managed)
-│   │         └─ No  → Direct Access
+│   │         └─ No  → Direct Access (Standard endpoint)
 │   │
 │   └─ No → Delta Sync (Managed Embeddings)
 │
 └─ Do you need real-time updates (<1 sec)?
-    ├─ Yes → Direct Access
+    ├─ Yes → Direct Access (Standard endpoint)
     └─ No  → Delta Sync (any type)
 ```
 
@@ -218,7 +226,8 @@ After choosing index type, choose endpoint:
 
 | Scenario | Endpoint Type |
 |----------|---------------|
-| Need <100ms latency | Standard |
-| >100M vectors | Storage-Optimized |
+| Need <100ms latency or high QPS | Standard |
+| Direct Access or CONTINUOUS sync | Standard |
+| 10M+ vectors, latency-tolerant | Storage-Optimized |
 | Cost-sensitive | Storage-Optimized |
-| Default choice | Storage-Optimized |
+| Default choice, if none of the Standard-only needs apply | Storage-Optimized |

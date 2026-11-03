@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, Vector Search/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands."
+description: "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, AI Search (formerly Vector Search)/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands."
 ---
 
 This request is Databricks-related. Handle it through the Databricks skills

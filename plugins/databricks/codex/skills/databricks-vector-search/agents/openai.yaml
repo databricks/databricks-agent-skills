@@ -1,7 +1,7 @@
 interface:
   display_name: "Databricks AI Search"
-  short_description: "Patterns for Databricks AI Search (formerly Vector Search): create endpoints and indexes, query with filters, manage embeddings."
+  short_description: "Patterns for Databricks AI Search (formerly Vector Search): create endpoints and indexes, query with filters, manage embeddings, scale to high QPS."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
-  default_prompt: "Use $databricks-vector-search for patterns for databricks ai search: create endpoints and indexes, query with filters, manage embeddings."
+  default_prompt: "Use $databricks-vector-search for patterns for databricks ai search: create endpoints and indexes, query with filters, manage embeddings, scale to high QPS."

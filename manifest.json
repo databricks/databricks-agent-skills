@@ -585,7 +585,7 @@
       "version": "0.1.0"
     },
     "databricks-vector-search": {
-      "description": "Databricks AI Search (formerly Vector Search) endpoints and indexes for RAG and semantic search; covers index types, search modes, filtering, end-to-end RAG patterns",
+      "description": "Databricks AI Search (formerly Vector Search) endpoints and indexes for RAG and semantic search.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
