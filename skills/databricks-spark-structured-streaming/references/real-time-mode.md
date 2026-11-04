@@ -26,6 +26,8 @@ RTM has hard cluster requirements. Get any of these wrong and the stream either 
 
 For latency-sensitive Python UDFs, use **Dedicated** access mode — Standard's security isolation adds overhead.
 
+**Don't set `spark.sql.execution.arrow.maxRecordsPerBatch` to `1` on DBR 19+.** RTM batches input rows by time for every UDF it supports, on all compute types: a batch closes after about 10 ms or at the max batch size, whichever comes first, which already balances latency and throughput. Only on DBR 18 LTS and below is batching count-only — there, set it to `1` for latency, or to 100+ for pandas UDFs (they perform poorly at `1`; prefer Arrow UDFs).
+
 ## Trigger and output mode
 
 **Python:**
@@ -107,14 +109,14 @@ For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-
 - Session windows
 - **Outer / left-semi / left-anti stream-stream joins** — RTM stream-stream join is inner-only (`STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_NON_INNER_NOT_SUPPORTED`)
 - `flatMapGroupsWithState` and `mapGroupsWithState` (older APIs)
-- `foreachBatch` and `mapPartitions`
+- `foreachBatch`, `mapPartitions`, and its Python equivalents `mapInPandas` / `mapInArrow` (they fail with `STREAMING_REAL_TIME_MODE.OPERATOR_OR_SINK_NOT_IN_ALLOWLIST`). A scalar UDF alone is not a drop-in replacement because it maps one row to one row. To get the same behavior, combine scalar UDFs with [complex types](https://docs.databricks.com/aws/en/semi-structured/complex-types) (for example, return an array and `explode` it) or `filter`, as described in the [RTM `mapPartitions` limitation](https://docs.databricks.com/aws/en/structured-streaming/real-time/limitations#mappartitions-limitation).
 - `transformWithStateInPandas` — use the row-based Python API
 - Output modes `append` and `complete`
 - Event-time timers inside `transformWithState`
 - Checkpoint format v1
 - Union with batch sources; union of two identical streaming sources
 
-> **Note on async progress tracking:** RTM **enables async progress tracking by default** — do not disable it. The one constraint is that the async checkpoint interval must be `0`; a non-zero value raises `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO`.
+> **Note on async progress tracking and async state checkpointing:** starting in DBR 18 LTS, RTM **enables both by default** — async progress tracking for stateless queries, async state checkpointing for stateful queries. Don't configure or disable either; an explicit `asyncProgressTrackingEnabled` option or `spark.databricks.streaming.statefulOperator.asyncCheckpoint.enabled` conf overrides the default. The one constraint is that the async progress tracking checkpoint interval must be `0` (the RTM default); a non-zero value raises `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO`.
 
 The full supported-/unsupported-features matrix lives at [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference).
 
@@ -204,7 +206,7 @@ The full RTM error-class catalog is documented at [STREAMING_REAL_TIME_MODE erro
 | Error class | Cause / fix |
 |---|---|
 | `STREAMING_REAL_TIME_MODE.OUTPUT_MODE_NOT_SUPPORTED` | RTM only supports `outputMode("update")`. Replace `append` or `complete`. |
-| `STREAMING_REAL_TIME_MODE.OPERATOR_OR_SINK_NOT_IN_ALLOWLIST` | The query uses an operator or sink RTM doesn't support (e.g. `foreachBatch`, session windows). Refactor to a supported equivalent. |
+| `STREAMING_REAL_TIME_MODE.OPERATOR_OR_SINK_NOT_IN_ALLOWLIST` | The query uses an operator or sink RTM doesn't support (e.g. `foreachBatch`, `mapInPandas` / `mapInArrow`, session windows). Refactor to a supported equivalent. |
 | `STREAMING_REAL_TIME_MODE.INPUT_STREAM_NOT_SUPPORTED` | The source isn't supported in RTM (e.g. Delta, Auto Loader, Pub/Sub). No override — ingest via Kafka/Event Hubs/Kinesis-EFO. |
 | `STREAMING_REAL_TIME_MODE.SINK_NOT_SUPPORTED` | The sink isn't supported. Use Kafka/Event Hubs/MSK or a custom `foreach`. |
 | `STREAMING_REAL_TIME_MODE.EXACTLY_ONCE_SINK_NOT_SUPPORTED` | RTM is at-least-once at the sink boundary; the chosen sink advertises exactly-once. Pick an at-least-once-compatible sink. |
@@ -212,7 +214,7 @@ The full RTM error-class catalog is documented at [STREAMING_REAL_TIME_MODE erro
 | `STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_NON_INNER_NOT_SUPPORTED` | RTM stream-stream join is inner-only. Outer/semi/anti are not available; refactor to an inner join or move to micro-batch. |
 | `STREAMING_REAL_TIME_MODE.STREAM_STREAM_JOIN_POLLING_REQUIRED` | A join input source doesn't support non-blocking iteration. See the join setup confs in [Stream-stream inner join](#stream-stream-inner-join-dbr-18). |
 | `STREAMING_REAL_TIME_MODE.CHECKPOINT_FORMAT_V1_NOT_SUPPORTED` | The checkpoint location is in the legacy v1 format. Recreate the checkpoint (RTM uses v2+ only). |
-| `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO` | Async progress tracking is on by default in RTM; its checkpoint interval must be `0`. Set the async checkpoint interval to `0` — do **not** disable async progress tracking. |
+| `STREAMING_REAL_TIME_MODE.ASYNC_PROGRESS_TRACKING_CHECKPOINTING_INTERVAL_NON_ZERO` | Async progress tracking is on by default for stateless RTM queries (DBR 18 LTS+); its checkpoint interval must be `0`. Set the async checkpoint interval to `0` — do **not** disable async progress tracking. |
 | `STREAMING_REAL_TIME_MODE.SESSION_WINDOWS_NOT_SUPPORTED` | Session windows aren't supported. Use tumbling/sliding or `transformWithState`. |
 | `STREAMING_REAL_TIME_MODE.BATCH_UNION_NOT_SUPPORTED` | Cannot union a streaming source with a batch DataFrame. |
 | `STREAMING_REAL_TIME_MODE.IDENTICAL_SOURCES_IN_UNION_NOT_SUPPORTED` | Cannot union two identical streaming sources (e.g. same Kafka topic read twice). |
