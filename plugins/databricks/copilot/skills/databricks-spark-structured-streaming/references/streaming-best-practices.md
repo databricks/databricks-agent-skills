@@ -206,7 +206,7 @@ Combined with wiping the checkpoint dir when the stream's semantics allow it (e.
 # For large state stores, use RocksDB backend
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 ```
 
@@ -225,10 +225,11 @@ spark.conf.set(
 
 ```python
 # ✅ Always use watermark with stateful ops
-# Prevents infinite state growth
+# Prevents infinite state growth only when the grouping includes the
+# event-time column or a window on it; groupBy("user_id") alone keeps every key forever
 
 stream.withWatermark("timestamp", "10 minutes") \
-    .groupBy("user_id") \
+    .groupBy(window("timestamp", "1 day"), "user_id") \
     .agg(sum("amount"))
 
 # Exception: If infinite state needed, store in Delta + ZORDER

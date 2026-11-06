@@ -97,7 +97,7 @@ df = (spark.readStream
 # Checkpoint: + state folder
 df_stateful = (df
     .withWatermark("timestamp", "10 minutes")
-    .dropDuplicates(["partition", "offset"])
+    .dropDuplicatesWithinWatermark(["partition", "offset"])  # state expires with the watermark
 )
 ```
 
@@ -131,11 +131,11 @@ print(json.dumps(offset_data, indent=2))
 state_df = (spark
     .read
     .format("statestore")
-    .load("/checkpoints/stream/state")
+    .load("/checkpoints/stream")  # checkpoint root, not <checkpoint>/state
 )
 
 state_df.show()
-# Shows: key, value, partitionId, expiration timestamp
+# Shows: key, value, partition_id
 
 # Read state metadata
 state_metadata = (spark
@@ -215,10 +215,10 @@ except Exception as e:
 
 ```python
 # Monitor state store size (stateful jobs)
-state_df = spark.read.format("statestore").load("/checkpoints/stream/state")
+state_df = spark.read.format("statestore").load("/checkpoints/stream")
 
 # Check partition balance
-state_df.groupBy("partitionId").count().orderBy(desc("count")).show()
+state_df.groupBy("partition_id").count().orderBy(desc("count")).show()
 
 # Look for skew - one partition with 10x others = problem
 # State size = f(watermark duration, key cardinality)
@@ -315,4 +315,4 @@ def migrate_checkpoint(old_path, new_path):
 
 - `kafka-to-delta` - Kafka ingestion with checkpoint management
 - `stream-stream-joins` - Stateful operations and state stores
-- `state-store-management` - Deep dive on state store optimization
+- `stateful-operations` - State store optimization and monitoring

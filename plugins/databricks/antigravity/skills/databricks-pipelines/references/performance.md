@@ -105,16 +105,17 @@ GROUP BY user_id, product_id, session_id;   -- 1M × 10K × 100M — massive
 
 Three strategies to bound state:
 
-**1. Reduce cardinality** — group by coarser keys.
+**1. Reduce cardinality** — group by coarser keys. This shrinks state but does not bound it: without a watermarked time window every group stays in state.
 
 ```sql
 -- 100 categories instead of 10K products
-GROUP BY user_id, product_category, DATE(event_time)
+GROUP BY user_id, product_category
 ```
 
-**2. Use time windows** — explicit retention boundary.
+**2. Use time windows with a watermark:** an explicit retention boundary. The window bounds state only together with a `WATERMARK`; without one, SDP runs the aggregation in Complete mode and keeps every window.
 
 ```sql
+FROM STREAM(bronze_events) WATERMARK event_time DELAY OF INTERVAL 10 MINUTES
 GROUP BY user_id, window(event_time, '1 hour')
 ```
 
@@ -122,15 +123,17 @@ GROUP BY user_id, window(event_time, '1 hour')
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE user_daily_stats AS
-SELECT user_id, DATE(event_time) AS event_date, COUNT(*) AS event_count
-FROM STREAM(bronze_events)
-GROUP BY user_id, DATE(event_time);
+SELECT user_id, window(event_time, '1 day').start AS event_date, COUNT(*) AS event_count
+FROM STREAM(bronze_events) WATERMARK event_time DELAY OF INTERVAL 10 MINUTES
+GROUP BY user_id, window(event_time, '1 day');
 
 CREATE OR REFRESH MATERIALIZED VIEW user_monthly_stats AS
 SELECT user_id, DATE_TRUNC('month', event_date) AS month, SUM(event_count) AS total_events
 FROM user_daily_stats
 GROUP BY user_id, DATE_TRUNC('month', event_date);
 ```
+
+Use `window(...)`, not `DATE(event_time)`: a `DATE()` bucket runs in Complete mode and keeps every day, even with a `WATERMARK`. Each day's row lands once that day closes plus the delay.
 
 ---
 
@@ -153,13 +156,13 @@ Python: `sales = spark.readStream.table("bronze_sales")` / `products = spark.rea
 
 ### Stream-to-stream (stateful, time-bounded)
 
-Always bound by event-time interval. Without bounds, state grows unbounded.
+Watermark both sides and bound by an event-time interval on the same columns. The interval alone does not evict state.
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE orders_with_payments AS
 SELECT o.order_id, o.amount AS order_amount, p.payment_id, p.amount AS payment_amount
-FROM STREAM(bronze_orders) o
-INNER JOIN STREAM(bronze_payments) p
+FROM STREAM(bronze_orders) WATERMARK order_time DELAY OF INTERVAL 10 MINUTES o
+INNER JOIN STREAM(bronze_payments) WATERMARK payment_time DELAY OF INTERVAL 10 MINUTES p
   ON o.order_id = p.order_id
  AND p.payment_time BETWEEN o.order_time AND o.order_time + INTERVAL 1 HOUR;
 ```

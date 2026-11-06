@@ -1,6 +1,6 @@
 ---
 name: databricks-spark-structured-streaming
-description: "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance."
+description: "Comprehensive guide to Spark Structured Streaming for production workloads. Use when building streaming pipelines, working with Kafka ingestion, implementing Real-Time Mode (RTM), configuring triggers (processingTime, availableNow), handling stateful operations with watermarks, writing custom stateful logic with transformWithState (timers, TTL, per-key state; preferred over applyInPandasWithState and flatMapGroupsWithState for new code), optimizing checkpoints, performing stream-stream or stream-static joins, writing to multiple sinks, or tuning streaming cost and performance."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
@@ -45,6 +45,7 @@ df.writeStream \
 | **Stream Joins** | Stream-stream joins, stream-static joins | See [references/stream-stream-joins.md](references/stream-stream-joins.md), [references/stream-static-joins.md](references/stream-static-joins.md) |
 | **Multi-Sink Writes** | Write to multiple tables, parallel merges | See [references/multi-sink-writes.md](references/multi-sink-writes.md) |
 | **Merge Operations** | MERGE performance, parallel merges, optimizations | See [references/merge-operations.md](references/merge-operations.md) |
+| **Custom State (`transformWithState`)** | Built-in stateful operator or `transformWithState`; timers (`timeMode="ProcessingTime"` never lets `AvailableNow` jobs finish), TTL, initial state, schema evolution, state reader, migrating from `applyInPandasWithState` | See [references/transform-with-state.md](references/transform-with-state.md) |
 
 ## Configuration
 
@@ -68,4 +69,5 @@ df.writeStream \
 - [ ] Monitoring configured (input rate, lag, batch duration)
 - [ ] Exactly-once verified (txnVersion/txnAppId)
 - [ ] Watermark configured for stateful operations
+- [ ] New custom state uses `transformWithState` where supported, with `timeMode="EventTime"` or `"None"` in scheduled or serverless jobs
 - [ ] Left joins for stream-static (not inner)

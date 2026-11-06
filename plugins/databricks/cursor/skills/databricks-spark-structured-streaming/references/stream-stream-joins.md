@@ -306,7 +306,7 @@ For state stores exceeding memory capacity, use RocksDB:
 # Enable RocksDB state store provider
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 
 # State is stored on disk, reducing memory pressure
@@ -320,11 +320,12 @@ spark.conf.set(
 state_df = (spark
     .read
     .format("statestore")
-    .load("/checkpoints/orders_payments/state")
+    .option("joinSide", "left")  # required for stream-stream joins: joinSide or storeName
+    .load("/checkpoints/orders_payments")  # checkpoint root
 )
 
 # Check partition balance
-state_df.groupBy("partitionId").count().orderBy(desc("count")).show()
+state_df.groupBy("partition_id").count().orderBy(desc("count")).show()
 
 # Check state size
 state_metadata = (spark
@@ -389,7 +390,7 @@ stream1 = stream1.withWatermark("ts", "5 minutes")
 # Stream 2: Slow, high latency
 stream2 = stream2.withWatermark("ts", "15 minutes")
 
-# Effective watermark = max(5, 15) = 15 minutes
+# Global watermark = the slower stream's (default spark.sql.streaming.multipleWatermarkPolicy=min)
 joined = stream1.join(stream2, join_condition, "inner")
 ```
 
@@ -540,7 +541,8 @@ Understanding watermark behavior:
 # - Inner join: May still match if other side hasn't expired
 # - Outer join: Dropped from outer side after watermark passes
 
-# Effective watermark = max(left_watermark, right_watermark)
+# Global watermark = min(left_watermark, right_watermark) by default
+# (multipleWatermarkPolicy=max lowers latency but drops the slower stream's late data)
 ```
 
 ### State Store Backend Selection
@@ -554,7 +556,7 @@ Choose the right state store backend:
 # RocksDB: Disk-backed (slower but scalable)
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 # Use for: Large state (> 10GB), high cardinality keys
 
@@ -584,5 +586,5 @@ expr("""
 
 - `stream-static-joins` - Enrich streams with Delta dimension tables
 - `kafka-to-delta` - Kafka ingestion patterns
-- `watermark-configuration` - Deep dive on watermark semantics
-- `state-store-management` - State store optimization and monitoring
+- `stateful-operations` - Watermark semantics, state store optimization and monitoring
+- `transform-with-state` - Per-key state and timers beyond built-in joins

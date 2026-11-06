@@ -7,13 +7,15 @@ description: Configure watermarks and manage state stores for Spark Structured S
 
 Configure watermarks to handle late-arriving data and manage state stores for stateful streaming operations. Watermarks control state cleanup, while state stores handle the storage and retrieval of stateful data.
 
+**Custom per-key logic** (timeouts that fire without new data, state machines, multiple state variables, per-entry TTL): prefer `transformWithState` over `applyInPandasWithState`, `flatMapGroupsWithState`, or `mapGroupsWithState` for new work when your runtime supports it. See [transform-with-state.md](transform-with-state.md).
+
 ## Quick Start
 
 ```python
 # Enable RocksDB for large state stores
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 
 # Stateful operation with watermark
@@ -24,11 +26,11 @@ df = (spark.readStream
     .select(from_json(col("value").cast("string"), schema).alias("data"))
     .select("data.*")
     .withWatermark("event_time", "10 minutes")  # Late data threshold + state cleanup
-    .dropDuplicates(["event_id"])  # Stateful operation
+    .dropDuplicatesWithinWatermark(["event_id"])  # Stateful operation
 )
 
 # Watermark = latest_event_time - 10 minutes
-# State automatically expires after watermark duration
+# Each event_id's state expires once the watermark passes it
 ```
 
 ## Watermark Configuration
@@ -77,13 +79,13 @@ df.withWatermark("event_time", "5 minutes")  # Smaller state
 
 ### Enable RocksDB
 
-Use RocksDB for state stores exceeding memory capacity:
+RocksDB is the default state store provider on Databricks Runtime 17.3 and above. On earlier runtimes, enable it for state stores exceeding memory capacity ([RocksDB state store](https://docs.databricks.com/aws/en/structured-streaming/rocksdb-state-store)). The provider can't change on an existing checkpoint.
 
 ```python
 # Enable RocksDB state store provider
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 
 # Benefits:
@@ -118,11 +120,13 @@ df = (spark.readStream
     .select(from_json(col("value").cast("string"), schema).alias("data"))
     .select("data.*")
     .withWatermark("event_time", "10 minutes")
-    .dropDuplicates(["event_id"])
+    .dropDuplicatesWithinWatermark(["event_id"])
 )
 
-# State expires after watermark duration
-# Prevents infinite state growth
+# State expires once the watermark passes, which bounds state growth.
+# Plain dropDuplicates(["event_id"]) ignores the watermark: it keeps every key
+# forever and drops a legitimately reused key. Use dropDuplicatesWithinWatermark,
+# or include the event-time column: dropDuplicates(["event_id", "event_time"]).
 ```
 
 ### Pattern 2: Join-Specific Watermark Tuning
@@ -150,7 +154,7 @@ clicks = (spark.readStream
     .withWatermark("click_time", "15 minutes")
 )
 
-# Effective watermark = max(5, 15) = 15 minutes
+# Global watermark = the slower stream's (default spark.sql.streaming.multipleWatermarkPolicy=min)
 joined = impressions.join(
     clicks,
     expr("""
@@ -181,9 +185,11 @@ windowed = (df
     .withColumn("processing_time", current_timestamp())
 )
 
-# Use update mode for corrected results when late data arrives
+# The Delta sink supports append and complete, not update. Append writes each
+# window once, after the watermark passes its end. For updated windows as late
+# data arrives, use outputMode("update") with foreachBatch + MERGE (merge-operations.md).
 windowed.writeStream \
-    .outputMode("update") \
+    .outputMode("append") \
     .format("delta") \
     .option("checkpointLocation", "/checkpoints/windowed") \
     .start("/delta/windowed_metrics")
@@ -196,9 +202,9 @@ Check for state store skew:
 ```python
 def check_state_balance(checkpoint_path):
     """Check state store partition balance"""
-    state_df = spark.read.format("statestore").load(f"{checkpoint_path}/state")
+    state_df = spark.read.format("statestore").load(checkpoint_path)  # checkpoint root
     
-    partition_counts = state_df.groupBy("partitionId").count().orderBy(desc("count"))
+    partition_counts = state_df.groupBy("partition_id").count().orderBy(desc("count"))
     partition_counts.show()
     
     # Calculate skew
@@ -220,20 +226,20 @@ def check_state_balance(checkpoint_path):
 ```python
 def monitor_state_growth(checkpoint_path):
     """Track state store growth"""
-    state_df = spark.read.format("statestore").load(f"{checkpoint_path}/state")
+    state_df = spark.read.format("statestore").load(checkpoint_path)  # checkpoint root
     
-    # Current state size
+    # Current state size (columns: key, value, partition_id)
     total_rows = state_df.count()
     
     print(f"State rows: {total_rows}")
     
-    # Check expiration
-    from pyspark.sql.functions import current_timestamp, col
-    expired = state_df.filter(col("expirationMs") < current_timestamp().cast("long") * 1000)
-    expired_count = expired.count()
-    
-    print(f"Expired state rows: {expired_count}")
-    print(f"Active state rows: {total_rows - expired_count}")
+    # Growth between batches (DBR 16.4 LTS+): read the state change feed
+    first_batch = spark.read.format("state-metadata").load(checkpoint_path).first()["minBatchId"]
+    changes = (spark.read.format("statestore")
+        .option("readChangeFeed", True)
+        .option("changeStartBatchId", first_batch)  # older batches may be cleaned up
+        .load(checkpoint_path))
+    changes.groupBy("batch_id", "change_type").count().orderBy("batch_id").show()
 ```
 
 ## State Size Control
@@ -258,7 +264,7 @@ df.withWatermark("event_time", "10 minutes")
 df.dropDuplicates(["user_id"])  # Millions of distinct values
 
 # Good: Lower cardinality or expiring keys
-df.dropDuplicates(["session_id"])  # Sessions expire naturally
+df.withWatermark("event_time", "10 minutes").dropDuplicatesWithinWatermark(["session_id"])  # Keys expire with the watermark
 df.dropDuplicates(["event_id", "date"])  # Partition by date reduces cardinality
 ```
 
@@ -323,13 +329,12 @@ late_data_stats = spark.sql("""
 
 ```python
 # Scenario 1: State store corruption
-# Solution: Delete state folder, restart stream
-# State will rebuild from watermark
-
-dbutils.fs.rm("/checkpoints/stream/state", recurse=True)
-
-# Restart stream - state rebuilds automatically
-# Note: May reprocess some data within watermark window
+# Do NOT delete <checkpoint>/state and restart: the checkpoint's offsets still mark
+# that data as processed, so the lost state is not rebuilt from the source.
+# Instead, restart on a new checkpoint location (and, for transformWithState,
+# seed it via initialState from the statestore reader; see transform-with-state.md).
+# To read past a corrupted snapshot when debugging, use the statestore reader's
+# snapshotStartBatchId + snapshotPartitionId options.
 
 # Scenario 2: State store too large
 # Solution: Reduce watermark duration
@@ -340,13 +345,17 @@ df.withWatermark("event_time", "5 minutes")  # Reduced from 10 minutes
 # Consider salting keys if needed
 ```
 
+### Changing a Stateful Query
+
+A restart from the same checkpoint does not allow changes to the stateful operations: adding, removing, or reordering stateful operators, changing grouping keys or aggregates, dedup columns, join type or equi-join columns, or the state schema or timeout type of a custom stateful operator ([allowed changes](https://docs.databricks.com/aws/en/structured-streaming/checkpoints#allowed-changes)). Stateless changes such as filters and projections are generally allowed. For a stateful change, start on a **new** checkpoint. Positioning the source after the old query's progress avoids reprocessing, but built-in state (aggregations, deduplication, join buffers) starts empty: open windows, running totals, and dedup keys restart from nothing. If results must continue across the change, replay enough source history into the new checkpoint to rebuild that state, and write to a new or reconciled sink so already-emitted rows are not duplicated. For `transformWithState`, carry state over with `initialState` ([transform-with-state.md](transform-with-state.md#migrating-from-applyinpandaswithstate)).
+
 ## Production Best Practices
 
 ### Always Use Watermarks for Stateful Operations
 
 ```python
 # REQUIRED: Watermark for stateful operations
-df.withWatermark("event_time", "10 minutes").dropDuplicates(["id"])
+df.withWatermark("event_time", "10 minutes").dropDuplicatesWithinWatermark(["id"])
 
 # REQUIRED: Watermark for aggregations
 df.withWatermark("event_time", "10 minutes").groupBy(...).agg(...)
@@ -376,7 +385,7 @@ df.withWatermark("event_time", "10 minutes")  # Start here
 
 spark.conf.set(
     "spark.sql.streaming.stateStore.providerClass",
-    "com.databricks.sql.streaming.state.RocksDBStateProvider"
+    "com.databricks.sql.streaming.state.RocksDBStateStoreProvider"
 )
 ```
 
@@ -393,5 +402,7 @@ spark.conf.set(
 
 ## Related Skills
 
+- `transform-with-state` - Custom stateful processors, timers, TTL, migrating from legacy operators
 - `stream-stream-joins` - Late data in joins
 - `checkpoint-best-practices` - Checkpoint and state recovery
+- `transform-with-state` - Built-in operators vs `transformWithState`, timers, TTL, migration

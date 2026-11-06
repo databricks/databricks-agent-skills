@@ -1,6 +1,6 @@
 # Streaming Patterns
 
-Patterns for streaming pipelines: deduplication, windowed aggregations, late-arriving data, rescue-data quarantine, monitoring lag, anomaly detection. SQL is shown as canonical; Python equivalents use `@dp.table` + `spark.readStream.table(...)` with the obvious DataFrame translation.
+Patterns for streaming pipelines: deduplication, windowed aggregations, late-arriving data, custom stateful logic, rescue-data quarantine, monitoring lag, anomaly detection. SQL is shown as canonical; Python equivalents use `@dp.table` + `spark.readStream.table(...)` with the obvious DataFrame translation.
 
 For stream-to-stream joins as a perf-framed topic, see [performance.md](performance.md#join-optimization). For Auto Loader, see [auto-loader-python.md](auto-loader-python.md) / [auto-loader-sql.md](auto-loader-sql.md). For Kafka ingestion, see [kafka.md](kafka.md).
 
@@ -10,34 +10,39 @@ For stream-to-stream joins as a perf-framed topic, see [performance.md](performa
 
 Apply at the bronze → silver transition. Bronze accepts duplicates, silver is clean.
 
-### By key (keep first)
+### By key, retries within a bounded delay
 
-```sql
-CREATE OR REFRESH STREAMING TABLE silver_events_dedup AS
-SELECT event_id, user_id, event_type, event_timestamp, _ingested_at
-FROM (
-  SELECT *, ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_timestamp) AS rn
-  FROM STREAM(bronze_events)
-)
-WHERE rn = 1;
+Use `dropDuplicatesWithinWatermark` in a Python flow. It drops duplicates of a key that arrive within the watermark delay, even when their event time differs, then forgets the key so state stays bounded ([stateful processing](https://docs.databricks.com/aws/en/ldp/stateful-processing)).
+
+```python
+from pyspark import pipelines as dp
+
+
+@dp.table()
+def silver_events_dedup():
+    return (spark.readStream.table("bronze_events")
+            .withWatermark("event_timestamp", "1 hour")
+            .dropDuplicatesWithinWatermark(["event_id"]))
 ```
 
-Python equivalent: `Window.partitionBy("event_id").orderBy("event_timestamp")` + `.withColumn("rn", F.row_number().over(w)).filter(F.col("rn") == 1).drop("rn")`.
-
-**Simple alternative**: `SELECT DISTINCT` (SQL) / `.dropDuplicates(["event_id"])` (Python). Cheaper for low-cardinality append-only streams; maintains state per unique row.
+Do **not** use `ROW_NUMBER() OVER (PARTITION BY ...)` on `STREAM(...)`. Streaming rejects non-time window functions (`NON_TIME_WINDOW_NOT_SUPPORTED_IN_STREAMING`). Plain `.dropDuplicates(["event_id"])` keeps every key in state forever, and it wrongly drops a key that is legitimately reused later.
 
 ### Within a time window (tolerates late arrivals)
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE silver_events_dedup AS
-SELECT event_id, user_id, event_type, event_timestamp,
-       MIN(_ingested_at) AS first_seen_at
-FROM STREAM(bronze_events)
-GROUP BY event_id, user_id, event_type, event_timestamp,
-         window(event_timestamp, '1 hour');
+SELECT event_id, user_id, event_type,
+       MIN(event_timestamp) AS event_timestamp,
+       MIN(_ingested_at)    AS first_seen_at
+FROM STREAM(bronze_events) WATERMARK event_timestamp DELAY OF INTERVAL 10 MINUTES
+GROUP BY event_id, user_id, event_type, window(event_timestamp, '1 hour');
 ```
 
+Group by the `window(...)`, not also by the raw `event_timestamp`: grouping by both fails with `More than one event time columns are available`.
+
 Same `GROUP BY` shape generalises to composite-key dedup (just add the key columns to the `GROUP BY`).
+
+**Every streaming aggregation in SDP needs a `WATERMARK` clause.** Without one, the flow does not fail: SDP silently runs it in **Complete** output mode, which rewrites the whole table on every update and never evicts state (`DESCRIBE HISTORY` shows `outputMode: Complete`; with `WATERMARK` it shows `Append`). Syntax: `FROM STREAM(t) WATERMARK <time column> DELAY OF INTERVAL <n> <unit> [alias]`.
 
 ### When to use Auto CDC instead
 
@@ -57,13 +62,13 @@ SELECT sensor_id,
        MIN(temperature) AS min_temperature,
        MAX(temperature) AS max_temperature,
        COUNT(*)         AS event_count
-FROM STREAM(bronze_sensor_events)
+FROM STREAM(bronze_sensor_events) WATERMARK event_timestamp DELAY OF INTERVAL 2 MINUTES
 GROUP BY sensor_id, window(event_timestamp, '5 minutes');
 ```
 
-Python equivalent: `.groupBy("sensor_id", F.window("event_timestamp", "5 minutes")).agg(F.avg(...), F.min(...), F.max(...), F.count("*"))`.
+Python equivalent: `.withWatermark("event_timestamp", "2 minutes").groupBy("sensor_id", F.window("event_timestamp", "5 minutes")).agg(F.avg(...), F.min(...), F.max(...), F.count("*"))`.
 
-For multiple granularities, define a separate streaming table per window size (e.g. `gold_sensor_1min` + `gold_sensor_1hour`) — same shape, different `window(...)` argument. To expose start/end as columns: `window(event_timestamp, '1 minute').start AS window_start`, `.end AS window_end`.
+With `WATERMARK`, a window is written once, after the watermark passes its end (final values; latency = window + delay). For multiple granularities, define a separate streaming table per window size (e.g. `gold_sensor_1min` + `gold_sensor_1hour`); same shape, different `window(...)` argument. To expose start/end as columns: `window(event_timestamp, '1 minute').start AS window_start`, `.end AS window_end`.
 
 ### Session windows (inactivity-bounded)
 
@@ -77,11 +82,11 @@ SELECT user_id,
        MAX(event_timestamp)     AS session_end,
        COUNT(*)                 AS event_count,
        COLLECT_LIST(event_type) AS event_sequence
-FROM STREAM(bronze_user_events)
+FROM STREAM(bronze_user_events) WATERMARK event_timestamp DELAY OF INTERVAL 10 MINUTES
 GROUP BY user_id, session_window(event_timestamp, '30 minutes');
 ```
 
-Python: `F.session_window("event_timestamp", "30 minutes")`.
+Python: `F.session_window("event_timestamp", "30 minutes")` after `.withWatermark("event_timestamp", "10 minutes")`. Use append output for finalised sessions; update mode is rejected for session windows, and complete mode runs but rewrites every session on each update. For a max session length or custom session output, use `transformWithState` with event-time timers (below).
 
 ### Window-size guidance
 
@@ -101,14 +106,16 @@ Use event time (the timestamp in the row), not processing time (`_ingested_at`),
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE gold_daily_orders AS
-SELECT CAST(order_timestamp AS DATE) AS order_date,   -- event time
+SELECT window(order_timestamp, '1 day').start AS order_date,   -- event time
        COUNT(*)    AS order_count,
        SUM(amount) AS total_amount
-FROM STREAM(silver_orders)
-GROUP BY CAST(order_timestamp AS DATE);
+FROM STREAM(silver_orders) WATERMARK order_timestamp DELAY OF INTERVAL 1 HOUR
+GROUP BY window(order_timestamp, '1 day');
 ```
 
-Python: `.groupBy(F.to_date("order_timestamp").alias("order_date"))`.
+Python: `.withWatermark("order_timestamp", "1 hour").groupBy(F.window("order_timestamp", "1 day"))`.
+
+Choose a delay that covers how late orders arrive: rows later than the delay are dropped, and each day's row lands once the day closes plus the delay. A `CAST(... AS DATE)` bucket would run in Complete mode and keep every day ([performance.md](performance.md)).
 
 ---
 
@@ -142,7 +149,7 @@ Python equivalent uses `.option("rescuedDataColumn", "_rescued_data")` on the Au
 
 ## Stream-to-Stream Joins
 
-Always bound the join by event-time interval. Without bounds, state grows unbounded.
+Define a watermark on **both** sides and an event-time interval on the same columns ([stateful processing](https://docs.databricks.com/aws/en/ldp/stateful-processing)). An interval alone does not bound state: without watermarks the inner join still runs, but keeps every row, and an outer join is rejected.
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE silver_orders_with_payments AS
@@ -150,14 +157,14 @@ SELECT o.order_id, o.customer_id, o.order_timestamp,
        o.amount AS order_amount,
        p.payment_id, p.payment_timestamp, p.payment_method,
        p.amount AS payment_amount
-FROM STREAM(bronze_orders)   o
-INNER JOIN STREAM(bronze_payments) p
+FROM STREAM(bronze_orders) WATERMARK order_timestamp DELAY OF INTERVAL 10 MINUTES o
+INNER JOIN STREAM(bronze_payments) WATERMARK payment_timestamp DELAY OF INTERVAL 10 MINUTES p
   ON o.order_id = p.order_id
  AND p.payment_timestamp BETWEEN o.order_timestamp
                               AND o.order_timestamp + INTERVAL 1 HOUR;
 ```
 
-Python equivalent: same join with the time-bound predicate as `(p.payment_timestamp >= o.order_timestamp) & (p.payment_timestamp <= o.order_timestamp + F.expr("INTERVAL 1 HOUR"))`.
+Python equivalent: `.withWatermark(...)` on both inputs, then the same join with the time-bound predicate as `(p.payment_timestamp >= o.order_timestamp) & (p.payment_timestamp <= o.order_timestamp + F.expr("INTERVAL 1 HOUR"))`.
 
 For stream-to-static (broadcast small dimensions) and perf-tuning, see [performance.md](performance.md#join-optimization).
 
@@ -165,60 +172,130 @@ For stream-to-static (broadcast small dimensions) and perf-tuning, see [performa
 
 ## Incremental Aggregations (Running Totals)
 
-Streaming `GROUP BY` without windows yields cumulative aggregates per group. Watch state size — see [performance.md](performance.md#state-management-for-streaming).
+A bare `GROUP BY customer_id` on a stream has no watermark, so SDP runs it in Complete mode: it rewrites the table every update and keeps every customer in state forever. Scope the total to a time window with a watermark:
 
 ```sql
-CREATE OR REFRESH STREAMING TABLE silver_customer_running_totals AS
+CREATE OR REFRESH STREAMING TABLE silver_customer_daily_totals AS
 SELECT customer_id,
+       window(transaction_timestamp, '1 day').start AS day,
        SUM(amount)                AS total_spent,
        COUNT(*)                   AS transaction_count,
        MAX(transaction_timestamp) AS last_transaction_at
-FROM STREAM(bronze_transactions)
-GROUP BY customer_id;
+FROM STREAM(bronze_transactions) WATERMARK transaction_timestamp DELAY OF INTERVAL 1 HOUR
+GROUP BY customer_id, window(transaction_timestamp, '1 day');
 ```
+
+In append mode each day's row lands once, after the day closes plus the delay. For lifetime totals, roll the daily table up in a materialized view. For a live per-key total in a triggered pipeline, use `transformWithState` in `EventTime` mode with a timer that clears idle keys. TTL is valid only with `timeMode="ProcessingTime"`, which never lets a triggered update finish (see below).
+
+---
+
+## Custom Stateful Logic (`transformWithState`)
+
+Use this when dedup, windows, joins, and Auto CDC can't express the logic: a per-key state machine, sessions with a max duration, or "no event for this key for N minutes". Call `transformWithState` (row-based) or `transformWithStateInPandas` inside a Python flow ([TWS in pipelines](https://docs.databricks.com/aws/en/stateful-applications/#use-transformwithstate-in-lakeflow-pipelines)). It is Python only, with no SQL form. Prefer it over `applyInPandasWithState` for new pipelines when your runtime supports it.
+
+> **Triggered pipelines: use `timeMode="EventTime"` (or `"None"`), never `"ProcessingTime"`.** A triggered update whose flow uses `timeMode="ProcessingTime"` never finishes, even when the processor registers no timer: it keeps running empty micro-batches. The docs' [heartbeat example](https://docs.databricks.com/aws/en/ldp/flow-examples) uses `ProcessingTime`, which suits only **continuous** pipelines.
+
+Event-time silence alert. A triggered update gives `handleInputRows` all of a sensor's new rows at once, so the processor sorts them and alerts for each silence inside the batch. A timer alerts for the silence after the last event, when the watermark passes it. Other keys' events move the watermark, so if the *whole* stream stops, nothing fires; for wall-clock silence, run a continuous pipeline with `timeMode="ProcessingTime"`. Late rows inside the watermark delay can arrive after the alert for their gap has been emitted; when that matters and you only need the gaps, use `session_window`.
+
+```python
+import datetime as dt
+from typing import Iterator
+
+from pyspark import pipelines as dp
+from pyspark.sql import Row
+from pyspark.sql.streaming import StatefulProcessor, StatefulProcessorHandle
+
+SILENCE_MS = 5 * 60 * 1000
+
+
+def to_ms(t):  # store epoch-ms longs in state, not timestamps
+    return int((t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)).timestamp() * 1000)
+
+
+class SilenceAlert(StatefulProcessor):
+    def init(self, handle: StatefulProcessorHandle) -> None:
+        self.handle = handle
+        self.last = handle.getValueState("last", "last_event_ms long")
+
+    def handleInputRows(self, key, rows: Iterator[Row], timerValues) -> Iterator[Row]:
+        prev = self.last.get()
+        last_ms = prev[0] if prev else None
+        out = []
+        for t in sorted(to_ms(r.event_timestamp) for r in rows):
+            if last_ms is not None and t - last_ms >= SILENCE_MS:  # silence inside the batch, or since the last one
+                out.append(Row(sensor_id=key[0], silent_since_ms=last_ms))
+            last_ms = t if last_ms is None else max(last_ms, t)
+        for old in self.handle.listTimers():
+            self.handle.deleteTimer(old)
+        self.handle.registerTimer(last_ms + SILENCE_MS)  # event-time ms
+        self.last.update((last_ms,))
+        return iter(out)
+
+    def handleExpiredTimer(self, key, timerValues, expiredTimerInfo) -> Iterator[Row]:
+        prev = self.last.get()
+        self.last.clear()
+        if prev:
+            yield Row(sensor_id=key[0], silent_since_ms=prev[0])
+
+    def close(self) -> None:
+        pass
+
+
+dp.create_streaming_table("sensor_alerts")
+
+
+@dp.append_flow(target="sensor_alerts")
+def sensor_alerts_flow():
+    return (
+        spark.readStream.table("bronze_sensor_events")
+        .withWatermark("event_timestamp", "2 minutes")
+        .groupBy("sensor_id")
+        .transformWithState(
+            statefulProcessor=SilenceAlert(),
+            outputStructType="sensor_id long, silent_since_ms long",  # sensor_id: same type as the source column
+            outputMode="Append",
+            timeMode="EventTime",
+        )
+    )
+```
+
+Serverless pipelines manage the state store for you. On classic compute below DBR 17.3, set `spark.sql.streaming.stateStore.providerClass` to `com.databricks.sql.streaming.state.RocksDBStateStoreProvider` in the pipeline `configuration` and full-refresh ([heartbeat example](https://docs.databricks.com/aws/en/ldp/flow-examples)). For state types, initial state, and schema evolution, see the `databricks-spark-structured-streaming` skill's [transform-with-state.md](../../databricks-spark-structured-streaming/references/transform-with-state.md).
 
 ---
 
 ## Anomaly Detection
 
-### Rolling z-score outlier flag
+### Windowed z-score outlier flag
+
+Row-based window functions (`OVER (... ROWS BETWEEN 100 PRECEDING ...)`) are not supported on streams; the flow fails with `NON_TIME_WINDOW_NOT_SUPPORTED_IN_STREAMING`. Compute the statistics per time window with a watermark instead:
 
 ```sql
-CREATE OR REFRESH STREAMING TABLE silver_sensor_with_anomalies AS
-SELECT sensor_id, event_timestamp, temperature,
-       AVG(temperature)    OVER w AS rolling_avg_100,
-       STDDEV(temperature) OVER w AS rolling_stddev_100,
-       CASE
-         WHEN temperature > AVG(temperature) OVER w + 3 * STDDEV(temperature) OVER w THEN 'HIGH_OUTLIER'
-         WHEN temperature < AVG(temperature) OVER w - 3 * STDDEV(temperature) OVER w THEN 'LOW_OUTLIER'
-         ELSE 'NORMAL'
-       END AS anomaly_flag
-FROM STREAM(bronze_sensor_events)
-WINDOW w AS (PARTITION BY sensor_id ORDER BY event_timestamp
-             ROWS BETWEEN 100 PRECEDING AND CURRENT ROW);
-
--- Route anomalies for alerting
-CREATE OR REFRESH STREAMING TABLE silver_sensor_anomalies AS
-SELECT * FROM STREAM(silver_sensor_with_anomalies)
-WHERE anomaly_flag IN ('HIGH_OUTLIER', 'LOW_OUTLIER');
+CREATE OR REFRESH STREAMING TABLE silver_sensor_window_stats AS
+SELECT sensor_id,
+       window(event_timestamp, '10 minutes').start AS window_start,
+       AVG(temperature)    AS avg_temperature,
+       STDDEV(temperature) AS stddev_temperature,
+       MAX(temperature)    AS max_temperature,
+       MIN(temperature)    AS min_temperature
+FROM STREAM(bronze_sensor_events) WATERMARK event_timestamp DELAY OF INTERVAL 2 MINUTES
+GROUP BY sensor_id, window(event_timestamp, '10 minutes');
 ```
 
-Python: same shape with `Window.partitionBy("sensor_id").orderBy("event_timestamp").rowsBetween(-100, 0)` and `F.when(...).when(...).otherwise(...)`. Static-threshold variants are just `.filter(F.col("amount") > 10000)`.
+Flag outliers downstream against the previous window's statistics (a materialized view, or a stream-static join). For a true per-row rolling buffer per sensor, keep a bounded `ListState` in `transformWithState`.
 
 ---
 
 ## Monitoring Lag
 
-Compare event-time max to processing time. Useful for alerting on ingestion delays from Kafka, Kinesis, or Auto Loader.
+Compare event-time max to processing time. Useful for alerting on ingestion delays from Kafka, Kinesis, or Auto Loader. Use a materialized view with a batch read: it recomputes the lag on each refresh. A streaming aggregation without a `WATERMARK` would run in Complete mode, and with one each window would land only after it closes plus the delay.
 
 ```sql
-CREATE OR REFRESH STREAMING TABLE monitoring_lag AS
+CREATE OR REFRESH MATERIALIZED VIEW monitoring_lag AS
 SELECT 'kafka_events' AS source,
        MAX(kafka_timestamp) AS max_event_timestamp,
        current_timestamp()  AS processing_timestamp,
        unix_timestamp(current_timestamp()) - unix_timestamp(MAX(kafka_timestamp)) AS lag_seconds
-FROM STREAM(bronze_kafka_events)
-GROUP BY window(kafka_timestamp, '1 minute');
+FROM bronze_kafka_events;
 ```
 
 ---
