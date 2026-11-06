@@ -34,7 +34,8 @@ User request → What kind of output?
 │   │   ├── CDC / upserts / track changes / keep latest per key / SCD Type 1 or 2 → Auto CDC (only when this pipeline owns the target; merge/upsert into an existing/external table → ForEachBatch Sink)
 │   │   ├── Multiple sources into one table → Append Flows (NOT union)
 │   │   ├── Historical backfill + live stream → one-time Append Flow + regular flow
-│   │   └── Windowed aggregation with watermark → stateful streaming
+│   │   ├── Windowed aggregation with watermark → stateful streaming
+│   │   └── Custom per-key state, timers, timeouts (Python) → transformWithState in a flow (timeMode EventTime or None in triggered pipelines)
 │   └── Source is batch/historical/full scan → Materialized View
 │       ├── Aggregation/join across full dataset (GROUP BY, SUM, COUNT, etc.)
 │       ├── Gold layer aggregation from streaming table → MV with batch read (spark.read / no STREAM)
@@ -55,7 +56,7 @@ User request → What kind of output?
 - **SCD Type 2 queries:** Use validity columns `__START_AT` / `__END_AT`, not invented names. Current rows: `__END_AT IS NULL`; point-in-time: `__START_AT <= t AND (__END_AT > t OR __END_AT IS NULL)`. Read [scd-2-querying](references/scd-2-querying.md).
 - **UNRESOLVED_COLUMN / column not found:** Verify upstream columns. For Auto Loader, check that `schemaHints` match the actual file schema.
 - **"Create a table" without a type:** Ask whether the source is streaming or batch. Streaming → Streaming Table; batch → Materialized View. Mismatched pairs fail validation.
-- **Aggregating a streaming source:** Use a Materialized View with a batch read (no `STREAM`). Streaming tables are append-only and don't recompute aggregates when source rows change.
+- **Aggregating a streaming source:** For per-window results (hourly, daily) from an append-only source, use a streaming table with a `WATERMARK` and `window()`, which bounds state ([performance.md](references/performance.md)). Otherwise use a Materialized View with a batch read (no `STREAM`): streaming tables are append-only and don't recompute aggregates when source rows change.
 - **`Cannot create streaming table from batch query`:** The streaming table reads in batch. Use `FROM STREAM read_files(...)` / `FROM STREAM(table)`.
 - **Python-only features** (sinks, ForEachBatch sinks, custom data sources, Real-Time Mode): When the user works in SQL, say so and suggest Python for that part.
 - **`databricks fs` on Volumes:** The CLI needs the `dbfs:` prefix, e.g. `databricks fs ls dbfs:/Volumes/<catalog>/<schema>/<volume>/<path>`.
