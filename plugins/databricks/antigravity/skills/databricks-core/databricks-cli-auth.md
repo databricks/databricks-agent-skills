@@ -15,7 +15,7 @@ Configure Databricks CLI workspace/profile selection and authentication. Covers 
 
 ## No Workspace Yet?
 
-1. Start a free trial at [signup.databricks.com](https://signup.databricks.com/?utm_source=agent-skills&dbxSource=agent-skills&utm_campaign=cli-auth)
+1. Start a free trial at [databricks.com/signup/express](https://www.databricks.com/signup/express?provider=DB&dbx_source=agent-skills&dbxSource=agent-skills&utm_source=agent-skills&utm_campaign=cli-auth)
 2. Once your workspace is ready, authenticate with it:
    ```bash
    databricks auth login --host <new workspace URL> --profile <profile-name>
