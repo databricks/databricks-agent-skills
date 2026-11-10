@@ -42,7 +42,7 @@ Replace the Kafka client with the SDK for the producer's language: [python-sdk.m
 Use Debezium's built-in Zerobus sink: set `debezium.sink.type=zerobus` with the endpoint, workspace URL, and service principal credentials. Target a Unity Catalog Delta table (with CDC and column mapping disabled). Build current-state tables downstream with AUTO CDC in Lakeflow Spark Declarative Pipelines (see the `databricks-pipelines` skill).
 
 ### Path D: Keep Kafka
-Don't replace a multi-consumer bus. To land a lakehouse copy, have **Databricks read from Kafka**: Lakeflow Spark Declarative Pipelines with `read_kafka` (the `databricks-pipelines` skill), Spark Structured Streaming (the `databricks-spark-structured-streaming` skill), or the managed Kafka connector in Lakeflow Connect (the `databricks-lakeflow-connect` skill). Zerobus isn't involved on this path.
+Don't replace a multi-consumer bus. To land a lakehouse copy, have **Databricks read from Kafka**: Lakeflow Spark Declarative Pipelines with `read_kafka` (the `databricks-pipelines` skill), Spark Structured Streaming (the `databricks-spark-structured-streaming` skill), or the managed Kafka connector in Lakeflow Connect (the `databricks-lakeflow-connect-saas` skill). Zerobus isn't involved on this path.
 
 ## 3. Pre-Migration Inventory
 

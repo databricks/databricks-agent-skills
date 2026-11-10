@@ -406,6 +406,8 @@ openai_client = w.serving_endpoints.get_open_ai_client()
 **Doc (Indexes):** https://databricks-sdk-py.readthedocs.io/en/latest/workspace/vectorsearch/vector_search_indexes.html
 **Doc (Endpoints):** https://databricks-sdk-py.readthedocs.io/en/latest/workspace/vectorsearch/vector_search_endpoints.html
 
+`query_index` uses the workspace query URL, capped at a few tens of QPS. For apps and production traffic, use the [databricks-vector-search](../databricks-vector-search/SKILL.md) skill (`AISearchClient` with a service principal and the index URL).
+
 ```python
 # List vector search indexes
 for idx in w.vector_search_indexes.list_indexes(endpoint_name="my-vs-endpoint"):

@@ -308,6 +308,7 @@ for row in rows:
 By default, Standard endpoints serve about 20-200 QPS, depending on index size. Traffic over a PAT or the workspace query URL is capped at a few tens of QPS.
 
 - **Auth and route:** production traffic needs service principal OAuth and the index URL. Create `AISearchClient(workspace_url=..., service_principal_client_id=..., service_principal_client_secret=...)`, call `get_index()` once, and reuse the index object; it queries the index URL. Use a dedicated [service principal](https://docs.databricks.com/aws/en/ai-search/high-qps#service-principal). For Delta Sync indexes with managed embeddings, an IP access list or a private access settings object (on Azure, public network access disabled) keeps queries on the capped route; on GCP, a private access settings object does so for every index. Otherwise, self-managed embeddings avoid it. See [requirements](https://docs.databricks.com/aws/en/ai-search/high-qps#requirements).
+  - **Pitfalls:** with any token passed as `personal_access_token` (a PAT, or a forwarded user or on-behalf-of token such as the Databricks Apps `x-forwarded-access-token`), or a bare `AISearchClient()` that picks up notebook or model-serving credentials, `get_index()` queries the workspace URL even though `describe()` lists `status.index_url`; if `index.index_url` starts with your workspace URL, queries are on the capped route. In Databricks Apps, send query traffic with the app's service principal, not the forwarded user token. `workspace_url` must include `https://`: in Databricks Apps, `DATABRICKS_HOST` can lack the scheme, so add it ([example](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/vector-search)).
 - **Query type:** start with ANN; hybrid uses about 4x the resources. Load-test with the query type production sends.
 - **429s:** move to service principal OAuth and the index URL; wait for `SCALING_CHANGE_APPLIED`; with `query_vector`, lower concurrency or raise `target_qps`; with `query_text` on a managed-embedding index, the embedding endpoint may be the bottleneck. `similarity_search` already retries (`total_retries`, `backoff_factor`, `backoff_jitter`); raise those or add your own bounded backoff with jitter. See [Troubleshoot 429 errors](https://docs.databricks.com/aws/en/ai-search/high-qps#troubleshoot-429-errors).
 - **Load testing:** use **Run load test** on the endpoint page or the [load test notebook](https://docs.databricks.com/aws/en/ai-search/endpoint-load-test#notebook). With `databricks-ai-search` 0.82+, `databricks-ai-search guide --topic high-qps` prints the guide and `databricks-ai-search load-test --index <name>` plans a run (it runs only with `--yes`); skip this if the `databricks-ai-search` command isn't available.
@@ -332,6 +333,13 @@ while time.monotonic() < deadline:
     time.sleep(30)
 print(info)
 ```
+
+**`ONLINE` doesn't mean scaled.** These are separate waits:
+- **Endpoint provisioned:** `endpoint_status.state` is `ONLINE` (what `create_endpoint_and_wait` waits for). `ONLINE` doesn't mean the target QPS is applied.
+- **Target QPS applied:** `scaling_info.state` is `SCALING_CHANGE_APPLIED` for the requested target (the loop above). This takes minutes to hours, depending on index size and how much the target changes.
+- **Index ready:** `status.ready` is true. A new endpoint's first index has `status.detailed_state` `PROVISIONING_ENDPOINT` while compute is created.
+
+Load-test only after all three; a load test before `SCALING_CHANGE_APPLIED` doesn't reflect the target capacity. If the loop above hits its deadline, report that target QPS is still applying instead of load testing.
 
 ## Reference Files
 

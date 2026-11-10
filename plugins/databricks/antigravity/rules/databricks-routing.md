@@ -29,7 +29,8 @@ that matches the request:
 - Databricks Sandbox: serverless sandboxes for untrusted / agent-generated code (Databricks SDK) -> databricks-sandbox
 - Local Python environment matched to Databricks compute (setup-local, Databricks Connect) -> databricks-setup-local
 - Apache Iceberg tables / UniForm / Iceberg REST Catalog -> databricks-iceberg
-- Lakeflow Connect managed ingestion connectors -> databricks-lakeflow-connect
+- Lakeflow Connect database connectors (SQL Server, PostgreSQL, MySQL, Oracle, query-based) -> databricks-lakeflow-connect
+- Lakeflow Connect SaaS connectors (Salesforce, Workday, ServiceNow, SharePoint, Google Ads, Jira, Kafka, ...) -> databricks-lakeflow-connect-saas
 - Metric Views / governed metrics -> databricks-metric-views
 - ML model training -> databricks-ml-training
 - MLflow agent evaluation / scorers / optimization -> databricks-mlflow-evaluation

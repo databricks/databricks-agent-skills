@@ -25,7 +25,7 @@
         "docker-images.md"
       ],
       "repo_dir": "skills",
-      "version": "0.2.1"
+      "version": "0.3.0"
     },
     "databricks-aibi-dashboards": {
       "description": "Create Databricks AI/BI dashboards. Must use when creating, updating, or deploying Lakeview dashboards as Databricks Dashboard have a unique json structure. CRITICAL: You MUST test ALL SQL queries...",
@@ -260,16 +260,32 @@
       "version": "0.2.0"
     },
     "databricks-lakeflow-connect": {
-      "description": "Build managed ingestion pipelines into Databricks using Lakeflow Connect.",
+      "description": "Lakeflow Connect managed ingestion into Unity Catalog from databases (SQL Server, PostgreSQL, MySQL, Oracle) by CDC or query-based.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "references/1-saas-connectors.md",
-        "references/2-database-connectors.md",
-        "references/4-ingestion-decision-tree.md",
-        "references/5-troubleshooting-and-monitoring.md"
+        "references/modes.md",
+        "references/rows-per-run.md",
+        "references/sources.md",
+        "references/troubleshooting.md",
+        "scripts/rows_per_run.sql"
+      ],
+      "repo_dir": "skills",
+      "version": "0.3.0"
+    },
+    "databricks-lakeflow-connect-saas": {
+      "description": "Lakeflow Connect ingestion from SaaS apps (Salesforce, Workday, ServiceNow, HubSpot, SharePoint, Google Drive, OneDrive, Jira, ads, audit logs, 70+ more) and Kafka or RabbitMQ into Unity Catalog.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/ads.md",
+        "references/connector-notes.md",
+        "references/file-connectors.md",
+        "references/streaming.md"
       ],
       "repo_dir": "skills",
       "version": "0.1.0"
@@ -549,10 +565,11 @@
         "references/4-fine-grained-access.md",
         "references/5-system-tables.md",
         "references/6-volumes.md",
-        "references/7-data-profiling.md"
+        "references/7-data-profiling.md",
+        "references/8-connections-and-secrets.md"
       ],
       "repo_dir": "skills",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     "databricks-unity-gateway": {
       "description": "Use when querying or calling pay-per-token foundation models, or when creating, updating, listing, or querying Unity Gateway (also called Unity AI Gateway) services, including model provider servic...",

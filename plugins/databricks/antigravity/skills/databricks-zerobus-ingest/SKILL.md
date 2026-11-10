@@ -182,7 +182,8 @@ These references hold the decisions, gotchas, and tested minimal samples for eac
 - **databricks-core**: CLI, profiles, auth, and ad hoc SQL for verification
 - **databricks-unity-catalog**: catalogs, schemas, tables, and grants
 - **databricks-pipelines**: downstream processing of ingested data, including a deduplicated table built with AUTO CDC
-- **databricks-lakeflow-connect**: managed connectors when Databricks should **pull** from a source
+- **databricks-lakeflow-connect-saas**: managed connectors when Databricks should **pull** from a SaaS app, Kafka or RabbitMQ
+- **databricks-lakeflow-connect**: managed connectors when Databricks should **pull** from a database
 - **databricks-apps** / **databricks-apps-python**: building the Databricks App that hosts a producer
 - **databricks-dabs**: deploying a producer job with Declarative Automation Bundles
 - **databricks-aibi-dashboards**: building a dashboard over the ingested events or telemetry

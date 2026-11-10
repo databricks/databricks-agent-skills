@@ -22,18 +22,25 @@ Two paths:
 Published on Docker Hub at
 [`databricksruntime/air`](https://hub.docker.com/r/databricksruntime/air/tags).
 
-| Tag | Cloud | Variant | Size | Use |
-|---|---|---|---|---|
-| `dcs-base-aws-runtime` | AWS | Runtime | ~4.7 GB | `pip install` pre-built wheels only |
-| `dcs-base-aws-devel` | AWS | Devel | ~11 GB | Compile CUDA extensions (needs `nvcc`) |
-| `dcs-base-azure-runtime` | Azure | Runtime | ~4.1 GB | Pre-built wheels |
-| `dcs-base-azure-devel` | Azure | Devel | ~10.3 GB | Compile CUDA extensions |
+| Tag | Cloud | Variant | CUDA | Size | Use |
+|---|---|---|---|---|---|
+| `dcs-base-aws-runtime` | AWS | Runtime | 12 | ~4.7 GB | `pip install` pre-built wheels only |
+| `dcs-base-aws-devel` | AWS | Devel | 12 | ~11 GB | Compile CUDA extensions (needs `nvcc`) |
+| `dcs-base-aws-runtime-cu13` | AWS | Runtime | 13 | — | Pre-built wheels on CUDA 13 |
+| `dcs-base-aws-devel-cu13` | AWS | Devel | 13 | — | Compile CUDA extensions on CUDA 13 |
+| `dcs-base-azure-runtime` | Azure | Runtime | 12 | ~4.1 GB | Pre-built wheels |
+| `dcs-base-azure-devel` | Azure | Devel | 12 | ~10.3 GB | Compile CUDA extensions |
 
 Pick **runtime** unless you need `nvcc` (e.g. for flash-attn, apex,
 custom CUDA kernels). Expect ~10 GB final size after adding PyTorch
-(runtime) or ~17 GB (devel).
+(runtime) or ~17 GB (devel). Use a `-cu13` tag for `GPU_8xB300` and for
+PyTorch wheels built against CUDA 13; install a torch wheel that matches
+the image's CUDA major version.
 
-### What's in all 4 variants
+The details below describe the CUDA 12 tags. The `-cu13` tags follow the
+same layout with a CUDA 13 toolkit.
+
+### What's in the CUDA 12 variants
 
 - Ubuntu 24.04, Python 3.12 in `/opt/venv`, managed by `uv` (`/usr/local/bin/uv`)
 - CUDA 12.9.1 runtime, OS-level NCCL 2.27.3, `cuda-compat` for forward driver
@@ -132,11 +139,11 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ### AWS networking (EFA)
 
 EFA is needed for multi-node GPU communication **only on instance
-families with EFA hardware** — `GPU_8xH100` (P5-class) today.
-For `GPU_1xA10` (A10/G-family, single GPU per pod), EFA is not
+families with EFA hardware**, the 8-GPU types (`GPU_8xH100`,
+`GPU_8xB300`). On the single-GPU types such as `GPU_1xA10`, EFA is not
 present on the host; installing it just bloats the image (~600 MB) and
 NCCL logs three OFI WARN lines per job before falling back to socket
-transport. Skip this whole section for A10-only workloads.
+transport. Skip this whole section for single-GPU workloads.
 
 If you do need EFA, the installer bundles libfabric, OpenMPI, and the
 `aws-ofi-nccl` NCCL plugin:
@@ -171,7 +178,7 @@ build can't reach S3 at all, pre-download the tarball on the host and
 `COPY` it instead.
 
 > **Base images install EFA unconditionally** too. If you start from
-> Option 1 and your `gpu_type` is `a10`, the OFI plugin will still try to
+> Option 1 and your `accelerator_type` is `GPU_1xA10`, the OFI plugin will still try to
 > probe at NCCL init and emit three `NET/OFI ... initialization failed`
 > WARN lines per job. They're non-fatal (NCCL falls back to socket); to
 > silence: `env_variables: { NCCL_NET_PLUGIN: "none" }` in the workload YAML.
@@ -363,8 +370,8 @@ docker run --rm <your-image> python3 -c \
 ### 6. EFA / RDMA
 
 - **AWS EFA:** the Databricks base images ship EFA 1.42.0. For
-  scratch builds, target the same version on EFA-capable instance
-  families (H100 / P5-class) and skip EFA entirely on A10 / G-family.
+  scratch builds, target the same version on the EFA-capable 8-GPU
+  types and skip EFA entirely on single-GPU types such as A10.
 - **Azure RDMA:** `rdma-core` from Ubuntu apt works.
 
 ### Summary table
@@ -377,7 +384,7 @@ docker run --rm <your-image> python3 -c \
 | CUDA toolkit vs host driver  | OK/WARN     | CUDA X needs ≥Y; host Z. cuda-compat: needed / NOT needed (host already ≥ minimum) |
 | PyTorch vs CUDA              | OK/FAIL     | torch A.B ships cuXYZ, image has CUDA X.Y |
 | NCCL                         | OK/N/A      | torch-bundled NCCL loads preferentially; OS NCCL usually unused |
-| EFA/RDMA                     | OK/WARN/N/A | EFA X.Y.Z vs node image (N/A on a10 — non-EFA hardware) |
+| EFA/RDMA                     | OK/WARN/N/A | EFA X.Y.Z vs node image (N/A on single-GPU types — non-EFA hardware) |
 | CXX11 ABI (CUDA extensions)  | OK/WARN/N/A | extension ABI matches torch ABI |
 ```
 
@@ -419,9 +426,13 @@ databricks air images push \
 The helper authenticates Docker, tags the image, and pushes it; it does not
 build the image or submit a workload. Replace the destination catalog, schema,
 and artifact with your own. It prints the Unity Catalog image name, here
-`main.ml.training:v1`. For an image from another registry, authenticate Docker
-to that source registry first if it is private, then pass its full URI as
-`--source`. See the
+`main.ml.training:v1`. `--artifact` defaults to the source image's name and
+tag, and in an interactive terminal the helper prompts for any omitted image
+details; pass every flag in scripts and agent runs. It reuses a compatible
+local image and otherwise pulls the `linux/amd64` image; add `--pull` to
+refresh a stale local copy. For an image from another registry, authenticate
+Docker to that source registry first if it is private, then pass its full URI
+as `--source`. See the
 [image push guide](https://docs.databricks.com/machine-learning/ai-runtime/connecting/cli/image-push)
 and `databricks air images push --help` for options. Manual Docker tagging and
 pushing through the Artifact Registry setup guide is also supported.
@@ -454,3 +465,43 @@ Validate and submit using the same workspace profile used to push the image:
 databricks air run --file workload.yaml --dry-run -p <profile>
 databricks air run --file workload.yaml -p <profile>
 ```
+
+AI Runtime injects the same per-node environment variables into a custom
+image as into a managed environment (`CODE_SOURCE_PATH`, `NUM_NODES`,
+`LOCAL_WORLD_SIZE`, `WORLD_SIZE`, `NODE_RANK`/`POD_RANK`, and on multi-node
+runs `MASTER_ADDR`/`MASTER_PORT`); see the table in
+[SKILL.md](SKILL.md#environment-variables-provided-on-each-node).
+
+To run different images on different node ranks, for example a trainer and an
+inference server, use top-level `containers` instead of `command` and
+`environment.unity_catalog_image`. Each container sets its own `name`,
+`command`, `ranks`, and `unity_catalog_image`; run
+`databricks air run -h config.containers` for the fields.
+
+---
+
+## Troubleshooting
+
+### `ssl.SSLError` when loading dependencies
+
+A custom image can fail at runtime with an OpenSSL error as soon as a library
+opens a network connection (for example `huggingface_hub`):
+
+```text
+ssl.SSLError: [CRYPTO] unknown error (_ssl.c:3076)
+```
+
+AI Runtime hosts run with FIPS mode enabled, and the image's cryptographic
+libraries are not FIPS-compliant. If the workload must stay FIPS-compliant,
+build the image with FIPS-compliant cryptographic libraries. Otherwise, disable
+FIPS mode in the Dockerfile (`ENV OPENSSL_FORCE_FIPS_MODE=0`, already set in
+the Databricks base images) or in the workload YAML. Tell the user this can
+break compliance requirements before you disable it:
+
+```yaml
+env_variables:
+  OPENSSL_FORCE_FIPS_MODE: "0"
+```
+
+For registry authentication, permission, push, or image discovery errors, see
+the [Artifact Registry troubleshooting guide](https://docs.databricks.com/aws/en/artifact-registry/troubleshooting).

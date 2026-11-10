@@ -33,6 +33,7 @@
     "genie-agents",
     "iceberg",
     "lakeflow-connect",
+    "lakeflow-connect-saas",
     "metric-views",
     "ml-training",
     "mlflow-evaluation",
