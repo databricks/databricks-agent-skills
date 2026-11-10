@@ -1,6 +1,6 @@
 ---
 name: databricks-apps-python
-description: "Python backend for Databricks Apps — FastAPI (default), Flask, Dash, Streamlit, Gradio, Reflex. **Default for a new Databricks App is `databricks-apps` (AppKit — Node/TypeScript/React) — reach for it first.** Use this skill only when the user asks for a Python backend, extends an existing Python app, or the team is Python-only. Covers OAuth auth, app resources, SQL warehouse and Lakebase connectivity, foundation-model / Vector Search / model-serving APIs (via `databricks-python-sdk`), and deployment via CLI or DABs."
+description: "Python backend for Databricks Apps — FastAPI (default), Flask, Dash, Streamlit, Gradio, Reflex. **Default for a new Databricks App is `databricks-apps` (AppKit — Node/TypeScript/React) — reach for it first.** Use this skill only when the user asks for a Python backend, extends an existing Python app, or the team is Python-only. Covers OAuth auth, app resources, SQL warehouse and Lakebase connectivity, foundation-model / model-serving APIs (via `databricks-python-sdk`), AI Search (Vector Search) queries (via `databricks-vector-search`), and deployment via CLI or DABs."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.1.0"
@@ -57,7 +57,8 @@ Copy this checklist and verify each item:
 | **Auth (app)** | Service principal via `Config()` — auto-injected `DATABRICKS_CLIENT_ID`/`DATABRICKS_CLIENT_SECRET` |
 | **Auth (user)** | `x-forwarded-access-token` header — see [references/1-authorization.md](references/1-authorization.md) |
 | **Resources** | `valueFrom` in app.yaml — see [references/2-app-resources.md](references/2-app-resources.md) |
-| **SDK / Foundation Models / Vector Search / Model Serving** | Use the `databricks-python-sdk` skill — same `WorkspaceClient` and OpenAI-compatible foundation-model patterns work inside a Databricks App. For UC model services (`system.ai.*`), see the model-service note in [references/2-app-resources.md](references/2-app-resources.md) and the `databricks-unity-gateway` skill |
+| **SDK / Foundation Models / Model Serving** | Use the `databricks-python-sdk` skill — same `WorkspaceClient` and OpenAI-compatible foundation-model patterns work inside a Databricks App. For UC model services (`system.ai.*`), see the model-service note in [references/2-app-resources.md](references/2-app-resources.md) and the `databricks-unity-gateway` skill |
+| **AI Search (Vector Search)** | Use the `databricks-vector-search` skill: `AISearchClient(workspace_url=..., service_principal_client_id=..., service_principal_client_secret=...)` from `DATABRICKS_HOST` (prefix `https://` if missing), `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET`. Create the client and call `get_index()` once at startup, then reuse the index object across requests. Add `databricks-ai-search>=0.83` to the app's dependencies (e.g. `requirements.txt`). `WorkspaceClient` queries are capped at a few tens of QPS |
 | **Docs** | https://docs.databricks.com/dev-tools/databricks-apps/ |
 
 ---
@@ -76,7 +77,7 @@ Copy this checklist and verify each item:
 
 **CLI commands**: Use [references/6-cli-approach.md](references/6-cli-approach.md) for managing app lifecycle via CLI — covers creating, deploying, monitoring, and deleting apps. (Keywords: CLI, create app, deploy app, app logs)
 
-**Foundation Models / SDK / Vector Search / Model Serving**: Use the **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** skill for the OpenAI-compatible foundation-model client, `WorkspaceClient` calls, Vector Search, and model-serving invocation — the same patterns apply inside a Databricks App. The examples in this skill's `examples/` folder (`fm-minimal-chat.py`, `fm-parallel-calls.py`, `fm-structured-outputs.py`, `llm_config.py`) show the App-side wiring only. For **UC model services** (`system.ai.*`, called on `/ai-gateway/mlflow/v1`), see the model-service note in [references/2-app-resources.md](references/2-app-resources.md) and the **`databricks-unity-gateway`** skill.
+**Foundation Models / SDK / Model Serving**: Use the **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** skill for the OpenAI-compatible foundation-model client, `WorkspaceClient` calls, and model-serving invocation — the same patterns apply inside a Databricks App. For AI Search (Vector Search) queries, use the **[databricks-vector-search](../databricks-vector-search/SKILL.md)** skill instead (`AISearchClient` with the app's service principal; see [Production and High QPS](../databricks-vector-search/SKILL.md#production-and-high-qps)). The examples in this skill's `examples/` folder (`fm-minimal-chat.py`, `fm-parallel-calls.py`, `fm-structured-outputs.py`, `llm_config.py`) show the App-side wiring only. For **UC model services** (`system.ai.*`, called on `/ai-gateway/mlflow/v1`), see the model-service note in [references/2-app-resources.md](references/2-app-resources.md) and the **`databricks-unity-gateway`** skill.
 
 ---
 
@@ -91,7 +92,8 @@ Copy this checklist and verify each item:
    **Using Lakebase (PostgreSQL)?** → Read [references/5-lakebase.md](references/5-lakebase.md)
    **Deploying to Databricks?** → Read [references/4-deployment.md](references/4-deployment.md)
    **Using CLI for app lifecycle?** → Read [references/6-cli-approach.md](references/6-cli-approach.md)
-   **Calling foundation model / LLM APIs, Vector Search, or model-serving endpoints?** → Load the **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** skill. This skill's `examples/` folder shows only the App-side wiring on top of those SDK patterns.
+   **Calling foundation model / LLM APIs or model-serving endpoints?** → Load the **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** skill. This skill's `examples/` folder shows only the App-side wiring on top of those SDK patterns.
+   **Querying AI Search (Vector Search)?** → Load the **[databricks-vector-search](../databricks-vector-search/SKILL.md)** skill.
 
 2. Follow the instructions in the relevant guide.
 
@@ -206,7 +208,8 @@ class EntityIn(BaseModel):
 ## Related Skills
 
 - **[databricks-apps](../databricks-apps/SKILL.md)** — the default for new Databricks Apps (AppKit / Node / TypeScript + React); load it first unless a Python backend is explicitly required
-- **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** — `WorkspaceClient`, OpenAI-compatible foundation-model client, Vector Search, model-serving invocation; the same patterns work inside a Databricks App
+- **[databricks-python-sdk](../databricks-python-sdk/SKILL.md)** — `WorkspaceClient`, OpenAI-compatible foundation-model client, model-serving invocation; the same patterns work inside a Databricks App
+- **[databricks-vector-search](../databricks-vector-search/SKILL.md)** — AI Search (Vector Search) indexes and high-QPS queries with `AISearchClient`
 - **[databricks-lakebase](../databricks-lakebase/SKILL.md)** — persistent PostgreSQL state (autoscaling managed PG with branching)
 - **[databricks-model-serving](../databricks-model-serving/SKILL.md)** — endpoint lifecycle for ML models an App calls
 - **databricks-dabs** — deploying apps via DABs

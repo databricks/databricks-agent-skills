@@ -182,6 +182,7 @@ def synthesize_short_description(skill_path: Path) -> str:
 DISPLAY_NAME_OVERRIDES = {
     "databricks-ai-functions": "Databricks AI Functions",
     "databricks-aibi-dashboards": "Databricks AI/BI Dashboards",
+    "databricks-lakeflow-connect-saas": "Databricks Lakeflow Connect SaaS",
     "databricks-mlflow-evaluation": "Databricks MLflow Evaluation",
     "databricks-setup-local": "Databricks Local Environment Setup",
     "databricks-unstructured-pdf-generation": "Databricks Unstructured PDF Generation",

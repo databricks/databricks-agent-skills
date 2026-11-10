@@ -1,9 +1,9 @@
 ---
 name: databricks-unity-catalog
-description: "Unity Catalog governance, access control, and observability. Use to grant or revoke access (GRANT/REVOKE), reason about the privilege model and ownership, set up row-level security and column masks, create external locations and storage credentials, define catalogs/schemas/tables/volumes, answer \"who can read this table\", and query system tables (audit, lineage, billing) or work with volume files in /Volumes/."
+description: "Unity Catalog governance, access control, and observability. Use to grant or revoke access (GRANT/REVOKE), reason about the privilege model and ownership, set up row-level security and column masks, create external locations and storage credentials, define catalogs/schemas/tables/volumes, answer \"who can read this table\", query system tables (audit, lineage, billing), work with volume files in /Volumes/, and set up connection passwords (secret scopes, Azure Key Vault, AWS Secrets Manager)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
 parent: databricks-core
 ---
 
@@ -29,6 +29,7 @@ Use this skill when:
 - **Row- and column-level security** — row filters, column masks, dynamic views with `current_user()` / `is_account_group_member()`
 - **External locations & storage credentials** — `CREATE STORAGE CREDENTIAL`, `CREATE EXTERNAL LOCATION`, backing external tables/volumes
 - **Securable DDL & metadata** — creating/altering catalogs, schemas, managed vs external tables, views; comments, tags, table properties, ownership
+- **Connection credentials & secrets**: a connection's password from a secret scope (`secret()`) and its rotation; where the secret lives
 
 **Observability & files:**
 - Working with **volumes** (upload, download, list files in `/Volumes/`)
@@ -51,6 +52,7 @@ Use this skill when:
 | System Tables | [references/5-system-tables.md](references/5-system-tables.md) | Lineage, audit, billing, compute, jobs, query history |
 | Volumes | [references/6-volumes.md](references/6-volumes.md) | Volume file operations, permissions, best practices |
 | Data Profiling | [references/7-data-profiling.md](references/7-data-profiling.md) | Data profiling, drift detection, profile metrics |
+| Connections & Secrets | [references/8-connections-and-secrets.md](references/8-connections-and-secrets.md) | A connection's password and its rotation; where the secret lives |
 
 ## Quick Start
 
@@ -214,6 +216,7 @@ for row in resp.result.data_array or []:
 3. **Use appropriate retention** - Check your workspace's retention settings
 4. **Schedule reports** - Create scheduled queries for regular monitoring
 5. **Prefer SQL/SDK over experimental CLI** - For anything beyond quick checks
+6. **Connection passwords** - after a rotation, run `ALTER CONNECTION` with every option and the same `secret()`, or `databricks connections update` for a connection made without `secret()`. Azure Key Vault-backed scopes: the vault's access-policy model only, and a vault in another tenant needs the creating user to be able to create service principals there. Where the secret lives: [references/8-connections-and-secrets.md](references/8-connections-and-secrets.md)
 
 ## Related Skills
 
@@ -234,10 +237,10 @@ tables, and volumes. For adjacent concerns, use the sibling skill instead:
 
 ### Roadmap (not yet covered — deferred to a later version)
 
-These governance areas are intentionally **out of scope for v0.3.0** and planned for later:
+These governance areas are intentionally **out of scope for v0.4.0** and planned for later:
 
 - Delta Sharing / Marketplace / Clean Rooms
-- Lakehouse Federation (connections + foreign catalogs)
+- Lakehouse Federation (connection setup + foreign catalogs; connection passwords: Best Practice 6)
 - ABAC / governed tags as policy
 
 ## Resources
