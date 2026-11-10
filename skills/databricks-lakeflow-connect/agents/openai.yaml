@@ -1,7 +1,7 @@
 interface:
   display_name: "Databricks Lakeflow Connect"
-  short_description: "Build managed ingestion pipelines into Databricks using Lakeflow Connect."
+  short_description: "Build Lakeflow Connect ingestion pipelines from databases (SQL Server, PostgreSQL, MySQL, Oracle) into Unity Catalog with CDC or query-based ingestion."
   icon_small: "./assets/databricks.svg"
   icon_large: "./assets/databricks.png"
   brand_color: "#FF3621"
-  default_prompt: "Use $databricks-lakeflow-connect to build managed ingestion pipelines into databricks using Lakeflow Connect."
+  default_prompt: "Use $databricks-lakeflow-connect to build a Lakeflow Connect ingestion pipeline from a database (SQL Server, PostgreSQL, MySQL, Oracle) with CDC or query-based ingestion, or to debug one."

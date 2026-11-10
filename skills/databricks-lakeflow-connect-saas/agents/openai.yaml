@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Lakeflow Connect SaaS"
+  short_description: "Build Lakeflow Connect ingestion pipelines from SaaS apps (Salesforce, Workday, ServiceNow, SharePoint, ads platforms), Kafka and RabbitMQ into Unity Catalog."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-lakeflow-connect-saas to find a Lakeflow Connect SaaS connector, create its connection and ingestion pipeline from a SaaS app, Kafka or RabbitMQ, schedule it, or debug it."

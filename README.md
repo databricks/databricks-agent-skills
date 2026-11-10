@@ -128,7 +128,8 @@ Stable skills shipped from [`skills/`](./skills/):
 - **databricks-docs** — Databricks documentation lookup via llms.txt.
 - **databricks-execution-compute** — Execute code on Databricks compute.
 - **databricks-iceberg** — Apache Iceberg tables (Managed/Foreign), UniForm, Iceberg REST Catalog, client interoperability.
-- **databricks-lakeflow-connect** — Lakeflow Connect managed ingestion connectors.
+- **databricks-lakeflow-connect** — Lakeflow Connect managed ingestion from databases (CDC, gateway, query-based).
+- **databricks-lakeflow-connect-saas** — Lakeflow Connect managed ingestion from SaaS applications, files, Kafka and RabbitMQ.
 - **databricks-metric-views** — Unity Catalog Metric Views for governed metrics.
 - **databricks-ml-training** — ML model training on Databricks.
 - **databricks-mlflow-evaluation** — MLflow agent evaluation, scorers, and quality improvement.
