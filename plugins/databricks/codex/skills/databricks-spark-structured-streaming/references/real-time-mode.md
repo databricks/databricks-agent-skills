@@ -62,7 +62,7 @@ RTM runs **all pipeline stages simultaneously** (unlike micro-batch, which can r
 
 If `maxPartitions` is unset, the source partition count equals the Kafka topic's partition count. If under-sized, the query throws an insufficient-task-slots error at start and stalls or fails.
 
-RTM also allows **at most one streaming shuffle stage** per query — a second shuffle-requiring operation throws `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED` (see [Common errors](#common-errors)). Combine aggregations or use a broadcast join to stay within one shuffle.
+RTM supports **multiple shuffle stages in one query**, whether or not real-time watermark propagation is on. The only shuffle limits apply to queries that use `withWatermark` while propagation is on (the default for new queries in DBR 19.16+): **no shuffle before `withWatermark`**, and **at most one shuffle between a stateful operator and the closest `withWatermark` or stateful operator before it**. See [Query shapes that aren't supported](#query-shapes-that-arent-supported).
 
 ## Supported sources and sinks
 
@@ -101,6 +101,7 @@ For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-
 - Simple aggregations: `groupBy(...).count()`, `sum`, `avg`, etc.
 - **Stream-stream inner join** — supported on **DBR 18+** with five Spark configs (see [Stream-stream inner join](#stream-stream-inner-join-dbr-18) below).
 - `transformWithState` for custom state (see below)
+- **Multi-step stateful queries (DBR 19+)** — chain stateful operators, e.g. `dropDuplicates` → `transformWithState`, or a stream-stream join feeding another stateful operator.
 
 > **Note on `dropDuplicatesWithinWatermark`:** the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference) marks it **supported** in standalone Structured Streaming RTM (state is kept unbounded — pass the event-time column so state can evict). A `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` error class exists in the catalog, but the existence of the class does not make the operator unsupported here — it is not raised on this surface. It *is* raised on Lakeflow/SDP RTM, where the operator is genuinely unsupported (see [databricks-pipelines/references/real-time-mode.md](../../databricks-pipelines/references/real-time-mode.md)). Do **not** replace `dropDuplicatesWithinWatermark` with `dropDuplicates` in standalone RTM.
 
@@ -112,7 +113,7 @@ For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-
 - `foreachBatch`, `mapPartitions`, and its Python equivalents `mapInPandas` / `mapInArrow` (they fail with `STREAMING_REAL_TIME_MODE.OPERATOR_OR_SINK_NOT_IN_ALLOWLIST`). A scalar UDF alone is not a drop-in replacement because it maps one row to one row. To get the same behavior, combine scalar UDFs with [complex types](https://docs.databricks.com/aws/en/semi-structured/complex-types) (for example, return an array and `explode` it) or `filter`, as described in the [RTM `mapPartitions` limitation](https://docs.databricks.com/aws/en/structured-streaming/real-time/limitations#mappartitions-limitation).
 - `transformWithStateInPandas` — use the row-based Python API
 - Output modes `append` and `complete`
-- Event-time timers inside `transformWithState`
+- Event-time timers inside `transformWithState` **when real-time watermark propagation is off** (supported on DBR 19+ with it on — see [`transformWithState` behavior change](#transformwithstate-behavior-change))
 - Checkpoint format v1
 - Union with batch sources; union of two identical streaming sources
 
@@ -136,6 +137,37 @@ State format v4 is what enables non-blocking iteration over both sides — requi
 
 For broadcast stream-static joins (the long-standing RTM-compatible enrichment pattern, available on all RTM DBRs), see [stream-static-joins.md](stream-static-joins.md) — wrap the static side in `broadcast()`.
 
+## Real-time watermark propagation (DBR 19+)
+
+With real-time watermark propagation, each stateful operator advances its watermark, cleans up state, fires event-time timers, and passes the watermark downstream **in real time** instead of only at batch boundaries. It's what makes event-time timers in `transformWithState` and multi-step stateful queries work in RTM.
+
+**On by default for new RTM queries in DBR 19.16+.** Earlier DBR 19 releases leave it off. To go back to the previous behavior (watermark advances only at batch boundaries), set this before the query starts, in the session or the cluster's Spark config:
+
+```python
+spark.conf.set("spark.databricks.streaming.realTimeMode.realTimeWatermark.enabled", "false")
+```
+
+- **The setting is pinned in the checkpoint.** A query keeps the value it started with across restarts from the same checkpoint, including queries whose checkpoint predates the new default (they stay off). To change it for an existing query, restart from a new checkpoint.
+- **Behavior change for new stateful queries:** more aggressive late-event filtering and shorter state retention than the batch-boundary semantics. Validate in pre-production before running new stateful queries in production.
+
+### Min-of-max watermark
+
+With propagation on, RTM uses **min-of-max** semantics for every RTM-supported source: for each `withWatermark`, track the max event time per source partition; the watermark is the **min** of those per-partition maxes, minus the delay. The watermark moves only as fast as the slowest source partition, so a fast partition can't make a slower partition's events late.
+
+- **What a "source partition" is:** for most sources, each Spark input partition. **Kafka and Kinesis are exceptions** — they track each Kafka topic partition / Kinesis shard, even when one Spark input partition reads several (e.g. `maxPartitions` lower than the topic-partition count). A slow topic partition still holds back the watermark when it shares a task with faster ones.
+- **Idle partitions stall the watermark for that batch.** Only one watermark value is persisted between batches (not one per partition), so if any source partition gets no data during a batch, the watermark doesn't advance in that batch.
+- **With propagation off**, RTM uses **max-of-max** (max event time across all partitions, minus the delay), same as micro-batch.
+- Multiple `withWatermark` inputs to one stateful operator (e.g. a stream-stream join) combine under [`spark.sql.streaming.multipleWatermarkPolicy`](https://docs.databricks.com/aws/en/structured-streaming/watermarks#multiple-watermarks) (default `min`).
+
+### Query shapes that aren't supported
+
+In a query that uses `withWatermark` with propagation on, these shapes are rejected when a batch is planned, before any task runs. Other queries have no shuffle limit.
+
+- **A shuffle before `withWatermark`**, e.g. `repartition(n).withWatermark(...)` → `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.SHUFFLE_NOT_SUPPORTED_BEFORE_WATERMARK`.
+- **More than one shuffle between a stateful operator and the closest `withWatermark` or stateful operator before it** → `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED`. Each input of a stateful operator is checked separately, so each join input gets its own one-shuffle budget. Example: `withWatermark(...)` → `repartition(2)` → `groupByKey(...).transformWithState(...)` has two shuffles (the `repartition` and the `groupByKey`).
+
+The usual fix for both is to remove the explicit `repartition`. If the workload genuinely needs one of these shapes, tell the user to contact Databricks support; don't suggest turning propagation off as a workaround.
+
 ## `transformWithState` behavior change
 
 `transformWithState` is also the main escape hatch for working around RTM's other restrictions — many things RTM doesn't support natively (event-time-window-like behavior, custom join logic, complex multi-row state transitions) can be implemented inside a stateful processor.
@@ -147,9 +179,9 @@ The single semantic difference to know:
 If you write a `StatefulProcessor` assuming "I get a batch of rows for one key," that logic breaks in RTM. Each row arrives separately.
 
 Other RTM-specific rules:
-- **Processing-time timers only.** Event-time timers are not supported.
+- **Event-time timers need [real-time watermark propagation](#real-time-watermark-propagation-dbr-19)** (DBR 19+, on by default for new queries in 19.16+). A timer fires when the live watermark passes its timestamp. With propagation off, a query using event-time timers fails with `EVENT_TIME_BASED_TIMERS_IN_TRANSFORM_WITH_STATE_NOT_SUPPORTED`.
 - **No `transformWithStateInPandas`.** Use the row-based Python API.
-- Timer firing is delayed by data arrival: a timer scheduled for 10:00:00 will not fire at 10:00:00 if no data arrives — it fires when the next row arrives. Termination paths fire pending timers before exit.
+- **Processing-time timers fire close to their scheduled time on DBR 19+**, even when no data arrives. On DBR 18 LTS and below they're delayed by data arrival: a timer scheduled for 10:00:00 doesn't fire until the next row arrives. Termination paths fire pending timers before exit.
 - DBR 18.1 and below show "up to a few hundred ms" latency with Python at <5 rec/sec. Use DBR 18.2 or later (or Scala) to avoid this.
 
 ## Verifying and observing RTM
@@ -218,10 +250,11 @@ The full RTM error-class catalog is documented at [STREAMING_REAL_TIME_MODE erro
 | `STREAMING_REAL_TIME_MODE.SESSION_WINDOWS_NOT_SUPPORTED` | Session windows aren't supported. Use tumbling/sliding or `transformWithState`. |
 | `STREAMING_REAL_TIME_MODE.BATCH_UNION_NOT_SUPPORTED` | Cannot union a streaming source with a batch DataFrame. |
 | `STREAMING_REAL_TIME_MODE.IDENTICAL_SOURCES_IN_UNION_NOT_SUPPORTED` | Cannot union two identical streaming sources (e.g. same Kafka topic read twice). |
-| `STREAMING_REAL_TIME_MODE.EVENT_TIME_BASED_TIMERS_IN_TRANSFORM_WITH_STATE_NOT_SUPPORTED` | Use processing-time timers only inside `transformWithState`. |
+| `STREAMING_REAL_TIME_MODE.EVENT_TIME_BASED_TIMERS_IN_TRANSFORM_WITH_STATE_NOT_SUPPORTED` | Event-time timers need [real-time watermark propagation](#real-time-watermark-propagation-dbr-19), which was off for this query. On DBR 19.16+ it's on by default for new queries: check that `spark.databricks.streaming.realTimeMode.realTimeWatermark.enabled` isn't set to `false`, and that the checkpoint wasn't created with it off (restart from a new checkpoint if so). On older releases, use processing-time timers. |
 | `STREAMING_REAL_TIME_MODE.CLUSTER_CONFIGURATION_NOT_SUPPORTED` | Cluster setting is incompatible (e.g. Photon on, autoscaling on). Fix the offending setting (see [Cluster setup](#cluster-setup)). |
 | `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` | Exists in the catalog but is **not raised in standalone Structured Streaming RTM** — `dropDuplicatesWithinWatermark` is supported there per the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference). This class applies on other surfaces (e.g. Lakeflow/SDP RTM), where the operator is genuinely unsupported. |
-| More than one streaming shuffle stage (`STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED`) | RTM allows **at most one streaming shuffle stage** per query. Two shuffle-requiring operations (e.g. two aggregations, or an aggregation plus a shuffle join) trigger this — note the different top-level class, **not** a `STREAMING_REAL_TIME_MODE.*` subclass. Combine aggregations into one `groupBy`, or convert a shuffle join to a broadcast (stream-static) join, to stay within one shuffle. |
+| `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.MULTIPLE_SHUFFLES_NOT_SUPPORTED` | Only raised for a query that uses `withWatermark` with real-time watermark propagation on: more than one shuffle between a stateful operator and the closest `withWatermark` or stateful operator before it (checked per input). Multiple shuffle stages elsewhere in the query are fine. Typically an explicit `repartition` plus the stateful operator's own shuffle. Note the different top-level class, **not** a `STREAMING_REAL_TIME_MODE.*` subclass. Remove the extra shuffle; see [Query shapes that aren't supported](#query-shapes-that-arent-supported). |
+| `STREAMING_REAL_TIME_WATERMARK_PROPAGATION.SHUFFLE_NOT_SUPPORTED_BEFORE_WATERMARK` | A shuffle (e.g. `repartition`) runs before `withWatermark`. Remove it; see [Query shapes that aren't supported](#query-shapes-that-arent-supported). |
 | Query fails at start: **insufficient task slots** (`CONCURRENT_SCHEDULER_INSUFFICIENT_SLOT`) | This class lives outside the curated `STREAMING_REAL_TIME_MODE.*` namespace in public docs. Cluster has fewer vCPUs than the pipeline's sum-of-partitions. Increase cluster size to match the [Slot math](#slot-math) above. |
 
 ## Worker memory and GC
