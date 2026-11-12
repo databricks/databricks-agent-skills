@@ -476,7 +476,7 @@
       "version": "0.3.2"
     },
     "databricks-serverless-migration": {
-      "description": "Migrate Databricks workloads from classic compute to serverless compute.",
+      "description": "Make direct code and configuration changes to migrate Databricks workloads from classic compute to serverless. Use for editing notebooks, jobs, pipelines, or Scala JARs (`spark_jar_task`), analyzin...",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
@@ -500,6 +500,19 @@
       ],
       "repo_dir": "skills",
       "version": "0.1.1"
+    },
+    "databricks-serverless-migration-api": {
+      "description": "Migrate Databricks jobs to serverless through the Compute Migrations API and CLI, then track, review, and approve each migration. Use for automated job migrations managed by this service, scripts t...",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "assets/databricks.png",
+        "assets/databricks.svg",
+        "references/backups-and-rollback.md",
+        "references/bulk-migration.md"
+      ],
+      "repo_dir": "skills",
+      "version": "0.1.0"
     },
     "databricks-setup-local": {
       "description": "Previews, provisions, or diagnoses a uv-managed local Python .venv with `databricks environments setup-local`.",

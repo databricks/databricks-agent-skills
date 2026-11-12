@@ -22,6 +22,7 @@
     "dabs",
     "serverless-compute",
     "serverless",
+    "compute-migrations",
     "vector-search",
     "ai-functions",
     "ai-runtime",
