@@ -1,6 +1,6 @@
 ---
 name: databricks-serverless-migration
-description: "Migrate Databricks workloads from classic compute to serverless compute. Use when migrating notebooks, jobs, pipelines, or Scala JARs (`spark_jar_task`) from classic clusters to serverless, checking if existing code is serverless-compatible, or writing new serverless-compatible code. Provides concrete fixes for the serverless Spark Connect architecture and guides the full migration. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
+description: "Make direct code and configuration changes to migrate Databricks workloads from classic compute to serverless. Use for editing notebooks, jobs, pipelines, or Scala JARs (`spark_jar_task`), analyzing serverless compatibility, or writing serverless-compatible code. Provides concrete fixes for the serverless Spark Connect architecture and guides the full migration. For automated job migrations managed through the Compute Migrations API and CLI, use databricks-serverless-migration-api. Not for classic DBR version upgrades or cluster configuration changes within classic compute."
 compatibility: Requires databricks CLI (>= v0.292.0)
 metadata:
   version: "0.1.1"
@@ -12,6 +12,15 @@ parent: databricks-core
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, and profile selection.
 
 Analyze existing Databricks code for serverless compute compatibility and guide migration from classic clusters. The skill follows a 4-step migration lifecycle: **Ingest** the workload → **Analyze** for compatibility → **Test** via A/B comparison → **Validate** and iterate.
+
+## Prefer the Compute Migrations API for Jobs
+
+To migrate a job, first check whether `databricks-serverless-migration-api` is installed and its prerequisites are available. If so, use it to start and manage the migration. The service backs up the job, builds and optionally runs a serverless working copy, and changes the original only after review. Use the manual workflow below when:
+
+- the API skill, `databricks compute-migrations` CLI commands, or Compute Agent preview are not available,
+- the workload is a standalone notebook or pipeline,
+- the service reports the job as not supported, or
+- the user wants you to make the changes yourself.
 
 ## When to Use This Skill
 
