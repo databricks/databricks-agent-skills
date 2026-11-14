@@ -153,6 +153,56 @@ Do not combine `unity_catalog_image` with `version` or `dependencies`.
 These optional top-level fields cover the common needs. Run
 `databricks air run -h config.<field>` for the full reference on any of them.
 
+### Hugging Face gated models
+
+When a model needs a Hugging Face (HF) token, lead with this checklist before
+asking for other training details or running secrets commands:
+
+1. Accept the model license on HF and, if required, wait for access approval.
+   Create a fine-grained read-only token with **Read access to contents of all
+   public gated repos you can access**. For a private repo, also grant read
+   access to that specific repo.
+2. Choose an existing scope the user owns and can write. If they need to find
+   one, have them filter `list-scopes` to their own username or scopes they
+   created, then confirm ownership and access; a name match alone is not proof.
+   For example, the user can run the following with their own username:
+   ```bash
+   databricks secrets list-scopes -p <profile> -o json | jq -r --arg user "<your-username>" '.[] | select(.name | contains($user)) | .name'
+   ```
+   Never browse or inspect other users' scopes or keys. Create a scope only if
+   needed; if `create-scope` reports `Max limit of 2000 scopes has been reached`,
+   reuse an existing user-owned scope instead. The user may need to run
+   `list-acls` on their own scope to check access. Before using `<scope>` in any
+   `databricks secrets ...` command, validate it: it must be an existing scope
+   the user owns, from their own scopes, and match the scope-name charset
+   `^[A-Za-z0-9_.@-]+$`. If it doesn't, have the user run the commands
+   themselves. Always double-quote it. If the scope is Azure Key Vault-backed
+   (`backend_type` is `AZURE_KEYVAULT`), `put-secret` can't write to it: have
+   the user add the token to that vault with their own tooling and use that
+   secret's name as the key below.
+3. First check whether `hf-token` already exists in the scope, using the
+   key-name check in step 4. If it does, reuse it only if it is the right
+   token; otherwise pick a new key such as `hf-token-gemma`, or get the user's
+   explicit OK before overwriting it, since other workloads may read it. Use
+   the chosen key in steps 4 and 5. Have the user run this in **their own
+   terminal** and enter the token at the hidden prompt. Never paste the token
+   into chat or a command line.
+   ```bash
+   databricks secrets put-secret "<scope>" hf-token -p <profile>
+   ```
+4. Once they have stored it and named their scope, verify only the key name in
+   that one scope, filtering the output to `hf-token`:
+   ```bash
+   databricks secrets list-secrets "<scope>" -p <profile> -o json | jq -r '.[] | select(.key == "hf-token") | .key'
+   ```
+5. Reference `secrets: {HF_TOKEN: "<scope>/hf-token"}` in the workload. Quote
+   the reference, particularly when the scope contains `@` or `.`. Transformers
+   reads `HF_TOKEN` automatically.
+
+Gemma 3 is gated; Mistral Small 3.2, gpt-oss-20b, and Qwen3 are ungated and do
+not need a token just to download their public weights. Check the specific
+model's HF page for current access requirements.
+
 ### Environment variables and secrets
 
 Set plain values under `env_variables`; pull sensitive values from Databricks
@@ -163,17 +213,12 @@ the value is materialized on the worker, never logged):
 env_variables:
   BATCH_SIZE: "32"
 secrets:
-  HF_TOKEN: my_scope/hf_token          # -> $HF_TOKEN on every node
-  WANDB_API_KEY: my_scope/wandb_key
+  HF_TOKEN: "<scope>/hf-token"          # -> $HF_TOKEN on every node
+  WANDB_API_KEY: "<scope>/wandb_key"
 ```
 
-The scope and key must already exist; create them once with the Databricks CLI:
-
-```bash
-databricks secrets create-scope my_scope -p <profile>
-databricks secrets put-secret my_scope hf_token -p <profile>
-```
-
+The scope and keys must already exist. Prefer a user-owned scope; create one
+only if needed, and have the user store secret values in their own terminal.
 Secret env var names must not collide with `env_variables` names.
 
 ### Parameters (hyperparameters)
@@ -265,9 +310,10 @@ Your `command:` runs **once per node**, so per-process ranks (`RANK`,
 ## Starting a run
 
 1. **Turn the user's intent into the YAML.** Extract model, dataset path, GPU
-   count and type, and the training command from the request. Ask before
-   synthesizing a config when something critical is ambiguous (data path,
-   checkpoint dir, custom image).
+   count and type, and the training command from the request. For gated models,
+   lead with the [token checklist](#hugging-face-gated-models) first. Ask before
+   synthesizing a config when a remaining critical detail is ambiguous (data
+   path, checkpoint dir, custom image).
 
 2. **Write the `command:`** using the env vars above. Common launch shapes:
 
@@ -289,8 +335,9 @@ Your `command:` runs **once per node**, so per-process ranks (`RANK`,
      [environment](#python-environment) or its `dependencies` (the Standard
      environment has no `torch`).
    - `max_retries: 0` is set while the workload is new or being debugged.
-   - Every `secrets` scope/key exists (`databricks secrets list-scopes` /
-     `list-secrets <scope>`).
+   - For each `secrets` reference, verify only its key name in the user's chosen
+     scope, filtering `list-secrets` as in the [token checklist](#hugging-face-gated-models).
+     Never browse other users' scopes or list their keys.
    - If `environment.unity_catalog_image` is set, the image has been pushed to
      Databricks Artifact Registry in the same workspace and the submitting
      identity can read it (see [docker-images.md](docker-images.md)).
@@ -371,6 +418,37 @@ Show the failing traceback and let the user decide the fix. Before
 resubmitting, set `max_retries: 0` so a deterministic error fails once. For a
 deeper, guided diagnosis of a training failure, use AI Runtime's own debugging
 support rather than guessing at root cause here.
+
+## Serving a trained model
+
+A model trained with `databricks air` is served as a
+[custom model](https://docs.databricks.com/aws/en/machine-learning/model-serving/custom-models):
+log it with MLflow, register it in Unity Catalog, and create a serving endpoint
+on CPU or GPU compute.
+
+To serve it with the library versions you tested, without pinning `torch` or
+CUDA for the serving container, use an
+[express deployment](https://docs.databricks.com/aws/en/machine-learning/model-serving/express-deployments)
+(Public Preview). The endpoint then runs the environment of the notebook you
+registered from. Express deployments require:
+
+- Logging and registering from an AI Runtime notebook to serve on GPU, or from
+  a serverless notebook to serve on CPU, with `mlflow>=3.12` and
+  `databricks-sdk>=0.102.0`.
+- Registering with
+  `mlflow.register_model(..., env_pack="databricks_model_serving")`. Do not use
+  `registered_model_name=` on `log_model`: it does not accept `env_pack` and
+  registers a standard model.
+- An environment of at most 200 GB.
+
+For LLMs, use
+[Custom LLM Serving](https://docs.databricks.com/aws/en/machine-learning/model-serving/serve-custom-llms),
+which builds on express deployments and starts an OpenAI-compatible server such
+as vLLM from the model's `entrypoint` metadata.
+
+GPU `workload_type` names map to different GPUs per cloud. For example,
+`GPU_LARGE` is an L40S (48 GB) on AWS and an A100 (80 GB) on Azure. See the GPU
+table on the Custom LLM Serving page.
 
 ## Custom Docker images
 

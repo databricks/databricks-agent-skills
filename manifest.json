@@ -22,7 +22,8 @@
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg",
-        "docker-images.md"
+        "docker-images.md",
+        "eval/ground_truth.yaml"
       ],
       "repo_dir": "skills",
       "version": "0.3.0"

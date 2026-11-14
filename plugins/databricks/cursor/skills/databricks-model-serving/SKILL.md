@@ -60,8 +60,9 @@ Run `databricks serving-endpoints -h` before constructing any command. Run `data
 > **Do NOT list endpoints before creating.**
 
 ```bash
-databricks serving-endpoints create <ENDPOINT_NAME> \
+databricks serving-endpoints create \
   --json '{
+    "name": "<ENDPOINT_NAME>",
     "served_entities": [{
       "entity_name": "<MODEL_CATALOG_PATH>",
       "entity_version": "<VERSION>",
