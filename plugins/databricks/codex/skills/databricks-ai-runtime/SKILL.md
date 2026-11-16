@@ -309,6 +309,27 @@ Your `command:` runs **once per node**, so per-process ranks (`RANK`,
 
 ## Starting a run
 
+**Start from a cookbook recipe when one fits.** The
+[AI Runtime Cookbook](https://github.com/databricks-solutions/ai-runtime-cookbook)
+has runnable recipes, each a `workload.yaml` plus source code, grouped by domain
+(`language-models/`, `computer-vision/`, `recommendation-and-ranking/`,
+`time-series/`, `multimodal/`, `serving/`, and more; Ray recipes live in these
+domain folders with a `ray-` prefix). `getting-started/air-cli/` is the
+minimal first run. Adapting the closest recipe is usually faster and less
+error-prone than writing a workload from scratch:
+
+```bash
+git clone https://github.com/databricks-solutions/ai-runtime-cookbook.git
+cd ai-runtime-cookbook/<domain>/<recipe>     # e.g. getting-started/air-cli
+# Review workload.yaml (and the recipe README) for values to configure, then:
+databricks air run --file workload.yaml --dry-run -o json -p <profile>
+databricks air run --file workload.yaml --watch \
+  --idempotency-key <key> -o json -p <profile>  # key as in step 5
+```
+
+Apply the steps below to the recipe's YAML the same way as to a new one,
+including the stable `--idempotency-key` from step 5.
+
 1. **Turn the user's intent into the YAML.** Extract model, dataset path, GPU
    count and type, and the training command from the request. For gated models,
    lead with the [token checklist](#hugging-face-gated-models) first. Ask before

@@ -106,3 +106,33 @@ test_cases:
           title: "Reporter-observed gated-model workflow"
           retrieved_at: 2026-11-12T21:00:03Z
           snippet: "The reporter checked the Hugging Face API and found Qwen3 returns gated: false."
+
+  - id: cookbook_starting_point_7c1e
+    inputs:
+      prompt: |
+        I want to run my first fine-tuning job on AI Runtime and I'd rather
+        not write the workload from scratch. Is there an example I can start
+        from? Don't run any commands.
+    expectations:
+      expected_facts:
+        - "The AI Runtime Cookbook (github.com/databricks-solutions/ai-runtime-cookbook) has runnable recipes, each with a workload.yaml and source code."
+        - "getting-started/air-cli is the minimal first recipe; language-models holds fine-tuning recipes."
+      assertions:
+        - "Point the user to the AI Runtime Cookbook and suggest adapting the closest recipe."
+        - "Show cloning the cookbook, changing into a recipe directory, and running databricks air run with that recipe's workload.yaml."
+        - "Do not run any commands."
+      expected_patterns:
+        - 'ai-runtime-cookbook'
+        - 'workload.yaml'
+      trace_expectations:
+        banned_tools: [Bash]
+    metadata:
+      category: happy_path
+      difficulty: easy
+      regression_intent: "Catch an agent that writes a workload from scratch without knowing the cookbook exists."
+      sources:
+        - type: docs
+          uri: https://docs.databricks.com/aws/en/machine-learning/ai-runtime/quickstart
+          title: "AI Runtime quickstart"
+          retrieved_at: 2026-11-14T00:00:00Z
+          snippet: "To start from a runnable project instead of creating these files manually, clone the AI Runtime cookbook repository."
