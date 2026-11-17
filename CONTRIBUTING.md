@@ -69,6 +69,8 @@ python3 scripts/skills.py validate
 
 `generate` is idempotent — re-running it never overwrites your `SKILL.md`, `references/`, or hand-edited `agents/openai.yaml`; it only fills in what's missing.
 
+The one exception is the **skills-invoked telemetry block**: `generate` writes a block between `<!-- BEGIN databricks-skills-invoked ... -->` and `<!-- END databricks-skills-invoked -->` right after each `SKILL.md` title, and `validate` fails if it is missing or stale. It tells the agent to prefix its `databricks` CLI calls with `DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI sends that value as the `X-Databricks-Skills-Invoked` HTTP header, starting with the first CLI release that includes databricks/cli#7730. Older CLIs ignore the env var, which is why skills use it instead of the CLI's `--skills-invoked` flag (older CLIs reject unknown flags). Edit the text in `scripts/skillsgen/telemetry.py`, never in a `SKILL.md`.
+
 ### CI
 
 `.github/workflows/validate-manifest.yml` runs `python3 scripts/skills.py validate` on every PR that touches the skills, the generator, `metaplugin/plugin.meta.json`, any plugin manifest dir (`.claude-plugin/**`, `.github/plugin/**`, `.cursor-plugin/**`, `.agents/**`), the `plugins/**` bundle, `hooks/**`, the command dirs, `rules/**`, `LICENSE`, or `NOTICE`. Validation enforces:

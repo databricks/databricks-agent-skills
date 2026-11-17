@@ -8,6 +8,7 @@ from pathlib import Path
 from skillsgen.common import META_FILE, load_meta
 from skillsgen.discovery import check_codex_metadata, ensure_codex_metadata
 from skillsgen.generate import generate_all
+from skillsgen.telemetry import check_skills_invoked_block
 from skillsgen.manifest import check_manifest_file_references, validate_manifest
 from skillsgen.plugins import (
     check_generated_plugins,
@@ -71,6 +72,7 @@ def main() -> None:
             # generate_all so this CLI and the release bump cannot drift.
             result = generate_all(repo_root)
             manifest = result["manifest"]
+            print(f"Updated {result['telemetry']} SKILL.md skills-invoked block(s)")
             print(f"Wrote {result['assets']} Codex-metadata file(s)")
             print(f"Generated {repo_root / 'manifest.json'}")
             print(
@@ -113,6 +115,17 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in metadata_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            telemetry_errors = check_skills_invoked_block(repo_root)
+            if telemetry_errors:
+                print(
+                    "ERROR: SKILL.md skills-invoked telemetry blocks are out of sync "
+                    "(run `python3 scripts/skills.py generate`):",
+                    file=sys.stderr,
+                )
+                for err in telemetry_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

@@ -25,6 +25,7 @@ from skillsgen.hooks import generate_hooks
 from skillsgen.manifest import generate_manifest, serialize_manifest
 from skillsgen.plugins import generate_plugins
 from skillsgen.routing import generate_routing
+from skillsgen.telemetry import ensure_skills_invoked_block
 
 
 def generate_all(repo_root: Path, version_override: str | None = None) -> dict:
@@ -36,6 +37,8 @@ def generate_all(repo_root: Path, version_override: str | None = None) -> dict:
     the file count for each step plus the manifest object, so callers can print
     their own progress without re-deriving anything.
     """
+    # Rewrites SKILL.md bodies, so it runs before the manifest and bundle read them.
+    written_telemetry = ensure_skills_invoked_block(repo_root)
     written_assets = ensure_codex_metadata(repo_root)
 
     meta = load_meta(repo_root)
@@ -53,6 +56,7 @@ def generate_all(repo_root: Path, version_override: str | None = None) -> dict:
     written_bundle = generate_bundle(repo_root, meta)
 
     return {
+        "telemetry": written_telemetry,
         "assets": written_assets,
         "plugins": written_plugins,
         "routing": written_routing,

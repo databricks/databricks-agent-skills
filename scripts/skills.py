@@ -46,6 +46,15 @@ from skillsgen.discovery import (
     ensure_codex_metadata,
     check_codex_metadata,
 )
+from skillsgen.telemetry import (
+    BLOCK_START,
+    BLOCK_END,
+    SKILLS_INVOKED_TEMPLATE,
+    render_block,
+    apply_block,
+    ensure_skills_invoked_block,
+    check_skills_invoked_block,
+)
 from skillsgen.manifest import (
     generate_manifest,
     _add_skill,
