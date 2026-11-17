@@ -1,9 +1,9 @@
 ---
 name: databricks-ai-runtime
-description: "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` workload YAML, choosing an accelerator type and Python environment, passing hyperparameters and secrets, configuring retries, checking run status, listing/cancelling runs, streaming a run's logs and watching its progress, debugging failed runs, GPU pools, multi-container workloads, custom Docker image setup, and converting a workload to a Databricks Asset Bundle."
+description: "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` workload YAML, choosing an accelerator type and Python environment, reading Unity Catalog tables as training data with UCDataset, passing hyperparameters and secrets, configuring retries, checking run status, listing/cancelling runs, streaming a run's logs and watching its progress, debugging failed runs, GPU pools, multi-container workloads, custom Docker image setup, and converting a workload to a Databricks Asset Bundle."
 compatibility: Requires Databricks CLI 1.18.0 or newer for the air command. Flattened code_source, multi-container workloads, and workspace-validated dry runs require CLI 1.20.0 or newer; older CLIs can use the nested snapshot format documented below. Listing the accelerator types available in your workspace requires CLI 1.23.0 or newer. See the [AI Runtime CLI setup guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/connecting/cli).
 metadata:
-  version: "0.3.0"
+  version: "0.3.1"
 ---
 
 # Databricks AI Runtime (`databricks air`)
@@ -203,6 +203,63 @@ Gemma 3 is gated; Mistral Small 3.2, gpt-oss-20b, and Qwen3 are ungated and do
 not need a token just to download their public weights. Check the specific
 model's HF page for current access requirements.
 
+### Training data in Unity Catalog
+
+When the training script reads rows from a Unity Catalog (UC) table, use
+`UCDataset` (Beta), a PyTorch dataset that reads the table's files directly.
+An AIR workload has no `spark` global, so code that calls `spark.table()` fails.
+Lead with this checklist before writing the script:
+
+1. Use `environment.version: databricks_ai_v6` and add
+   `databricks-uc-dataset==0.0.1b1` to `environment.dependencies`. If the
+   script also imports `databricks.air.data`, for example its `DataLoader`,
+   add `"databricks-sdk-air[data]"` as well, as the AIR docs ask of CLI
+   workloads; some `databricks_ai_v6` builds don't include it. With
+   `unity_catalog_image`, which can't be combined with `version` or
+   `dependencies`, install these packages in the image instead.
+2. Launch with `torchrun`, even on one GPU, for example
+   `torchrun --nproc_per_node=$LOCAL_WORLD_SIZE train.py`. AIR sets
+   `WORLD_SIZE` but not `RANK`, and `UCDataset` raises when only one of them is
+   set. With DDP, call `torch.distributed.init_process_group()` before you
+   create the dataset, and create it on every rank.
+3. The workload reads the table as the identity that submits it, which needs
+   `USE CATALOG`, `USE SCHEMA`, and `SELECT`. `UCDataset` reads only Delta
+   tables in UC. It can't read views, materialized views, streaming tables,
+   shallow clones, tables with a `VARIANT` column, or tables with row filters
+   or column masks; see the
+   [limitations](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/develop-workloads/load-uc-tables#limitations).
+4. Before submitting, check each table, so a wrong name, a missing privilege, or
+   an unsupported table fails in seconds instead of after the GPUs start. Keep
+   the arguments in single quotes so the shell doesn't expand them:
+   ```bash
+   databricks tables get '<catalog>.<schema>.<table>' -o json -p <profile>
+   databricks experimental aitools tools query 'SELECT COUNT(*) FROM IDENTIFIER(:t)' --param 't=<catalog>.<schema>.<table>' -p <profile>
+   ```
+   Continue only if `table_type` is `MANAGED` or `EXTERNAL`,
+   `data_source_format` is `DELTA`, there's no `row_filter`, no column has a
+   `mask` or a `VARIANT` type, and the count returns. Backtick-quote name parts
+   that contain characters other than letters, digits, and underscores; if a
+   name contains `'`, have the user run the checks. The query needs a SQL
+   warehouse (add `--warehouse <id>` to choose one), and `experimental`
+   commands can change between CLI versions. If the query can't run for a
+   reason unrelated to the table, report the check as inconclusive, not as a
+   missing privilege.
+
+If creating the dataset fails with `PERMISSION_DENIED: ... prohibited from
+retrieving temporary storage credentials from Unity Catalog in network
+restricted workspaces`, the workspace's serverless network policy blocks
+`UCDataset`. The checks in step 4 still pass in that case, and tables in the
+`samples` catalog may still load. Retrying, or changing how the script calls
+`UCDataset`, won't help: tell the user, since an account admin controls that
+policy. If the user says the policy changed and the same error comes back,
+resubmit at most once with `max_retries: 0`, then stop.
+
+For files in a UC volume, such as images or audio, use
+`databricks.air.data.UCVolumeDataset` instead. For a complete workload, see
+[Load UC tables into PyTorch with UCDataset](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/develop-workloads/load-uc-tables)
+and the cookbook's
+[click-through-rate recipe](https://github.com/databricks-solutions/ai-runtime-cookbook/tree/main/recommendation-and-ranking/click-through-rate-uc-dataset).
+
 ### Environment variables and secrets
 
 Set plain values under `env_variables`; pull sensitive values from Databricks
@@ -332,15 +389,16 @@ including the stable `--idempotency-key` from step 5.
 
 1. **Turn the user's intent into the YAML.** Extract model, dataset path, GPU
    count and type, and the training command from the request. For gated models,
-   lead with the [token checklist](#hugging-face-gated-models) first. Ask before
-   synthesizing a config when a remaining critical detail is ambiguous (data
-   path, checkpoint dir, custom image).
+   lead with the [token checklist](#hugging-face-gated-models) first. For data
+   in a UC table, follow the [UC data checklist](#training-data-in-unity-catalog).
+   Ask before synthesizing a config when a remaining critical detail is
+   ambiguous (data path, checkpoint dir, custom image).
 
 2. **Write the `command:`** using the env vars above. Common launch shapes:
 
    | Framework | `command:` shape |
    |---|---|
-   | plain torch, single GPU | `python train.py` |
+   | plain torch, single GPU | `python train.py` (with `UCDataset`, use `torchrun`; see the [UC data checklist](#training-data-in-unity-catalog)) |
    | torch, multi-GPU (1 node) | `torchrun --nproc_per_node=$LOCAL_WORLD_SIZE train.py` |
    | torch, multi-node | `torchrun --nnodes=$NUM_NODES --nproc_per_node=$LOCAL_WORLD_SIZE --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT train.py` |
    | HuggingFace Accelerate | `accelerate launch --config_file accelerate.yaml train.py` |
@@ -359,6 +417,9 @@ including the stable `--idempotency-key` from step 5.
    - For each `secrets` reference, verify only its key name in the user's chosen
      scope, filtering `list-secrets` as in the [token checklist](#hugging-face-gated-models).
      Never browse other users' scopes or list their keys.
+   - Every UC table the script reads passes both checks in the
+     [UC data checklist](#training-data-in-unity-catalog). A dry run doesn't
+     check UC tables, however the script gets their names.
    - If `environment.unity_catalog_image` is set, the image has been pushed to
      Databricks Artifact Registry in the same workspace and the submitting
      identity can read it (see [docker-images.md](docker-images.md)).
@@ -434,6 +495,15 @@ databricks air logs <JOB_RUN_ID> --retry 0 --tail 500 -p <profile>   # first att
 If the run was retried, the latest attempt's logs may show a different symptom
 than the first failure; check `--retry 0`. On a multi-node run, check other
 nodes with `--node N` when node 0 looks healthy.
+
+`torchrun` workloads can print hundreds of `NCCL INFO` lines before the user's
+error, so search the logs for `Traceback` or `Error` rather than reading them in
+order. When creating a `UCDataset` fails, the traceback ends with the UC error,
+such as `TABLE_DOES_NOT_EXIST` or `PERMISSION_DENIED`. Under DDP it's a single
+long `rank 0 failed to build the Delta plan` line. In `databricks-uc-dataset`
+0.0.1b1, `UC returned no storage location` usually means the name is a view,
+and `set both RANK and WORLD_SIZE or neither` means the script wasn't launched
+with `torchrun`. See the [UC data checklist](#training-data-in-unity-catalog).
 
 Show the failing traceback and let the user decide the fix. Before
 resubmitting, set `max_retries: 0` so a deterministic error fails once. For a

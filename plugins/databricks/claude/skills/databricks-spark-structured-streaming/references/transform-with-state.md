@@ -171,16 +171,17 @@ ops = spark.read.format("state-metadata").load(ckpt)  # operators, minBatchId, m
 The same checkpoint cannot switch operators: it fails with `STREAMING_STATEFUL_OPERATOR_NOT_MATCH_IN_STATE_METADATA`. Carry the state over instead. The state reader's output is not a drop-in initial state: read it, reshape it to the new processor's state schema, validate it, group it, and seed it on a new checkpoint.
 
 1. Stop the legacy query at a version boundary and note `last_version`, the last source version it processed completely. A Delta source can split one large commit across batches (`maxFilesPerTrigger`, 1000 files by default), so a query stopped mid-commit holds only part of that version. An `AvailableNow` run that ends by itself stops at a boundary.
-2. Read its state: `spark.read.format("statestore").load(old_ckpt)`. The user fields are under `value` (or `value.groupState`, depending on the runtime).
+2. Read its state: `spark.read.format("statestore").load(old_ckpt)`. The user fields are under `value.groupState` with state format v2, the default (`spark.sql.streaming.flatMapGroupsWithState.stateFormatVersion`); only a checkpoint written with v1 stores them directly under `value`.
 3. Reshape it to the columns your `handleInitialState` expects, check the keys and values (for example, row counts against the old state), and group it by the same keys as the stream.
 4. Pass it as `initialState` to the new TWS query.
-5. Start on a **new** checkpoint, with the source starting at `last_version + 1`, so no row is counted twice or skipped.
+5. Start on a **new** checkpoint, with the source starting at `last_version + 1`, so no row is counted twice or skipped. After an `AvailableNow` run that caught up fully, `last_version` is usually the table's latest version, so `last_version + 1` does not exist yet and the new query fails at start with `DELTA_VERSION_NOT_FOUND`. Start it after the next commit lands, which is when the latest version in `DESCRIBE HISTORY` is greater than `last_version`. Do not use `startingVersion` `latest` to skip the wait: it skips a commit that lands between the stop and the start.
 
 ```python
 from pyspark.sql import functions as F
 
 legacy = spark.read.format("statestore").load(old_ckpt)
-initial = legacy.select(F.col("key.user_id").alias("user_id"), "value.n", "value.total").groupBy("user_id")
+# State format v2 (the default) nests the legacy fields under value.groupState; a v1 checkpoint stores them flat, so select value.n and value.total
+initial = legacy.select(F.col("key.user_id").alias("user_id"), "value.groupState.n", "value.groupState.total").groupBy("user_id")
 (spark.readStream.option("startingVersion", last_version + 1).table(src)
     .groupBy("user_id")
     .transformWithStateInPandas(statefulProcessor=CountProcessor(),  # your processor, with handleInitialState

@@ -106,7 +106,7 @@ Use event time (the timestamp in the row), not processing time (`_ingested_at`),
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE gold_daily_orders AS
-SELECT window(order_timestamp, '1 day').start AS order_date,   -- event time
+SELECT window(order_timestamp, '1 day').start AS order_date,   -- event time; a TIMESTAMP at 00:00 UTC, not a DATE
        COUNT(*)    AS order_count,
        SUM(amount) AS total_amount
 FROM STREAM(silver_orders) WATERMARK order_timestamp DELAY OF INTERVAL 1 HOUR
@@ -114,6 +114,8 @@ GROUP BY window(order_timestamp, '1 day');
 ```
 
 Python: `.withWatermark("order_timestamp", "1 hour").groupBy(F.window("order_timestamp", "1 day"))`.
+
+`window(..., '1 day')` buckets are UTC days: each starts at 00:00 UTC, and `.start` is a `TIMESTAMP`. A `CAST(... AS DATE)` bucket uses the session time zone and gives a `DATE`. With the session time zone `America/Los_Angeles`, an order at 10:00 local time on Jan 1 falls in the window that starts at 16:00 local time on Dec 31. For days in a fixed UTC offset, add a `startTime` offset: `window(order_timestamp, '1 day', '1 day', '8 hours')` for UTC-8, which is `America/Los_Angeles` in winter only. `startTime` and one-day windows do not adjust for daylight saving, so this does not give year-round local calendar days in a zone that observes it. `startTime` is the negative of the UTC offset, so for a zone east of UTC use a negative value or its complement: for UTC+5:30, `'-5 hours -30 minutes'` (or `'18 hours 30 minutes'`). `'5 hours 30 minutes'` would start each day at 11:00 local time, with no error. Use the same four-argument `window(...)` in `SELECT` and in `GROUP BY`.
 
 Choose a delay that covers how late orders arrive: rows later than the delay are dropped, and each day's row lands once the day closes plus the delay. A `CAST(... AS DATE)` bucket would run in Complete mode and keep every day ([performance.md](performance.md)).
 
@@ -185,7 +187,7 @@ FROM STREAM(bronze_transactions) WATERMARK transaction_timestamp DELAY OF INTERV
 GROUP BY customer_id, window(transaction_timestamp, '1 day');
 ```
 
-In append mode each day's row lands once, after the day closes plus the delay. For lifetime totals, roll the daily table up in a materialized view. For a live per-key total in a triggered pipeline, use `transformWithState` in `EventTime` mode with a timer that clears idle keys. TTL is valid only with `timeMode="ProcessingTime"`, which never lets a triggered update finish (see below).
+In append mode each day's row lands once, after the day closes plus the delay. `day` is the UTC day start as a `TIMESTAMP`; for days in a fixed UTC offset, see the `startTime` offset under [Late-Arriving Data](#late-arriving-data), which does not adjust for daylight saving. For lifetime totals, roll the daily table up in a materialized view. For a live per-key total in a triggered pipeline, use `transformWithState` in `EventTime` mode with a timer that clears idle keys. TTL is valid only with `timeMode="ProcessingTime"`, which never lets a triggered update finish (see below).
 
 ---
 

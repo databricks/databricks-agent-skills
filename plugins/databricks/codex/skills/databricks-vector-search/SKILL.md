@@ -1,6 +1,6 @@
 ---
 name: databricks-vector-search
-description: "Databricks AI Search (formerly Vector Search) endpoints and indexes for RAG and semantic search. Use when asked to: create Standard or Storage-Optimized endpoints and Delta Sync or Direct Access indexes with AISearchClient; query with ANN, hybrid, or full-text search and filters; sync, monitor, or migrate indexes; set a target QPS, triage 429s, or load-test an endpoint; wire an index into an agent as a retriever tool. NOT for: no-code document Q&A (databricks-genie-agents); serving-endpoint CRUD (databricks-model-serving); custom ResponsesAgent authoring and deployment (databricks-ml-training)."
+description: "Databricks AI Search (formerly Vector Search) endpoints and indexes for RAG and semantic search. Use when asked to: create Standard or Storage-Optimized endpoints and Delta Sync or Direct Access indexes with AISearchClient; query with ANN, hybrid, or full-text search and filters; sync, monitor, or migrate indexes; run the built-in index search quality evaluation; set a target QPS, triage 429s, or load-test an endpoint; wire an index into an agent as a retriever tool. NOT for: MLflow evaluation of RAG apps/agents (databricks-mlflow-evaluation); no-code document Q&A (databricks-genie-agents); serving-endpoint CRUD (databricks-model-serving); custom ResponsesAgent authoring and deployment (databricks-ml-training)."
 compatibility: Requires databricks-ai-search >= 0.79 (Python); >= 0.80 for start_endpoint/stop_endpoint; 0.82+ for the databricks-ai-search CLI
 metadata:
   version: "0.2.0"
@@ -123,6 +123,11 @@ index = client.create_delta_sync_index(
     embedding_model_endpoint_name="databricks-gte-large-en"
 )
 ```
+
+**An index on an endpoint with no other active indexes can wait for compute even while the endpoint says `ONLINE`.** This typically takes 5-15 minutes, occasionally longer. Its `status.detailed_state` is `PROVISIONING_ENDPOINT` ("pending endpoint provisioning"), and `sync()` is rejected as not ready. The initial sync starts on its own. This also happens when an existing endpoint has released its compute after all indexes were deleted; deleting and recreating the only index can prolong the wait.
+
+- **From an agent's tool calls** (which usually time out within minutes): check once per call with `databricks vector-search-indexes get-index <index> -o json`. Finish when `status.detailed_state` contains `ONLINE` and does not contain `FAILED`; `ready` alone is true even for `ONLINE_PIPELINE_FAILED`. Stop on `ONLINE_PIPELINE_FAILED` or `OFFLINE_FAILED` and report `status.message` and `status.failed_status`. Between checks, tell the user it is still provisioning. After 45 minutes total, report the current status and that provisioning has not finished; do not recreate the index or leave background sleep loops running.
+- **From a notebook, job or long-running script:** use the bounded 45-minute wait and failure diagnostics in [Step 4 of the end-to-end walkthrough](references/end-to-end-rag.md#step-4-wait-for-the-initial-sync).
 
 ### Query Index
 
@@ -314,13 +319,15 @@ By default, Standard endpoints serve about 20-200 QPS, depending on index size. 
 - **Load testing:** use **Run load test** on the endpoint page or the [load test notebook](https://docs.databricks.com/aws/en/ai-search/endpoint-load-test#notebook). With `databricks-ai-search` 0.82+, `databricks-ai-search guide --topic high-qps` prints the guide and `databricks-ai-search load-test --index <name>` plans a run (it runs only with `--yes`); skip this if the `databricks-ai-search` command isn't available.
 - **Agent safety:** ask before creating endpoints or indexes, setting `target_qps`, running load tests, or upserting/deleting data, since each costs money or changes data. Never print, paste, or commit tokens or client secrets; read them from a secret scope or environment variables.
 
-**Target QPS** is Standard-only and best-effort, and the capacity is billed whether or not traffic arrives. Storage-Optimized endpoints reject `target_qps`. A change can be rejected with `RESOURCE_CONFLICT` while a previous change is still applying. Nothing is saved, so `requested_target_qps` still shows the earlier target: poll until `scaling_info.state` is `SCALING_CHANGE_APPLIED` (whatever the target), or wait the minutes the error gives, then call `update_endpoint` again before running the loop below.
+**Target QPS** is Standard-only and best-effort, and the capacity is billed whether or not traffic arrives. Storage-Optimized endpoints reject `target_qps`. A change can be rejected with `RESOURCE_CONFLICT` while a previous change is still applying. Nothing is saved, so `requested_target_qps` still shows the earlier target: poll until `scaling_info.state` is `SCALING_CHANGE_APPLIED` (whatever the target), or until `scaling_info.target_qps_change_allowed_after_timestamp` if set (epoch ms; `int()` then /1000), otherwise the minutes the error gives, then call `update_endpoint` again before running the loop below.
 
 ```python
 import time
+from datetime import datetime, timezone
 
 client.update_endpoint(name="my-vs-endpoint", target_qps=500)
-# Or at creation: create_endpoint(..., target_qps=500)
+# Or at creation: create_endpoint(..., target_qps=500).
+# Create the index before this loop: target QPS may not apply until the endpoint has an index.
 
 # Match the requested target too: right after the update, state can still be APPLIED from an earlier target.
 # Target QPS is best-effort: if it's still in progress at the deadline, move on.
@@ -330,16 +337,38 @@ while time.monotonic() < deadline:
     # int(): proto3 JSON may serialize int64 fields as strings
     if info.get("state") == "SCALING_CHANGE_APPLIED" and int(info.get("requested_target_qps") or 0) == 500:
         break
+    progress = {k: v for k, v in info.items() if k in ("state", "phase", "index_initialization_percentage", "delayed_reason")}
+    if info.get("estimated_completion_timestamp"):
+        eta = datetime.fromtimestamp(int(info["estimated_completion_timestamp"]) / 1000, tz=timezone.utc)
+        progress["eta"] = eta.isoformat()
+    print(progress)
     time.sleep(30)
 print(info)
 ```
 
+While `state` is `SCALING_CHANGE_IN_PROGRESS`, `scaling_info` also reports progress (Beta; every field is optional and can hold other values, so check each one and report unknown values as-is):
+- `estimated_completion_timestamp`: expected completion, epoch ms (`int()` then /1000). It can change as scaling progresses, and it's unset when no estimate is available yet or when `delayed_reason` is set.
+- `phase`: `ESTIMATING`, `ADJUSTING_CAPACITY`, or `INITIALIZING_INDEX` (with `index_initialization_percentage`, 0-100).
+- `delayed_reason`: `CAPACITY_UNAVAILABLE`, `SCALE_DOWN_BLOCKED`, or `TAKING_LONGER_THAN_EXPECTED`.
+
+Report the ETA, phase, or delay reason to the user instead of guessing, and keep polling until `SCALING_CHANGE_APPLIED` or the loop's deadline. If all three are unset, that isn't a hang (some endpoints don't report progress): check the endpoint has an index and keep polling `state`.
+
 **`ONLINE` doesn't mean scaled.** These are separate waits:
 - **Endpoint provisioned:** `endpoint_status.state` is `ONLINE` (what `create_endpoint_and_wait` waits for). `ONLINE` doesn't mean the target QPS is applied.
-- **Target QPS applied:** `scaling_info.state` is `SCALING_CHANGE_APPLIED` for the requested target (the loop above). This takes minutes to hours, depending on index size and how much the target changes.
-- **Index ready:** `status.ready` is true. A new endpoint's first index has `status.detailed_state` `PROVISIONING_ENDPOINT` while compute is created.
+- **Target QPS applied:** `scaling_info.state` is `SCALING_CHANGE_APPLIED` for the requested target (the loop above, run after the index is created). This takes minutes to hours, depending on index size and how much the target changes.
+- **Index ready:** wait as in [Create Delta Sync Index](#create-delta-sync-index-managed-embeddings). After `PROVISIONING_ENDPOINT`, a Delta Sync index typically moves through `PROVISIONING_INDEX`, `PROVISIONING_PIPELINE_RESOURCES`, and `PROVISIONING_INITIAL_SNAPSHOT`; a Direct Access index goes from `PROVISIONING_INDEX` to `ONLINE_DIRECT_ACCESS`. A Direct Access index can stay in `PROVISIONING_INDEX` with a message that creation has failed; stop and report it.
+
+Don't create a second endpoint to get around either wait: it repeats endpoint and index provisioning, and without `target_qps` it lacks the target capacity.
 
 Load-test only after all three; a load test before `SCALING_CHANGE_APPLIED` doesn't reflect the target capacity. If the loop above hits its deadline, report that target QPS is still applying instead of load testing.
+
+## Search Quality Evaluation (Beta)
+
+[Retrieval quality evaluation](https://docs.databricks.com/aws/en/ai-search/retrieval-quality-eval) generates queries from a managed Delta Sync index, runs them with ANN, hybrid and full-text (each with and without the reranker), scores results with an LLM judge, and reports DCG@10 and other [metrics](https://docs.databricks.com/aws/en/ai-search/retrieval-quality-eval#retrieval-metrics).
+
+- **Start it from the index page in Catalog Explorer.** In the **Search Quality Evaluation** section, click **Evaluate search quality** (or **Start new evaluation** / **Create evaluation** under **Latest evaluation runs** after a run). The built-in Beta evaluation is not configurable. There is no CLI command, SDK method or documented REST API for this built-in evaluation, so don't probe for one. If you can't use the browser, finish the index, then give the user the index page link and these steps, and pick up again from the results.
+- **Requirements:** a workspace admin turns on **AI Search: Quality Evaluation** from the workspace **Previews** page; the person starting a run needs SELECT on the index and may also need CREATE TABLE on its schema, because evaluation writes output tables there. Each run is a job that costs money; its status shows on the index page.
+- **Reading results:** the index page shows the latest runs and their DCG@10; **View results** opens the dashboard, and **What do my results mean?** asks Genie Code to interpret the run. Judged metrics only see the text you indexed: if users search on attributes that live in other columns or tables, also check results against those structured fields, since the judge can't see what's missing.
 
 ## Reference Files
 
@@ -381,6 +410,8 @@ databricks vector-search-indexes delete-index catalog.schema.my_index
 | **Filters not working** | Standard endpoints use a dict (`filters={"col": "val"}`); Storage-Optimized use a SQL string (`filters="col = 'val'"`) |
 | **Embedding dimension mismatch** | Ensure query and index dimensions match |
 | **Index not updating** | Check pipeline_type; use `index.sync()` for TRIGGERED. If it's rejected as already running, wait for the current update to finish |
+| **Index "pending endpoint provisioning" / `sync()` "not ready"** | Normal for an index on an endpoint with no other active indexes, even while the endpoint says `ONLINE`; wait (see [Create Delta Sync Index](#create-delta-sync-index-managed-embeddings)) instead of recreating it |
+| **Evaluating search quality** | Start it from the index page; there's no CLI or SDK command. See [Search Quality Evaluation](#search-quality-evaluation-beta) |
 | **Out of capacity** | Capacity is sized from the source table at index creation. Load the full table first; past ~320M vectors, recreate on Storage-Optimized (1B+ vectors) |
 | **Rate limited (429 errors)** | See [Production and High QPS](#production-and-high-qps) |
 | **`query_vector` truncated** | Large vectors (e.g. 1024-dim) can be truncated when serialized as JSON. Use `query_text` instead (for managed embedding indexes), or pass the vector directly via `index.similarity_search(query_vector=...)` |

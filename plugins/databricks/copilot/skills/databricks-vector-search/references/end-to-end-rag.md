@@ -99,7 +99,12 @@ Creating the index starts its first sync. Don't call `index.sync()` yet: it is r
 
 ```python
 # Polls every 30s and returns on any ONLINE* state; raises if the index goes OFFLINE or isn't online within the timeout
-index.wait_until_ready(timeout=datetime.timedelta(hours=2))
+try:
+    index.wait_until_ready(timeout=datetime.timedelta(minutes=45))
+except Exception:
+    # The SDK can raise a bare offline error; retain the status that explains it.
+    print(index.describe()["status"])
+    raise
 
 # ready means the index serves some version; ONLINE_PIPELINE_FAILED is ready=True but the latest sync failed.
 status = index.describe()["status"]

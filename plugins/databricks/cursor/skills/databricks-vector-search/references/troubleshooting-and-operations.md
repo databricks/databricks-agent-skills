@@ -14,7 +14,7 @@ Use `databricks vector-search-endpoints get-endpoint ENDPOINT_NAME` (CLI) or `cl
 | `endpoint_status.message` | Human-readable status or error message |
 | `endpoint_type` | `STANDARD` or `STORAGE_OPTIMIZED` |
 | `num_indexes` | Number of indexes hosted on this endpoint |
-| `scaling_info` | Standard only: `requested_target_qps` and `state` (`SCALING_CHANGE_IN_PROGRESS` / `SCALING_CHANGE_APPLIED`) |
+| `scaling_info` | Standard only: `requested_target_qps` and `state` (`SCALING_CHANGE_IN_PROGRESS` / `SCALING_CHANGE_APPLIED`), plus optional progress fields while in progress (see [SKILL.md](../SKILL.md#production-and-high-qps)) |
 | `creation_timestamp` | When the endpoint was created |
 | `last_updated_timestamp` | When the endpoint was last modified |
 
@@ -220,4 +220,4 @@ else:
 | **Quota or capacity errors** | Too many indexes or vectors, or index sized from a small source table | Check `num_indexes` on endpoint. Recreate the index after loading the full source table, or on Storage-Optimized for higher capacity. |
 | **Upsert fails on Delta Sync** | Cannot upsert to Delta Sync indexes | Upsert/delete operations only work on Direct Access indexes. Delta Sync indexes update via their source table. |
 | **Rate limited (429 errors)** | Endpoint over capacity: PAT or workspace query URL, scaling in progress, target QPS too low, or the embedding endpoint (managed-embedding `query_text`) | Increase endpoint capacity (`target_qps`, Standard only). Implement client-side rate limiting with exponential backoff. Follow the checklist in [SKILL.md](../SKILL.md#production-and-high-qps) and [Troubleshoot 429 errors](https://docs.databricks.com/aws/en/ai-search/high-qps#troubleshoot-429-errors). |
-| **`RESOURCE_CONFLICT` on target QPS update** | A change can be rejected while a previous change is still applying; nothing is saved, so `requested_target_qps` keeps the earlier target | Poll `client.get_endpoint(name).get("scaling_info")` with a deadline until `state` is `SCALING_CHANGE_APPLIED` (for whatever target is current), or wait the minutes the error gives. Then call `update_endpoint` again, and only then wait for the new target as in the [SKILL.md example](../SKILL.md#production-and-high-qps). |
+| **`RESOURCE_CONFLICT` on target QPS update** | A change can be rejected while a previous change is still applying; nothing is saved, so `requested_target_qps` keeps the earlier target | Poll `client.get_endpoint(name).get("scaling_info")` with a deadline until `state` is `SCALING_CHANGE_APPLIED` (for whatever target is current), or until `target_qps_change_allowed_after_timestamp` if set (epoch ms; `int()` then /1000), otherwise the minutes the error gives. Then call `update_endpoint` again, and only then wait for the new target as in the [SKILL.md example](../SKILL.md#production-and-high-qps). |

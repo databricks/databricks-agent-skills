@@ -136,3 +136,77 @@ test_cases:
           title: "AI Runtime quickstart"
           retrieved_at: 2026-11-14T00:00:00Z
           snippet: "To start from a runnable project instead of creating these files manually, clone the AI Runtime cookbook repository."
+
+  - id: uc_table_training_3c9e
+    inputs:
+      prompt: |
+        I want to train a PyTorch model on AI Runtime that reads my Unity
+        Catalog table main.ml.clicks. Don't run commands or submit a job; tell
+        me how to set up the workload.
+    expectations:
+      expected_facts:
+        - "Read the table with UCDataset from the databricks-uc-dataset package, added to environment.dependencies on the databricks_ai_v6 environment."
+        - "Launch the training script with torchrun, even on one GPU, because AI Runtime sets WORLD_SIZE but not RANK."
+        - "The workload reads the table as the submitting identity, which needs USE CATALOG, USE SCHEMA, and SELECT."
+        - "UCDataset can't read views or tables with row filters or column masks."
+        - "If the script imports databricks.air.data, also add databricks-sdk-air[data] to environment.dependencies."
+        - "Check the table before submitting, for example with databricks tables get and a SELECT COUNT(*) on main.ml.clicks, so a wrong name, a missing privilege, or an unsupported table fails before GPUs start."
+      assertions:
+        - "Recommend UCDataset rather than calling spark.table() in the workload."
+        - "Suggest checking the table before GPUs are allocated."
+        - "Do not execute any command or submit a workload."
+      expected_patterns:
+        - 'UCDataset'
+        - 'databricks-uc-dataset'
+        - 'torchrun'
+        - 'COUNT\(\*\)'
+      trace_expectations:
+        banned_tools: [Bash]
+    metadata:
+      category: happy_path
+      difficulty: intermediate
+      generation_session_id: 6953c33c-7f93-455f-a827-9d9be9536b5d
+      regression_intent: "Catch an agent that calls spark.table() or skips the torchrun and access requirements when a workload reads a UC table."
+      sources:
+        - type: docs
+          uri: https://docs.databricks.com/aws/en/machine-learning/ai-runtime/develop-workloads/load-uc-tables
+          title: "Load UC tables into PyTorch with UCDataset"
+          retrieved_at: 2026-11-14T23:30:00Z
+          snippet: "When you submit a workload with databricks air run, start the training script with torchrun, even on a single GPU."
+        - type: manual
+          uri: manual
+          title: "AI Runtime cookbook walkthrough: UC table training"
+          retrieved_at: 2026-11-14T23:30:00Z
+          snippet: "Wrong table names and missing privileges surfaced only after GPU provisioning; a warehouse query found them in seconds."
+
+  - id: uc_network_restricted_7a1d
+    inputs:
+      prompt: |
+        My AI Runtime run failed with "RuntimeError: rank 0 failed to build the
+        Delta plan: ... PERMISSION_DENIED: Serverless python and scala notebooks
+        are prohibited from retrieving temporary storage credentials from Unity
+        Catalog in network restricted workspaces." A SQL query on the same table
+        works. What should I do? Don't run any commands.
+    expectations:
+      expected_facts:
+        - "The workspace's serverless network policy blocks UCDataset from getting storage credentials; it isn't a bug in the training code."
+        - "An account admin controls that policy."
+      assertions:
+        - "Do not suggest retrying the run, or changing how the script calls UCDataset, as the fix."
+        - "Do not claim that the user lacks SELECT on the table."
+        - "Do not execute any command."
+      expected_patterns:
+        - 'account admin'
+      trace_expectations:
+        banned_tools: [Bash]
+    metadata:
+      category: error_handling
+      difficulty: intermediate
+      generation_session_id: 6953c33c-7f93-455f-a827-9d9be9536b5d
+      regression_intent: "Catch an agent that burns GPU runs retrying, or blames privileges, when the network policy blocks UCDataset."
+      sources:
+        - type: manual
+          uri: manual
+          title: "AI Runtime cookbook walkthrough: network-restricted workspaces"
+          retrieved_at: 2026-11-14T23:30:00Z
+          snippet: "In two network-restricted workspaces UCDataset failed with this PERMISSION_DENIED while a SQL warehouse query on the same table succeeded."
