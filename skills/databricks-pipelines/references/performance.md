@@ -133,7 +133,7 @@ FROM user_daily_stats
 GROUP BY user_id, DATE_TRUNC('month', event_date);
 ```
 
-Use `window(...)`, not `DATE(event_time)`: a `DATE()` bucket runs in Complete mode and keeps every day, even with a `WATERMARK`. Each day's row lands once that day closes plus the delay.
+Use `window(...)`, not `DATE(event_time)`: a `DATE()` bucket runs in Complete mode and keeps every day, even with a `WATERMARK`. Each day's row lands once that day closes plus the delay. `event_date` is the start of a UTC day as a `TIMESTAMP`, not a `DATE`; for days in a fixed UTC offset, add a `startTime` offset, which does not adjust for daylight saving ([streaming-patterns.md](streaming-patterns.md#late-arriving-data)). `DATE_TRUNC` uses the session time zone, so the monthly rollup above is correct only when the session time zone is UTC, or when the daily window uses the `startTime` offset for the same zone: with `America/Los_Angeles`, the Feb 1 row (Jan 31 16:00 local) falls in January.
 
 ---
 
