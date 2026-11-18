@@ -69,7 +69,7 @@ python3 scripts/skills.py validate
 
 `generate` is idempotent — re-running it never overwrites your `SKILL.md`, `references/`, or hand-edited `agents/openai.yaml`; it only fills in what's missing.
 
-The one exception is the **skills-invoked telemetry block**: `generate` writes a block between `<!-- BEGIN databricks-skills-invoked ... -->` and `<!-- END databricks-skills-invoked -->` right after each `SKILL.md` title, and `validate` fails if it is missing or stale. It tells the agent to prefix its `databricks` CLI calls with `DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI sends that value as the `X-Databricks-Skills-Invoked` HTTP header, starting with the first CLI release that includes databricks/cli#7730. Older CLIs ignore the env var, so the skills need no CLI version gate. Nothing is sent when `DATABRICKS_CLI_DISABLE_TELEMETRY` is set. Edit the text in `scripts/skillsgen/telemetry.py`, never in a `SKILL.md`.
+The one exception is the **skills-invoked telemetry block**: `generate` writes a block between `<!-- BEGIN databricks-skills-invoked ... -->` and `<!-- END databricks-skills-invoked -->` right after each `SKILL.md` title, and `validate` fails if it is missing or stale. It tells the agent to prefix its `databricks` CLI calls with `DATABRICKS_SKILLS_INVOKED=<skills>` (bare skill names, never `plugin:` prefixed). This is experimental tracking and may change or be removed. Starting with the first CLI release that includes databricks/cli#7730, the CLI turns the value into `skill/<name>` pairs in its User-Agent. Older CLIs ignore the env var, so the skills need no CLI version gate. Nothing is sent when `DATABRICKS_CLI_DISABLE_TELEMETRY` is set. Edit the text in `scripts/skillsgen/telemetry.py`, never in a `SKILL.md`.
 
 ### CI
 

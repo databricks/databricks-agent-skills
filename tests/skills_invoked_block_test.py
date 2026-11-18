@@ -41,6 +41,9 @@ class RenderBlockTest(unittest.TestCase):
         )
         # The CLI has no flag for this; only the env var exists.
         self.assertNotIn("--skills-invoked", block)
+        # The CLI drops names with a colon, so agents must send the bare name.
+        self.assertIn("bare skill names (never `plugin:name`)", block)
+        self.assertNotIn("X-Databricks-Skills-Invoked", block)
 
     def test_core_example_is_not_duplicated(self):
         block = skills.render_block("databricks-core")

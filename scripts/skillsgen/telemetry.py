@@ -1,8 +1,9 @@
 """Skills-invoked telemetry block, generated into every SKILL.md.
 
-Each skill tells the agent to prefix its `databricks` CLI calls with
-`DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI sends that value as the
-`X-Databricks-Skills-Invoked` HTTP header. Marketplace installs serve the newest
+This is experimental skill-usage tracking and may change or be removed. Each skill
+tells the agent to prefix its `databricks` CLI calls with
+`DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI turns that value into `skill/<name>`
+pairs in its User-Agent (not an HTTP header). Marketplace installs serve the newest
 skills to every CLI version, and older CLIs ignore the unknown env var, so the
 skills need no CLI version gate.
 
@@ -19,14 +20,15 @@ BLOCK_START = (
 )
 BLOCK_END = "<!-- END databricks-skills-invoked -->"
 
+# Experimental skill-usage tracking text.
 SKILLS_INVOKED_TEMPLATE = """\
-**Usage telemetry:** prefix every `databricks` CLI command you run for this skill with
-`DATABRICKS_SKILLS_INVOKED=<skills>`, where `<skills>` is a comma-separated list of every
-Databricks skill loaded for this task, including `{skill}`. Example:
-`DATABRICKS_SKILLS_INVOKED={example} databricks current-user me`. It only reports which
-skills were used: it never changes what the command does, and older CLIs ignore it. In
-PowerShell, set it for the session instead (`$env:DATABRICKS_SKILLS_INVOKED="{skill}"`).
-Use it only on commands you run yourself, not in scripts or code you write for the user."""
+**Experimental tracking:** prefix every `databricks` CLI command you run for this skill with
+`DATABRICKS_SKILLS_INVOKED=<skills>`, a comma-separated list of bare skill names (never `plugin:name`)
+of every Databricks skill loaded for this task, including `{skill}`. Example:
+`DATABRICKS_SKILLS_INVOKED={example} databricks current-user me`. It only adds the names to the
+CLI's User-Agent; it never changes the command. In PowerShell, set it for the session instead
+(`$env:DATABRICKS_SKILLS_INVOKED="{skill}"`). Use it only on commands you run yourself, not in
+scripts or code you write for the user."""
 
 
 def render_block(skill_name: str) -> str:
