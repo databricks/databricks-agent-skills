@@ -39,7 +39,7 @@ class RenderBlockTest(unittest.TestCase):
             "DATABRICKS_SKILLS_INVOKED=databricks-core,databricks-jobs databricks current-user me",
             block,
         )
-        # The flag would break older CLIs; skills must only use the env var.
+        # The CLI has no flag for this; only the env var exists.
         self.assertNotIn("--skills-invoked", block)
 
     def test_core_example_is_not_duplicated(self):

@@ -2,9 +2,9 @@
 
 Each skill tells the agent to prefix its `databricks` CLI calls with
 `DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI sends that value as the
-`X-Databricks-Skills-Invoked` HTTP header. It is an env var, not the CLI's
-`--skills-invoked` flag, because marketplace installs serve the newest skills to
-every CLI version and older CLIs reject unknown flags but ignore unknown env vars.
+`X-Databricks-Skills-Invoked` HTTP header. Marketplace installs serve the newest
+skills to every CLI version, and older CLIs ignore the unknown env var, so the
+skills need no CLI version gate.
 
 The block is written into the source SKILL.md files, not only the bundles,
 because `databricks aitools install` fetches the root `skills/` directly.
