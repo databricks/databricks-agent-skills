@@ -2,16 +2,12 @@
 
 Each skill tells the agent to prefix its `databricks` CLI calls with
 `DATABRICKS_SKILLS_INVOKED=<skills>`. The CLI sends that value as the
-`X-Databricks-Skills-Invoked` HTTP header, so skill usage shows up per request
-in the HTTP access logs. An env var is used rather than a CLI flag because
-older CLIs reject unknown flags but silently ignore unknown env vars, and
-marketplace installs serve the newest skills to every CLI version.
+`X-Databricks-Skills-Invoked` HTTP header. It is an env var, not the CLI's
+`--skills-invoked` flag, because marketplace installs serve the newest skills to
+every CLI version and older CLIs reject unknown flags but ignore unknown env vars.
 
-The block lives in the source SKILL.md files (not only the bundles) because the
-CLI's `aitools install` fetches the root `skills/` directory directly.
-`ensure_skills_invoked_block` writes it; `check_skills_invoked_block` is its
-validation counterpart. Edit SKILLS_INVOKED_TEMPLATE here, never the block in a
-SKILL.md.
+The block is written into the source SKILL.md files, not only the bundles,
+because `databricks aitools install` fetches the root `skills/` directly.
 """
 
 from pathlib import Path
@@ -68,8 +64,8 @@ def _strip_block(body: str) -> str:
 def apply_block(text: str, skill_name: str) -> str:
     """Return SKILL.md text with the block inserted or refreshed.
 
-    The block goes right after the first H1 title when the body opens with one,
-    otherwise right after the frontmatter, so it sits near the top of the skill.
+    The block goes right after the H1 title when the body opens with one,
+    otherwise right after the frontmatter.
     """
     frontmatter, body = _split_frontmatter(text)
     body = _strip_block(body)
@@ -78,12 +74,8 @@ def apply_block(text: str, skill_name: str) -> str:
     leading = len(body) - len(body.lstrip("\n"))
     rest = body[leading:]
     if rest.startswith("# "):
-        line_end = rest.find("\n")
-        if line_end == -1:
-            return frontmatter + body[:leading] + rest + "\n\n" + block
-        title = rest[: line_end + 1]
-        after = rest[line_end + 1 :].lstrip("\n")
-        return frontmatter + body[:leading] + title + "\n" + block + after
+        title, _, after = rest.partition("\n")
+        return frontmatter + body[:leading] + title + "\n\n" + block + after.lstrip("\n")
     return frontmatter + body[:leading] + block + rest
 
 

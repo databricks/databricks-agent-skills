@@ -9,7 +9,8 @@ everything except the bundled icons and failed its own `validate` step on
 "Stale 'assets/databricks.png'". One function, one ordering, no drift.
 
 Ordering invariants (do not reorder without re-reading these):
-- `ensure_codex_metadata` runs FIRST: it syncs each skill's icons +
+- `ensure_skills_invoked_block` and `ensure_codex_metadata` run FIRST. The first
+  rewrites each SKILL.md's telemetry block; the second syncs each skill's icons +
   `agents/openai.yaml`, which `generate_manifest` records and `generate_bundle`
   copies. A stale sync here taints both.
 - `generate_bundle` runs LAST: it copies `skills/`, `hooks/`, `commands/`,
@@ -37,7 +38,6 @@ def generate_all(repo_root: Path, version_override: str | None = None) -> dict:
     the file count for each step plus the manifest object, so callers can print
     their own progress without re-deriving anything.
     """
-    # Rewrites SKILL.md bodies, so it runs before the manifest and bundle read them.
     written_telemetry = ensure_skills_invoked_block(repo_root)
     written_assets = ensure_codex_metadata(repo_root)
 
