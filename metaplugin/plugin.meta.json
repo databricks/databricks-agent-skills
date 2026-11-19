@@ -90,6 +90,7 @@
   "skills": {
     "databricks-core": { "keyword": "cli" },
     "databricks-data-discovery": { "keyword": "data-discovery" },
+    "databricks-lakehouse-mcp": { "keyword": "lakehouse-mcp" },
     "databricks-apps": { "keyword": "apps" },
     "databricks-app-design": { "keyword": "app-design" },
     "databricks-lakebase": { "keyword": "lakebase" },
@@ -131,6 +132,8 @@
   "routing": {
     "strong": [
       "\\bdatabricks\\b",
+      "\\blakehouse\\s+mcp\\b",
+      "\\bsystem\\.ai\\.lakehouse\\b",
       "\\bunity\\s+catalog\\b",
       "\\bunity\\s+(?:ai\\s+)?gateway\\b",
       "\\blakeflow\\b",
@@ -183,6 +186,7 @@
     ],
     "//table": "Ordered product-skill routing table shared by the router instruction, Cursor rule, and Antigravity rule. A skill's `note` is appended after the skill name.",
     "table": [
+      { "label": "Databricks notebooks / Lakehouse MCP: setup, inspection, editing, execution, results", "skill": "databricks-lakehouse-mcp", "note": " (For this MCP route, override the general CLI prerequisites: databricks-core may be read for context, but MCP connection and skill retrieval require no CLI install, upgrade, or CLI authentication. Apply CLI prerequisites only when CLI operations are actually needed.)" },
       { "label": "Jobs / Lakeflow / workflows", "skill": "databricks-jobs" },
       { "label": "Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT)", "skill": "databricks-pipelines" },
       { "label": "Apps / AppKit", "skill": "databricks-apps" },
@@ -221,7 +225,7 @@
     ],
     "instruction_preamble": "[DATABRICKS] This request is Databricks-related. Handle it through the Databricks skills rather than ad hoc commands. Use the Skill tool to load `databricks-core` first (the parent skill: CLI, auth, profile selection, data exploration), then load the product skill that matches the request:",
     "instruction_closing": "Then follow the skill's guidance (it drives the `databricks` CLI). If no product skill fits, databricks-core alone is enough.",
-    "reminder": "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks skills (databricks-core plus the matching product skill); load any that are not already loaded.",
+    "reminder": "[DATABRICKS] Databricks-related prompt: keep routing through the Databricks skills (databricks-core plus the matching product skill); load any that are not already loaded. For the Lakehouse MCP route, override the general CLI prerequisites: databricks-core may be read for context, but MCP connection and skill retrieval require no CLI install, upgrade, or CLI authentication. Apply CLI prerequisites only when CLI operations are actually needed.",
     "rule_description": "Routing for any Databricks task -- CLI, auth, profiles, data exploration, Jobs/Lakeflow, Spark Declarative Pipelines (formerly DLT), Apps/AppKit, Asset Bundles/DABs, Model Serving, Unity Gateway, Lakebase/Postgres, AI Search (formerly Vector Search)/RAG, Genie, and classic-to-serverless migration. Apply when the request is Databricks-related so the Databricks skills are loaded instead of ad hoc commands.",
     "rule_preamble": [
       "This request is Databricks-related. Handle it through the Databricks skills",
