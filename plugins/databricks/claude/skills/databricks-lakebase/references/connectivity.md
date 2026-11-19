@@ -330,7 +330,8 @@ ALTER VIEW <VIEW_NAME> SET (security_invoker = true);   -- fix an existing view
 -- in public it also lists Lakebase internal views (databricks_list_roles and others)
 SELECT c.oid::regclass AS view_name FROM pg_class c
 WHERE c.relkind = 'v' AND c.relnamespace = '<SCHEMA>'::regnamespace
-  AND NOT coalesce('security_invoker=true' = ANY (c.reloptions), false);
+  AND NOT EXISTS (SELECT 1 FROM pg_options_to_table(c.reloptions) o
+                  WHERE o.option_name = 'security_invoker' AND o.option_value::boolean);
 ```
 
 - Do not expose a materialized view over an RLS table. It stores the owner's result, so every caller sees all rows, and Postgres does not accept `security_invoker` on it.

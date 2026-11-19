@@ -1,0 +1,7 @@
+interface:
+  display_name: "Databricks Lakehouse MCP"
+  short_description: "Connect to Lakehouse MCP and load notebook workflow guidance."
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $databricks-lakehouse-mcp to connect to the Lakehouse MCP and load guidance for my notebook task."

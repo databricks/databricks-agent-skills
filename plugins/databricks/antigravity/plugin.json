@@ -15,6 +15,7 @@
     "databricks",
     "cli",
     "data-discovery",
+    "lakehouse-mcp",
     "apps",
     "app-design",
     "lakebase",

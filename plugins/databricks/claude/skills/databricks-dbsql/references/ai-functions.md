@@ -51,7 +51,7 @@ Databricks AI Functions are built-in SQL functions that invoke state-of-the-art 
 
 ## ai_query -- General-Purpose AI Function
 
-The most powerful and flexible AI function. Queries any serving endpoint (Foundation Models, external models, or custom ML models) for real-time or batch inference.
+Queries a hosted `system.ai` model service or a Model Serving endpoint for custom, external, or provisioned-throughput models. Prefer a task-specific function when it fits the task. Discover hosted services through the AI Gateway listing and use the exact returned name; see [model discovery](../../databricks-ai-functions/references/2-ai-query.md#model-discovery) for CLI/REST commands and cloud exceptions. Model names in the examples must be available in the target workspace.
 
 ### Syntax
 
@@ -75,20 +75,20 @@ ai_query(
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `endpoint` | STRING | Yes | Name of a Foundation Model, external model, or custom model serving endpoint in the same workspace |
+| `endpoint` | STRING | Yes | Hosted `system.ai.<model>` service name, or a custom, external, or provisioned-throughput Model Serving endpoint name |
 | `request` | STRING or STRUCT | Yes | For LLM endpoints: STRING prompt. For custom ML endpoints: single column or STRUCT matching expected input features |
 | `returnType` | Expression | No | Expected return type (DDL-style). Optional in Runtime 15.2+; required in 15.1 and below |
-| `failOnError` | BOOLEAN | No | Default `true`. When `false`, returns STRUCT with `response` and `errorStatus` fields instead of failing |
+| `failOnError` | BOOLEAN | No | Default `true`. When `false`, returns STRUCT with `response` and `errorMessage` fields for row-level model endpoint errors |
 | `modelParameters` | STRUCT | No | Model parameters via `named_struct()` (Runtime 15.3+) |
 | `responseFormat` | STRING | No | Controls output format: `'text'`, `'json_object'`, or a DDL/JSON schema string (Runtime 15.4 LTS+, chat models only) |
-| `files` | Expression | No | Multimodal file input for image processing (JPEG, PNG supported) |
+| `files` | BINARY column | No | Image bytes from `read_files(..., format => 'binaryFile')` (JPEG, PNG supported) |
 
 ### Return Types
 
 | Scenario | Return Type |
 |----------|-------------|
 | `failOnError => true` (default) | Parsed response matching endpoint type or `returnType` |
-| `failOnError => false` | `STRUCT<result: T, errorMessage: STRING>` where T is the parsed type |
+| `failOnError => false` | `STRUCT<response: T, errorMessage: STRING>` where T is the parsed type |
 | With `responseFormat` | Structured output matching the specified schema |
 
 ### Model Parameters
@@ -96,7 +96,7 @@ ai_query(
 ```sql
 -- Control generation with modelParameters
 SELECT ai_query(
-  'databricks-meta-llama-3-3-70b-instruct',
+  'system.ai.meta-llama-3-3-70b-instruct',
   'Explain quantum computing in 3 sentences.',
   modelParameters => named_struct(
     'max_tokens', 256,
@@ -119,7 +119,7 @@ Common model parameters:
 ```sql
 -- Force JSON output matching a schema (top-level STRUCT must have exactly one field)
 SELECT ai_query(
-  'databricks-meta-llama-3-3-70b-instruct',
+  'system.ai.meta-llama-3-3-70b-instruct',
   'Extract the product name, price, and category from: "Sony WH-1000XM5 headphones, $348, Electronics"',
   responseFormat => 'STRUCT<result: STRUCT<product_name: STRING, price: DOUBLE, category: STRING>>'
 ) AS extracted;
@@ -133,7 +133,7 @@ SELECT
   review_id,
   review_text,
   ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
+    'system.ai.meta-llama-3-3-70b-instruct',
     CONCAT('Classify the following review as positive, negative, or neutral: ', review_text),
     responseFormat => 'STRUCT<result: STRUCT<sentiment: STRING, confidence: STRING>>'
   ) AS classification
@@ -160,11 +160,14 @@ FROM catalog.schema.inbox_messages;
 ```sql
 -- Analyze images using a vision model
 SELECT ai_query(
-  'databricks-meta-llama-3-2-90b-instruct',
+  'system.ai.llama-4-maverick',
   'Describe the contents of this image.',
-  files => READ_FILES('/Volumes/catalog/schema/images/photo.jpg', format => 'binaryFile')
-) AS description;
+  files => content
+) AS description
+FROM READ_FILES('/Volumes/catalog/schema/images/photo.jpg', format => 'binaryFile');
 ```
+
+`READ_FILES` is a table-valued function in the `FROM` clause; `files` consumes its binary `content` column.
 
 ### Error Handling with failOnError
 
@@ -172,13 +175,13 @@ SELECT ai_query(
 -- Graceful error handling for batch processing
 SELECT
   id,
-  result.result AS answer,
+  result.response AS answer,
   result.errorMessage AS error
 FROM (
   SELECT
     id,
     ai_query(
-      'databricks-meta-llama-3-3-70b-instruct',
+      'system.ai.meta-llama-3-3-70b-instruct',
       question,
       failOnError => false
     ) AS result
@@ -188,16 +191,16 @@ FROM (
 
 ### Unity Gateway Migration (403 PERMISSION_DENIED)
 
-With Unity Catalog–native model serving (the Unity Gateway), foundation models are addressed as `system.ai.<model>`. Once the legacy path is disabled in a workspace that has completed the Unity Gateway migration (legacy pay-per-token endpoints discontinued by end of 2026), a bare `databricks-<model>` name hard-fails with HTTP 403 PERMISSION_DENIED — `"'<endpoint>' is no longer available. Use Unity Catalog model services."` (or the `"... Please use Unity Gateway."` variant). With `failOnError => false`, that text is returned in the `errorMessage` field. Fix: replace `databricks-<model>` with `system.ai.<model>` (drop the `databricks-` prefix), keeping other arguments unchanged. This applies to built-in foundation models only — custom (non-FM) endpoints are not affected by this migration.
+If a legacy hosted-model call fails with a 403 asking for Unity Gateway or Unity Catalog model services, discover the replacement through the AI Gateway listing. Legacy endpoint names do not always have a matching `system.ai` model service. Use the exact listed name; custom Model Serving endpoints keep their existing names. See the [AI Functions reference](../../databricks-ai-functions/references/2-ai-query.md) for discovery and migration details.
 
 ```sql
 -- Before (403 once legacy endpoints are disabled):
 SELECT ai_query('databricks-meta-llama-3-3-70b-instruct', question) FROM catalog.schema.questions;
--- After:
+-- After (confirm this model-service name appears in the workspace listing):
 SELECT ai_query('system.ai.meta-llama-3-3-70b-instruct', question) FROM catalog.schema.questions;
 ```
 
-Other `ai_query` examples in this reference use the `databricks-*` names (the default today); in a workspace cut over to Unity Gateway, swap them to `system.ai.<model>` as shown above.
+With `failOnError => false`, `.errorMessage` is SQL NULL on success. Other query errors, such as validation failures, can still fail the whole query.
 
 ### Embedding Generation
 
@@ -205,7 +208,7 @@ Other `ai_query` examples in this reference use the `databricks-*` names (the de
 -- Generate embeddings using ai_query
 SELECT
   text,
-  ai_query('databricks-gte-large-en', text) AS embedding
+  ai_query('system.ai.gte-large-en', text) AS embedding
 FROM catalog.schema.documents;
 ```
 
@@ -246,7 +249,9 @@ LIMIT 10;
 
 ### ai_classify
 
-Classify text into one of the provided labels.
+For new code, use v2.1 with JSON labels and `MAP('version', '2.1')`; read each returned label's `value` field. See [the current classification contract and examples](../../databricks-ai-functions/references/1-task-functions.md#ai_classify).
+
+**Version 1 — legacy compatibility:** The examples below document the ARRAY input and STRING output used by existing v1 queries. Existing v2.0 queries also remain supported; update their projections from label strings to `.value` when upgrading to v2.1.
 
 ```sql
 ai_classify(content, labels)
@@ -286,7 +291,9 @@ FROM catalog.schema.support_tickets;
 
 ### ai_extract
 
-Extract named entities from text.
+For new code, use v2.1 with a JSON schema and `MAP('version', '2.1')`; every scalar response field has a `value` key. See [the current extraction contract and schema format](../../databricks-ai-functions/references/1-task-functions.md#ai_extract).
+
+**Version 1 — legacy compatibility:** The examples below document the ARRAY input and STRUCT output used by existing v1 queries. Existing v2.0 queries return scalar leaves directly; update their projections to read `.value` when upgrading to v2.1.
 
 ```sql
 ai_extract(content, labels)
@@ -587,21 +594,22 @@ SELECT ai_parse_document(
 )
 FROM READ_FILES('/Volumes/catalog/schema/volume/invoices/', format => 'binaryFile');
 
--- Parse documents then extract structured data with ai_query
+-- Parse documents then pass their structure directly into extraction
 WITH parsed AS (
   SELECT
     path,
-    ai_parse_document(content) AS doc
+    ai_parse_document(content, MAP('version', '2.0')) AS doc
   FROM READ_FILES('/Volumes/catalog/schema/volume/invoices/', format => 'binaryFile')
 )
 SELECT
   path,
-  ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
-    CONCAT('Extract vendor name, invoice number, and total from: ', doc:document:elements[0]:content::STRING),
-    responseFormat => 'STRUCT<vendor: STRING, invoice_number: STRING, total: DOUBLE>'
+  ai_extract(
+    doc,
+    '{"vendor":{"type":"string"},"invoice_number":{"type":"string"},"total":{"type":"number"}}',
+    MAP('version', '2.1')
   ) AS invoice_data
-FROM parsed;
+FROM parsed
+WHERE is_variant_null(doc:error_status);
 ```
 
 ---
@@ -1286,8 +1294,8 @@ SELECT
   feedback_id,
   feedback_text,
   ai_analyze_sentiment(feedback_text) AS sentiment,
-  ai_classify(feedback_text, ARRAY('product', 'service', 'billing', 'other')) AS category,
-  ai_extract(feedback_text, ARRAY('product', 'issue')) AS entities,
+  ai_classify(feedback_text, '["product", "service", "billing", "other"]', MAP('version', '2.1')):response[0].value::STRING AS category,
+  ai_extract(feedback_text, '["product", "issue"]', MAP('version', '2.1')) AS entities,
   ai_summarize(feedback_text, 20) AS summary,
   ai_mask(feedback_text, ARRAY('person', 'email', 'phone')) AS anonymized_text
 FROM catalog.schema.raw_feedback;
@@ -1296,7 +1304,7 @@ FROM catalog.schema.raw_feedback;
 ### Document Processing Pipeline
 
 ```sql
--- Ingest, parse, and query documents
+-- Ingest, parse, and extract from the complete structured document
 WITH raw_docs AS (
   SELECT path, content
   FROM read_files('/Volumes/catalog/schema/volume/contracts/', format => 'binaryFile')
@@ -1307,13 +1315,13 @@ parsed AS (
 )
 SELECT
   path,
-  ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
-    CONCAT('Extract the contract parties, effective date, and termination clause from: ',
-           doc:document:elements[0]:content::STRING),
-    responseFormat => 'STRUCT<party_a: STRING, party_b: STRING, effective_date: STRING, termination_clause: STRING>'
+  ai_extract(
+    doc,
+    '["party_a", "party_b", "effective_date", "termination_clause"]',
+    MAP('version', '2.1')
   ) AS contract_info
-FROM parsed;
+FROM parsed
+WHERE is_variant_null(doc:error_status);
 ```
 
 ### External API Integration with http_request
@@ -1349,8 +1357,9 @@ SELECT
   ai_classify(
     CONCAT('Customer spent $', CAST(remote_orders.total_spend AS STRING),
            ' in segment ', local_profiles.segment),
-    ARRAY('high_value', 'medium_value', 'low_value', 'at_risk')
-  ) AS value_tier
+    '["high_value", "medium_value", "low_value", "at_risk"]',
+    MAP('version', '2.1')
+  ):response[0].value::STRING AS value_tier
 FROM remote_query(
   'my_postgres',
   database => 'sales_db',

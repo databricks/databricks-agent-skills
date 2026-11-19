@@ -25,9 +25,9 @@ The **Function** column links to the in-repo deep reference (full options, schem
 | Function | Task | Input | Output | Extra prereqs | Docs |
 |---|---|---|---|---|---|
 | [`ai_analyze_sentiment`](references/1-task-functions.md#ai_analyze_sentiment) | Sentiment scoring | `content STRING` | `STRING` — `positive`/`negative`/`neutral`/`mixed`, or `NULL` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_analyze_sentiment) |
-| [`ai_classify`](references/1-task-functions.md#ai_classify) | Fixed-label routing | `content STRING\|VARIANT`, `labels` (2–500), `[options MAP]` | `VARIANT` — `{response:[label], error_message}` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_classify) |
+| [`ai_classify`](references/1-task-functions.md#ai_classify) | Fixed-label routing | `content STRING\|VARIANT`, `labels` (2–500), `[options MAP]` | v2.1 `VARIANT` — `{response:[{value:label}], error_message, metadata}` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_classify) |
 | [`ai_decide`](references/1-task-functions.md#ai_decide) | Evaluate questions (boolean / choice / score) over text or structured data | `state STRING\|VARIANT`, `questions STRING` (JSON), `[options MAP]` | `VARIANT` — `{response:{answers}, metadata, error_message}` | Beta; admin-gated via Previews | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_decide) |
-| [`ai_extract`](references/1-task-functions.md#ai_extract) | Entity / field extraction | `content STRING\|VARIANT`, `schema STRING` (JSON), `[options MAP]` | `VARIANT` — `{response:{…}, error_message, metadata}` | ≤256 fields, ≤12 nesting levels | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_extract) |
+| [`ai_extract`](references/1-task-functions.md#ai_extract) | Entity / field extraction | `content STRING\|VARIANT`, `schema STRING` (JSON), `[options MAP]` | v2.1 `VARIANT` — `{response:{field:{value:…}}, error_message, metadata}` | ≤256 fields, ≤12 nesting levels | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_extract) |
 | [`ai_fix_grammar`](references/1-task-functions.md#ai_fix_grammar) | Grammar correction | `content STRING` | `STRING` (corrected) | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_fix_grammar) |
 | [`ai_gen`](references/1-task-functions.md#ai_gen) | Free-form generation | `prompt STRING` | `STRING` | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_gen) |
 | [`ai_mask`](references/1-task-functions.md#ai_mask) | PII redaction | `content STRING`, `labels ARRAY<STRING>` | `STRING` (entities → `[MASKED]`) | — | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_mask) |
@@ -35,13 +35,15 @@ The **Function** column links to the in-repo deep reference (full options, schem
 | [`ai_summarize`](references/1-task-functions.md#ai_summarize) | Summarization | `content STRING`, `[max_words INT]` (0 = uncapped) | `STRING` | Public Preview; English-tuned | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_summarize) |
 | [`ai_translate`](references/1-task-functions.md#ai_translate) | Translation | `content STRING`, `to_lang STRING` | `STRING` | Langs: en, fr, de, hi, it, pt, es, th | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_translate) |
 | [`ai_parse_document`](references/1-task-functions.md#ai_parse_document) | Parse PDF / Office / images | `content BINARY`, `[Map('version','2.0', …)]` | `VARIANT` — pages, elements, error_status | **DBR 17.3+**; ≤500 pages / 100 MB | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_parse_document) |
-| [`ai_prep_search`](references/1-task-functions.md#ai_prep_search) | RAG chunking from parsed docs | `parsed VARIANT`, `[options MAP]` | `VARIANT` — `{document:{contents, pages, source_uri}, error_status}` | **DBR 18.2+** (serverless env v3+) | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_prep_search) |
-| [`ai_query`](references/2-ai-query.md) | Any serving endpoint (built-in foundation or custom), multimodal, complex JSON (**last resort**) | `endpoint STRING`, `request STRING\|STRUCT`, `[returnType]`, `[failOnError BOOL]`, `[modelParameters STRUCT]`, `[responseFormat STRING]`, `[files]` | Parsed response; with `failOnError => false` a `STRUCT{response, errorMessage}` | **Pro/Serverless** warehouse; `CAN QUERY` on endpoint | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_query) |
+| [`ai_prep_search`](references/1-task-functions.md#ai_prep_search) | RAG chunking from parsed docs or text | `parsed VARIANT\|STRING`, `[options MAP]` | `VARIANT` — `{document:{contents, pages, source_uri}, error_status}` | **DBR 18.2+** (serverless env v3+) | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_prep_search) |
+| [`ai_query`](references/2-ai-query.md) | Hosted model service or custom serving endpoint, multimodal, complex JSON (**last resort**) | `endpoint STRING`, `request STRING\|STRUCT`, `[returnType]`, `[failOnError BOOL]`, `[modelParameters STRUCT]`, `[responseFormat STRING]`, `[files]` | Parsed response; with `failOnError => false` a `STRUCT{response, errorMessage}` | **Pro/Serverless** warehouse; `EXECUTE` on model service or `CAN QUERY` on serving endpoint | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_query) |
 | [`ai_forecast`](references/3-ai-forecast.md) | Time series forecasting (table-valued) | `observed TABLE`, `horizon`, `time_col`, `value_col`, `[group_col]`, `[prediction_interval_width]`, `[frequency]`, `[seed]`, `[parameters]` | Rows: time/group cols + per value `{v}_forecast`, `{v}_upper`, `{v}_lower` (DOUBLE) | **Pro/Serverless** warehouse; Public Preview | [↗](https://docs.databricks.com/sql/language-manual/functions/ai_forecast) |
 
 Models run under Apache 2.0 or LLAMA 3.3 Community License — you are responsible for compliance.
 
 ## Patterns
+
+**Pin extraction and classification to v2.1 in new code.** Every extracted scalar and returned label has a `value` field, even when citations, confidence scores, and rationales are disabled. Existing v2.0 queries remain supported; update downstream projections to read `value` when upgrading. See the [task-function reference](references/1-task-functions.md) for the version-specific contracts.
 
 **Chain task functions to enrich a column in one pass.** `ai_classify`/`ai_extract` return a VARIANT — read it with the colon operator (`:response`):
 
@@ -49,13 +51,13 @@ Models run under Apache 2.0 or LLAMA 3.3 Community License — you are responsib
 SELECT id,
   ai_analyze_sentiment(content)                                                   AS sentiment,
   ai_summarize(content, 30)                                                       AS summary,
-  ai_classify(content, '["technical","billing","other"]', map('version','2.0')):response[0]::STRING AS category,
-  ai_extract(content, '["product","error_code","date"]', map('version','2.0')):response:product::STRING AS product,
+  ai_classify(content, '["technical","billing","other"]', map('version','2.1')):response[0].value::STRING AS category,
+  ai_extract(content, '["product","error_code","date"]', map('version','2.1')):response:product:value::STRING AS product,
   ai_fix_grammar(content)                                                         AS content_clean
 FROM raw_feedback;
 ```
 
-In **PySpark**, call any of these inside `expr(...)`: `df.withColumn("category", expr("ai_classify(content, '[\"a\",\"b\"]', map('version','2.0')):response[0]::STRING"))` — and read VARIANT fields via `selectExpr("col:response:field::STRING AS field")`.
+In **PySpark**, call any of these inside `expr(...)`: `df.withColumn("category", expr("ai_classify(content, '[\"a\",\"b\"]', map('version','2.1')):response[0].value::STRING"))` — and read extracted scalar fields via `selectExpr("col:response:field:value::STRING AS field")`.
 
 **PII redaction before storage** — `ai_mask(content, ARRAY(entity_types))` returns text with entities → `[MASKED]`.
 
@@ -80,17 +82,7 @@ SELECT * FROM ai_forecast(
 -- Returns: date, sales_forecast, sales_upper, sales_lower
 ```
 
-**Nested JSON via `ai_query`** (last resort — only past `ai_extract`'s limits) — parse the response with `from_json`. Model names, multimodal `files =>`, `modelParameters`, SQL UDF → [2-ai-query.md](references/2-ai-query.md):
-
-```sql
-SELECT from_json(
-    ai_query('databricks-claude-sonnet-4',
-        concat('Extract invoice as JSON with nested line_items array: ', text_blocks),
-        responseFormat => '{"type":"json_object"}', failOnError => false).response,
-    'STRUCT<numero:STRING, total:DOUBLE, line_items:ARRAY<STRUCT<code:STRING, qty:DOUBLE>>>'
-) AS invoice
-FROM parsed_documents;
-```
+**Nested field extraction** — `ai_extract` supports arrays of objects, including invoice line items. See [extraction schemas and versioned outputs](references/1-task-functions.md#ai_extract).
 
 Document parsing (`ai_parse_document`) and RAG chunking (`ai_prep_search`) get their own staged pipeline below.
 
@@ -98,40 +90,42 @@ Document parsing (`ai_parse_document`) and RAG chunking (`ai_prep_search`) get t
 
 Chain AI Functions stage-by-stage into Delta tables for batch document processing. The example is written as a **Spark Declarative Pipeline (SDP / Lakeflow / DLT)** — `CREATE OR REFRESH STREAMING TABLE` with `STREAM(...)` sources. To run the same logic standalone in a **notebook / SQL warehouse**, swap each `CREATE OR REFRESH STREAMING TABLE x AS` for `CREATE OR REPLACE TABLE x AS` and drop the `STREAM(...)` wrappers. In SDP Python it's `@dp.table` with `from pyspark import pipelines as dp`.
 
+Pass the parsed VARIANT directly into extraction and classification to preserve layout and source context. For plain-text or Markdown files, skip parsing: use `read_files(..., format => 'text', wholetext => true)` and pass its `value` column. Without `wholetext => true`, text input is read one line per row.
+
 ```sql
--- Stage 1 — parse binary docs (any type), filter parse errors
+-- Stage 1 — parse supported PDF, image, or Office documents, filter parse errors
 CREATE OR REFRESH STREAMING TABLE raw_parsed AS
 SELECT path,
-  concat_ws('\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks,
+  parsed AS parsed_content,
   parsed:error_status AS parse_error
 FROM (
   SELECT path, ai_parse_document(content, map('version','2.0')) AS parsed
   FROM STREAM read_files('/Volumes/my_catalog/doc_processing/landing/', format => 'binaryFile')
 )
-WHERE parsed:error_status IS NULL;
+WHERE is_variant_null(parsed:error_status);
 
 -- Stage 2 — classify document type (cheap, no endpoint selection)
 CREATE OR REFRESH STREAMING TABLE classified_docs AS
 SELECT *,
-  ai_classify(text_blocks, '["invoice","purchase_order","receipt","contract","other"]', map('version','2.0')):response[0]::STRING AS doc_type
+  ai_classify(parsed_content, '["invoice","purchase_order","receipt","contract","other"]', map('version','2.1')):response[0].value::STRING AS doc_type
 FROM STREAM raw_parsed;
 
 -- Stage 3 — extract fields; ai_extract returns a VARIANT, read fields with `:`
 CREATE OR REFRESH STREAMING TABLE extracted AS
 SELECT path, doc_type,
-  result:response:invoice_number::STRING AS invoice_number,
-  result:response:vendor_name::STRING    AS vendor_name,
-  result:response:total_amount::DOUBLE   AS total_amount,
+  result:response:invoice_number:value::STRING AS invoice_number,
+  result:response:vendor_name:value::STRING    AS vendor_name,
+  result:response:total_amount:value::DOUBLE   AS total_amount,
   result:error_message::STRING           AS extract_error
 FROM (
-  SELECT *, ai_extract(text_blocks,
+  SELECT *, ai_extract(parsed_content,
     '{"invoice_number":{"type":"string"},"vendor_name":{"type":"string"},"total_amount":{"type":"number"}}',
-    map('version','2.0')) AS result
-  FROM STREAM classified_docs WHERE doc_type = 'invoice' AND text_blocks IS NOT NULL
+    map('version','2.1')) AS result
+  FROM STREAM classified_docs WHERE doc_type = 'invoice' AND parsed_content IS NOT NULL
 );
 ```
 
-In a batch job, route the per-row error to a sidecar table instead of letting it crash the run: keep `ai_extract`'s `result:error_message` (VARIANT, colon-accessed, as above), and for `ai_query` pass `failOnError => false` and check `ai_response.errorMessage` (a STRUCT field, dot-accessed). See [2-ai-query.md](references/2-ai-query.md).
+In a batch job, retain per-row errors for inspection or route them to a sidecar table: check `ai_extract`'s `result:error_message` with `is_variant_null` for JSON null on success, and for `ai_query` pass `failOnError => false` and check `ai_response.errorMessage` (a STRUCT field, dot-accessed). SQL `IS NULL` does not recognize a JSON null inside VARIANT. See [2-ai-query.md](references/2-ai-query.md).
 
 ### Custom RAG Pipeline — Parse → Prep → Index
 
@@ -140,7 +134,7 @@ For retrieval rather than field extraction: `ai_parse_document` → `ai_prep_sea
 ```sql
 CREATE OR REPLACE TABLE parsed_chunks AS
 WITH prepped AS (
-  SELECT path AS source_path, ai_prep_search(ai_parse_document(content)) AS prep
+  SELECT path AS source_path, ai_prep_search(ai_parse_document(content, map('version','2.0'))) AS prep
   FROM read_files('/Volumes/my_catalog/doc_processing/docs/', format => 'binaryFile')
 )
 SELECT
@@ -178,5 +172,5 @@ Then enable CDF (`ALTER TABLE parsed_chunks SET TBLPROPERTIES (delta.enableChang
 | `ai_translate` fails for a language | Supported (8): English (`en`), French (`fr`), German (`de`), Hindi (`hi`), Italian (`it`), Portuguese (`pt`), Spanish (`es`), Thai (`th`) — `to_lang` takes the code or the full name (see [references/1-task-functions.md](references/1-task-functions.md)). Use `ai_query` with a multilingual model for others. |
 | `ai_classify` returns unexpected labels | Use clear, mutually exclusive label names. Fewer labels (2–5) produces more reliable results. |
 | `ai_query` raises on some rows in a batch job | Add `failOnError => false` — returns a STRUCT with `.response` and `.errorMessage` (dot-accessed) instead of raising. |
-| `ai_query` fails with 403 "no longer available" | The legacy `databricks-*` foundation-model endpoint name has been retired in favor of Unity Catalog model services. Switch to `system.ai.<model>` (same call, other args unchanged); custom endpoints are not affected by this migration and keep their existing name. See [2-ai-query.md](references/2-ai-query.md#unity-gateway-migration-403-permission_denied). |
+| `ai_query` fails with 403 "no longer available" | Discover the exact replacement `system.ai` model service using the AI Gateway listing; legacy names do not always have a matching model service. Custom serving endpoints keep their existing names. See [2-ai-query.md](references/2-ai-query.md#unity-gateway-migration-403-permission_denied). |
 | Batch job runs slowly | Use DBR **15.4 ML LTS** cluster (not serverless or interactive) for optimized batch inference throughput. |

@@ -71,7 +71,7 @@ stderr too, not just the parsed JSON. When you do get a structured error, its
 | `databricks air get <JOB_RUN_ID>` | Show status, config, timing, and the failure reason for one run. |
 | `databricks air list` | List your **active** runs. A run that just finished drops out of the default view; add `--all-status` to include finished runs. Also `--all-users`, `--filter KEY=VALUE`, `--limit`. |
 | `databricks air cancel <JOB_RUN_ID> [<JOB_RUN_ID>...]` / `... --all` | Cancel one or more runs, or all of your active runs (`--all` prompts; add `--yes` in scripts). |
-| `databricks air logs <JOB_RUN_ID>` | Stream a running run's logs, or fetch a finished run's logs. |
+| `databricks air logs <JOB_RUN_ID>` | Print a run's logs. Newer CLIs print the logs available now and exit, and stream with `--follow`; older CLIs (no `--follow` in `--help`) stream an active run by default. |
 | `databricks air pools list` / `pools get <POOL_ID>` | View the provisioned GPU pools available to the workspace. |
 | `databricks air images push` | Push a local or remote container image to Databricks Artifact Registry. See [docker-images.md](docker-images.md). |
 | `databricks air convert-to-dabs <yaml_path>` | Convert a workload YAML into a Databricks Asset Bundle (local only; deploy with `databricks bundle deploy`). |
@@ -121,16 +121,16 @@ supported by the installed CLI.
 
 Run `databricks air run -h config.compute` to see the accelerator types. On CLI
 1.23.0 and newer it lists the types **available in the current workspace** and
-how many GPUs each type has per node; if it cannot reach the workspace, it
-prints a warning and falls back to a built-in list. Do not guess a type from
-memory: availability depends on the workspace, cloud, and region, and matching
-is case-sensitive.
+how many GPUs each type has per node. If it cannot fetch them, it prints a
+warning. Some older CLI versions also show a built-in fallback that may include
+types the workspace can't use. Do not guess a type from memory: availability
+depends on the workspace, cloud, and region, and matching is case-sensitive.
 
 Type names follow `GPU_<GPUs per node>x<GPU>`, for example `GPU_1xA10`,
 `GPU_1xH100`, `GPU_8xH100`, and `GPU_8xB300`. `num_accelerators` is the total
 GPU count across all nodes, so it must be a multiple of the per-node count: 8
-on an `8x` type is one node, 16 is two nodes. Only the `8x` types support
-multi-GPU and multi-node training.
+on an `8x` type is one node, 16 is two nodes. `GPU_1xH100` does not support
+multi-node configurations, so set `num_accelerators: 1`.
 
 ### Python environment
 
@@ -356,7 +356,7 @@ and in your training code.
 | `NODE_RANK` | Rank of the current node (0 to `NUM_NODES`-1). Also set as `POD_RANK`. |
 | `WORLD_SIZE` | Total number of GPUs across all nodes. |
 | `LOCAL_WORLD_SIZE` | Number of GPUs on this node. |
-| `MLFLOW_RUN_ID` | MLflow run ID for this job (log metrics/artifacts to it). |
+| `MLFLOW_RUN_ID` | MLflow run created for this attempt (log metrics/artifacts to it). `mlflow.start_run()` attaches to it. The Hugging Face `Trainer`'s MLflow integration starts it automatically, so don't also call `mlflow.start_run()` around `trainer.train()`: it fails with "Run ... is already active". |
 | `HYPERPARAMETERS_PATH` | Path to the `parameters` YAML file (only set when `parameters:` is defined). |
 
 Your `command:` runs **once per node**, so per-process ranks (`RANK`,
@@ -467,14 +467,26 @@ which streams the run's logs to your terminal until it reaches a terminal state:
 databricks air run --file workload.yaml --watch -p <profile>
 ```
 
-For a run that is already going, stream its logs by ID:
+For a run that is already going, check whether `databricks air logs` supports
+`--follow`:
 
 ```bash
-databricks air logs <JOB_RUN_ID> -p <profile>
-# --node N (one node), --tail N (last N lines of a finished run),
-# --minutes N (last N minutes), --retry N (one retry attempt, 0-indexed),
-# --download-to DIR (save all nodes' logs)
+databricks air logs --help 2>&1 | grep -qF -- '--follow'
 ```
+
+If that command succeeds, `air logs` prints the logs available now and exits,
+which is the right way to check progress, and `--follow` streams:
+
+```bash
+databricks air logs <JOB_RUN_ID> --tail 100 -p <profile>   # print the last 100 lines and exit
+databricks air logs <JOB_RUN_ID> --follow -p <profile>     # stream until the run finishes
+# --node N (one node), --tail N (last N lines), --minutes N (last N minutes),
+# --retry N (one retry attempt, 0-indexed), --download-to DIR (save all nodes' logs)
+```
+
+If the check fails, the CLI is older: `air logs <JOB_RUN_ID>` streams an active
+run until it finishes, and `--follow` is rejected. To check progress without
+blocking on an older CLI, use `databricks air get <JOB_RUN_ID>`.
 
 **Loss, GPU utilization, and metric history live in MLflow.** The CLI streams
 logs and status, not training metrics. The submit/status response includes the

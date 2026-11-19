@@ -142,8 +142,8 @@ Don't prefix non-columns: string literals, `<placeholders>`, `:params`, and CTE-
         "identifier": "catalog.ops.gold_otp_summary",
         "column_configs": [
           {"column_name": "flight_date", "description": ["Scheduled departure date."]},
-          {"column_name": "region", "enable_format_assistance": true, "enable_entity_matching": true, "synonyms": ["area", "market"]},
-          {"column_name": "internal_batch_id", "exclude": true}
+          {"column_name": "internal_batch_id", "exclude": true},
+          {"column_name": "region", "enable_format_assistance": true, "enable_entity_matching": true, "synonyms": ["area", "market"]}
         ]
       }
     ]
@@ -164,6 +164,7 @@ Don't prefix non-columns: string literals, `<placeholders>`, `:params`, and CTE-
 - **Unique 32-char lowercase hex `id`** (no hyphens) on every item in `sample_questions`, `example_question_sqls`, `text_instructions`, `join_specs`, all `sql_snippets` sub-arrays, and `benchmarks.questions`. Question IDs unique across `sample_questions` + `benchmarks.questions` combined; instruction IDs unique across `text_instructions` + `example_question_sqls` + `join_specs` + all `sql_snippets` sub-arrays combined.
 - **Text fields are arrays of strings** — `question`, `sql`, `content` (not plain strings).
 - **Sort order:** id-keyed arrays sorted by `id`; `data_sources.tables`/`metric_views` by `identifier`; `column_configs` by `column_name`.
+- **Sample-question sequence:** the API exports `sample_questions` in ascending ID order. To preserve a requested sequence in API readback, generate and sort the IDs first, then assign them to the questions in that sequence. Sorting question objects after assigning random IDs scrambles their order. After creating the space, read it back with `--include-serialized-space` and check the question sequence; the chat UI may separately sample or shuffle starter chips.
 - **`text_instructions` ≤ 1 item.** **`data_sources.tables` ≤ 30.** **`volumes` ≤ 10**, MANAGED volumes only, whole volume indexed. Per-string field ≤ 25,000 chars; total JSON ≤ 3.5 MB.
 - Common errors → cause: `sample_question.id must be provided` (missing hex id); `Expected an array for <field>` (string where an array is required); `must be sorted by id`; `Unknown field 'benchmarks'` (nested under `instructions` instead of top-level).
 
@@ -212,8 +213,10 @@ def build_serialized_space(table_identifier, sample_questions=None, instruction_
         table["column_configs"] = sorted(column_configs, key=lambda c: c["column_name"])
     payload = {"version": 2, "data_sources": {"tables": [table]}}   # metric_views: [...] for a Metric View source
     if sample_questions:
-        payload.setdefault("config", {})["sample_questions"] = sorted(
-            [{"id": newid(), "question": [q]} for q in sample_questions], key=lambda x: x["id"])
+        questions = list(sample_questions)
+        question_ids = sorted(newid() for _ in questions)
+        payload.setdefault("config", {})["sample_questions"] = [
+            {"id": question_id, "question": [q]} for question_id, q in zip(question_ids, questions)]
     instructions = {}
     if instruction_rules:
         instructions["text_instructions"] = [{"id": newid(), "content": list(instruction_rules)}]

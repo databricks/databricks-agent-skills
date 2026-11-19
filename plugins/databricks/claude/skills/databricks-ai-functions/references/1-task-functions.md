@@ -30,21 +30,24 @@ df.withColumn("sentiment", expr("ai_analyze_sentiment(review_text)")).display()
   - With descriptions: `'{"billing_error": "Payment, invoice, or refund issues", "product_defect": "Any malfunction or bug"}'` (descriptions up to 1000 chars each)
   - 2–500 labels, each 1–100 characters
 - `options`: optional MAP\<STRING, STRING\>:
-  - `version`: `"2.0"` (recommended) or `"1.0"` for backward compatibility
+  - `version`: `"2.1"` (recommended), `"2.0"`, or `"1.0"` for backward compatibility. Pin the version in new code; the default depends on input types and can fall back to v1.
   - `instructions`: task context to improve accuracy (max 20,000 chars)
   - `multilabel`: `"true"` to return multiple matching labels (default `"false"`)
-  - `version`: `"2.0"` (recommended) or `"1.0"` (legacy); defaults based on input types. v2 supports 2–500 labels, v1 only 2–20.
+  - `enableConfidenceScores`: `"true"` to include a per-label `confidence_score` (0–1); requires v2.1
+  - `enableRationales`: `"true"` to include a short, input-grounded `rationale`; requires v2.1
 
-Returns VARIANT `{"response": ["label", ...], "error_message": null}`. Returns `NULL` if content is `NULL`.
+Version 2.1 returns VARIANT `{"response": [{"value": "label"}], "metadata": {"version": "2.1"}, "error_message": null}`. Every returned label has a `value` field, even when confidence scores and rationales are disabled. Those optional fields appear only when enabled. Read a single-label result with `result:response[0].value::STRING`; explode the response array to read multiple labels. Returns SQL `NULL` if content is SQL `NULL`. On success, `error_message` is a JSON null: check it with `is_variant_null(result:error_message)`.
+
+**Compatibility:** v2.0 returns `response` as an array of strings. Existing v2.0 queries remain supported; update their projections to read `value` when upgrading to v2.1. The legacy v1 interface accepts `ARRAY<STRING>` labels (2–20) and returns a `STRING`.
 
 **Constraints:** total input + labels context capped at **128,000 tokens**; not available on Databricks SQL Classic.
 
 ```sql
 -- simple labels
 SELECT ticket_text,
-       ai_classify(ticket_text, '["urgent", "not urgent", "spam"]') AS priority
+       ai_classify(ticket_text, '["urgent", "not urgent", "spam"]', MAP('version', '2.1')) AS priority
 FROM support_tickets;
--- {"response": ["urgent"], "error_message": null}
+-- {"response": [{"value": "urgent"}], "metadata": {"version": "2.1"}, "error_message": null}
 
 -- labels with descriptions
 SELECT ticket_text,
@@ -53,7 +56,7 @@ SELECT ticket_text,
            '{"billing_error": "Payment, invoice, or refund issues",
              "product_defect": "Any malfunction, bug, or breakage",
              "account_issue": "Login failures, password resets"}',
-           MAP('instructions', 'Customer support tickets for a SaaS product')
+           MAP('version', '2.1', 'instructions', 'Customer support tickets for a SaaS product')
        ) AS category
 FROM support_tickets;
 ```
@@ -63,7 +66,7 @@ from pyspark.sql.functions import expr
 df = spark.table("support_tickets")
 df.withColumn(
     "priority",
-    expr("ai_classify(ticket_text, '[\"urgent\", \"not urgent\", \"spam\"]')")
+    expr("ai_classify(ticket_text, '[\"urgent\", \"not urgent\", \"spam\"]', MAP('version', '2.1'))")
 ).display()
 ```
 
@@ -71,6 +74,7 @@ df.withColumn(
 - Use label descriptions for ambiguous categories — they significantly improve accuracy
 - `multilabel: "true"` enables multi-label classification without running multiple calls
 - Up to 500 labels supported
+- For PDF, image, or Office documents, pass the `ai_parse_document` VARIANT directly to preserve document structure. For plain text or Markdown files, use `read_files(..., format => 'text', wholetext => true)` and classify the `value` column; otherwise each line becomes a separate input.
 
 ---
 
@@ -115,7 +119,7 @@ PySpark — pass the JSON as a literal (an apostrophe in a question would break 
 
 **Syntax:** `ai_extract(content, schema [, options])`
 - `content`: VARIANT | STRING — raw text, or VARIANT from `ai_parse_document`
-- `schema`: STRING — JSON schema definition:
+- `schema`: STRING literal — the JSON schema format supported by `ai_extract`:
   - Simple (field names only): `'["invoice_id", "vendor_name", "total_amount"]'`
   - Advanced (with types and descriptions):
     ```json
@@ -127,22 +131,27 @@ PySpark — pass the JSON as a literal (an apostrophe in a question would break 
     }
     ```
   - Supported types: `string`, `integer`, `number`, `boolean`, `enum`, `object` (with `properties`), `array` (with `items`)
+  - Use these lowercase types and supported keywords (`type`, `description`, `properties`, `items`, `labels`). Standard JSON Schema keywords such as `required`, `anyOf`, and `additionalProperties`, and SQL types such as `DECIMAL(12,2)` or `DATE`, are unsupported. Use `number` and cast downstream for decimals; use `string` with a description for dates. Enum fields use `"type": "enum"` with `"labels": [...]`.
   - Max 256 fields, field names up to 150 chars, 12 nesting levels, 500 enum values, 128,000 token total context
 - `options`: optional MAP\<STRING, STRING\>:
   - `version`: `"2.1"` (recommended) / `"2.0"` / `"1.0"`
   - `instructions`: task context to improve extraction quality (max 20,000 chars)
-  - `enableCitations`: `"true"` to attach `citation_ids` to each extracted field
-  - `enableConfidenceScores`: `"true"` to attach a per-field `confidence_score` (0–1)
+  - `mode`: `"precision"` for extraction involving long documents, many output items, or complex schemas
+  - `enableCitations`: `"true"` to attach `citation_ids` to each extracted field; requires v2.1
+  - `enableConfidenceScores`: `"true"` to attach a per-field `confidence_score` (0–1); requires v2.1
 
-Returns VARIANT `{"response": {...}, "error_message": null}`. With `enableCitations` or `enableConfidenceScores` enabled, each scalar field becomes an object `{"value": ..., "citation_ids": [...], "confidence_score": 0.x}` and a `metadata` block is added at the top level. Returns `NULL` if content is `NULL`.
+Version 2.1 returns VARIANT `{"response": {"field": {"value": ...}}, "metadata": {...}, "error_message": null}`. Nested objects and arrays keep their structure, and every scalar leaf is an object with a `value` field, even when citations and confidence scores are disabled. `citation_ids` and `confidence_score` appear only when enabled. A field that cannot be extracted has a null `value`. Returns SQL `NULL` if content is SQL `NULL`. On success, `error_message` is a JSON null: check it with `is_variant_null(result:error_message)`.
+
+**Compatibility:** v2.0 returns scalar values directly, such as `result:response:total_amount::DECIMAL(12,2)`. Existing v2.0 queries remain supported. When upgrading to v2.1, update the projection to `result:response:total_amount:value::DECIMAL(12,2)`. The legacy v1 interface accepts `ARRAY<STRING>` entity names and returns a `STRUCT` of string fields.
 
 ```sql
 -- simple schema
 SELECT ai_extract(
     'Invoice #12345 from Acme Corp for $1,250.00',
-    '["invoice_id", "vendor_name", "total_amount"]'
+    '["invoice_id", "vendor_name", "total_amount"]',
+    MAP('version', '2.1')
 ) AS extracted;
--- {"response": {"invoice_id": "12345", "vendor_name": "Acme Corp", ...}, "error_message": null}
+-- {"response": {"invoice_id": {"value": "12345"}, "vendor_name": {"value": "Acme Corp"}, ...}, "error_message": null}
 
 -- composable with ai_parse_document
 WITH parsed AS (
@@ -152,7 +161,7 @@ WITH parsed AS (
 SELECT ai_extract(
     parsed,
     '["invoice_id", "vendor_name", "total_amount"]',
-    MAP('instructions', 'These are vendor invoices.')
+    MAP('version', '2.1', 'instructions', 'These are vendor invoices.')
 ) AS invoice_data
 FROM parsed;
 ```
@@ -162,14 +171,14 @@ from pyspark.sql.functions import expr
 df = spark.table("messages")
 df = df.withColumn(
     "entities",
-    expr("ai_extract(message, '[\"person\", \"location\", \"date\"]')")
+    expr("ai_extract(message, '[\"person\", \"location\", \"date\"]', MAP('version', '2.1'))")
 )
 df.display()
 ```
 
 ### Version 2.1: citations and confidence scores
 
-Pass `version => 2.1` with `enableCitations` and/or `enableConfidenceScores` to attach provenance and reliability metadata to each extracted field. Useful for review queues and downstream filtering by confidence.
+Pass `MAP('version', '2.1', ...)` with `enableCitations` and/or `enableConfidenceScores` to attach provenance and reliability metadata to each extracted field. Useful for review queues and downstream filtering by confidence. For more demanding extraction, add `'mode', 'precision'` to the same options map.
 
 ```sql
 SELECT ai_extract(
@@ -381,7 +390,7 @@ document
     ├── content      -- extracted text
     ├── confidence   -- DOUBLE 0–1
     ├── bbox         -- [{coord:[...], page_id}]
-    └── description  -- AI-generated description (figures/tables when enabled)
+    └── description  -- AI-generated figure description (when enabled)
 metadata             -- id, version, file_metadata
 error_status[]       -- {error_message, page_id} per page (if any)
 ```
@@ -389,15 +398,16 @@ error_status[]       -- {error_message, page_id} per page (if any)
 **Limits:** max 500 pages per document, max 100 MB file size.
 
 ```sql
--- Parse and extract text blocks
+-- Parse and retain the structured result for extraction or classification
 SELECT
     path,
-    concat_ws('\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks,
+    parsed AS parsed_content,
     parsed:error_status AS parse_error
 FROM (
-    SELECT path, ai_parse_document(content) AS parsed
+    SELECT path, ai_parse_document(content, MAP('version', '2.0')) AS parsed
     FROM read_files('/Volumes/catalog/schema/landing/docs/', format => 'binaryFile')
-);
+)
+WHERE is_variant_null(parsed:error_status);
 
 -- Parse with options (image output + descriptions)
 SELECT ai_parse_document(
@@ -424,20 +434,19 @@ from pyspark.sql.functions import expr
 df = (
     spark.read.format("binaryFile")
     .load("/Volumes/catalog/schema/landing/docs/")
-    .withColumn("parsed", expr("ai_parse_document(content)"))
+    .withColumn("parsed", expr("ai_parse_document(content, MAP('version', '2.0'))"))
     .selectExpr(
         "path",
-        "concat_ws('\\n', transform(parsed:document:elements, e -> e:content::STRING)) AS text_blocks",
+        "parsed AS parsed_content",
         "parsed:error_status AS parse_error",
     )
-    .filter("parse_error IS NULL")
+    .filter("is_variant_null(parse_error)")
 )
 
-# Chain with task-specific functions on the extracted text
+# Preserve document structure when chaining extraction and classification
 df = (
-    df.withColumn("summary",  expr("ai_summarize(text_blocks, 50)"))
-      .withColumn("entities", expr("ai_extract(text_blocks, '[\"date\",\"amount\",\"vendor\"]', map('version','2.0'))"))
-      .withColumn("category", expr("ai_classify(text_blocks, '[\"invoice\",\"contract\",\"report\"]', map('version','2.0'))"))
+    df.withColumn("entities", expr("ai_extract(parsed_content, '[\"date\",\"amount\",\"vendor\"]', map('version','2.1'))"))
+      .withColumn("category", expr("ai_classify(parsed_content, '[\"invoice\",\"contract\",\"report\"]', map('version','2.1'))"))
 )
 df.display()
 ```
@@ -448,22 +457,25 @@ df.display()
 - Suboptimal for non-Latin alphabets (e.g., Japanese, Korean in images) and digitally signed PDFs
 - Custom models not supported — always uses the built-in parsing model
 
+On success, `error_status` is a JSON null inside the VARIANT. Use `is_variant_null(parsed:error_status)` to select successful parses; SQL `IS NULL` does not recognize JSON null. Pass the complete parsed VARIANT into `ai_extract` or `ai_classify` to preserve layout and provenance. Plain-text and Markdown files can be read with `format => 'text', wholetext => true` and processed directly, without parsing.
+
 ---
 
 ## `ai_prep_search`
 
 **Requires:** DBR **18.2+** (serverless env v3+ for VARIANT support).
 
-Takes the VARIANT output of `ai_parse_document` and returns RAG-ready chunks. The function performs:
+Takes the VARIANT output of `ai_parse_document`, or a plain-text or Markdown STRING, and returns RAG-ready chunks. The function performs:
 1. **Semantic chunking** — splits document content into retrieval-sized chunks at natural boundaries (paragraphs, sections, tables).
 2. **Context enrichment** — adds document title, section headers, page numbers, and captions to each chunk's embedding text so Vector Search can match on context, not just chunk content.
 
 Use this instead of hand-rolled `variant_get` + `explode` + `md5` chunking when feeding `ai_parse_document` output into Databricks Vector Search.
 
 **Syntax:** `ai_prep_search(parsed [, options])`
-- `parsed`: VARIANT — output from `ai_parse_document`
+- `parsed`: VARIANT output from `ai_parse_document`, or a STRING containing plain text or Markdown
 - `options`: optional MAP\<STRING, STRING\>:
   - `version`: output schema version (major.minor; minor upgrades are backward-compatible)
+  - `schema`: JSON string in the same schema format as `ai_extract`, defining document-level metadata fields to extract. Each chunk exposes the typed values in `metadata`, and the fields also enrich `chunk_to_embed`.
 
 **Returns:** VARIANT with chunks ready for Vector Search. Chunks live under the top-level `document` key — access them via `$.document.contents`, NOT `$.chunks`:
 
@@ -473,7 +485,9 @@ document
 │   ├── chunk_id            -- unique id (document_id + position) — use as PK
 │   ├── chunk_position      -- 0-based position of the chunk in the document
 │   ├── chunk_to_retrieve   -- raw chunk text (return this to the LLM)
-│   └── chunk_to_embed      -- context-enriched text (use this as the embedding source)
+│   ├── chunk_to_embed      -- context-enriched text (use this as the embedding source)
+│   ├── metadata            -- typed fields requested by the schema option
+│   └── pages[]             -- page_id + image_uri for this chunk
 ├── pages[]                 -- page index + image_uri (when imageOutputPath was set on ai_parse_document)
 └── source_uri              -- input document path
 error_status                -- per-page error info, if any
@@ -486,7 +500,7 @@ CREATE OR REPLACE TABLE catalog.schema.parsed_chunks AS
 WITH parsed AS (
   SELECT
     path AS source_path,
-    ai_parse_document(content) AS parsed
+    ai_parse_document(content, MAP('version', '2.0')) AS parsed
   FROM read_files('/Volumes/catalog/schema/docs/', format => 'binaryFile')
 ),
 prepped AS (
@@ -523,7 +537,7 @@ from pyspark.sql.functions import expr, current_timestamp
 chunks_df = (
     spark.read.format("binaryFile")
     .load("/Volumes/catalog/schema/docs/")
-    .withColumn("parsed", expr("ai_parse_document(content)"))
+    .withColumn("parsed", expr("ai_parse_document(content, MAP('version', '2.0'))"))
     .withColumn("prep",   expr("ai_prep_search(parsed)"))
     .withColumn("chunk",  expr("explode(variant_get(prep, '$.document.contents', 'ARRAY<VARIANT>'))"))
     .selectExpr(
@@ -540,6 +554,16 @@ chunks_df.write.format("delta").mode("overwrite").saveAsTable("catalog.schema.pa
 ```
 
 **Vector Search integration:** Point a Delta Sync index at this table with `chunk_to_embed` as the embedding source column and `chunk_id` as the primary key. The `chunk_to_retrieve` column is what you return to the LLM at query time.
+
+**Plain-text or Markdown input with metadata extraction:**
+
+```sql
+SELECT _metadata.file_path AS path,
+       ai_prep_search(value, MAP('schema', '["document_type", "vendor_name"]')) AS prep
+FROM read_files('/Volumes/catalog/schema/notes/', format => 'text', wholetext => true);
+```
+
+`wholetext => true` keeps each file in one row. The `schema` option controls extracted metadata; it does not change the fixed chunk output structure.
 
 **Tips:**
 - Pass `imageOutputPath` on the upstream `ai_parse_document` call if you want page image URIs available in the prep output for multimodal retrieval.

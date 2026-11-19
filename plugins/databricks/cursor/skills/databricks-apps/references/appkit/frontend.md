@@ -42,7 +42,7 @@ All charts accept these core props (verify full list via `npx @databricks/appkit
   parameters={{}}              // query params — REQUIRED in query mode, even if empty
   xKey="region"                // X axis field (auto-detected from schema if omitted)
   yKey="revenue"               // Y axis field(s) — string or string[] (auto-detected if omitted)
-  format="auto"                // "json" | "arrow" | "auto" (default: "auto")
+  format="auto"                // "json_array" | "arrow_stream" | "auto" (default: "auto")
   transformer={(d) => d}       // transform raw data before rendering
   colors={['#40d1f5']}         // custom colors (overrides colorPalette)
   colorPalette="categorical"   // "categorical" | "sequential" | "diverging"
