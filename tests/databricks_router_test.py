@@ -39,6 +39,40 @@ class CheckPromptTest(unittest.TestCase):
         ]:
             self.assertRoutes(p)
 
+    def test_lakehouse_mcp_setup_routes_to_bootstrap(self):
+        for prompt in (
+            "Set up Lakehouse MCP",
+            "Connect system.ai.lakehouse",
+            "Use LAKEHOUSE MCP to inspect this notebook",
+        ):
+            with self.subTest(prompt=prompt):
+                instruction = router.check_prompt(prompt)
+                self.assertIsNotNone(instruction)
+                self.assertIn("databricks-lakehouse-mcp", instruction)
+
+    def test_lakehouse_mcp_instruction_overrides_cli_prerequisites(self) -> None:
+        instruction = router.check_prompt(
+            "Use connected system.ai.lakehouse to inspect this notebook"
+        )
+        self.assertIsNotNone(instruction)
+        mcp_rows = [
+            line for line in instruction.splitlines()
+            if "-> databricks-lakehouse-mcp" in line
+        ]
+        self.assertEqual(len(mcp_rows), 1)
+        for guidance in (
+            "override the general CLI prerequisites",
+            "databricks-core may be read for context",
+            "MCP connection and skill retrieval require no CLI install, upgrade, or CLI authentication",
+            "Apply CLI prerequisites only when CLI operations are actually needed",
+        ):
+            with self.subTest(guidance=guidance):
+                self.assertIn(guidance, mcp_rows[0])
+
+    def test_generic_lakehouse_or_local_notebook_does_not_route(self):
+        self.assertSkips("Explain lakehouse architecture")
+        self.assertSkips("Run a SQL query in my local notebook")
+
     def test_strong_routes_even_with_alternative_platform(self):
         # "databricks" present -> route despite the alternative-platform mention.
         self.assertRoutes("migrate my tables from redshift to databricks")
@@ -187,6 +221,23 @@ class SessionMemoTest(unittest.TestCase):
         self.assertEqual(first, router.ROUTING_INSTRUCTION)
         self.assertEqual(second, router.ROUTING_REMINDER)
         self.assertEqual(other, router.ROUTING_INSTRUCTION)
+
+    def test_lakehouse_mcp_reminder_preserves_cli_exemption(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(router.tempfile, "gettempdir", return_value=tmp):
+            router.routing_context("deploy a databricks job", "sess-mcp")
+            reminder = router.routing_context(
+                "Use connected system.ai.lakehouse to inspect this notebook",
+                "sess-mcp",
+            )
+        self.assertEqual(reminder, router.ROUTING_REMINDER)
+        for guidance in (
+            "For the Lakehouse MCP route, override the general CLI prerequisites",
+            "no CLI install, upgrade, or CLI authentication",
+            "Apply CLI prerequisites only when CLI operations are actually needed",
+        ):
+            with self.subTest(guidance=guidance):
+                self.assertIn(guidance, reminder)
 
     def test_non_databricks_prompt_does_not_mark_session(self):
         with tempfile.TemporaryDirectory() as tmp, \
