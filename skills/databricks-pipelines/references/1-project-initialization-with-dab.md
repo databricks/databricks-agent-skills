@@ -253,7 +253,7 @@ Edit `.sql` / `.py` files under `src/`, then re-run `databricks bundle deploy` +
 
 If the user already has `bronze/`, `silver/`, `gold/` folders without a bundle, migrate to Workflow A by wrapping them in a `databricks.yml` and a pipeline resource pointing at the existing folders via a `glob`. No file moves required — the medallion folders work as-is under `transformations/**`.
 
-For detailed pipeline configuration options (development mode, continuous, custom event log, notifications, Python deps, classic clusters), see [pipeline-configuration.md](pipeline-configuration.md).
+For detailed pipeline configuration options (development mode, continuous, custom event log, notifications, Python deps, classic clusters), see [pipeline-settings.md](pipeline-settings.md).
 
 ---
 

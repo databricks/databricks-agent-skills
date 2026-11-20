@@ -286,22 +286,33 @@ a YAML file on the cluster and exposes its path as `$HYPERPARAMETERS_PATH`:
 
 ```yaml
 parameters:
-  learning_rate: 0.001
+  learning_rate: 2e-5
   batch_size: 32
   warmup_steps: 1000
   use_amp: true
 ```
 
-Read them in the script:
+Read them in the script, converting every number to the type your code
+expects:
 
 ```python
 import os, yaml
 with open(os.environ["HYPERPARAMETERS_PATH"]) as f:
     hp = yaml.safe_load(f)
-lr = hp["learning_rate"]
+lr = float(hp["learning_rate"])
+batch_size = int(hp["batch_size"])
+warmup_steps = int(hp["warmup_steps"])
+use_amp = hp["use_amp"]
 ```
 
-Values can be strings, numbers, booleans, lists, or nested dicts. To sweep a
+Always convert numeric values with `float()` or `int()`, including values in
+nested dicts and lists: `yaml.safe_load` can return floats such as `2e-5`,
+`0.00002`, or `1e6` as strings. Write integers as plain digits (`1000000`,
+not `1e6`), because `int("1e+06")` fails.
+
+Strings, booleans, lists, and nested dicts arrive with their types. Quote a
+value that must stay a string but looks like a number (`run_tag: "1e5"`,
+`version: "1.10"`); unquoted, it is read as a number. To sweep a
 hyperparameter without editing the YAML, resubmit with
 `--override parameters.learning_rate=0.0005` (and a fresh idempotency key).
 
@@ -437,13 +448,18 @@ including the stable `--idempotency-key` from step 5.
 5. **Submit.** Use a stable `--idempotency-key` so an accidental re-run does not
    double-submit (compose it from `<user>-<experiment>-<YYYYMMDD>-v<N>` and bump
    `vN` on each resubmit; avoid dynamic subexpressions like `$(uuidgen)` so the
-   command stays auto-approvable):
+   command stays auto-approvable). If you want to wait for the run to finish or
+   stream live progress, add `--watch`:
    ```bash
-   databricks air run --file workload.yaml \
+   databricks air run --file workload.yaml --watch \
      --idempotency-key <key> -o json -p <profile>
    ```
-   Add `--watch` to stream logs to your terminal until the run finishes. Capture
-   `data.run_id` from the response, then monitor it.
+   `--watch` streams logs and status updates until the run finishes and exits 0
+   only if the run succeeds. With `-o json`, it emits JSONL and includes the run
+   ID. For long runs, use the agent's background-execution support. Stopping
+   `--watch` does not cancel the run, so if it exits non-zero after returning a
+   run ID, check `air get` before resubmitting. If the user only wants to submit
+   the run, omit `--watch` and return the run ID.
 
 ## Checking on a run
 
@@ -451,17 +467,24 @@ including the stable `--idempotency-key` from step 5.
 databricks air get <JOB_RUN_ID> -o json -p <profile>        # status, config, timing, failure reason
 databricks air list -o json -p <profile>                    # your active runs
 databricks air list --all-status -o json -p <profile>       # include finished runs
+databricks air logs <JOB_RUN_ID> -p <profile>               # view logs for an existing run
 ```
 
-`air get` reports `PENDING` while the run waits for GPUs, then `RUNNING`, then
-a final state such as `SUCCESS` or `FAILED`. An empty `air list` means you have
-no **active** runs, not that the run is gone; use `--all-status` or `air get`
-to see a finished run.
+Read the status from `.data.status` in the `air get -o json` envelope. The
+terminal statuses are `SUCCESS`, `FAILED`, `TIMEDOUT`, `CANCELED`,
+`INTERNAL_ERROR`, and `SKIPPED`. An empty `air list` means you have no
+**active** runs, not that the run is gone; use `--all-status` or `air get` to
+see a finished run.
+
+If no waiter is active and you need periodic status snapshots, read
+`.data.status`, sleep between calls, set a hard time limit, and stop on any
+terminal status or command error. Because `air run --watch` waits for the run
+to finish, you do not need to poll while it is active.
 
 ## Monitoring a run
 
-**Stream logs while it runs.** The simplest path is to submit with `--watch`,
-which streams the run's logs to your terminal until it reaches a terminal state:
+**Wait and stream logs.** If you want to wait for a new run and receive live
+updates, use `--watch`:
 
 ```bash
 databricks air run --file workload.yaml --watch -p <profile>
@@ -516,11 +539,12 @@ long `rank 0 failed to build the Delta plan` line. In `databricks-uc-dataset`
 0.0.1b1, `UC returned no storage location` usually means the name is a view,
 and `set both RANK and WORLD_SIZE or neither` means the script wasn't launched
 with `torchrun`. See the [UC data checklist](#training-data-in-unity-catalog).
+A `TypeError` comparing `'float'` and `'str'` at optimizer or scheduler setup
+means a hyperparameter was read without `float()`; see
+[Parameters](#parameters-hyperparameters).
 
 Show the failing traceback and let the user decide the fix. Before
-resubmitting, set `max_retries: 0` so a deterministic error fails once. For a
-deeper, guided diagnosis of a training failure, use AI Runtime's own debugging
-support rather than guessing at root cause here.
+resubmitting, set `max_retries: 0` so a deterministic error fails once.
 
 ## Serving a trained model
 
