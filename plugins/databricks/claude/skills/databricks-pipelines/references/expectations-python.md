@@ -1,26 +1,83 @@
-# Expectations (Python)
+Expectations apply data quality constraints to Lakeflow Spark Declarative Pipelines tables and views in Python. They use SQL Boolean expressions to validate each record and take actions when constraints are violated.
 
-Data-quality constraints stacked above `@dp.materialized_view()` / `@dp.table()` / `@dp.temporary_view()` functions. Each constraint is a SQL Boolean string evaluated per row.
+## When to Use Expectations
 
-Legacy `@dlt.expect*` decorators still parse but should be migrated to `@dp.expect*` (same names, same semantics) — see [SKILL.md Legacy DLT Syntax](../SKILL.md#legacy-dlt-syntax--always-migrate).
+- Apply to `@dp.materialized_view()`/`@dp.table()`/`@dlt.table()`/`@dp.temporary_view()`/`@dp.view()`/`@dlt.view()` decorated functions
+- Use on streaming tables, materialized views, or temporary views
+- Stack multiple expectation decorators above the dataset function
+- Prefer `@dp.expect*` in new code; the `@dlt.expect*` forms have the same names and semantics. Keep existing `@dlt.expect*` code unless the user asks to migrate (see [dlt-migration.md](dlt-migration.md))
 
-## Decorators
+## Decorator Types
 
-| Decorator | Action on violation |
-|---|---|
-| `@dp.expect(name, condition)` | Warn — invalid rows pass through, metrics logged. |
-| `@dp.expect_or_drop(name, condition)` | Drop violating rows before write. |
-| `@dp.expect_or_fail(name, condition)` | Fail the pipeline atomically on first violation. |
-| `@dp.expect_all({name: cond, ...})` | Warn, multiple at once. |
-| `@dp.expect_all_or_drop({name: cond, ...})` | Drop, multiple at once. |
-| `@dp.expect_all_or_fail({name: cond, ...})` | Fail, multiple at once. |
+### Single Expectation Decorators
 
-- `name` (str) — unique within the dataset; appears in metrics.
-- `condition` (str) — a SQL Boolean expression. Built-ins are fine. **No** Python UDFs, external calls, or subqueries.
+**@dp.expect(description, constraint)** (or **@dlt.expect(description, constraint)**)
 
-## Patterns
+- Logs violations but allows invalid records to pass through
+- Collects metrics for monitoring
 
-### Single decorator
+**@dp.expect_or_drop(description, constraint)** (or **@dlt.expect_or_drop(description, constraint)**)
+
+- Removes invalid records before writing to target
+- Logs dropped record metrics
+
+**@dp.expect_or_fail(description, constraint)** (or **@dlt.expect_or_fail(description, constraint)**)
+
+- Stops pipeline execution immediately on violation
+- Requires manual intervention to resolve
+- Transaction rolls back atomically
+
+### Multiple Expectations Decorators
+
+**@dp.expect_all({description: constraint, ...})** (or **@dlt.expect_all({description: constraint, ...})**)
+
+- Applies multiple warn-level expectations
+- Takes dictionary of description-constraint pairs
+
+**@dp.expect_all_or_drop({description: constraint, ...})** (or **@dlt.expect_all_or_drop({description: constraint, ...})**)
+
+- Applies multiple drop-level expectations
+- Records dropped if any constraint fails
+
+**@dp.expect_all_or_fail({description: constraint, ...})** (or **@dlt.expect_all_or_fail({description: constraint, ...})**)
+
+- Applies multiple fail-level expectations
+- Pipeline stops if any constraint fails
+
+## Parameters
+
+**description** (str, required)
+
+- Unique identifier for the constraint within the dataset
+- Should clearly communicate what is being validated
+- Can be reused across different datasets
+
+**constraint** (str, required)
+
+- SQL Boolean expression evaluated per record
+- Must return true or false
+- Cannot contain Python functions or UDFs, external calls, or subqueries; SQL built-in functions are fine
+- Cannot include subqueries in constraint logic
+
+## Usage Examples
+
+All variants below work on both the `table`, `materialized_view` or `view` decorators.
+
+### Basic Single Expectation
+
+```python
+@dp.materialized_view()
+@dp.expect("valid_price", "price >= 0")
+def sales_data():
+    return spark.read.table("raw_sales")
+
+@dp.table()
+@dp.expect("valid_price", "price >= 0")
+def sales_data():
+    return spark.read.table("raw_sales")
+```
+
+### Drop Invalid Records
 
 ```python
 @dp.materialized_view()
@@ -29,25 +86,34 @@ def customer_contacts():
     return spark.read.table("raw_contacts")
 ```
 
-`@dp.expect("name", "cond")` (warn) and `@dp.expect_or_fail(...)` (fail) follow the same shape.
+### Fail on Critical Violations
 
-### Multiple expectations, same action — use `expect_all`
+```python
+@dp.materialized_view()
+@dp.expect_or_fail("required_id", "customer_id IS NOT NULL")
+def customer_master():
+    return spark.read.table("raw_customers")
+```
+
+### Multiple Expectations
 
 ```python
 @dp.materialized_view()
 @dp.expect_all({
-    "valid_age":     "age >= 0 AND age <= 120",
+    "valid_age": "age >= 0 AND age <= 120",
     "valid_country": "country_code IN ('US', 'CA', 'MX')",
-    "recent_date":   "created_date >= '2020-01-01'",
+    "recent_date": "created_date >= '2020-01-01'"
 })
 def validated_customers():
     return spark.read.table("raw_customers")
 ```
 
-### Multiple expectations, mixed actions — stack decorators
+### Stacking Multiple Decorators
 
 ```python
-@dp.materialized_view(comment="Clean customer data")
+@dp.materialized_view(
+    comment="Clean customer data with quality checks"
+)
 @dp.expect_or_drop("valid_email", "email LIKE '%@%'")
 @dp.expect_or_fail("required_id", "id IS NOT NULL")
 @dp.expect("valid_age", "age BETWEEN 0 AND 120")
@@ -55,16 +121,21 @@ def customers_clean():
     return spark.read.table("raw_customers")
 ```
 
-### Temporary view with expectations
+### With Views
 
 ```python
-@dp.temporary_view(name="high_value_customers")
+from pyspark.sql import functions as F
+
+@dp.view(
+    name="high_value_customers",
+    comment="Customers with total purchases over $1000"
+)
 @dp.expect("valid_total", "total_purchases > 0")
 def high_value_view():
-    return (spark.read.table("orders")
-                 .groupBy("customer_id")
-                 .agg(F.sum("amount").alias("total_purchases"))
-                 .filter("total_purchases > 1000"))
+    return spark.read.table("orders") \
+        .groupBy("customer_id") \
+        .agg(F.sum("amount").alias("total_purchases")) \
+        .filter("total_purchases > 1000")
 ```
 
 ## Aggregate Expectations
@@ -127,11 +198,18 @@ def orders_customer_fk_check():
                  .select("customer_id", F.lit(False).alias("has_matching_customer")))
 ```
 
+## Monitoring
+
+- Per-expectation metrics are in the `flow_progress` events of the event log (`details.flow_progress.data_quality`); users also see them in the pipeline's data quality view
+- Query the event log for detailed analytics
+- Metrics available for `expect` (warn) and `expect_or_drop` actions
+- Metrics unavailable if pipeline fails or no updates occur
+
 ## Best Practices
 
-- Unique, descriptive names — they appear in metrics.
-- `expect_or_fail` for critical business invariants.
-- `expect_or_drop` for cleansing operations.
-- `expect` (warn) for measuring soft quality without blocking.
-- Group same-action constraints in `expect_all*` rather than stacking many decorators.
-- Predicate is a SQL string — no Python UDFs, subqueries, external calls.
+- Use unique, descriptive names for each expectation; the names appear in the pipeline's data-quality metrics
+- Apply `expect_or_fail` for critical business constraints
+- Use `expect_or_drop` for data cleansing operations where losing some rows is acceptable
+- Use `expect` for monitoring optional quality metrics
+- Keep constraint logic simple and SQL-based only
+- Group related expectations using `expect_all` variants

@@ -34,7 +34,7 @@ If 80%+ of the pipeline is SQL-expressible (filters, aggregations, joins, CDC, A
 
 - `apply_changes(...)` → `create_auto_cdc_flow(...)`. Same parameters EXCEPT:
   - `sequence_by` accepts string OR `col(...)`; either works.
-  - `stored_as_scd_type` is **integer `2`** for Type 2, **string `"1"`** for Type 1.
+  - `stored_as_scd_type` is `1` or `2`, as an integer or a string.
 
 ```python
 # Legacy
@@ -116,7 +116,7 @@ CREATE OR REFRESH STREAMING TABLE silver_sales (
 ... WHERE amount > 0
 
 -- 3. Quarantine pattern (full audit trail; route bad rows to a side table) —
--- see streaming-patterns.md#rescue-data-quarantine
+-- see streaming-table-sql.md#rescued-data-quarantine
 ```
 
 ### UDFs
@@ -151,7 +151,7 @@ Run old and new in parallel during cutover and diff outputs before retiring the 
 | Issue | Solution |
 |-------|----------|
 | `sequence_by` type error | Both string and `col("column")` work — confirm the column exists in the source. |
-| `stored_as_scd_type` rejected | Integer `2` for Type 2, string `"1"` for Type 1. Don't quote `2`. |
+| `stored_as_scd_type` rejected | Use `1` or `2` (integer or string). |
 | UDF doesn't translate cleanly | Keep in Python, or refactor into SQL built-ins. |
 | Performance regressed | Replace `partition_cols` with `cluster_by` (Liquid Clustering). |
 | Schema evolution different | Use `mode => 'PERMISSIVE'` in `read_files()` or rely on rescued-data column. |
@@ -163,4 +163,4 @@ Run old and new in parallel during cutover and diff outputs before retiring the 
 
 - [python-basics.md](python-basics.md) — modern `dp` API reference
 - [auto-cdc-python.md](auto-cdc-python.md) / [auto-cdc-sql.md](auto-cdc-sql.md) — full CDC API
-- [SKILL.md](../SKILL.md#legacy-dlt-syntax--always-migrate) — Legacy DLT Syntax mapping table
+- [SKILL.md](../SKILL.md#migrating-legacy-dlt-syntax) — Legacy DLT Syntax mapping table

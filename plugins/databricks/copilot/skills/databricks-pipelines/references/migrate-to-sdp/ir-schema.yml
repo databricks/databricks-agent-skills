@@ -1,0 +1,385 @@
+# ============================================================================
+# Migration IR Schema v0 — Thin Decision Manifest
+# ============================================================================
+#
+# This file defines the schema for migration-plan.yml, the intermediate
+# representation between the Research and Generate phases of the ETL→SDP
+# migration tool.
+#
+# Source-pluggable: works for DBT today, plus future ETL sources (Snowflake,
+# Informatica, etc.) by setting metadata.source_type and using free-form
+# source-specific fields under nodes[].source_meta.
+#
+# DESIGN PRINCIPLES:
+#
+#   1. Decisions, not translations.
+#      The IR captures WHAT each artifact should become, not HOW to write it.
+#      The generate phase reads the original source file for content.
+#
+#   2. Every field earns its place.
+#      If the generate phase can derive it from the source file,
+#      it does NOT belong in the IR. Fields exist only when:
+#      - The information cannot be derived (source catalog mappings)
+#      - The information is a judgment call (sdp_type classification)
+#      - The information is needed by the orchestrator (dag_levels)
+#
+#   3. Flat over nested. Scannable in 30 seconds.
+#      A user reviewing this file should immediately see:
+#      what each artifact becomes, which sources map where, what needs attention.
+#
+#   4. `notes` and `source_meta` are the escape hatches.
+#      `notes` is free-text guidance from research→generate.
+#      `source_meta` is free-form structured data the source pack uses for
+#      anything that doesn't fit standard fields.
+#
+#   5. Omit, don't default.
+#      Optional fields are omitted entirely when not needed, not set to null
+#      or empty. A 5-node project with no issues should be ~30 lines.
+#
+# CONSUMERS:
+#
+#   Orchestrator  — reads metadata, dag_levels, summary
+#   Generate phase — reads nodes[].sdp_type + sources[] + node.source_path,
+#                    then reads the original source file for content
+#   Repair phase  — reads everything; can propose amendments to any field
+#   User          — reviews decisions, source mappings, flags
+#
+# ============================================================================
+
+# --- Required ---
+
+version: 0
+
+metadata:
+  # Source identity
+  source_type: 'dbt' # dbt | snowflake | informatica | ... — determines which source pack the generate/repair phases load
+  source_project_name: 'my_analytics' # human-readable project name
+  source_project_path: './my_dbt_project' # root of the source project (relative or absolute)
+
+  # Generation defaults — per-node overrides are possible
+  output_format: 'sql' # sql | python
+
+  # Pipeline display name
+  pipeline_name: 'migrated_my_analytics'
+
+  # Catalog/schema are NOT in the IR. The migration writes SDP files to the pipeline,
+  # and the pipeline's existing catalog/schema apply. If the user wants a different
+  # target, they adjust it when the agent shows the proposed pipeline settings
+  # for confirmation.
+
+# --- Source Mappings (Required) ---
+#
+# WHY THIS EXISTS: The generate phase cannot guess catalog.schema.table names.
+# Source-side abstractions (DBT source('s','t'), Snowflake external tables,
+# Informatica source connections) need to resolve to concrete UC locations
+# that only the user/research phase knows.
+#
+# HOW IT'S USED: When the generate phase encounters a source reference in the
+# original file, it looks up the mapping here and writes the resolved name.
+#
+# Intra-project references (DBT ref(), Snowflake same-schema references, etc.)
+# do NOT need mappings — SDP resolves them within the pipeline. Only EXTERNAL
+# sources need explicit resolution.
+#
+# The `source` field is source-flavored — DBT uses {name, table}; other
+# sources may use a string identifier or a different shape.
+
+sources:
+  - source: { name: 'raw', table: 'orders' } # DBT-flavored example
+    catalog_table: 'raw_catalog.raw_schema.orders'
+
+  - source: { name: 'raw', table: 'users' }
+    catalog_table: 'raw_catalog.raw_schema.users'
+
+  - source: { name: 'events', table: 'clickstream' }
+    catalog_table: 'events_catalog.streaming.clickstream'
+
+# --- Node Decisions (Required) ---
+#
+# One entry per source artifact (DBT model/snapshot/seed, Snowflake DDL/task,
+# Informatica mapping, etc.). This is the core of the IR.
+#
+# REQUIRED FIELDS per node:
+#   id           — unique identifier (typically the source artifact name)
+#   source_path  — path to the original source file (generate phase reads this)
+#   sdp_type     — THE classification decision
+#
+# OPTIONAL FIELDS (omit when not needed):
+#   output_format    — override metadata.output_format for this node
+#   sdp_cdc_hint     — only for auto_cdc / auto_cdc_snapshot nodes
+#   confidence       — only include for medium/low (high is the default assumption)
+#   notes            — free-text guidance for the generate phase
+#   source_meta      — free-form object for source-pack-specific data the
+#                      generate phase needs that doesn't fit standard fields
+#   manual_review    — list of issues requiring human attention before/after generation
+#   skip             — set to true to exclude from generation (user decided not to migrate)
+#
+# sdp_type values:
+#   streaming_table    — append-only incremental (CREATE OR REFRESH STREAMING TABLE)
+#   materialized_view  — full recompute batch (CREATE OR REFRESH MATERIALIZED VIEW)
+#   temporary_view     — intermediate, not persisted (CREATE TEMPORARY VIEW)
+#   auto_cdc           — change data capture with SCD (AUTO CDC INTO)
+#   auto_cdc_snapshot  — CDC from snapshots (recurring Python, SQL ONCE for an empty target, or recurring versioned SQL)
+
+nodes:
+  # --- Simple: straightforward mapping, no extras needed ---
+
+  - id: stg_orders
+    source_path: models/staging/stg_orders.sql
+    sdp_type: streaming_table
+
+  - id: stg_customers
+    source_path: models/staging/stg_customers.sql
+    sdp_type: streaming_table
+
+  - id: stg_products
+    source_path: models/staging/stg_products.sql
+    sdp_type: materialized_view
+    notes: 'Batch source, full reload each run — no incremental strategy in DBT'
+
+  # --- Intermediate: internal-only, not persisted ---
+
+  - id: int_order_items
+    source_path: models/intermediate/int_order_items.sql
+    sdp_type: temporary_view
+
+  # --- Mart: final consumption layer ---
+
+  - id: fct_daily_revenue
+    source_path: models/marts/fct_daily_revenue.sql
+    sdp_type: materialized_view
+
+  - id: dim_customers
+    source_path: models/marts/dim_customers.sql
+    sdp_type: materialized_view
+
+  # --- CDC: incremental with merge → AUTO CDC ---
+
+  - id: orders_merged
+    source_path: models/intermediate/orders_merged.sql
+    sdp_type: auto_cdc
+    sdp_cdc_hint:
+      scd_type: 1 # 1 = current state (upsert), 2 = history tracking
+    notes: >
+      DBT uses incremental_strategy='merge' with unique_key='order_id'.
+      updated_at column available for sequence_by.
+
+  # --- Snapshot → AUTO CDC SCD Type 2 ---
+
+  - id: users_snapshot
+    source_path: snapshots/users_snapshot.sql
+    sdp_type: auto_cdc
+    sdp_cdc_hint:
+      scd_type: 2
+    notes: 'DBT timestamp strategy, updated_at as the tracking column'
+
+  # --- Snapshot with check strategy → AUTO CDC from snapshot ---
+
+  - id: products_snapshot
+    source_path: snapshots/products_snapshot.sql
+    sdp_type: auto_cdc_snapshot
+    output_format: python
+    sdp_cdc_hint:
+      scd_type: 2
+    source_meta:
+      snapshot_is_complete_current_state: true
+    notes: "DBT check strategy (check_cols='all') — source exposes current state only"
+    manual_review:
+      - 'Use Python for recurring CDC; SQL AUTO CDC ONCE is available only for one-time initialization into an empty target'
+
+  - id: versioned_products_snapshot
+    source_path: snapshots/versioned_products_snapshot.sql
+    sdp_type: auto_cdc_snapshot
+    output_format: sql
+    sdp_cdc_hint:
+      scd_type: 2
+    source_meta:
+      snapshot_version_column: snapshot_version
+      snapshot_versions_are_complete: true
+      snapshot_versions_are_immutable: true
+    notes: 'Underlying source retains one immutable, complete snapshot per snapshot_version'
+
+  # --- Complex: needs Python, lower confidence ---
+
+  - id: complex_model
+    source_path: models/intermediate/complex_model.sql
+    sdp_type: auto_cdc
+    output_format: python # override: complex Jinja needs Python
+    sdp_cdc_hint:
+      scd_type: 1
+    confidence: medium
+    notes: >
+      Uses custom_pivot macro — expand inline as .groupBy().pivot().
+      Uses dbt_utils.surrogate_key — convert to sha2(concat_ws('|', ...)).
+    manual_review:
+      - 'custom_pivot macro has no direct SDP equivalent — verify expanded logic'
+
+  # --- Seed: CSV file → materialized view reading from Volume ---
+
+  - id: seed_countries
+    source_path: seeds/countries.csv
+    sdp_type: materialized_view
+    seed_volume_path: '/Volumes/analytics_catalog/analytics/seeds/countries.csv'
+    notes: 'Upload CSV to Volume before running pipeline'
+
+  # --- Skipped: user decided not to migrate this one ---
+
+  - id: legacy_report
+    source_path: models/legacy/legacy_report.sql
+    sdp_type: materialized_view
+    skip: true
+    notes: 'Deprecated model — user chose to skip migration'
+
+# --- DAG Levels (Required) ---
+#
+# Topological ordering of nodes for parallel generation.
+# Nodes within the same level have no dependencies on each other
+# and can be generated concurrently.
+#
+# The orchestrator uses this to batch generation when parallelizing.
+# The generate phase does NOT use this — it reads refs from the source file.
+
+dag_levels:
+  - [stg_orders, stg_customers, stg_products, seed_countries]
+  - [int_order_items, users_snapshot, products_snapshot, versioned_products_snapshot]
+  - [orders_merged, dim_customers, complex_model]
+  - [fct_daily_revenue]
+
+# --- Summary (Required) ---
+#
+# Quick stats for the orchestrator to present to the user.
+# The user should be able to approve/reject the migration from this alone.
+
+summary:
+  total_nodes: 13
+  skipped: 1
+  by_sdp_type:
+    streaming_table: 2
+    materialized_view: 4
+    temporary_view: 1
+    auto_cdc: 3
+    auto_cdc_snapshot: 2
+  needs_manual_review: 2
+  # Highlight anything the user should pay attention to
+  alerts:
+    - '1 node (complex_model) has medium confidence — review notes before generating'
+    - '1 recurring current-state snapshot node (products_snapshot) requires Python unless reduced to one-time SQL initialization'
+    - '1 node (legacy_report) marked as skip'
+    - '1 seed file (countries.csv) must be uploaded to Volume before pipeline runs'
+
+# ============================================================================
+# SCHEMA FIELD REFERENCE (for agent implementers)
+# ============================================================================
+#
+# metadata (required):
+#   source_type         enum      "dbt" | "snowflake" | "informatica" | ...
+#                                 Determines which references/migrate-to-sdp/sources/<x>/ pack the
+#                                 generate and repair phases load.
+#   source_project_name string    Source project name (e.g. from dbt_project.yml)
+#   source_project_path string    Path to source project root
+#   output_format       string    "sql" | "python" — default for all nodes
+#   pipeline_name       string    Display name for the SDP pipeline
+#
+#   Catalog/schema are NOT IR fields. The migration writes SDP files into the
+#   pipeline, and the pipeline's existing catalog/schema apply at runtime.
+#   To target a different catalog/schema, the user adjusts it when the agent
+#   shows the proposed pipeline settings for confirmation.
+#
+# sources[] (required, at least one):
+#   source              object    Source-flavored identifier. Shape depends on
+#                                 source_type — DBT uses {name, table}; other
+#                                 sources may use a string identifier or different keys.
+#   catalog_table       string    Fully qualified Unity Catalog table
+#
+# nodes[] (required, at least one):
+#   id                  string    REQUIRED — unique node identifier
+#   source_path         string    REQUIRED — path to source file relative to project root
+#   sdp_type            enum      REQUIRED — streaming_table | materialized_view |
+#                                            temporary_view | auto_cdc | auto_cdc_snapshot
+#   output_format       string    OPTIONAL — override metadata.output_format
+#   sdp_cdc_hint        object    OPTIONAL — only for auto_cdc / auto_cdc_snapshot
+#     scd_type          int         REQUIRED within hint — 1 (current) or 2 (history)
+#   seed_volume_path    string    OPTIONAL — only for reference-data nodes, path in Volume
+#   confidence          string    OPTIONAL — "medium" | "low" (omit = high)
+#   notes               string    OPTIONAL — free-text guidance for generate phase
+#   source_meta         object    OPTIONAL — free-form, source-pack-specific structured data
+#   manual_review       string[]  OPTIONAL — issues needing human attention
+#   skip                bool      OPTIONAL — true to exclude from generation
+#
+# dag_levels (required):
+#   list of lists of node IDs, topologically ordered
+#
+# summary (required):
+#   total_nodes         int       Total node count (including skipped)
+#   skipped             int       Count of skip: true nodes
+#   by_sdp_type         map       Count per sdp_type
+#   needs_manual_review int       Count of nodes with manual_review
+#   alerts              string[]  Human-readable warnings for user review
+#
+# ============================================================================
+# REPAIR PHASE: AMENDABLE FIELDS
+# ============================================================================
+#
+# The repair phase can propose amendments to ANY field. Common amendments:
+#
+#   node.sdp_type           — reclassify (e.g., streaming_table → auto_cdc)
+#   node.sdp_cdc_hint       — add/change SCD type
+#   node.output_format      — switch sql ↔ python
+#   node.notes              — add guidance that was missing
+#   node.source_meta        — refine source-pack-specific data
+#   node.skip               — skip a node that can't be migrated
+#   sources[].catalog_table — fix wrong catalog.schema.table mapping
+#
+# Amendment format:
+#
+#   ir_amendments:
+#     - node_id: "stg_orders"
+#       field: "sdp_type"
+#       new_value: "auto_cdc"
+#       reason: "Source has UPDATEs — streaming_table can't handle them"
+#     - node_id: "stg_orders"
+#       field: "sdp_cdc_hint"
+#       new_value: { scd_type: 1 }
+#       reason: "Added CDC hint for the reclassified node"
+#     - source: { name: "raw", table: "orders" }
+#       field: "catalog_table"
+#       new_value: "prod_catalog.raw_schema.orders"
+#       reason: "Table not found in dev_catalog — correct catalog is prod_catalog"
+#
+# ============================================================================
+# WHAT'S INTENTIONALLY NOT IN THE IR
+# ============================================================================
+#
+# compiled_sql        — generate phase reads source file and transpiles
+# expectations[]      — generate phase reads source-side test definitions directly
+# dependencies[]      — generate phase reads refs from source file
+# macros_used[]       — generate phase discovers templating helpers when reading
+# column_list         — generate phase reads from source file / source schema
+# cluster_config      — pipeline settings handle this (serverless by default)
+# schedule            — pipeline settings handle this
+# templating_complexity — output_format: python IS the actionable decision
+# downstream[]        — not needed; dag_levels captures the ordering
+# source_materialization — generate phase reads this from the source file
+#
+# These fields were considered and rejected because the generate phase can
+# derive them from the source file. Adding them would make the IR a
+# transpilation cache, which defeats the purpose of LLM-driven generation.
+#
+# ============================================================================
+# VERSIONING
+# ============================================================================
+#
+# The `version: 0` field at the top allows future schema evolution.
+# When the schema changes:
+#   - Bump version number
+#   - Research phase produces the new version
+#   - Generate phase checks version and adapts
+#   - Old IRs can be migrated or re-researched
+#
+# Anticipated v1 additions (if patterns emerge from v0 usage):
+#   - source[].source_kind: "table" | "files" | "stream" (for Auto Loader / Kafka)
+#   - node.pipeline_assignment: for multi-pipeline splitting
+#   - node.variables: explicit source-var → SDP param mappings per node
+#   - metadata.variables: global variable mappings
+#
+# ============================================================================

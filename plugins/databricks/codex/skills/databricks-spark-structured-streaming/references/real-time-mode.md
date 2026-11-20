@@ -18,7 +18,7 @@ RTM has hard cluster requirements. Get any of these wrong and the stream either 
 | Setting | Required value | Notes |
 |---|---|---|
 | DBR | **16.4 LTS minimum, 18.1+ recommended** | Per the [GA blog](https://www.databricks.com/blog/announcing-general-availability-real-time-mode-apache-spark-structured-streaming-databricks): "we recommend DBR 18.1 for the latest features and optimizations." DBR 18+ is also required for stream-stream inner join (see [Supported operations](#supported-operations)) and DBR 18.2+ resolves a known latency floor with Python `transformWithState` at <5 rec/sec. |
-| Compute type | **Classic compute** (Dedicated or Standard access mode) | Standard supports Python only. Serverless is NOT supported for standalone RTM — only inside SDP-on-RTM (see [SDP real-time mode](../../databricks-pipelines/references/real-time-mode.md)). |
+| Compute type | **Classic compute** (Dedicated or Standard access mode) | Standard supports Python only. Serverless is NOT supported for standalone RTM — only inside SDP-on-RTM (see [SDP real-time mode](../../databricks-pipelines/references/real-time-mode-sdp.md)). |
 | Autoscaling | **Off** | Streaming clusters must be fixed-size. |
 | Photon | **Off** | Incompatible with RTM. |
 | Spot instances | **Off** | Interruptions break the stream. |
@@ -103,7 +103,7 @@ For writing into Lakebase Postgres, see [lakebase-sink-python.md](lakebase-sink-
 - `transformWithState` for custom state (see below)
 - **Multi-step stateful queries (DBR 19+)** — chain stateful operators, e.g. `dropDuplicates` → `transformWithState`, or a stream-stream join feeding another stateful operator.
 
-> **Note on `dropDuplicatesWithinWatermark`:** the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference) marks it **supported** in standalone Structured Streaming RTM (state is kept unbounded — pass the event-time column so state can evict). A `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` error class exists in the catalog, but the existence of the class does not make the operator unsupported here — it is not raised on this surface. It *is* raised on Lakeflow/SDP RTM, where the operator is genuinely unsupported (see [databricks-pipelines/references/real-time-mode.md](../../databricks-pipelines/references/real-time-mode.md)). Do **not** replace `dropDuplicatesWithinWatermark` with `dropDuplicates` in standalone RTM.
+> **Note on `dropDuplicatesWithinWatermark`:** the [RTM reference](https://docs.databricks.com/aws/en/structured-streaming/real-time/reference) marks it **supported** in standalone Structured Streaming RTM (state is kept unbounded — pass the event-time column so state can evict). A `STREAMING_REAL_TIME_MODE.DROP_DUPLICATES_WITHIN_WATERMARK_NOT_SUPPORTED` error class exists in the catalog, but the existence of the class does not make the operator unsupported here — it is not raised on this surface. It *is* raised on Lakeflow/SDP RTM, where the operator is genuinely unsupported (see [databricks-pipelines/references/real-time-mode-sdp.md](../../databricks-pipelines/references/real-time-mode-sdp.md)). Do **not** replace `dropDuplicatesWithinWatermark` with `dropDuplicates` in standalone RTM.
 
 ### Not supported in RTM
 

@@ -37,7 +37,7 @@ databricks pipelines create --json '{
 }'
 ```
 
-These flags are the canonical dev/iteration defaults — fail fast. **Tuned for demo / iteration.** For production pipelines, drop `"development"` and the two `pipelines.*RetryAttempts` overrides so the platform's retry defaults (5 / 2) can absorb transient infra failures. Per-field rationale in [pipeline-configuration.md#canonical-create-dev--iteration-defaults](pipeline-configuration.md#canonical-create-dev--iteration-defaults).
+These flags are the canonical dev/iteration defaults — fail fast. **Tuned for demo / iteration.** For production pipelines, drop `"development"` and the two `pipelines.*RetryAttempts` overrides so the platform's retry defaults (5 / 2) can absorb transient infra failures. Per-field rationale in [pipeline-settings.md#canonical-create-dev--iteration-defaults](pipeline-settings.md#canonical-create-dev--iteration-defaults).
 
 `libraries`: use `"glob"` for a directory (recommended for medallion folders), `"file"` for a single `.sql`/`.py` (folder paths fail with `Paths must end with .py or .sql`), or enumerated `"file"` entries when ordering matters. `"notebook"` is deprecated — never use.
 
