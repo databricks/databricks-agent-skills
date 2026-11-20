@@ -401,8 +401,7 @@ newer** for custom images and the `databricks air images push` helper.
 
 Before pushing:
 
-- Ask a workspace admin to enable the **AI Runtime Beta Features** and
-  **Databricks Artifact Registry** previews.
+- Ask a workspace admin to enable the **Databricks Artifact Registry** preview.
 - Create or select a Unity Catalog catalog and schema, and obtain the
   privileges to push and read images. Follow the
   [Artifact Registry setup guide](https://docs.databricks.com/aws/en/artifact-registry/get-started).

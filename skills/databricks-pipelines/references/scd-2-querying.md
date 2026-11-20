@@ -121,7 +121,7 @@ FROM products_history
 GROUP BY product_id;
 ```
 
-**Cluster the history table on lookup key + time**: `CLUSTER BY (product_id, __START_AT)`. Accelerates both entity lookups and point-in-time scans. See [performance.md#cluster-key-selection-by-layer](performance.md#cluster-key-selection-by-layer).
+**Cluster the history table on lookup key + time**: `CLUSTER BY (product_id, __START_AT)`. Accelerates both entity lookups and point-in-time scans. See [performance-tuning.md#cluster-key-selection-by-layer](performance-tuning.md#cluster-key-selection-by-layer).
 
 ## Best Practices
 
