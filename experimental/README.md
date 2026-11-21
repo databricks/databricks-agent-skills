@@ -1,6 +1,6 @@
 > ⚠️ **Experimental: best-effort, not officially supported**
 >
-> The skills in this directory were originally imported from
+> This directory includes skills authored here and skills originally imported from
 > [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
 > on a best-effort basis. **`ai-dev-kit` is now deprecated** —
 > `databricks/databricks-agent-skills` is the canonical home for these skills
@@ -8,7 +8,7 @@
 >
 > Most of that snapshot has since been **promoted to the stable
 > [`../skills/`](../skills/) tree** (see [Promoted to stable](#promoted-to-stable)
-> below). The few skills that remain here are still **not officially supported**
+> below). The experimental skills here are still **not officially supported**
 > as part of `databricks-agent-skills`:
 >
 > - They do not follow the same review / quality bar as the skills in
@@ -40,6 +40,10 @@ databricks aitools install spark-python-data-source --experimental
 See the root [README](../README.md) for details on the stable install path.
 
 ## Available Skills
+
+### Document Intelligence
+
+- **[lakeflow-unstructured](lakeflow-unstructured/SKILL.md)** - Create and deploy Document Intelligence workflow folders from existing volume files or Delta tables, with AI Function tasks and a UI handoff for evaluation and improvements. Source ingestion and connector setup are outside scope.
 
 ### 🔧 Data Engineering
 - **spark-python-data-source** - Python data sources for Spark (custom connectors)
@@ -77,11 +81,11 @@ reference and ships with that skill (no separate install).
 
 ## Provenance
 
-These skills are imported as a snapshot from
+`spark-python-data-source` was imported as a snapshot from
 [`databricks-solutions/ai-dev-kit/databricks-skills/`](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills).
 
 **Source SHA**: [`20a92a3`](https://github.com/databricks-solutions/ai-dev-kit/commit/20a92a38144ca5228f1dfe4cc0be46da40ec9177)
 on the `experimental` branch of `databricks-solutions/ai-dev-kit`.
 
-While `ai-dev-kit` is the upstream source, this directory receives periodic
-manual re-syncs.
+`lakeflow-unstructured` is authored in this repository. Experimental skills are
+maintained here; changes are not automatically re-synced from `ai-dev-kit`.

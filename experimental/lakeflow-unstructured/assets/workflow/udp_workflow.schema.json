@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unstructured data processing workflow",
+  "description": "Metadata for an unstructured data processing workflow folder. The presence of udp_workflow.yaml marks the folder as a workflow.",
+  "type": "object",
+  "required": ["schema_version", "title"],
+  "properties": {
+    "schema_version": {
+      "description": "Version of this file's format.",
+      "const": 1
+    },
+    "title": {
+      "description": "Short name of the workflow.",
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "description": "What the workflow does.",
+      "type": "string"
+    },
+    "sample_tables": {
+      "description": "The samples tables that hold the workflow's sample files, each a fully qualified Unity Catalog table name.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^. ]+[.][^. ]+[.][^. ]+$"
+      },
+      "uniqueItems": true
+    },
+    "genie_code_thread_id": {
+      "description": "ID of the Genie Code chat that created the workflow. Written by Databricks.",
+      "type": "string"
+    },
+    "routers": {
+      "description": "How the workflow routes each class of documents to its own extraction, one entry per classification step. Only what the job's own settings can't show: the labels are the classification task's, and each extraction task is found by the table it reads.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/pipeline_router" }
+    }
+  },
+  "$defs": {
+    "table_name": {
+      "type": "string",
+      "pattern": "^[^.\\s]+\\.[^.\\s]+\\.[^.\\s]+$"
+    },
+    "pipeline_router": {
+      "description": "A classification task whose labels a pipeline task routes to a table per class.",
+      "type": "object",
+      "required": ["type", "job", "classify_task", "route_task"],
+      "properties": {
+        "type": {
+          "description": "How the documents are routed: a pipeline task after the classification task.",
+          "const": "pipeline"
+        },
+        "job": {
+          "description": "The bundle key of the job that runs both tasks (`resources.jobs.<job>`).",
+          "type": "string",
+          "minLength": 1
+        },
+        "classify_task": {
+          "description": "The task key of the ai_classify task whose labels are routed.",
+          "type": "string",
+          "minLength": 1
+        },
+        "route_task": {
+          "description": "The task key of the pipeline task that writes each class's documents to its own table.",
+          "type": "string",
+          "minLength": 1
+        },
+        "routes": {
+          "description": "The table each label's documents are routed to. A label without a route here isn't declared, not unrouted.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "table"],
+            "properties": {
+              "label": {
+                "description": "A label of the classification task, as the task names it.",
+                "type": "string",
+                "minLength": 1
+              },
+              "table": {
+                "description": "The `catalog.schema.table` the label's documents are routed to.",
+                "$ref": "#/$defs/table_name"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "unmatched": {
+          "description": "What happens to a document that fits no label: `fail` fails the routing update, or the `catalog.schema.table` such documents go to.",
+          "anyOf": [{ "const": "fail" }, { "$ref": "#/$defs/table_name" }]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

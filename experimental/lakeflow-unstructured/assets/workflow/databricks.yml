@@ -1,0 +1,70 @@
+bundle:
+  name: document_processing
+
+experimental:
+  deployment_history: true
+
+workspace:
+  file_path: ${var.workflow_workspace_path}
+  sync_mode: overwrite
+
+sync:
+  include:
+    - databricks.yml
+    - udp_workflow.yaml
+    - udp_workflow.schema.json
+    - README.md
+    - SPEC.md
+    - AGENTS.md
+
+variables:
+  workflow_workspace_path:
+    description: Dedicated workspace folder for this workflow's published files.
+  input_volume_path:
+    description: Existing Unity Catalog volume directory containing the documents.
+  output_catalog:
+    description: Destination catalog for development output tables.
+  output_schema:
+    description: Destination schema reserved for this development workflow's outputs.
+  extraction_schema:
+    description: Confirmed AI Extract field map encoded as a JSON string.
+  extraction_instructions:
+    description: Instructions for extracting the requested fields.
+    default: Extract only values supported by the document. Leave absent values empty.
+
+resources:
+  jobs:
+    document_processing:
+      name: ${bundle.name}
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: parse_documents
+          ai_function_task:
+            volume:
+              volume_path: ${var.input_volume_path}
+            output:
+              catalog: ${var.output_catalog}
+              schema: ${var.output_schema}
+            ai_parse_document:
+              version: "2.0"
+        - task_key: extract_fields
+          depends_on:
+            - task_key: parse_documents
+          ai_function_task:
+            delta_table:
+              table_name: "{{tasks.parse_documents.output.table_name}}"
+              input_column: response
+              merge_key_columns:
+                - id
+            output:
+              catalog: ${var.output_catalog}
+              schema: ${var.output_schema}
+            ai_extract:
+              version: "2.1"
+              schema: ${var.extraction_schema}
+              instructions: ${var.extraction_instructions}
+
+targets:
+  dev:
+    default: true
+    mode: development

@@ -1,6 +1,6 @@
 ---
 name: databricks-jobs
-description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating data engineering jobs with notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation. For compute (serverless, performance mode, classic), also use databricks-serverless.
+description: Develop and deploy Lakeflow Jobs on Databricks via DABs, Python SDK, or the CLI. Use when creating jobs with AI Function tasks, notebooks, Python wheels, SQL, dbt, or pipelines. Invoke BEFORE starting implementation. For configurable compute, also use databricks-serverless.
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
   version: "0.3.0"
@@ -11,8 +11,9 @@ parent: databricks-core
 
 **FIRST**: Use the parent `databricks-core` skill for CLI basics, authentication, profile selection, and data exploration commands.
 
-**Compute**: jobs run on serverless by default. Before you choose compute or write any cluster setting, use the
-`databricks-serverless` skill; it decides serverless or classic and the performance mode.
+**Compute**: AI Function tasks manage their own execution and need no compute settings. For other tasks,
+before you choose compute or write any cluster setting, use the `databricks-serverless` skill; it decides
+serverless or classic and the performance mode.
 
 Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers, and comprehensive monitoring. Jobs support diverse task types and can be managed via Declarative Automation Bundles (DABs), Python SDK, or CLI.
 
@@ -20,6 +21,7 @@ Lakeflow Jobs orchestrate data workflows with multi-task DAGs, flexible triggers
 
 | Use Case | Reference File |
 |----------|----------------|
+| Configure native Document Parsing, AI Extract, and Classification tasks and chain their output tables | [references/ai-function-tasks.md](references/ai-function-tasks.md) |
 | Configure task types (notebook, Python, SQL, dbt, pipeline, JAR, run_job, for_each) | [references/task-types.md](references/task-types.md) |
 | Set up triggers and schedules (cron, periodic, file arrival, table update, continuous) | [references/triggers-schedules.md](references/triggers-schedules.md) |
 | Configure notifications, health rules, retries, timeouts, queues | [references/notifications-monitoring.md](references/notifications-monitoring.md) |
