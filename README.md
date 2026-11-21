@@ -147,11 +147,11 @@ Stable skills shipped from [`skills/`](./skills/):
 
 ## Experimental Skills
 
-The [`experimental/`](./experimental/) directory contains additional skills
-originally imported from
+The [`experimental/`](./experimental/) directory contains additional skills on a
+**best-effort basis**. These include skills authored here and remaining snapshot
+imports from
 [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit)
-(now deprecated — this repo is the source of truth going forward) on a
-**best-effort basis**.
+(now deprecated — this repo is the source of truth going forward).
 
 - Experimental skills are **not officially supported** — they may be used, but
   do not follow the same review / quality bar as the stable skills under

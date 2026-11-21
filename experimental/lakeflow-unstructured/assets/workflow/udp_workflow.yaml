@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=./udp_workflow.schema.json
+schema_version: 1
+title: Document processing
+description: Parse existing documents and extract the requested fields into a table.

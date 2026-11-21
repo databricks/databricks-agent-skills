@@ -1,0 +1,7 @@
+interface:
+  display_name: "Lakeflow Unstructured"
+  short_description: "Create and deploy document-processing workflows"
+  icon_small: "./assets/databricks.svg"
+  icon_large: "./assets/databricks.png"
+  brand_color: "#FF3621"
+  default_prompt: "Use $lakeflow-unstructured to create and deploy a Document Intelligence workflow from my existing volume files or tables."
