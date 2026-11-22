@@ -348,7 +348,7 @@ print(info)
 
 While `state` is `SCALING_CHANGE_IN_PROGRESS`, `scaling_info` also reports progress (Beta; every field is optional and can hold other values, so check each one and report unknown values as-is):
 - `estimated_completion_timestamp`: expected completion, epoch ms (`int()` then /1000). It can change as scaling progresses, and it's unset when no estimate is available yet or when `delayed_reason` is set.
-- `phase`: `ESTIMATING`, `ADJUSTING_CAPACITY`, or `INITIALIZING_INDEX` (with `index_initialization_percentage`, 0-100).
+- `phase`: `ESTIMATING`, `ADJUSTING_CAPACITY`, `INITIALIZING_INDEX` (with `index_initialization_percentage`, 0-100), or `FINALIZING` (the new capacity and index replicas are in place, and the change is being finalized; keep polling until the loop's deadline, then ask the user).
 - `delayed_reason`: `CAPACITY_UNAVAILABLE`, `SCALE_DOWN_BLOCKED`, or `TAKING_LONGER_THAN_EXPECTED`.
 
 Report the ETA, phase, or delay reason to the user instead of guessing, and keep polling until `SCALING_CHANGE_APPLIED` or the loop's deadline. If all three are unset, that isn't a hang (some endpoints don't report progress): check the endpoint has an index and keep polling `state`.
