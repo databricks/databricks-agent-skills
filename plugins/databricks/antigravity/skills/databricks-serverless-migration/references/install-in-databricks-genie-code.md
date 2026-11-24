@@ -64,7 +64,7 @@ The installer copies the entire skill directory as listed in `manifest.json`.
 
 Inside Genie Code on serverless compute, those commands will fail with `databricks: command not found`. Three options to reconcile:
 
-1. **Run the Agent-mode chat against a classic cluster** that has the CLI installed (you can `%pip install databricks-cli` in a setup cell, or bake it into a cluster init script).
+1. **Run the Agent-mode chat against a classic cluster** that has the CLI installed (you can `%pip install "databricks>=1.23"` in a setup cell to get the current CLI from PyPI, or bake it into a cluster init script). Don't use `databricks-cli`: that is the legacy v0.18 CLI, which lacks the commands this skill uses.
 2. **Use the Databricks SDK equivalents** the skill mentions where available — `WorkspaceClient().jobs.update(...)`, `WorkspaceClient().workspace.import_(...)`. The skill's recommendations are CLI-flavored today; SDK calls work equivalently in a notebook context.
 3. **Skip the deploy steps** entirely. The skill's value is the analyze + migrate phases — code transformation, blocker detection, and fix suggestions. Those work without the CLI. You can apply the migrated job/DABs changes by hand or from a separate environment.
 
