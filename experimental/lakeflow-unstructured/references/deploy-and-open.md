@@ -65,6 +65,10 @@ Replace angle-bracket placeholders in the commands below with the selected
 profile, folder, and returned resource IDs. Run bundle commands from the local
 workflow root.
 
+For an existing workflow, follow [Synchronize workflow edits](sync-edits.md)
+before preparing changes and repeat the comparison immediately before deploy.
+Reconcile workspace files and deployed settings into the local bundle first.
+
 ```bash
 databricks bundle validate --strict --target dev --profile <profile>
 databricks bundle plan --target dev --profile <profile>
@@ -72,8 +76,8 @@ databricks bundle plan --target dev --profile <profile>
 
 Review the resolved inputs, output catalog/schema, extraction configuration,
 and workspace file path. Confirm there are no unintended replacements or
-changes to existing resources. When updating a workflow, reconcile edits made
-in the UI before overwriting them with the local bundle.
+changes to existing resources. `bundle plan` previews deployment changes; it
+does not bring workspace file edits into the local project.
 
 Deploy the authorized development configuration:
 
@@ -86,6 +90,8 @@ databricks workspace get-status "<workflow_workspace_path>" --profile <profile> 
 Record the returned Job ID, folder object ID, and URLs. Read the Job back with
 `databricks jobs get <job_id> --profile <profile> --output json` and verify its
 tasks, dependencies, source, output destination, and extraction schema.
+After verifying the published files and deployed settings, save the local
+synchronization baseline described in [Synchronize workflow edits](sync-edits.md).
 
 A folder can also be published before deployment when the user asks to save
 only its design. Use Workspace file operations from the CLI, preserving file
@@ -113,7 +119,10 @@ path. Report a pending UI check separately from a successful CLI deployment.
 ## Run and inspect when authorized
 
 Establish the input size and test scope first, as described in
-[Document processing](document-processing.md). Then:
+[Document processing](document-processing.md). Before starting the run, follow
+[Synchronize workflow edits](sync-edits.md) to check the deployed configuration
+and workspace source files against the reconciled design. Resolve unexpected
+changes before running; checking does not authorize another deployment. Then:
 
 ```bash
 databricks bundle run document_processing --target dev --profile <profile> --no-wait

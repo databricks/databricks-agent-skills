@@ -1,9 +1,9 @@
 ---
 name: databricks-ml-training
-description: "Train ML models on Databricks. Use for: classification/regression/deep-learning (XGBoost, scikit-learn, LightGBM, PyTorch) with Optuna, @prod/@challenger aliases, batch scoring (spark_udf for plain models, fe.score_batch for feature-store-backed), custom PyFunc, custom ResponsesAgent (LangGraph + UC Function/Vector Search); UC feature tables + FeatureLookup + point-in-time joins + Lakebase online store; declarative Feature Views (create_feature, DeltaTableSource, RollingWindow/SlidingWindow/TumblingWindow, materialize_features, streaming Kafka features). NOT for: endpoint ops (databricks-model-serving), MLflow evaluation (databricks-mlflow-evaluation)."
+description: "Train ML models on Databricks. Use for: classification/regression/deep-learning (XGBoost, scikit-learn, LightGBM, PyTorch) with Optuna, @prod/@challenger aliases, batch scoring (spark_udf for plain models, fe.score_batch for Feature Views-backed), custom PyFunc, custom ResponsesAgent (LangGraph + UC Function/Vector Search); feature engineering with Feature Views (Feature, create_feature, DeltaTableSource/SdpSource/StreamSource/RequestSource, RollingWindow/SawtoothWindow/SlidingWindow/TumblingWindow, compute_features, point-in-time create_training_set, materialize_features to offline Delta + Lakebase online store, streaming features, Feature Serving). NOT for: endpoint ops (databricks-model-serving), MLflow evaluation (databricks-mlflow-evaluation)."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 parent: databricks-core
 ---
 
@@ -19,7 +19,7 @@ If you need to deploy a real time model serving endpoint **after** the model is 
 
 | Consumption | When | How |
 |---|---|---|
-| **Batch UDF** | Dashboards, daily/hourly scores, predictions read by Genie/Dashboards or an app (often synced to a Lakebase table) | `mlflow.pyfunc.spark_udf(...)` → `INSERT INTO gold_predictions`. **If the model was logged with `fe.log_model(training_set=...)`, use `fe.score_batch()` instead** — see the [Feature Engineering](#feature-engineering-feature-store--feature-views) section below. |
+| **Batch UDF** | Dashboards, daily/hourly scores, predictions read by Genie/Dashboards or an app (often synced to a Lakebase table) | `mlflow.pyfunc.spark_udf(...)` → `INSERT INTO gold_predictions`. **If the model was logged with `fe.log_model(training_set=...)`, use `fe.score_batch()` instead** (not for models with `StreamSource` features) — see the [Feature Engineering](#feature-engineering-with-feature-views) section below. |
 | **Real-time endpoint** | Score on a user action (fraud at authorization, rec at page load) — sub-100ms | `mlflow.deployments.get_deploy_client()` (classical) / `agents.deploy()` (agents). Endpoint lifecycle: see [databricks-model-serving](../databricks-model-serving/SKILL.md). |
 
 ## Default Canonical flow
@@ -36,7 +36,9 @@ silver_<features>  +  silver_<labels>
 gold_<entity>_predictions   ◄── dashboards, apps, Genie read this
 ```
 
-> **Feature-store-backed models diverge here.** If training used `fe.log_model(training_set=...)`, replace `spark_udf(@prod)` with `fe.score_batch(model_uri, df=<keys_only>)` — it auto-joins features via the model's registered feature lineage. See the [Feature Engineering](#feature-engineering-feature-store--feature-views) section below.
+This flow assumes the feature columns already exist in a silver table. When the model needs engineered features (windowed aggregations, point-in-time joins, online lookup), define them with Feature Views — see [Feature Engineering](#feature-engineering-with-feature-views).
+
+> **Feature Views-backed models diverge here.** If training used `fe.log_model(training_set=...)`, replace `spark_udf(@prod)` with `fe.score_batch(model_uri, df=...)`, passing the entity keys, timeseries column, and any request-time columns — it computes the features from the model's registered feature lineage. Models with `StreamSource` features can't use `score_batch`; serve them from an endpoint. See the [Feature Engineering](#feature-engineering-with-feature-views) section below.
 
 One notebook, one artifact. Re-running = retraining. Gold is where truth lives — read paths never call the model directly. Keep label-window logic (`failure occurred within 7 days`) in the notebook during dev; once stable, promote to a silver materialized view in SDP.
 
@@ -127,7 +129,7 @@ client.set_registered_model_alias(FULL_NAME, "prod", info.registered_model_versi
 
 ## Consume: batch scoring over Delta
 
-The cheap, default path **for models NOT backed by feature tables**. Load the registered model as a Spark UDF and score a Delta table; write predictions to a gold table that downstream consumers read. **For feature-store-backed models** (logged with `fe.log_model(training_set=...)`), skip `spark_udf` entirely and use `fe.score_batch()` — see the [Feature Engineering](#feature-engineering-feature-store--feature-views) section.
+The cheap, default path **for models NOT backed by Feature Views**. Load the registered model as a Spark UDF and score a Delta table; write predictions to a gold table that downstream consumers read. **For Feature Views-backed models** (logged with `fe.log_model(training_set=...)`), skip `spark_udf` entirely and use `fe.score_batch()`, except for models with `StreamSource` features, which `score_batch` rejects — see the [Feature Engineering](#feature-engineering-with-feature-views) section.
 
 ```python
 # COMMAND ----------
@@ -236,16 +238,23 @@ Prefer no-code authoring via [databricks-genie-agents](../databricks-genie-agent
 
 ---
 
-## Feature Engineering: Feature Store & Feature Views
+## Feature Engineering with Feature Views
 
-When to reach for Feature Engineering (either flavor) instead of a plain Delta table: when the same feature must be computed identically at training and serving time (no training/serving skew), the feature is time-dependent and needs point-in-time joins against labels (no future leakage), the feature needs to be served with <10ms latency via an online store, or the feature is shared across models with lineage tracked in UC. If none apply, a plain UC table is enough — the sections below can be skipped.
+Default to using Feature Views for feature engineering, unless the user specifies otherwise or the features are more complex than the framework supports. Read **[references/feature-views.md](references/feature-views.md)** before writing feature-engineering code; it lists the supported sources, windows, and aggregation functions.
 
-**Default: don't use Feature Engineering unless one of the reasons above clearly applies or the user explicitly asked for it.** It adds build time and complexity (an extra Delta table layer for `FeatureLookup`; a materialization pipeline for Feature Views). If you're unsure, use plain UC tables and add Feature Engineering later when a concrete need surfaces.
+When a batch feature needs logic beyond one source table and the aggregation functions `references/feature-views.md` lists, try these in order:
 
-Two flavors, one train/score path (`create_training_set` → `fe.log_model` → `fe.score_batch`):
+1. **`transformation_sql` on the `DeltaTableSource`** for renames, casts, and derived columns of one table.
+2. **`SdpSource`** for joins, multi-step transforms, or custom windowing: write the logic in a triggered Spark Declarative Pipeline ([databricks-pipelines](../databricks-pipelines/SKILL.md)) and point Feature Views at its output table. Feature Store runs the pipeline before each materialization and backfill.
+3. **`DeltaTableSource` on the pipeline's output table** when the pipeline is continuous or scheduled outside Feature Store.
 
-- **`FeatureLookup` API** — you own the feature tables (compute, write, refresh); bind them to a training set via `FeatureLookup` + `FeatureEngineeringClient`. Reach for it when the features already exist as Delta tables or you want direct control over how they are computed. See **[references/feature-store.md](references/feature-store.md)**.
-- **Feature Views** (declarative, GA, `databricks-feature-engineering>=0.16.0`) — Databricks owns compute, materialization (Delta offline + Lakebase online), and refresh from a spec you declare (`create_feature` over `DeltaTableSource`; `RollingWindow`/`SlidingWindow`/`TumblingWindow`; `create_stream` for Kafka features). Reach for it when the feature is a formula you want Databricks to keep fresh. See **[references/feature-views.md](references/feature-views.md)**.
+Whichever route you take, the output table must keep an event timestamp for `timeseries_column`. A current-snapshot table joined onto historical labels leaks future values into training.
+
+When a streaming feature needs a stream-stream join, a stream-static join, a multi-step aggregation, or an aggregation function `references/feature-views.md` doesn't list for streaming sources, compute it in a Spark Declarative Pipeline that writes a Delta table with change data feed enabled, and materialize a `DeltaTableSource` feature on it with `StreamingMode()` (online only, freshness in tens of seconds). Route the pipeline through Kafka (`fe.create_stream` + `StreamSource`) only when the feature needs sub-second freshness or a `SawtoothWindow`; ingestion then starts at the latest offset, so seed history with `backfill_source`.
+
+Use feature tables and `FeatureLookup` only when the user explicitly asks for them; see **[references/feature-tables.md](references/feature-tables.md)**. When a project already has feature tables, keep them and define Feature Views over them rather than rewriting the tables.
+
+Train/score path with Feature Views: `create_training_set(features=[...])` → `fe.log_model(training_set=...)` → `fe.score_batch`, or a model serving endpoint when any feature is on a `StreamSource`.
 
 ---
 
@@ -270,8 +279,8 @@ Endpoint-lifecycle gotchas (readiness two-state, version-swap, Serving-UI SP fil
 |---|---|
 | [references/custom-pyfunc.md](references/custom-pyfunc.md) | Single end-to-end custom pyfunc example: artifacts, signature, code_paths, log → register → deploy → query. |
 | [references/genai-agents.md](references/genai-agents.md) | Custom LangGraph `ResponsesAgent` with UC Function + Vector Search tools. `create_text_output_item` gotcha and the `resources=[...]` passthrough-auth list. For no-code agents prefer **databricks-genie-agents**. |
-| [references/feature-store.md](references/feature-store.md) | Feature Engineering in Unity Catalog (standard `FeatureLookup` API): `FeatureEngineeringClient`, `create_table` with `timeseries_column`, `FeatureLookup` with point-in-time joins, `fe.log_model` with lineage, `fe.score_batch` (replaces `spark_udf` for FE models), and Lakebase online store via `publish_table`. Requires `databricks-feature-engineering>=0.16.0`. |
-| [references/feature-views.md](references/feature-views.md) | Feature Views (declarative Feature Engineering, GA): `create_feature` over `DeltaTableSource`, `RollingWindow`/`SlidingWindow`/`TumblingWindow` aggregations, `materialize_features` (offline + online), streaming features off Kafka via `create_stream`, point-in-time training sets, and the Feature Serving Endpoint. Requires `databricks-feature-engineering>=0.16.0`. |
+| [references/feature-views.md](references/feature-views.md) | Feature Engineering with Feature Views (GA): choosing entities and windows, the `Feature` object, Delta/Stream/Request sources, `create_stream`, streaming windows and destinations, window ↔ operator compatibility, `compute_features`, point-in-time `create_training_set` and holdout eval, `register_feature`, `materialize_features` triggers, teardown order, and batch / online model / Feature Serving patterns. Requires `databricks-feature-engineering>=0.18.3`. |
+| [references/feature-tables.md](references/feature-tables.md) | Feature tables with `FeatureLookup`, for when the user asks for them: `create_table` with primary keys, time series tables and `timestamp_lookup_key`, `score_batch`, `publish_table` to an online store, and Feature Views over existing feature tables. |
 
 ## Related skills
 

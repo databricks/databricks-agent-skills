@@ -1,442 +1,402 @@
 # Feature Views
 
-> **Generally available.** Requires `databricks-feature-engineering>=0.16.0` and **Databricks Runtime 17.0 ML or above**, on **serverless OR a classic cluster**.
->
-> **Verified end-to-end on 0.16.0 / serverless DBR 17.3 ML (2026-06)**: batch + streaming Feature Views, training sets, offline + online (Lakebase) materialization. Notes flagged **[Verified 0.16.0]** below were confirmed against that release.
->
-> Docs: [Feature Views](https://docs.databricks.com/machine-learning/feature-store/feature-views) · [Materialize Feature Views](https://docs.databricks.com/machine-learning/feature-store/materialized-features)
+Feature Views are a simple, powerful framework for creating Features in the latest `databricks-feature-engineering` client. The core primitive is a **`Feature`** object: a data source plus a computation function, and — for aggregations — an entity (grain) and a timeseries column. From one `Feature` object you can: **compute** its values directly, build a **training set**, **register** it to Unity Catalog, **materialize** it to an offline store (for training reuse) and/or an online store — backed by Lakebase — for low-latency serving, and **serve** it.
 
-A **Feature View** declares *what* a feature is — "7-day rolling average of `amount` per `user_id`" — and lets Databricks compute it point-in-time for training, materialize it to Delta (offline) and/or Lakebase (online), and keep it fresh. Batch (Delta) and streaming (Kafka) sources use the same `Feature` object and the same `fe.create_training_set(features=...)` → `fe.log_model(training_set=...)` → `fe.score_batch()` path as the standard API in [feature-store.md](feature-store.md).
+Use Feature Views for all feature engineering — batch, streaming, and request-time features. Use the feature-table workflow (`create_table` / `write_table` / `FeatureLookup`, see [feature-tables.md](feature-tables.md)) only when the user explicitly asks for it. When a project already has feature tables, keep them and define Feature Views over them ([Feature Views over existing feature tables](feature-tables.md#feature-views-over-existing-feature-tables)) instead of rewriting them.
 
-> **Naming.** A Feature View's materialized output is a **Materialized Feature** (offline and/or online tables). The Python API has no `FeatureView` class: you work with `Feature` objects and `FeatureEngineeringClient`. (If you used the beta API, see [Migrating from the beta API](#migrating-from-the-beta-api--feature-views).)
+Docs: [Feature Views](https://docs.databricks.com/machine-learning/feature-store/feature-views) · [API reference](https://docs.databricks.com/machine-learning/feature-store/feature-views-api-reference) · [Materialized features](https://docs.databricks.com/machine-learning/feature-store/materialized-features)
 
-## Why use Feature Views?
+## Prerequisites
 
-**The problem it solves — rolling feature boilerplate.** Writing Spark window functions for temporal features is verbose and brittle:
+Feature Views is generally available. Use serverless or a classic cluster on Databricks Runtime 17.0 ML or above, and install the client at the top of the notebook. This file relies on behavior from client 0.18.3 and above (`SdpSource`, Sawtooth lifetime windows, `RollingWindow(window_duration=None)`):
 
 ```python
-# What you'd write manually — once per feature, per entity, per time window:
-F.avg("value").over(
-    W.partitionBy("user_id").orderBy(F.col("ts").cast("long")).rangeBetween(-7*86400, 0)
-)
-```
-
-Across 5 features × 3 time windows × 2 entity types = 30 near-identical blocks to keep synchronized between training and serving. Declare them instead, and Databricks handles backfill, incremental refresh, materialization, and online publishing from one definition.
-
-**Use Feature Views when you have:**
-- Multiple rolling/window aggregations on the same source table
-- Features that must stay identical offline (training) AND online (serving)
-- Real-time features off an event stream (Kafka) — see [Streaming features](#streaming-features)
-
-**Use the standard `FeatureLookup` API ([feature-store.md](feature-store.md)) instead when:**
-- Your features are already-computed columns you just want to look up
-- You need non-aggregation transforms beyond row-wise SQL (`transformation_sql` is row-wise only; cross-row aggregation must go through an `AggregationFunction`)
-
----
-
-## Setup
-
-```python
-%pip install databricks-feature-engineering>=0.16.0
+%pip install -U "databricks-feature-engineering>=0.18.3"
 dbutils.library.restartPython()
 ```
 
 ```python
 from databricks.feature_engineering import FeatureEngineeringClient
+from databricks.sdk import WorkspaceClient
+
+fe = FeatureEngineeringClient()   # every snippet below uses fe
+w = WorkspaceClient()             # and w for serving endpoints and pipelines
+```
+
+## Choosing windows and features
+
+Before defining features, use EDA to choose entities and window sizes:
+
+- **Entities** are the natural grouping keys (e.g. `pickup_zip`, `customer_id`, `merchant_id`); confirm the timeseries column and the event frequency.
+- **Window granularity follows event frequency:** high-frequency (many events/hour) → sub-daily windows (1h/3h/6h); daily → 1d/7d/14d/30d; sparse (weekly or less) → 7d/30d/90d. A quick `groupBy(entity, to_date(ts)).count()` reveals per-entity frequency.
+
+Common problem → feature mappings:
+
+- **Behavioral velocity** (fraud/anomaly): `Sum`/`Avg` of amount and `Count`, each across several windows; `ApproxCountDistinct` for entity diversity (distinct merchants per customer, customers per merchant).
+- **RFM** (churn, lead scoring, lifetime value): Recency = `Count` over short windows (1d/3d); Frequency = `Count` over long windows (30d/90d); Monetary = `Sum` over 30d/90d.
+- **Trend detection** (forecasting, behavioral shift): compare a recent window against the same window shifted back with `delay` — e.g. `RollingWindow(window_duration=timedelta(days=7))` vs `RollingWindow(window_duration=timedelta(days=7), delay=timedelta(days=7))`.
+- **Static lookups**: use `ColumnSelection` for non-aggregated reference attributes instead of an aggregation.
+
+## The Feature object
+
+A `Feature` combines a **source**, a **function**, and (for aggregations) an **entity** and **timeseries_column**:
+
+```python
 from databricks.feature_engineering.entities import (
-    DeltaTableSource, Feature, AggregationFunction, ColumnSelection,
-    Sum, Avg, Count, Min, Max, First, Last,               # aggregation operators
-    StddevPop, StddevSamp, VarPop, VarSamp,               # std-dev / variance
-    ApproxCountDistinct, ApproxPercentile,                # approximate aggregates
-    SlidingWindow, TumblingWindow, RollingWindow,          # window types
-    OfflineStoreConfig, OnlineStoreConfig,
-    CronSchedule, TableTrigger, StreamingMode,             # materialization triggers
+    Feature, DeltaTableSource, AggregationFunction, Avg, TumblingWindow,
 )
 from datetime import timedelta
 
-fe = FeatureEngineeringClient()
-
-# --- Replace with your own values ---
-catalog  = "my_catalog"
-schema   = "my_schema"
-PROJECT  = "my_project"    # table_name_prefix + endpoint names (underscores fine here)
-ONLINE_STORE = "my-project-online-store"   # Lakebase instance name — DNS-compliant: lowercase alnum + hyphens, NO underscores
-# ------------------------------------
+avg_fare = Feature(
+    source=DeltaTableSource(catalog_name="main", schema_name="ny", table_name="trips"),
+    function=AggregationFunction(Avg(input="fare_amount"), TumblingWindow(window_duration=timedelta(days=30))),
+    entity=["pickup_zip"],
+    timeseries_column="tpep_pickup_datetime",
+    name="avg_fare_30d",           # optional; auto-generated if omitted
+)
 ```
 
-### Aggregation operators
+There are two kinds of `function`:
 
-Wrap an operator + window in `AggregationFunction(operator=..., time_window=...)`. Operators carry their input column(s).
+- **`AggregationFunction(operator(input="col"), time_window)`** — a windowed aggregate. Requires `entity` and `timeseries_column`.
+- **`ColumnSelection("col")`** — a pass-through / latest value. No `AggregationFunction` wrapper, no time window.
 
-| Operator | Notes |
-|---|---|
-| `Sum(input="col")` / `Avg(input="col")` / `Count(input="col")` | totals / mean / row count |
-| `Min(input="col")` / `Max(input="col")` | extrema |
-| `First(input="col")` / `Last(input="col")` | first/last value in the window |
-| `StddevPop` / `StddevSamp` / `VarPop` / `VarSamp` | std-dev / variance (population & sample) |
-| `ApproxCountDistinct(input="col")` | approximate distinct count (HLL) |
-| `ApproxPercentile(input="col")` | approximate percentiles |
-| `ColumnSelection("col")` | **no aggregation, no window** — latest value of `col` per entity (`LAST()` as-of timestamp) |
+`entity` and `timeseries_column` live on the **`Feature`**, not on the source — so one source can back features at different grains.
 
-Nested fields use dot notation: `Sum(input="value.amount")` reads the `amount` field of the `value` struct.
+## Create a Feature
 
-### Window types
-
-| Type | Behaviour | Materializable? |
-|---|---|---|
-| `SlidingWindow(window_duration=, slide_duration=)` | overlapping rolling windows (7-day avg recomputed daily); `slide_duration` must be `< window_duration` | batch (offline/online) |
-| `TumblingWindow(window_duration=)` | non-overlapping fixed buckets (weekly totals) | batch (offline/online) |
-| `RollingWindow(window_duration=, delay=None)` | continuous lookback ending at evaluation time; `delay` shifts the window back (e.g. "the 7 days *ending a week ago*") | **streaming only** — for batch it's computed point-in-time in `create_training_set`/`compute_features`, but cannot be *materialized* to a store |
-
----
-
-## Batch features
-
-### 1. Define the source
-
-`DeltaTableSource` carries only the table reference (plus optional row-level filter / SQL). `entity` and `timeseries_column` live on the **feature**, not the source — so one source can feed features at different entity grains.
+### Sources
 
 ```python
-source = DeltaTableSource(
-    catalog_name=catalog,
-    schema_name=schema,
-    table_name="silver_events",
-    # filter_condition="amount > 0",                       # optional: WHERE predicate, applied first
-    # transformation_sql="*, amount * qty AS gross",       # optional: projection list ONLY (what sits between SELECT and FROM) — no SELECT/FROM/WHERE
-    # dataframe_schema=<Spark StructType JSON>,            # REQUIRED when transformation_sql is set (e.g. df.schema.json())
+from databricks.feature_engineering.entities import DeltaTableSource, StreamSource, RequestSource, FieldDefinition, ScalarDataType
+
+# Delta table (batch)
+src = DeltaTableSource(
+    catalog_name="main", schema_name="ny", table_name="trips",
+    filter_condition="fare_amount > 0",        # optional SQL WHERE, applied before aggregation
+    # transformation_sql="...", dataframe_schema="..."  # optional column transforms
 )
+
+# Stream (real-time). Reference a Stream by three-part name; prefix columns with value./key.
+stream = StreamSource(full_name="main.ny.trips_stream", filter_condition="value.event_type = 'paid'")
+
+# Request-time input (provided in the serving payload). Scalar types only; ColumnSelection only.
+req = RequestSource(schema=[FieldDefinition(name="distance_km", data_type=ScalarDataType.DOUBLE)])
 ```
 
-### 2. Declare features — two equivalent patterns
+`timeseries_column` must be `TimestampType` or `TimestampNTZType`; cast a `DateType` column with `transformation_sql` (which also needs `dataframe_schema`). `entity` columns cannot be `DATE`/`TIMESTAMP`.
 
-**Pattern A — construct locally, then register** (handy when you build features from config and want to preview before persisting):
+### Create a Stream — prerequisite for `StreamSource`
 
-```python
-avg_amount_30d = Feature(
-    source=source,
-    entity=["user_id"],
-    timeseries_column="ts",
-    function=AggregationFunction(operator=Avg(input="amount"),
-                                 time_window=TumblingWindow(window_duration=timedelta(days=30))),
-    name="user_avg_amount_30d",                            # omit to auto-name from col+func+window
-)
-
-sum_amount_7d = Feature(
-    source=source,
-    entity=["user_id"],
-    timeseries_column="ts",
-    function=AggregationFunction(operator=Sum(input="amount"),
-                                 time_window=SlidingWindow(window_duration=timedelta(days=7),
-                                                           slide_duration=timedelta(days=1))),
-)
-
-# Preview point-in-time values before persisting — prototyping only, no lineage/materialization.
-fe.compute_features(features=[avg_amount_30d, sum_amount_7d]).display()
-
-# Persist the definitions to Unity Catalog.
-avg_amount_30d = fe.register_feature(feature=avg_amount_30d, catalog_name=catalog, schema_name=schema)
-sum_amount_7d  = fe.register_feature(feature=sum_amount_7d,  catalog_name=catalog, schema_name=schema)
-```
-
-**Pattern B — define and register in one call** with `create_feature()`:
-
-```python
-# Latest non-aggregated value per entity (ColumnSelection still needs entity + timeseries).
-latest_tier = fe.create_feature(
-    source=DeltaTableSource(catalog_name=catalog, schema_name=schema, table_name="entity_attributes"),
-    function=ColumnSelection("loyalty_tier"),
-    entity=["user_id"],
-    timeseries_column="ts",
-    catalog_name=catalog, schema_name=schema,
-    name="user_loyalty_tier",
-)
-```
-
-> `AggregationFunction(operator, time_window)` also accepts positional args:
-> `AggregationFunction(Avg(input="amount"), TumblingWindow(window_duration=timedelta(days=30)))`.
-
-### 3. Training set (point-in-time correct automatically)
-
-The Feature Views `create_training_set()` takes `features=` (a list of `Feature` objects), **not** `feature_lookups=`. The join is point-in-time on each feature's `timeseries_column`.
-
-```python
-labeled_df = spark.table(f"{catalog}.{schema}.silver_events") \
-    .select("record_id", "label", "user_id", "ts")
-
-training_set = fe.create_training_set(
-    df=labeled_df,
-    features=[avg_amount_30d, sum_amount_7d, latest_tier],
-    label="label",
-    exclude_columns=["record_id", "user_id", "ts"],   # drop row id + entity key + event-time; keep only features
-)
-training_df = training_set.load_df()
-```
-
-Train and log exactly like the standard API — `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see [feature-store.md](feature-store.md#3-train-and-register-with-feature-lineage)). Lineage and feature resolution at `score_batch()` come for free.
-
-### 4. Materialize with `materialize_features()`
-
-Provisions a serverless **Lakeflow Spark Declarative Pipeline** that writes the feature values to offline Delta tables and/or the online (Lakebase) store. `materialize_features()` is the canonical materialization API for Feature Views (`>=0.16.0`).
-
-> **[Verified 0.16.0] Aggregation features require a `CronSchedule` for offline materialization.** Passing `TableTrigger()` for an aggregation feature is rejected server-side with `BadRequest: Cron schedule must be specified for aggregation feature '<name>'`. `TableTrigger()` is only valid for `ColumnSelection`. The cron also runs an **initial backfill immediately** on creation (the offline tables populate right away), then refreshes on the schedule, so a far-future cron (e.g. monthly) still backfills now.
-
-```python
-PREFIX = f"{PROJECT}_features"
-
-# Aggregation features → offline and/or online, on a cron.
-fe.materialize_features(
-    features=[avg_amount_30d, sum_amount_7d],
-    offline_config=OfflineStoreConfig(
-        catalog_name=catalog, schema_name=schema, table_name_prefix=PREFIX,
-    ),
-    online_config=OnlineStoreConfig(                       # optional — add for real-time serving
-        catalog_name=catalog, schema_name=schema, table_name_prefix=f"{PREFIX}_serving",
-        online_store_name=ONLINE_STORE,       # Lakebase store; create it first if needed
-    ),
-    trigger=CronSchedule(quartz_cron_expression="0 0 0 * * ?", timezone_id="UTC"),  # daily 00:00 UTC
-)
-```
-
-`ColumnSelection` features materialize to the **online store only**, triggered on every source commit with `TableTrigger`:
-
-```python
-fe.materialize_features(
-    features=[latest_tier],                                # ColumnSelection only
-    online_config=OnlineStoreConfig(
-        catalog_name=catalog, schema_name=schema, table_name_prefix=f"{PREFIX}_serving",
-        online_store_name=ONLINE_STORE,
-    ),
-    trigger=TableTrigger(),
-)
-```
-
-> The online store is a Databricks Online Feature Store (Lakebase) instance. Create it once with `fe.create_online_store(name=ONLINE_STORE, capacity="CU_1")` — see [feature-store.md](feature-store.md#5-online-store-real-time-feature-serving). Its **name must be DNS-compliant** (lowercase alphanumeric + hyphens, **no underscores**), which is why `ONLINE_STORE` is kept separate from `PROJECT`.
-
----
-
-## Streaming features
-
-Define features off a **Kafka** event stream for real-time use cases. Streaming features materialize to the **online store only** (no offline), advertise ~**200ms p99** freshness to serving, and auto-maintain a Delta **ingestion table** that doubles as the offline copy for training.
-
-**Constraints:**
-- **Kafka only**, **JSON-serialized** messages; provide the schema directly as JSON Schema (Confluent/Glue schema registries are not formally supported — but pipelines can read topics governed by one if you supply the schema).
-- **`RollingWindow` only** for streaming aggregations.
-- Operators limited to **`Count`, `Avg`, `Sum`, `StddevPop`, `Max`, `Min`, `Last`**.
-- Online materialization only; cannot be mixed with batch features in one `materialize_features()` call (different trigger types).
-- `compute_features()` does **not** support streaming features.
-- **Enterprise-tier** workspace in a region that supports Lakebase; standard catalog on your own cloud storage (default storage unsupported). Streaming pipelines restart ~twice weekly (≤1 min delay each).
-
-### 1. Register the Kafka source as a governed `Stream`
-
-A **Stream** is a Unity Catalog object (`catalog.schema.stream`); SELECT on its ingestion table grants read access. Authenticate via a **UC Kafka connection** (`ConnectionType.KAFKA`, cleanest) or **direct mTLS** (`DirectMtlsConfig`). `create_stream`'s `StreamConnectionConfig` takes **only** `uc_connection_name` or `direct_mtls_config` — it does **not** accept a UC service credential (that was the old `create_kafka_config` path). So an MSK/IAM stream that used `AuthConfig(uc_service_credential_name=...)` must be re-fronted with a UC Kafka connection before `create_stream` will work. (The Spark Kafka *writer* still uses `.option("databricks.serviceCredential", ...)` — only the FE read-side needs the connection.)
+`StreamSource(full_name=...)` **references** a Stream; it does not create one. A Stream is a governed UC entity you create once with `fe.create_stream` before any `StreamSource` can point at it. All arguments are keyword-only. It takes four configs — source, connection, schema, ingestion. Example:
 
 ```python
 from databricks.feature_engineering.entities import (
     KafkaStreamConfig, KafkaSubscriptionMode, StreamConnectionConfig,
     DirectSchemas, SchemaConfig, IngestionConfig, IngestionDestination,
-    # StreamBackfillSource, DirectMtlsConfig,   # optional: backfill / mTLS auth
 )
 
-fe.create_stream(
-    name=f"{catalog}.{schema}.events_stream",
+stream = fe.create_stream(
+    name="main.ny.trips_stream",                                  # three-part UC name
     source_config=KafkaStreamConfig(
-        subscription_mode=KafkaSubscriptionMode(subscribe="events-topic"),  # or subscribe_pattern=, assign=
-        extra_options={"maxOffsetsPerTrigger": "10000"},
+        subscription_mode=KafkaSubscriptionMode(subscribe="trips-topic"),  # or subscribe_pattern="trips-.*" / assign='{"trips-topic":[0,1]}'
     ),
-    # Auth: a UC connection holding the Kafka bootstrap + credentials...
-    connection_config=StreamConnectionConfig(uc_connection_name="my-kafka-connection"),
-    # ...or direct mTLS:  connection_config=DirectMtlsConfig(...)
-    schema_config=DirectSchemas(
-        payload_schema=SchemaConfig(json_schema='''
-            {"type":"object","properties":{
-              "user_id":{"type":"integer"},
-              "amount":{"type":"number"},
-              "event_type":{"type":"string"},
-              "event_time":{"type":"string","format":"date-time"}}}'''),
-        # key_schema=SchemaConfig(json_schema='...'),     # at least one of payload/key required
+    connection_config=StreamConnectionConfig(uc_connection_name="my-kafka-connection"),  # recommended; see mTLS below
+    schema_config=DirectSchemas(                                  # ≥1 of payload_schema/key_schema required
+        payload_schema=SchemaConfig(json_schema='{"type":"object","properties":{"user_id":{"type":"string"},"amount":{"type":"number"},"event_time":{"type":"string","format":"date-time"}}}'),
     ),
-    ingestion_config=IngestionConfig(
-        ingestion_destination=IngestionDestination(
-            delta_table_name=f"{catalog}.{schema}.events_ingest"   # auto-maintained Delta copy
-        ),
-        deduplication_columns=["value.user_id"],          # dedup key; dot notation for nested
-        # backfill_source=StreamBackfillSource(delta_table_name=f"{catalog}.{schema}.events_history"),
+    ingestion_config=IngestionConfig(                             # Databricks-managed ingestion (Delta) table backing the Stream
+        ingestion_destination=IngestionDestination(delta_table_name="main.ny.trips_ingestion"),
     ),
 )
 ```
 
-> **[Verified 0.16.0] The ingestion consumer starts at the _latest_ offset.** Events already in the topic *before* the stream's ingestion pipeline comes online are **not** ingested, and `startingOffsets=earliest` in `extra_options` does **not** backfill them. To include pre-existing/historic events, supply `backfill_source=StreamBackfillSource(delta_table_name=...)` in `IngestionConfig` (a Delta table the pipeline replays), or produce events only *after* the ingestion pipeline is `RUNNING`. The pipeline takes ~5-7 min to provision; poll its `ingestion_pipeline_id` (from `fe.get_stream(name).ingestion_config.ingestion_pipeline_id`) until `RUNNING` before producing.
+- **Auth.** `StreamConnectionConfig(uc_connection_name=...)` (recommended) needs a pre-existing UC connection (`CREATE CONNECTION` on the metastore, or ask an admin + get `USE CONNECTION`). The connection authenticates with a UC service credential (IAM, e.g. Amazon MSK; also needs `ACCESS` on the credential) or SASL (`sasl_mechanism` `PLAIN`/`SCRAM-SHA-256`/`SCRAM-SHA-512` with `user`/`password`). For direct mTLS use `DirectMtlsConfig(bootstrap_servers=..., mtls_config=MtlsConfig(keystore_location=..., keystore_password_ref=SecretScopeReference(scope=..., key=...), ...))`.
+- **Schemas.** Each `SchemaConfig` takes one of `json_schema`, `avro_schema`, or `proto_schema=ProtoSchemaSpec(schema_text=..., message_name="pkg.Message")` (fully-qualified name). With Confluent Schema Registry (Avro/Protobuf only), pass `schema_config=SchemaRegistryConfig(api_secret_ref=SecretScopeReference(...), payload_schema_locator=SchemaLocator(confluent_schema=SchemaLocatorConfluentSchema(subject="<topic>-value"), format=SchemaLocatorFormat.FORMAT_AVRO))` and put the registry URL/key/secret on the UC connection.
+- **Filter / exclude.** `record_type_filter="value.event_type = 'txn'"` on `create_stream` drops non-matching records from ingestion for every feature; `excluded_columns=["value.user.email"]` keeps columns out of ingestion entirely.
+- **Ingestion & backfill.** The Stream maintains an ingestion Delta table (the historical copy that `create_training_set` reads). To seed history, pass `IngestionConfig(..., backfill_source=StreamBackfillSource(delta_table_name="main.ny.history"), deduplication_columns=["value.user_id"])`. The backfill table must have a `TIMESTAMP` column named `stream_record_timestamp`. Dedup columns use dot notation; the default is `(key, value, stream_record_timestamp)`.
+- **Ingestion starts at the latest offset.** Events already in the topic when the Stream is created are never ingested, so training history before that point comes only from `backfill_source`. The ingestion table becomes readable a few minutes after creation; produce test events only after the ingestion pipeline is `RUNNING`. If the table stays empty, check `w.pipelines.get(pipeline_id=stream.ingestion_config.ingestion_pipeline_id).state` and call `w.pipelines.start_update(pipeline_id=...)` if it is `IDLE`.
+- **Manage.** `fe.get_stream(name=...)`, `fe.list_streams(catalog_name=..., schema_name=...)`, `fe.update_stream(name=..., schema_config=DirectSchemas(...), excluded_columns=[...])` (backward-compatible direct-schema changes and exclusions only; restarts ingestion), `fe.delete_stream(name=...)` (also removes the ingestion pipeline + table). Access is governed by the ingestion table: `SELECT` reads, `MANAGE` deletes.
 
-> **[Verified 0.16.0 — live workspace test 2026-06]** `create_kafka_config()` is the predecessor and is now **rejected server-side** — it returns `BadRequest: CreateKafkaConfig is no longer supported. Use CreateStream instead.` Older notebooks built on `create_kafka_config` + `KafkaSource(name=...)` must be migrated to `create_stream` + `StreamSource(full_name=...)`.
+Once the Stream exists, define features against it with `StreamSource` (above) — `RollingWindow` or `SawtoothWindow`, `value.`/`key.`-prefixed columns — register them, then materialize with `StreamingMode()`. The destinations depend on the window:
 
-### 2. Declare streaming features
+- **`RollingWindow` (and `ColumnSelection`) → online only.** Pass `online_config`; `offline_config` is rejected.
+- **`SawtoothWindow` → offline + online.** Pass **both** `offline_config` and `online_config`. One call creates the batch offline, batch online, and streaming online materializations that a sawtooth window merges on read.
 
-Reference the stream with `StreamSource`. The Kafka payload is exposed under `value.*` (and key under `key.*`); use dot notation for nested JSON.
-
-```python
-from databricks.feature_engineering.entities import StreamSource
-
-stream_source = StreamSource(
-    full_name=f"{catalog}.{schema}.events_stream",
-    # filter_condition="value.event_type = 'purchase'",   # optional
-)
-
-purchase_sum_1h = Feature(
-    name="user_purchase_sum_1h",
-    source=stream_source,
-    entity=["value.user_id"],
-    timeseries_column="value.event_time",
-    function=AggregationFunction(operator=Sum(input="value.amount"),
-                                 time_window=RollingWindow(window_duration=timedelta(hours=1))),
-)
-
-# Latest value off the stream (ColumnSelection works on streams too):
-last_event_type = Feature(
-    name="user_last_event_type",
-    source=stream_source,
-    entity=["value.user_id"],
-    timeseries_column="value.event_time",
-    function=ColumnSelection("value.event_type"),
-)
-```
-
-### 3. Materialize (online only, `StreamingMode`)
+`OnlineStoreConfig` requires `online_store_name` (an existing Online Feature Store) alongside `catalog_name`/`schema_name`/`table_name_prefix` — omitting it fails:
 
 ```python
+from databricks.feature_engineering.entities import OfflineStoreConfig, OnlineStoreConfig, StreamingMode
+
+online = OnlineStoreConfig(
+    catalog_name="main", schema_name="ny",
+    table_name_prefix="txn_serving", online_store_name="ny-online-store",
+)
+
+# RollingWindow streaming feature: online only
+rolling_feat = fe.register_feature(feature=rolling_feat, catalog_name="main", schema_name="ny")
+fe.materialize_features(features=[rolling_feat], online_config=online, trigger=StreamingMode())
+
+# SawtoothWindow streaming feature: offline + online
+sawtooth_feat = fe.register_feature(feature=sawtooth_feat, catalog_name="main", schema_name="ny")
 fe.materialize_features(
-    features=[purchase_sum_1h, last_event_type],
-    online_config=OnlineStoreConfig(
-        catalog_name=catalog, schema_name=schema,
-        table_name_prefix=f"{PROJECT}_stream_serving",
-        online_store_name=ONLINE_STORE,
-    ),
-    trigger=StreamingMode(),                               # continuous Structured Streaming
+    features=[sawtooth_feat],
+    offline_config=OfflineStoreConfig(catalog_name="main", schema_name="ny", table_name_prefix="txn_offline"),
+    online_config=online,
+    trigger=StreamingMode(),
 )
 ```
 
-At serving time, request/response payloads use **leaf-node names** (`amount`, `user_id`) rather than the dotted source paths (`value.amount`). Build the training set the same way as batch — the auto-maintained ingestion table supplies point-in-time history.
+Streaming features cannot share a `materialize_features` call with batch features, cannot be backfilled with `backfill_features`, and are not supported by `compute_features` — inspect them with `create_training_set` (which reads the Stream's ingestion table) instead.
 
-### 4. Build a training set (point-in-time from the ingestion table)
+### Streaming from a Delta table (`DeltaTableSource` + `StreamingMode`)
 
-Build it exactly like a batch Feature View: pass the streaming `Feature` objects to `create_training_set(features=...)`. You never reference the ingestion table directly; the engine reads it behind the scenes and performs the point-in-time as-of join per label row.
+A feature on a `DeltaTableSource` becomes a streaming feature when materialized with `trigger=StreamingMode()` — same `Feature` definition as batch, online-only (`online_config`, no `offline_config`). The source table must have change data feed enabled (`ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`); Zerobus-populated tables do not set this automatically. Expect freshness of tens of seconds, versus ~200 ms p99 for a `StreamSource`. `SawtoothWindow` is not supported on a `DeltaTableSource`.
+
+### Aggregation functions
+
+Each operator takes `input="col"` and is wrapped in `AggregationFunction(operator, time_window)`:
 
 ```python
-# Labels carry the entity key plus an event-time column matching the feature defs.
-labeled_df = spark.table(f"{catalog}.{schema}.purchase_labels") \
-    .select("user_id", "event_time", "label")
+from databricks.feature_engineering.entities import (
+    Sum, Avg, Count, Min, Max, StddevPop, StddevSamp, VarPop, VarSamp,
+    ApproxCountDistinct, ApproxPercentile, First, Last,
+    FirstN, LastN, FirstDistinct, LastDistinct,
+)
+```
 
+There is no `CountDistinct` — use `ApproxCountDistinct(input="col", relativeSD=0.05)`. `ApproxPercentile(input="col", percentile=0.95, accuracy=100)`. `FirstN`/`LastN`/`FirstDistinct`/`LastDistinct(input="col", n=3)` return arrays of up to `n` values ordered by `timeseries_column`.
+
+**Window ↔ function compatibility.** Every operator above works with every window type (`RollingWindow`, `SawtoothWindow`, `TumblingWindow`, `SlidingWindow`). A model whose features use `ApproxCountDistinct` or `ApproxPercentile` on a `SawtoothWindow` must be logged on Python 3.9–3.13; `fe.log_model` rejects other versions.
+
+An operator rejected at `register_feature`/`create_feature` with `Function type '...' is not supported for ... window features. Supported types: ...` means the workspace doesn't support that pairing yet; the message lists what it accepts. Pick from that list, or move a batch feature to a `TumblingWindow`/`SlidingWindow`.
+
+### Time windows
+
+```python
+from databricks.feature_engineering.entities import RollingWindow, TumblingWindow, SlidingWindow, SawtoothWindow
+
+RollingWindow(window_duration=timedelta(days=7))                       # lookback from each row's time
+RollingWindow(window_duration=timedelta(days=7), delay=timedelta(days=7))  # delay (>=0) shifts window back
+TumblingWindow(window_duration=timedelta(days=1))                      # fixed, non-overlapping
+SlidingWindow(window_duration=timedelta(days=7), slide_duration=timedelta(days=1))  # overlapping
+SawtoothWindow(window_duration=timedelta(days=30))                     # StreamSource only; long lookback, kept fresh
+```
+
+**Lifetime windows** aggregate over each entity's entire history: pass `window_duration=None`.
+
+- `SlidingWindow(window_duration=None, slide_duration=timedelta(days=1))` for batch sources.
+- `SawtoothWindow(window_duration=None)` for streaming sources.
+- `RollingWindow(window_duration=None)` only for a `Last` aggregation on a Delta source, materialized online-only with `TableTrigger()`.
+- `TumblingWindow` has no lifetime form.
+
+Streaming features support `RollingWindow` and `SawtoothWindow` for aggregations; `TumblingWindow` and `SlidingWindow` are for batch sources.
+
+- **`RollingWindow`** for short streaming lookbacks: exact sub-second window edges, built from the live stream, so values are complete only after materialization has run for a full `window_duration`. On a `DeltaTableSource`, `RollingWindow` is also a batch window: `compute_features` and `create_training_set` compute it point-in-time from the source.
+- **`SawtoothWindow`** for long streaming lookbacks (recommended above 7 days; `window_duration` must be > 2 days, or `None` for lifetime): the last two days come from the live stream and older days from the Stream's ingestion table, so it is ready to serve about two days after materialization starts even for multi-month windows. The trailing edge advances daily, so the effective window is slightly longer than `window_duration`. If the ingestion table holds less history than the window, set `start_time=datetime(...)` (no later than feature creation). No `delay` or `SourceLateness.settling_delay`; `StreamSource` only.
+
+### ColumnSelection (pass-through / latest value)
+
+```python
+from databricks.feature_engineering.entities import ColumnSelection
+
+latest_zone = Feature(
+    source=src, function=ColumnSelection("vendor_zone"),
+    entity=["pickup_zip"], timeseries_column="tpep_pickup_datetime", name="latest_zone",
+)
+```
+
+## Compute
+
+Use `compute_features` to compute and inspect a `Feature` (or list of features) **directly** — no labels, registration, or materialization. This is the fastest way to iterate on a batch definition, including `RollingWindow` features on a `DeltaTableSource` (features on a `StreamSource` are not supported; use `create_training_set`):
+
+```python
+feature_df = fe.compute_features(features=[avg_fare])
+feature_df.display()
+```
+
+## Create Training Set
+
+`create_training_set` joins features onto labeled data with **point-in-time correctness** — each row's features use only source data available before that row's timestamp. Works with locally-constructed (unregistered) `Feature` objects, so you can build training data before registering anything.
+
+```python
 training_set = fe.create_training_set(
-    df=labeled_df,
-    features=[purchase_sum_1h, last_event_type],   # Feature objects, NOT FeatureLookup
-    label="label",
-    exclude_columns=["user_id", "event_time"],     # keep raw entity key + event-time out of the feature matrix
+    df=labeled_df,              # must contain entity + timeseries columns + the label
+    features=[avg_fare],
+    label="is_high_fare",
+    exclude_columns=["pickup_zip", "tpep_pickup_datetime"],  # keep lookup keys out of the feature matrix
 )
 training_df = training_set.load_df()
 ```
 
-Train and log identically to batch: `fe.log_model(model=..., flavor=mlflow.sklearn, training_set=training_set, registered_model_name=...)` (see [feature-store.md](feature-store.md#3-train-and-register-with-feature-lineage)). Lineage and feature resolution at `score_batch()` and serving come for free.
+The labeled `df` MUST contain every `entity` column and the `timeseries_column`, **matched by exact column name** to what the `Feature` definitions declare — a column that merely holds timestamps under a different name (e.g. `timestamp` when the feature declares `timeseries_column="event_timestamp"`) fails with `Training DataFrame is missing timestamp key required for join: <name>`. Before calling `create_training_set`, confirm the df's column names include the feature's `timeseries_column` and every `entity` name verbatim; `df.withColumnRenamed("timestamp", "event_timestamp")` if they differ. For streaming features, the df uses the **leaf** names (`user_id`, `event_time`), not the `value.`-prefixed source references. The label column name MUST NOT collide with a source column.
 
-**Watch for:**
-- **`features=[Feature, ...]`, not `feature_lookups=[FeatureLookup, ...]`.** The Feature Views signature differs from the standard `FeatureLookup` API in [feature-store.md](feature-store.md).
-- **The `label` column must not exist in the stream's ingestion table**, or it collides on the join.
-- **Entity and timeseries column names must match the feature definitions and be globally unique** across all sources in the training set. **[Verified 0.16.0]** Streaming features declare `entity=["value.user_id"]` / `timeseries_column="value.event_time"` (dotted source paths), but the **labeled DataFrame uses leaf names** (`user_id`, `event_time`), e.g. `spark.table(ingest).selectExpr("value.user_id AS user_id", "value.event_time AS event_time", ...)`. Leaf names give a correct point-in-time join and matching feature columns; dotted names in the labeled df are wrong.
-- **[Verified 0.16.0] During stream startup the ingestion table is registered in UC before its Delta path is materialized.** A `spark.table(<ingest>).count()`, or even `spark.catalog.tableExists(<ingest>)`, issued in that window throws `[DELTA_PATH_DOES_NOT_EXIST] ... doesn't exist, or is not a Delta table`. When polling for the ingestion table to fill, wrap the read in `try/except` and treat any exception as "not ready yet"; do not gate on `tableExists`.
+### Holdout evaluation
 
-### Where do the historic events live?
-
-Streaming features materialize **online only**, so there is no offline feature table to read at training time. The history lives in the **Delta ingestion table the Stream auto-maintains** — the `delta_table_name` you set in `IngestionConfig` (e.g. `catalog.schema.events_ingest`). That table is a continuous, governed copy of everything the Kafka stream ingested.
-
-It does double duty:
-- **Serving:** the live tail feeds the online (Lakebase) store at ~200ms freshness.
-- **Training:** `create_training_set` recomputes each streaming feature **point-in-time per label row** by replaying events from the ingestion table up to that row's timestamp — exactly what serving would have produced at that instant, with no offline/online skew. This is why offline materialization is unnecessary.
-
-To find or inspect them: `SELECT ... FROM catalog.schema.events_ingest` (SELECT on the ingestion table is the access grant for the `Stream`). The Kafka payload is under `value.*`, the key under `key.*`. Events from before the stream existed come from whatever `StreamBackfillSource(delta_table_name=...)` you supplied in `IngestionConfig`.
-
----
-
-## Feature Serving Endpoint
-
-Exposes raw feature values as a REST API — use when the scoring model lives outside Databricks and only needs the features, not a prediction. Pass `Feature` objects straight into the spec.
-
-> **Prerequisite:** every feature in the spec must already be materialized to the **online store** (the `online_config` block shown above); the endpoint serves from the online store, so the aggregation features need online materialization, not just offline.
+When scoring a separate holdout/test set, compute features from the **full** history (train ∪ test), not the holdout rows alone — otherwise the holdout's features lack the historical context they would have in production. Use a `DataFrameSource` over the union, redefine the same features against it, then build the eval training set:
 
 ```python
-from databricks.feature_engineering.entities.feature_serving_endpoint import (
-    ServedEntity, EndpointCoreConfig,
+from databricks.feature_engineering.entities import DataFrameSource
+
+full_history = train_df.unionByName(test_df).drop("is_high_fare")  # source rows only; labels stay in labeled_test_df
+eval_src = DataFrameSource(dataframe=full_history, source_name="full_history")
+# redefine the same Feature objects against eval_src (entity and timeseries_column stay on each Feature), then:
+eval_set = fe.create_training_set(
+    df=labeled_test_df, features=eval_features, label="is_high_fare",
+    exclude_columns=["pickup_zip", "tpep_pickup_datetime"],
+)
+eval_df = eval_set.load_df()
+```
+
+## Register
+
+Persist a `Feature` as a governed Unity Catalog object (requires `CREATE FEATURE` on the schema; reading later requires `READ FEATURE`).
+
+```python
+# Two-step: construct locally (above), then register when ready
+avg_fare = fe.register_feature(feature=avg_fare, catalog_name="main", schema_name="ny")
+
+# One-step: define and register together
+latest_amount = fe.create_feature(
+    source=src, function=ColumnSelection("fare_amount"),
+    entity=["pickup_zip"], timeseries_column="tpep_pickup_datetime",
+    catalog_name="main", schema_name="ny", name="latest_amount",
 )
 
-ENDPOINT_NAME = f"{PROJECT}-feature-endpoint"
-FEATURE_SPEC  = f"{catalog}.{schema}.{PROJECT}_feature_spec"
+# Retrieve
+f = fe.get_feature(full_name="main.ny.avg_fare_30d")
+```
 
-fe.create_feature_spec(name=FEATURE_SPEC, features=[avg_amount_30d, sum_amount_7d, latest_tier])
+To delete a feature, follow [Delete a materialized feature / reset state](#delete-a-materialized-feature--reset-state).
 
-fe.create_feature_serving_endpoint(
-    name=ENDPOINT_NAME,
-    config=EndpointCoreConfig(
-        served_entities=ServedEntity(                          # a SINGLE ServedEntity, NOT a list — Feature Serving Endpoints differ from Model Serving here
-            feature_spec_name=FEATURE_SPEC, workload_size="Small", scale_to_zero_enabled=True,
-        )
+## Materialize
+
+`materialize_features` writes a **registered** feature to an offline store (for reuse in training) and/or an online store — backed by Lakebase — for low-latency serving, kept fresh by a trigger. Register before materializing.
+
+`online_store_name` must name an existing Online Feature Store. Its name must be DNS-compliant: letters, digits, and single hyphens, no underscores. `get_online_store` returns `None` (it does not raise) when the store is missing:
+
+```python
+store = fe.get_online_store(name="ny-online-store")
+if store is None:
+    fe.create_online_store(name="ny-online-store", capacity="CU_1")
+# materialize once fe.get_online_store(name="ny-online-store").state is AVAILABLE
+```
+
+```python
+from databricks.feature_engineering.entities import (
+    OfflineStoreConfig, OnlineStoreConfig, CronSchedule, TableTrigger, StreamingMode,
+)
+
+fe.materialize_features(
+    features=[avg_fare],
+    offline_config=OfflineStoreConfig(catalog_name="main", schema_name="ny", table_name_prefix="fare_features"),
+    online_config=OnlineStoreConfig(
+        catalog_name="main", schema_name="ny",
+        table_name_prefix="fare_features_serving", online_store_name="ny-online-store",
+    ),
+    trigger=CronSchedule(quartz_cron_expression="0 0 * * * ?", timezone_id="UTC"),  # hourly
+)
+```
+
+Pick the trigger by feature type (you cannot mix trigger types in one call):
+
+| Feature type | Trigger | Stores |
+|---|---|---|
+| `TumblingWindow` / `SlidingWindow` aggregation (from `DeltaTableSource`) | `CronSchedule` or `TableTrigger()` | offline + online |
+| `ColumnSelection` (from `DeltaTableSource`) | `TableTrigger()` | online only |
+| `Last` with a `RollingWindow` (from `DeltaTableSource`) | `TableTrigger()` | online only |
+| `RollingWindow` or `ColumnSelection` from a `StreamSource` | `StreamingMode()` | online only |
+| `SawtoothWindow` from a `StreamSource` | `StreamingMode()` | offline + online (both configs required) |
+| Streaming from a CDF-enabled `DeltaTableSource` | `StreamingMode()` | online only |
+
+Other batch `RollingWindow` aggregations are not materialized: `create_training_set` and `score_batch` compute them point-in-time from the source.
+
+### Delete a materialized feature / reset state
+
+To tear down or reset a feature, **always `list_materialized_features(feature_name=...)` first, then delete what it returns, then `delete_feature`** — never delete the feature straight away. Listing first is harmless even when the feature was never materialized (it just returns empty), and it's the reliable path because a request to "delete a feature" is usually ambiguous about whether materializations exist. `list_materialized_features` takes a single feature's full name (keyword arg); to sweep many features, list features in a catalog/schema and call `list_materialized_features` on each. Which materialization to delete depends on the feature type: for aggregation features, including `SawtoothWindow`, delete the **offline** materialized feature (every paired online materialization, batch and streaming, is removed with it); `ColumnSelection` and `RollingWindow` streaming features are online-only, so delete the online one directly.
+
+```python
+for name in feature_names:
+    mfs = fe.list_materialized_features(feature_name=name)   # required, keyword-only
+    offline = [mf for mf in mfs if not mf.is_online]
+    # Aggregation → delete offline (paired online goes with it).
+    # ColumnSelection / RollingWindow streaming → online-only, delete those.
+    for mf in (offline or mfs):
+        fe.delete_materialized_feature(materialized_feature=mf)
+    fe.delete_feature(full_name=name)   # remove referencing models/feature specs first
+```
+
+Deleting a feature that was never materialized needs only `delete_feature`. Guard cleanup loops so a missing feature is a no-op rather than an error (`get_feature` on an absent feature raises).
+
+## Serving Patterns
+
+First log a model with feature lineage (needed for batch and online model serving) — `fe.log_model` records which features the model used so they can be recomputed/looked-up at inference:
+
+```python
+import mlflow
+with mlflow.start_run():
+    fe.log_model(
+        model=model, artifact_path="model", flavor=mlflow.sklearn,
+        training_set=training_set, registered_model_name="main.ny.high_fare_model",
+    )
+```
+
+### 1. Batch scoring (offline)
+
+`score_batch` recomputes features point-in-time from the source — **no online store required**. The scoring `df` needs the entity keys, the timeseries column, and every `RequestSource` column the model was trained with (e.g. `distance_km`): request-time values come from the scoring `df`, not from a source.
+
+`score_batch` rejects a model with any feature on a `StreamSource` (`NotImplementedError: Batch scoring with streaming sources is not yet supported`). Serve those models from a model serving endpoint (pattern 2).
+
+```python
+predictions = fe.score_batch(
+    model_uri="models:/main.ny.high_fare_model/1",   # or runs:/<run_id>/model
+    df=scoring_df,
+)
+```
+
+### 2. Online model serving (real-time predictions)
+
+Materialize the features to an **online store** (above), register the model in UC, then deploy it to a model serving endpoint. The endpoint looks up features from the online store automatically via lineage.
+
+```python
+from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
+
+w.serving_endpoints.create(
+    name="high-fare-endpoint",
+    config=EndpointCoreConfigInput(
+        name="high-fare-endpoint",
+        served_entities=[ServedEntityInput(
+            entity_name="main.ny.high_fare_model", entity_version=1,
+            max_provisioned_concurrency=4, min_provisioned_concurrency=0,
+        )],
     ),
 )
 
-# Query: pass entity keys → get feature values back.
-import mlflow.deployments
-client = mlflow.deployments.get_deploy_client("databricks")
-client.predict(endpoint=ENDPOINT_NAME, inputs={"dataframe_records": [{"user_id": 42}]})
+# Query: pass entity keys + timeseries (+ any RequestSource columns the model was trained with)
+w.serving_endpoints.query(
+    name="high-fare-endpoint",
+    dataframe_records=[{"pickup_zip": "10003", "tpep_pickup_datetime": "2026-03-01T12:00:00"}],
+)
 ```
 
-> A `FeatureSpec` containing Feature Views cannot also contain `FeatureLookup` / `FeatureFunction` entries — keep them in separate specs.
->
-> **Docs:** for a Feature Serving Endpoint, `served_entities` is a **single** `ServedEntity` (not a list). See the [feature-serving endpoint API](https://api-docs.databricks.com/python/feature-store/latest/ml_features.feature_serving_endpoint.html) and the [Feature Serving tutorial](https://docs.databricks.com/aws/en/machine-learning/feature-store/feature-serving-tutorial).
+### 3. Feature Serving (feature values, no model)
 
----
-
-## Migrating from the beta API → Feature Views
-
-Beta features were registered as **both** a `Feature` object and a same-named UC function; Feature Views exist **only** as a `Feature` object.
+When an application needs feature **values** rather than predictions, deploy a `FeatureSpec` to a Feature Serving endpoint. Features must be registered and materialized to an online store first.
 
 ```python
-# Find beta Feature Views that still need migration (optionally scope to a catalog/schema).
-beta = fe.list_beta_feature_views(catalog_name=catalog, schema_name=schema)
-for f in beta:
-    print(f.name)
+from databricks.feature_engineering.entities.feature_serving_endpoint import EndpointCoreConfig, ServedEntity
 
-fe.is_beta_feature_view(full_name=f"{catalog}.{schema}.user_avg_amount_30d")  # True if still beta
+agg = fe.get_feature(full_name="main.ny.avg_fare_30d")
+fe.create_feature_spec(name="main.ny.fare_feature_spec", features=[agg])
+fe.create_feature_serving_endpoint(
+    name="fare-features",
+    config=EndpointCoreConfig(served_entities=ServedEntity(
+        feature_spec_name="main.ny.fare_feature_spec",
+        workload_size="Small", scale_to_zero_enabled=True,
+    )),
+)
+
+w.serving_endpoints.query(name="fare-features", dataframe_records=[{"pickup_zip": "10003"}])
 ```
 
-Re-create migrated features with `create_feature()` / `register_feature()` and re-run `materialize_features()`. (Features materialized before **April 20, 2026** must be deleted and re-materialized to pick up the current pipeline.)
-
-### Migration gotchas
-
-| Trap | Fix |
-|---|---|
-| `create_pipeline()` not found / deprecated | `create_pipeline()` is **deprecated and not supported for Feature Views**. Use `materialize_features()`, the canonical materialization API. |
-| `create_kafka_config()` rejected server-side (`BadRequest: CreateKafkaConfig is no longer supported`) | Beta streaming entry point. Use `create_stream()` + `StreamSource(full_name=...)` — see [Streaming features](#streaming-features). |
-| `ContinuousWindow` import fails | Renamed to `RollingWindow`. Per the [Feature Views API reference](https://docs.databricks.com/machine-learning/feature-store/feature-views-api-reference): "`RollingWindow` was previously named `ContinuousWindow`. If you are migrating from an earlier SDK version, update your imports accordingly." |
-
----
-
-## Feature View gotchas
-
-| Trap | Fix |
-|---|---|
-| Feature View calls fail on an unsupported runtime | Feature Views require **DBR 17.0 ML+** with `databricks-feature-engineering>=0.16.0`, on **serverless or classic** compute. |
-| `time_window=` passed to `create_feature()` | The window now lives **inside** `AggregationFunction(operator=..., time_window=...)`; `create_feature` has no `time_window` arg |
-| `entity` / `timeseries_column` set on `DeltaTableSource` | They belong on the `Feature` / `create_feature()` call; the source only carries table + optional `filter_condition` / `transformation_sql` |
-| `RollingWindow` batch feature won't materialize | `RollingWindow` is point-in-time (training) for batch and **streaming-only** for materialization; use `Tumbling`/`Sliding` to materialize batch features |
-| Feature Views `create_training_set()` signature mismatch | Pass `features=[Feature, ...]`, not `feature_lookups=[FeatureLookup, ...]` |
-| Entity column is DATE or TIMESTAMP | Not allowed — use a string or numeric entity key |
-| Label column also present in a feature source table | The `label` column must not exist in any feature source — drop/rename before defining features |
-| `ColumnSelection` feature sent to offline store / `CronSchedule` | `ColumnSelection` is **online-only**; trigger with `TableTrigger` (batch) or `StreamingMode` (stream) |
-| Streaming feature with `Sliding`/`Tumbling`, a non-supported operator, or offline config | Streaming = `RollingWindow` + `{Count,Avg,Sum,StddevPop,Max,Min,Last}`, **online only**, `trigger=StreamingMode()`; never mix with batch in one call |
-| Streaming feature on a catalog in default storage | **Streaming** Feature Views require a **standard UC catalog in your own cloud object storage** (S3/ADLS/GCS); catalogs created in **default storage** are not supported. |
-| Kafka payload fields not found | Reference them as `value.<field>` (and `key.<field>`); messages must be JSON with a JSON-Schema you supply |
-| Mixed entity/timeseries column names between labels and features | Names must match across the labeled df and feature definitions, and be globally unique across all sources in a training set/endpoint |
-| Dropping a feature's source table (or the feature) without removing its materialization | Strands the materialization job, which loops failing forever on the now-missing source and is hard to find. UC table drops do **not** cascade to FE objects. Verified param names (0.16.0), tear down in order: (1) `fe.list_materialized_features(feature_name=full_name)` → `fe.delete_materialized_feature(materialized_feature=<MaterializedFeature obj>)` (takes the SDK object, **not** a string); (2) `fe.delete_feature(full_name=<str>)` (param is `full_name=`, not `feature_name=`); (3) `fe.delete_stream(name=<str>)`; (4) `fe.delete_online_store(name=<str>)`; (5) `DROP TABLE`. Use `list_features` / `list_streams` to discover names dynamically instead of hardcoding. |
-| Throwaway test materialization on a recurring `CronSchedule` | If the run is interrupted before its teardown cell, the cron materialization survives and silently loops. Use a one-shot trigger (or none) for tests, and put teardown in `try/finally`. |
-| `transformation_sql` rejected, or adding a computed column "doesn't work" | `transformation_sql` takes **only the projection list** — the part between `SELECT` and `FROM`, e.g. `"*, amount * qty AS gross"` — applied after `filter_condition` (the WHERE). A full `SELECT ... FROM ... WHERE ...` statement fails. It also **requires `dataframe_schema`** (post-transform schema as Spark StructType JSON, `df.schema.json()`). No derived table needed. |
-| `fe.create_online_store(name=...)` raises `InvalidParameterValue: DatabaseInstance name must be DNS compliant` | The Lakebase instance name must be **lowercase alphanumeric + hyphens only, no underscores**. `f"{PROJECT}-online-store"` with `PROJECT="my_project"` silently yields an invalid name; keep the store name separate and DNS-safe (`ONLINE_STORE` in Setup). |
-| `register_feature()` / `create_feature()` raises `AlreadyExists` on rerun | Feature definitions persist in UC across runs. Wrap in try/except: on `AlreadyExists`, call `fe.get_feature(full_name=f"{catalog}.{schema}.{name}")` to fetch the existing definition and continue (idempotent reruns). |
-| Ingestion pipeline stays `IDLE` after `create_stream()` | It does not always auto-start. With `from databricks.sdk import WorkspaceClient; w = WorkspaceClient()`, check `w.pipelines.get(pipeline_id).state`; if `IDLE`, call `w.pipelines.start_update(pipeline_id=pipeline_id)`. Allow ~5-7 min to reach `RUNNING`. |
-| Kafka topic does not exist (`UnknownTopicOrPartitionException`) | MSK and most managed Kafka default to `auto.create.topics.enable=false`. Create the topic (MSK console / Kafka CLI) **before** `create_stream()` or producing events. `.option("kafka.allow.auto.create.topics", "true")` on the Spark writer has no effect when broker-side auto-creation is disabled. |
-| Python session resets mid-poll on serverless (imports/variables cleared) | A long blocking poll (e.g. waiting on pipeline provisioning) can outlast the serverless session and detach it, clearing state. Keep poll loops short and bounded (≤~15 min, e.g. 30 × 30s) and re-run the import/config cells if the session resets. |
+Grant serving access (online lookups read the materialized table, so `SELECT` on it is what's needed): `fe.grant_feature_serving_access(grant_to=[...], model_uri=... )` (pass `dry_run=True` to preview). A `FeatureSpec` containing Feature Views cannot also contain `FeatureLookup` or `FeatureFunction` definitions.

@@ -68,9 +68,12 @@ README.md should describe the workflow as it exists now and link to its results.
 ## File changes
 
 Use databricks.yml as the source of truth for bundle-managed resources and
-redeploy changes through the bundle. If a SQL task or notebook is needed, put
-its file in src/ and reference it from the task configuration. Use the
-`databricks-jobs` skill for the relevant task type.
+redeploy changes through the bundle. Follow
+[Synchronize workflow edits](sync-edits.md) when reopening a workflow or
+returning from edits in Document Intelligence or Genie Code. Bring accepted
+workspace edits into the local project before redeploying. If a SQL task or
+notebook is needed, put its file in src/ and reference it from the task
+configuration. Use the `databricks-jobs` skill for the relevant task type.
 
 Keep the folder stable after creation so links and deployments continue to
 refer to it. Files can be managed in the user's Git repository for review and

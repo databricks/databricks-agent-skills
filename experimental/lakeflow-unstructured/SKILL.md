@@ -57,7 +57,10 @@ dumps, credential files, or authentication output containing token values.
    supplied. If the user needs help finding the source, use authorized read-only
    discovery in that workspace and present relevant accessible sources. For an
    existing workflow, read its manifest, SPEC.md, AGENTS.md, and bundle before
-   changing it. Preserve the user's source, destinations, and existing assets.
+   changing it, and follow
+   [Synchronize workflow edits](references/sync-edits.md) to reconcile local,
+   workspace, and deployed changes. Preserve the user's source, destinations,
+   and existing assets.
 2. **Design the document processing.** Read
    [Document processing](references/document-processing.md). Inspect a small
    representative sample when authorized. Reuse the user's extraction schema or
