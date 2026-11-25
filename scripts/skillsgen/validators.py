@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from skillsgen.common import BUNDLE_DIR, _norm_rel_path, _read_frontmatter
-from skillsgen.discovery import iter_all_skill_dirs
+from skillsgen.discovery import iter_all_skill_dirs, read_cli_commands
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +286,24 @@ def check_skill_frontmatter(repo_root: Path) -> list[str]:
                 f"{MAX_SKILL_NAME_LEN}-character limit that third-party loaders "
                 "enforce (the skill is dropped at load time). Shorten it."
             )
+    return errors
+
+
+def check_skill_cli_commands(repo_root: Path) -> list[str]:
+    """Flag a `metadata.cli_commands` value that is not a flow list of unique,
+    lowercase command group names.
+
+    The manifest copies the value to each skill's `commands` key, which the CLI
+    reads to point agents from a command group's help to its skill. A malformed
+    value would be silently dropped or mis-routed there, so reject it here.
+    """
+    errors: list[str] = []
+    for skill_dir in iter_all_skill_dirs(repo_root):
+        rel = (skill_dir / "SKILL.md").relative_to(repo_root)
+        try:
+            read_cli_commands(skill_dir)
+        except ValueError as exc:
+            errors.append(f"Skill '{rel}': {exc}")
     return errors
 
 

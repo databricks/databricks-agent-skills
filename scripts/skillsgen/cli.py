@@ -31,6 +31,7 @@ from skillsgen.validators import (
     check_cursor_plugin,
     check_plugin_components,
     check_routing_tables,
+    check_skill_cli_commands,
     check_skill_file_references,
     check_skill_frontmatter,
 )
@@ -123,6 +124,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in frontmatter_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            cli_command_errors = check_skill_cli_commands(repo_root)
+            if cli_command_errors:
+                print(
+                    "ERROR: skill metadata.cli_commands is invalid:",
+                    file=sys.stderr,
+                )
+                for err in cli_command_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

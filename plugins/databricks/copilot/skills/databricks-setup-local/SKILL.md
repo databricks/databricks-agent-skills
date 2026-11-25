@@ -4,6 +4,7 @@ description: "Previews, provisions, or diagnoses a uv-managed local Python .venv
 compatibility: Requires databricks CLI (>= v1.16.0) and uv
 metadata:
   version: "0.1.0"
+  cli_commands: [environments]
 parent: databricks-core
 ---
 

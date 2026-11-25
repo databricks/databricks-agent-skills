@@ -13,6 +13,7 @@ from skillsgen.discovery import (
     iter_experimental_skill_dirs,
     iter_skill_dirs,
     iter_skill_files,
+    read_cli_commands,
     synthesize_short_description,
 )
 
@@ -52,15 +53,28 @@ def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
     skills[name] = skill
 
 
+def _with_commands(entry: dict, skill_dir: Path) -> dict:
+    """Add `commands` (the CLI command groups the skill covers) when non-empty.
+
+    Additive: a skill without `metadata.cli_commands` gets no key at all, so
+    existing entries are unchanged and CLIs that do not read the key ignore it.
+    """
+    commands = read_cli_commands(skill_dir)
+    if commands:
+        entry["commands"] = commands
+    return entry
+
+
 def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
-    return skill_dir.name, {
+    entry = {
         "version": extract_version_from_skill(skill_dir),
         "description": synthesize_short_description(skill_dir),
         "repo_dir": STABLE_REPO_DIR,
         "files": files,
     }
+    return skill_dir.name, _with_commands(entry, skill_dir)
 
 
 # Experimental skills have a looser contract than stable: no agents/openai.yaml
@@ -69,12 +83,13 @@ def _build_stable_entry(skill_dir: Path) -> tuple[str, dict]:
 def _build_experimental_entry(skill_dir: Path) -> tuple[str, dict]:
     files = sorted(str(f.relative_to(skill_dir)) for f in iter_skill_files(skill_dir))
 
-    return skill_dir.name, {
+    entry = {
         "version": extract_version_from_skill(skill_dir),
         "description": extract_description_from_skill(skill_dir),
         "repo_dir": EXPERIMENTAL_REPO_DIR,
         "files": files,
     }
+    return skill_dir.name, _with_commands(entry, skill_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +214,11 @@ def validate_manifest(repo_root: Path) -> bool:
 
     current_text = manifest_path.read_text()
     current_manifest = json.loads(current_text)
-    expected_manifest = generate_manifest(repo_root)
+    try:
+        expected_manifest = generate_manifest(repo_root)
+    except ValueError as exc:
+        print(f"ERROR: cannot generate manifest.json: {exc}", file=sys.stderr)
+        return False
 
     if current_manifest != expected_manifest:
         print("ERROR: manifest.json content is out of date", file=sys.stderr)

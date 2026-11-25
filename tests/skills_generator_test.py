@@ -792,5 +792,84 @@ class GenerateAllTest(unittest.TestCase):
                 self.assertFalse((bundled_core / filename).exists())
 
 
+class CliCommandsTest(unittest.TestCase):
+    """`metadata.cli_commands` maps a skill to CLI command groups.
+
+    The field is additive: the manifest copies it to `commands` only when it is
+    non-empty, so a skill without it has no `commands` key and existing entries
+    are unchanged.
+    """
+
+    def _make_skill(self, root: Path, name: str, metadata_lines: str) -> None:
+        skill_dir = root / "skills" / name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: Test skill.\nmetadata:\n"
+            f"  version: \"1.0.0\"\n{metadata_lines}---\n\n# {name}\n"
+        )
+
+    def test_field_becomes_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-bundle", "  cli_commands: [bundle, air]\n")
+            entry = skills.generate_manifest(root)["skills"]["databricks-bundle"]
+            self.assertEqual(entry["commands"], ["bundle", "air"])
+            self.assertEqual(entry["version"], "1.0.0")
+
+    def test_skill_without_field_has_no_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-plain", "")
+            entry = skills.generate_manifest(root)["skills"]["databricks-plain"]
+            self.assertNotIn("commands", entry)
+            self.assertEqual(
+                set(entry),
+                {"version", "description", "repo_dir", "files"},
+            )
+
+    def test_empty_list_omits_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-empty", "  cli_commands: []\n")
+            entry = skills.generate_manifest(root)["skills"]["databricks-empty"]
+            self.assertNotIn("commands", entry)
+            self.assertEqual(skills.check_skill_cli_commands(root), [])
+
+    def test_invalid_values_are_rejected(self):
+        bad_values = {
+            "not a list": "  cli_commands: bundle\n",
+            "block list": "  cli_commands:\n    - bundle\n",
+            "uppercase": "  cli_commands: [Bundle]\n",
+            "duplicate": "  cli_commands: [bundle, bundle]\n",
+            "underscore": "  cli_commands: [my_group]\n",
+            "trailing comma": "  cli_commands: [bundle,]\n",
+        }
+        for label, metadata_lines in bad_values.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._make_skill(root, "databricks-bad", metadata_lines)
+                errors = skills.check_skill_cli_commands(root)
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("databricks-bad", errors[0])
+                with self.assertRaises(ValueError):
+                    skills.generate_manifest(root)
+
+    def test_valid_value_passes_check(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-ok", "  cli_commands: [compute-migrations]\n")
+            self.assertEqual(skills.check_skill_cli_commands(root), [])
+
+    def test_repo_mapped_skills(self):
+        self.assertEqual(skills.check_skill_cli_commands(_REPO), [])
+        dabs = _REPO / "skills" / "databricks-dabs"
+        self.assertEqual(skills.read_cli_commands(dabs), ["bundle"])
+        core = _REPO / "skills" / "databricks-core"
+        self.assertEqual(skills.read_cli_commands(core), [])
+        manifest = json.loads((_REPO / "manifest.json").read_text())
+        self.assertEqual(manifest["skills"]["databricks-dabs"]["commands"], ["bundle"])
+        self.assertNotIn("commands", manifest["skills"]["databricks-core"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,8 @@ import re
 import shutil
 from pathlib import Path
 
+from skillsgen.common import _read_frontmatter
+
 
 SHARED_ASSETS = [
     "assets/databricks.svg",
@@ -85,6 +87,53 @@ def extract_version_from_skill(skill_path: Path) -> str:
     # get 0.0.1 in the manifest. Avoids 0.0.0 which several install tools
     # treat as "unset" rather than "first release".
     return "0.0.1"
+
+
+# CLI command groups a skill covers, read from `metadata.cli_commands`. Only the
+# flow form (`cli_commands: [bundle, air]`) is accepted, so the value stays a
+# single line the stdlib parser can read.
+_CLI_COMMAND_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+_CLI_COMMANDS_LINE_RE = re.compile(r"^\s+cli_commands:[ \t]*(.*?)[ \t]*$")
+
+
+def read_cli_commands(skill_path: Path) -> list[str]:
+    """Return the CLI command groups in `metadata.cli_commands`, or [] if absent.
+
+    Raises ValueError when the value is not a flow list of unique lowercase
+    command group names. The generator lets that propagate; `validate` reports
+    it per skill.
+    """
+    frontmatter = _read_frontmatter(skill_path / "SKILL.md")
+    if frontmatter is None:
+        return []
+    raw = None
+    in_metadata = False
+    for line in frontmatter.splitlines():
+        if line.strip() and not line[0].isspace():
+            in_metadata = line.rstrip() == "metadata:"
+            continue
+        if in_metadata and raw is None:
+            match = _CLI_COMMANDS_LINE_RE.match(line)
+            if match:
+                raw = match.group(1)
+    if raw is None:
+        return []
+    if not (raw.startswith("[") and raw.endswith("]")):
+        raise ValueError(
+            "metadata.cli_commands must be a flow list of command group names, "
+            f"such as [bundle]; got {raw!r}."
+        )
+    inner = raw[1:-1].strip()
+    names = [part.strip().strip("\"'") for part in inner.split(",")] if inner else []
+    for name in names:
+        if not _CLI_COMMAND_RE.match(name):
+            raise ValueError(
+                f"metadata.cli_commands entry {name!r} is not a lowercase command "
+                "group name (letters, digits and hyphens, starting with a letter)."
+            )
+    if len(set(names)) != len(names):
+        raise ValueError(f"metadata.cli_commands lists a duplicate entry: {raw}.")
+    return names
 
 
 def iter_skill_files(skill_path: Path):
