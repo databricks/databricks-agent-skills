@@ -719,7 +719,8 @@ class GenerateAllTest(unittest.TestCase):
     # produced by generate_routing (rules/databricks-routing.mdc + README), so it
     # need not -- and in a source-only checkout cannot -- be seeded. Keeping it out
     # lets this test run on the bare mirror too, not just the published tree.
-    _SRC_DIRS = ("skills", "hooks", "commands", "assets", "metaplugin")
+    # catalog/ holds the rules file the manifest names, so it must be seeded too.
+    _SRC_DIRS = ("skills", "hooks", "commands", "assets", "metaplugin", "catalog")
 
     def setUp(self):
         self.meta = skills.load_meta(_REPO)
@@ -790,6 +791,108 @@ class GenerateAllTest(unittest.TestCase):
             bundled_core = root / "plugins/databricks/claude/skills/databricks-core"
             for filename in skills.UNPUBLISHED_FILENAMES:
                 self.assertFalse((bundled_core / filename).exists())
+
+
+class CatalogRulesTest(unittest.TestCase):
+    """The catalog rules file is a release asset, not a plugin bundle member."""
+
+    def _write_rules(self, root: Path, text: str) -> None:
+        target = root / skills.CATALOG_RULES_PATH
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+
+    def test_repo_rules_file_is_clean(self):
+        self.assertEqual(skills.check_catalog_rules(_REPO), [])
+
+    def test_manifest_names_rules_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_rules(root, "rule\n")
+            manifest = skills.generate_manifest(root)
+            self.assertEqual(manifest["catalog_rules"], skills.CATALOG_RULES_PATH)
+
+    def test_guard_key_is_additive(self):
+        # Guard: with the key removed, the manifest is what it was before this
+        # change, so a CLI that ignores the key sees no other difference.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_rules(root, "rule\n")
+            manifest = skills.generate_manifest(root)
+            self.assertEqual(
+                sorted(manifest), sorted(["//", "catalog_rules", "skills", "version"])
+            )
+            without_key = {k: v for k, v in manifest.items() if k != "catalog_rules"}
+            self.assertEqual(without_key["version"], "2")
+            self.assertEqual(sorted(without_key), ["//", "skills", "version"])
+
+    def test_committed_manifest_differs_only_by_catalog_rules(self):
+        committed = json.loads((_REPO / "manifest.json").read_text())
+        generated = skills.generate_manifest(_REPO)
+        self.assertEqual(committed.pop("catalog_rules"), skills.CATALOG_RULES_PATH)
+        generated.pop("catalog_rules")
+        self.assertEqual(committed, generated)
+
+    def test_rules_file_is_outside_every_plugin_bundle(self):
+        bundle = _REPO / skills.BUNDLE_DIR
+        bundled = [p for p in bundle.rglob("*") if p.is_file()]
+        self.assertFalse(
+            any(p.name == "rules.md" and p.parent.name == "catalog" for p in bundled)
+        )
+        self.assertFalse(skills.CATALOG_RULES_PATH.startswith(("plugins/", "skills/")))
+
+    def test_over_budget_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_rules(root, "x" * (skills.CATALOG_RULES_MAX_CHARS + 1))
+            errors = skills.check_catalog_rules(root)
+            self.assertTrue(
+                any("701 characters" in e and "budget is 700" in e for e in errors),
+                errors,
+            )
+
+    def test_at_budget_is_ok(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_rules(root, "x" * skills.CATALOG_RULES_MAX_CHARS)
+            self.assertEqual(skills.check_catalog_rules(root), [])
+
+    def test_budget_counts_characters_not_bytes(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # 700 characters, but 1400 UTF-8 bytes: still within the budget.
+            self._write_rules(root, "é" * skills.CATALOG_RULES_MAX_CHARS)
+            self.assertEqual(skills.check_catalog_rules(root), [])
+
+    def test_missing_rules_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            errors = skills.check_catalog_rules(Path(d))
+            self.assertTrue(
+                any("does not exist" in e and skills.CATALOG_RULES_PATH in e for e in errors),
+                errors,
+            )
+
+    def test_manifest_naming_missing_rules_file_is_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "manifest.json").write_text(
+                json.dumps({"version": "2", "catalog_rules": "catalog/rules.md", "skills": {}})
+                + "\n"
+            )
+            errors = skills.check_manifest_file_references(root)
+            self.assertTrue(
+                any("catalog_rules names 'catalog/rules.md'" in e for e in errors),
+                errors,
+            )
+
+    def test_manifest_with_unsafe_rules_path_is_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "manifest.json").write_text(
+                json.dumps({"version": "2", "catalog_rules": "../rules.md", "skills": {}})
+                + "\n"
+            )
+            errors = skills.check_manifest_file_references(root)
+            self.assertTrue(any("not a safe relative path" in e for e in errors), errors)
 
 
 if __name__ == "__main__":

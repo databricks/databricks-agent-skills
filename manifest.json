@@ -1,5 +1,6 @@
 {
   "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
+  "catalog_rules": "catalog/rules.md",
   "skills": {
     "databricks-ai-functions": {
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_decide, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_pre...",

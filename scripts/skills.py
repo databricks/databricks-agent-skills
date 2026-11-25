@@ -52,8 +52,11 @@ from skillsgen.manifest import (
     _build_stable_entry,
     _build_experimental_entry,
     serialize_manifest,
+    check_catalog_rules,
     check_manifest_file_references,
     validate_manifest,
+    CATALOG_RULES_PATH,
+    CATALOG_RULES_MAX_CHARS,
 )
 from skillsgen.plugins import (
     _CLAUDE_MARKETPLACE_SCHEMA,
