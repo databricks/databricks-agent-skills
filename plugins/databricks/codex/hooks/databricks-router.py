@@ -10,10 +10,10 @@ There is no second agent to delegate to: Claude itself drives the `databricks`
 CLI through the skills, so "routing" just means "make sure the Databricks skills
 are loaded." No permission gating, no cost warnings.
 
-The keyword lists and the injected instruction are generated from
-plugin.meta.json into `_routing_data.json` next to this file and loaded at
-import time; a minimal inline fallback keeps the hook working if that file is
-missing or unreadable. Regenerate with `python3 scripts/skills.py generate`.
+The keyword lists and the injected instruction are generated from the plugin
+metadata's routing table into `_routing_data.json` next to this file and loaded
+at import time; a minimal inline fallback keeps the hook working if that file
+is missing or unreadable.
 
 The full routing instruction is injected once per session (keyed by the
 payload's session_id via a marker file in the temp dir); later Databricks
@@ -34,9 +34,8 @@ import tempfile
 from pathlib import Path
 
 # Routing config (keyword lists + the injected instruction) is generated from
-# plugin.meta.json into _routing_data.json next to this file (see
-# rules/README.md and CONTRIBUTING.md) and loaded at import time. If that file
-# is missing or unreadable the hook stays fail-open via a minimal inline
+# the plugin metadata's routing table into _routing_data.json next to this file
+# and loaded at import time. If that file is missing or unreadable the hook stays fail-open via a minimal inline
 # fallback that still routes obvious Databricks prompts.
 _FALLBACK_STRONG = [r"\bdatabricks\b"]
 _FALLBACK_AMBIGUOUS = []
@@ -100,7 +99,7 @@ SUPPRESS = list(_DATA["suppress"]) if _DATA else list(_FALLBACK_SUPPRESS)
 
 # The full instruction injected on the session's first Databricks prompt, plus
 # the one-line reminder for later prompts. ROUTING_INSTRUCTION stays a
-# module-level attribute (scripts/skills.py check_routing_tables reads it).
+# module-level attribute (the generator's routing-table check reads it).
 ROUTING_INSTRUCTION = _DATA["instruction"] if _DATA else _FALLBACK_INSTRUCTION
 ROUTING_REMINDER = _DATA["reminder"] if _DATA else _FALLBACK_REMINDER
 

@@ -90,9 +90,11 @@ A continuous pipeline runs in STANDARD only when a continuous job runs it.
 
 ## 4. Code you write runs on serverless from the start
 
-Serverless reads Unity Catalog tables, `/Volumes/...` paths, cloud paths behind a Unity Catalog
-external location, and the sample data under `dbfs:/databricks-datasets/`. It cannot read DBFS
-mounts (`dbfs:/mnt/...`) or other DBFS root paths; only those count as a DBFS blocker.
+Serverless reads Unity Catalog tables, `/Volumes/...` paths (including the sample data in
+`/Volumes/samples/databricks/datasets/`), cloud paths behind a Unity Catalog external location,
+and the legacy `dbfs:/databricks-datasets/` sample data, which is deprecated (use the volume path
+in new code). It cannot read DBFS mounts (`dbfs:/mnt/...`) or other DBFS root paths; only those
+count as a DBFS blocker.
 
 DataFrame and SQL APIs only (no RDDs, `sc.*`, `spark.sparkContext`); Unity Catalog three-part table
 names; `/Volumes/...` paths instead of DBFS mounts (`dbfs:/mnt/...`); `availableNow` streaming
@@ -133,8 +135,9 @@ The user is waiting for the deployment. Spend one short pass, then deploy.
    - every input path, table, output table and parameter stays exactly as it was. Never swap in
      another dataset, even a sample one;
    - every input is already readable on serverless (section 4: a Unity Catalog table, an existing
-     `/Volumes/...` path, a cloud path behind an external location, or `dbfs:/databricks-datasets/`),
-     so nothing new has to be set up.
+     `/Volumes/...` path, including `/Volumes/samples/databricks/datasets/`, a cloud path behind
+     an external location, or the legacy `dbfs:/databricks-datasets/`), so nothing new has to be
+     set up.
 
    Save the original next to it as `<name>.classic.py` and point the job at the translated file.
    Tell the user that the translation has not been run yet and suggest one test run that compares

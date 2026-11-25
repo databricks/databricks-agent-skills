@@ -1,5 +1,5 @@
 {
-  "//": "GENERATED FILE: do not edit. Rendered from metaplugin/plugin.meta.json \"routing\" by scripts/skills.py. Run `python3 scripts/skills.py generate`.",
+  "//": "GENERATED FILE: do not edit. Rendered from the plugin metadata's routing table, which also renders the Cursor routing rule.",
   "strong": [
     "\\bdatabricks\\b",
     "\\blakehouse\\s+mcp\\b",
