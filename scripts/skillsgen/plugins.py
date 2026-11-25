@@ -265,10 +265,10 @@ _GENERATED_README = """\
 # Generated plugin manifests
 
 The plugin manifest files in this directory (`plugin.json` and/or
-`marketplace.json`) are generated from `metaplugin/plugin.meta.json` by
-`scripts/skills.py`. To change them, edit `metaplugin/plugin.meta.json` and run
-`python3 scripts/skills.py generate`. CI re-renders these files and fails on any
-drift, so hand-edits are reverted. See `CONTRIBUTING.md` ("Plugin metadata").
+`marketplace.json`) are generated from the internal Databricks source of truth
+this repository is published from, so hand-edits are overwritten by the next
+sync. To propose a change, open an issue as described in `CONTRIBUTING.md` at
+the repository root.
 """
 
 # Root-level directories whose marketplace catalog is generated; each gets the
