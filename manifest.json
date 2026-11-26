@@ -123,7 +123,7 @@
         "manual-data-exploration.md"
       ],
       "repo_dir": "skills",
-      "version": "0.2.0"
+      "version": "0.2.1"
     },
     "databricks-dabs": {
       "description": "Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles).",
@@ -163,6 +163,7 @@
         "references/best-practices.md",
         "references/geospatial-collations.md",
         "references/materialized-views-pipes.md",
+        "references/read-files.md",
         "references/sql-scripting.md"
       ],
       "repo_dir": "skills",
@@ -292,14 +293,14 @@
       "version": "0.1.0"
     },
     "databricks-lakehouse-mcp": {
-      "description": "Discover, connect to, or recover the hosted Databricks Lakehouse MCP (system.ai.lakehouse), then load its guidance for inspecting, editing, running, and reading results from Databricks notebooks. U...",
+      "description": "Discover, connect to, or recover the hosted Databricks Lakehouse MCP (system.ai.lakehouse), then load its guidance for inspecting, editing, running, and reading results from Databricks notebooks. Use for notebook work in a Databricks workspace or when the user asks to set up the Lakehouse MCP.",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "assets/databricks.png",
         "assets/databricks.svg"
       ],
-      "repo_dir": "skills",
+      "repo_dir": "experimental",
       "version": "0.1.0"
     },
     "databricks-metric-views": {

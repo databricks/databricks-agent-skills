@@ -51,10 +51,11 @@ calls so you get a structured envelope instead of human text:
 - **Success**: `{"v": 1, "ts": "...", "data": {...}}`
 - **Error**: `{"v": 1, "ts": "...", "error": {"code": "...", "kind": "...", "message": "...", "retryable": bool}}`
 
-Config validation (input) errors are the exception: they print as plain text to
-stderr with a non-zero exit even under `-o json`, so check the exit code and
-stderr too, not just the parsed JSON. When you do get a structured error, its
-`kind` tells you what to do:
+On CLI 1.28.0 and newer, `air run -o json` also reports config validation
+(input) errors as a structured error with code `INVALID_ARGS`. Older CLIs print
+them as plain text to stderr with a non-zero exit even under `-o json`, so check
+the exit code and stderr too, not just the parsed JSON. When you do get a
+structured error, its `kind` tells you what to do:
 
 | kind | Meaning | Action |
 |---|---|---|
@@ -62,6 +63,29 @@ stderr too, not just the parsed JSON. When you do get a structured error, its
 | `NOT_FOUND` | Bad run ID / resource | Check the input |
 | `CONFLICT` | Idempotency key collision | Use a new `--idempotency-key` |
 | `TRANSIENT` | Retryable | Retry |
+
+## Running AIR commands from an agent
+
+Run each `databricks air` command as its own shell call. Don't chain it with
+other commands through `&&`, `;`, or `|` (for example
+`python -m py_compile train.py && databricks air run ...`). Permission rules
+such as Claude Code's approve a chained command only when every part matches
+an allow-rule, so a chained `air` command prompts the user on every call. Run
+the check first, and run the `air` command in a separate call only if the check
+succeeded. Start the call with `databricks air` itself: put the profile in
+`-p <profile>` rather than an environment-variable prefix, and use paths
+instead of a `cd ... &&` prefix.
+
+To stop the prompts, the user can allow `databricks air` commands once, for
+example in Claude Code's `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(databricks air *)"]
+  }
+}
+```
 
 ## Subcommands
 
@@ -351,7 +375,7 @@ permissions:
 | `timeout_minutes` | Wall-clock limit per attempt, in minutes. |
 | `idempotency_token` | YAML equivalent of `--idempotency-key`: resubmitting with the same token returns the existing run. |
 | `mlflow_run_name`, `mlflow_experiment_directory` | Name the MLflow run, or choose the workspace directory that holds the experiment. |
-| `compute.pool_id`, `compute.priority_class` | Run on a pre-provisioned GPU pool (find IDs with `databricks air pools list`). `priority_class` is `NORMAL` or `BEST_EFFORT` (preemptable) and requires `pool_id`. |
+| `compute.accelerator_pool_id`, `compute.priority_class` | Run on a pre-provisioned GPU pool (find IDs with `databricks air pools list`). CLI 1.28.0 renamed `compute.pool_id` to `compute.accelerator_pool_id` and rejects the old name; older CLIs accept only `compute.pool_id`. `priority_class` requires the pool ID field; run `databricks air run -h config.compute.priority_class` for the values your CLI accepts. |
 | `containers` | Run different images and commands on different node ranks, for example a trainer and an inference server. Replaces `command`; each entry needs `name`, `command`, `ranks`, and `unity_catalog_image`. See `databricks air run -h config.containers`. |
 
 ## Environment variables provided on each node
@@ -441,9 +465,10 @@ including the stable `--idempotency-key` from step 5.
    ```
    On CLI 1.20.0 and newer, the dry run also checks the config against the
    workspace, so it needs a working profile. A config-validation error is a
-   hard stop: it prints as plain text on stderr with a non-zero exit, so show
-   that message to the user and fix the YAML. Other failures are infra/auth
-   and should bubble up.
+   hard stop: it exits non-zero with an `INVALID_ARGS` structured error on CLI
+   1.28.0 and newer, or plain text on stderr on older CLIs, so show that
+   message to the user and fix the YAML. Other failures are infra/auth and
+   should bubble up.
 
 5. **Submit.** Use a stable `--idempotency-key` so an accidental re-run does not
    double-submit (compose it from `<user>-<experiment>-<YYYYMMDD>-v<N>` and bump
@@ -491,13 +516,13 @@ databricks air run --file workload.yaml --watch -p <profile>
 ```
 
 For a run that is already going, check whether `databricks air logs` supports
-`--follow`:
+`--follow` by looking for it in the flags this prints:
 
 ```bash
-databricks air logs --help 2>&1 | grep -qF -- '--follow'
+databricks air logs --help
 ```
 
-If that command succeeds, `air logs` prints the logs available now and exits,
+If `--follow` is listed, `air logs` prints the logs available now and exits,
 which is the right way to check progress, and `--follow` streams:
 
 ```bash

@@ -110,6 +110,10 @@ Pick a base image:
 - `nvidia/cuda:12.9.0-devel-ubuntu24.04` — includes `nvcc`, headers
 - Or your own base image (corporate image, different OS/CUDA)
 
+Prefer the **runtime** image. PyTorch's CUDA wheels bundle their own CUDA
+libraries, so you only need `devel` to compile CUDA extensions with `nvcc`.
+The `devel` images are several GB larger, which slows every build and push.
+
 The steps below assume Ubuntu 24.04 + CUDA 12.9. If you start from a
 different OS or CUDA version, package names, paths, and versions may
 differ — and you're responsible for ensuring CUDA runtime + NCCL are
@@ -405,8 +409,14 @@ Before pushing:
 - Create or select a Unity Catalog catalog and schema, and obtain the
   privileges to push and read images. Follow the
   [Artifact Registry setup guide](https://docs.databricks.com/aws/en/artifact-registry/get-started).
-- Install and start Docker locally. Images must use `linux/amd64` and be
-  under 20 GB.
+- Install and start Docker locally. Images must use `linux/amd64`.
+- Images have size limits, and AI Runtime's limit varies by workspace; see
+  the [Artifact Registry image limits](https://docs.databricks.com/aws/en/artifact-registry/#limitations).
+  A registry push rejection does not state the limit. AI Runtime's own size
+  check reports it as `exceeds maximum allowed size (N GB)`. If either
+  rejects the image, slim it (runtime base, no package caches via
+  `pip --no-cache-dir` or `uv pip --no-cache`, no build artifacts) and push
+  again.
 - Configure a workspace OAuth profile for Docker authentication:
   `databricks auth login --profile <profile>`.
 
@@ -421,6 +431,13 @@ databricks air images push \
   --schema ml \
   --artifact training:v1
 ```
+
+> **Building on Apple Silicon.** On an arm64 Mac, a `linux/amd64` build runs
+> under emulation, so every `RUN` step is much slower than on an amd64 host,
+> and a multi-GB base image adds a long download on top. Start from a runtime
+> base unless you need `nvcc`, and for large images build on an amd64 machine
+> (Linux VM or CI runner) when one is available. Keep `--platform linux/amd64`:
+> AI Runtime runs only amd64 images.
 
 The helper authenticates Docker, tags the image, and pushes it; it does not
 build the image or submit a workload. Replace the destination catalog, schema,

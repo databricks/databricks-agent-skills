@@ -8,7 +8,6 @@ rather than ad hoc commands. Load the `databricks-core` skill first (the parent:
 CLI, auth, profile selection, data exploration), then load the product skill
 that matches the request:
 
-- Databricks notebooks / Lakehouse MCP: setup, inspection, editing, execution, results -> databricks-lakehouse-mcp (For this MCP route, override the general CLI prerequisites: databricks-core may be read for context, but MCP connection and skill retrieval require no CLI install, upgrade, or CLI authentication. Apply CLI prerequisites only when CLI operations are actually needed.)
 - Jobs / Lakeflow / workflows -> databricks-jobs
 - Pipelines / Lakeflow Spark Declarative Pipelines (formerly DLT) -> databricks-pipelines
 - Apps / AppKit -> databricks-apps

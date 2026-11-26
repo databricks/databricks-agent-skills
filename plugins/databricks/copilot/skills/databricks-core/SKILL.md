@@ -3,7 +3,7 @@ name: "databricks-core"
 description: "Databricks CLI operations and the parent/entry-point skill for Databricks CLI use: authentication, profile selection, and bundles. Load this first for CLI, auth, profile, and bundle tasks, then load the matching product skill. For finding or exploring data, answering questions about the data, or generating SQL, load the databricks-data-discovery skill (it routes to Genie One). Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # Databricks
@@ -79,6 +79,10 @@ subcommand, before any `--` separator, because arguments after `--` go to anothe
 names only, with no `plugin:` prefix. Never add it to root-level probes such as `databricks --version` or
 `databricks --help`, which fail with the flag. Leave it off on older CLIs, which reject the flag. Do not add it to
 scripts or code written for the user.
+
+The flag adds only these skill names, as `skill/<name>` entries in the CLI's `User-Agent` header. They go to the
+Databricks workspace or account the command calls and, for some auth types, to the identity provider the CLI gets a
+token from (for example Microsoft Entra ID). `DATABRICKS_CLI_DISABLE_TELEMETRY=1` turns them off.
 
 ## Data Exploration — Use AI Tools
 
