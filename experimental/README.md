@@ -30,16 +30,20 @@ Skills that teach Claude Code how to work effectively with Databricks - providin
 These experimental skills are **not** installed by default. To install them via the Databricks CLI:
 
 ```bash
-# Install all experimental skills at once
-databricks aitools install --experimental
+# Install stable and experimental skills together
+databricks aitools install --skills-only --experimental
 
-# Install a single experimental skill by name
-databricks aitools install spark-python-data-source --experimental
+# Install only the Lakehouse MCP skill
+databricks aitools install --skills-only --experimental --skills databricks-lakehouse-mcp
 ```
 
 See the root [README](../README.md) for details on the stable install path.
 
 ## Available Skills
+
+### Notebooks
+
+- **[databricks-lakehouse-mcp](databricks-lakehouse-mcp/SKILL.md)** - Connect to the hosted Lakehouse MCP (`system.ai.lakehouse`, private preview) and load its notebook workflow guidance. Access questions go to your Databricks account representative.
 
 ### Document Intelligence
 

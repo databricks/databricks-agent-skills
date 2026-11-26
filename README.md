@@ -111,7 +111,6 @@ Stable skills shipped from [`skills/`](./skills/):
 
 - **databricks-core** — CLI, authentication, profile selection, data exploration. Parent skill for all product skills.
 - **databricks-data-discovery** — Find, explore, and query data via Genie One (natural-language data Q&A and SQL generation); falls back to manual `information_schema` exploration.
-- **databricks-lakehouse-mcp** — Discover and connect to the hosted Lakehouse MCP, then retrieve notebook workflow guidance. Available before preview access; setup is provided by `system.ai.lakehouse`, and access questions go to your Databricks account representative.
 - **databricks-apps** — Build full-stack TypeScript apps on Databricks using AppKit.
 - **databricks-app-design** — Design the UX of data apps: dashboards, KPI pages, reports, charts, and Genie/chat surfaces, mapped to AppKit components.
 - **databricks-dabs** — Declarative Automation Bundles (formerly Asset Bundles) for deploying and managing Databricks resources.
@@ -328,6 +327,33 @@ shipped skill has no entry. The same source also drives prompt routing: its
 (`plugins/databricks/antigravity/rules/databricks-routing.md`) from one table,
 so they can't drift. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for the full field reference.
+
+## Telemetry
+
+When the agent has loaded the `databricks-core` skill and runs a `databricks`
+command on CLI v1.27.0 or later, the skill has it add `--skills-invoked
+<skills>`, for example
+`databricks jobs list --skills-invoked databricks-core,databricks-jobs`.
+
+- **What the flag adds:** only the names of the loaded Databricks skills, as
+  `skill/<name>` entries in the CLI's `User-Agent` header. Each command still
+  sends what its API needs, with or without the flag. `databricks feedback`
+  also copies this `User-Agent`, skill names included, into the record it
+  submits.
+- **Where it goes:** to the Databricks workspace or account the command calls.
+  For some auth types, the CLI also sends this `User-Agent` when it gets a token
+  from an identity provider, for example Microsoft Entra ID for Azure service
+  principals, or GitHub for GitHub Actions OIDC. Databricks uses the skill names
+  to measure which skills lead to which CLI commands.
+- **How to turn it off:** set `DATABRICKS_CLI_DISABLE_TELEMETRY=1` in the
+  environment the agent runs in. The CLI then sends no skill names, whether they
+  come from the flag or the `DATABRICKS_SKILLS_INVOKED` environment variable,
+  and it stops its buffered telemetry uploads. The rest of the CLI's
+  `User-Agent` (such as the command name and execution ID) is unchanged, and
+  `databricks feedback` still sends what you submit.
+
+The plugin's hooks make no network calls (see
+[Commands and hooks](#commands-and-hooks-claude-code-cursor)).
 
 ## Security
 
