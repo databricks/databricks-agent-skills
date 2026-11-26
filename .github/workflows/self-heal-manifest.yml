@@ -59,8 +59,8 @@ jobs:
     # below), but short-circuiting here avoids the wasted run entirely.
     if: github.event_name == 'workflow_dispatch' || github.event.head_commit.author.email != 'DECO-SDK-Tagging[bot]@users.noreply.github.com'
     runs-on:
-      group: databricks-protected-runner-group
-      labels: linux-ubuntu-latest
+      group: databricks-ghec-public-repos-runner-group-small
+      labels: linux-ubuntu-latest-public-2core-8gb
     # release-is holds the DECO-SDK-Tagging GitHub App credentials (same as
     # release.yml). main's rulesets reject a direct bot push; the App is on the
     # bypass list, so it can push the regen commit straight to main.
