@@ -37,7 +37,7 @@ parent: databricks-core
 | AI Functions | `ai_query()`, `ai_classify()`, 11+ funcs | DBR 15.1+ | [references/ai-functions.md](references/ai-functions.md) |
 | http_request | `http_request(conn, ...)` | Pro/Serverless | [references/ai-functions.md](references/ai-functions.md) |
 | remote_query | `SELECT * FROM remote_query(...)` | Pro/Serverless | [references/ai-functions.md](references/ai-functions.md) |
-| read_files | `SELECT * FROM read_files(...)` | All | [references/ai-functions.md](references/ai-functions.md) |
+| read_files | `SELECT * FROM read_files(...)` | All | [references/read-files.md](references/read-files.md) |
 | Data Modeling | Star schema, Liquid Clustering | All | [references/best-practices.md](references/best-practices.md) |
 
 ---
@@ -287,7 +287,8 @@ Load these for detailed syntax, full parameter lists, and advanced patterns:
 | [references/sql-scripting.md](references/sql-scripting.md) | SQL Scripting, Stored Procedures, Recursive CTEs, Transactions | User needs procedural SQL, error handling, loops, dynamic SQL |
 | [references/materialized-views-pipes.md](references/materialized-views-pipes.md) | Materialized Views, Temp Tables/Views, Pipe Syntax | User needs MVs, refresh scheduling, temp objects, pipe operator |
 | [references/geospatial-collations.md](references/geospatial-collations.md) | 39 H3 functions, 80+ ST functions, Collation types and hierarchy | User needs spatial analysis, H3 indexing, case/accent handling |
-| [references/ai-functions.md](references/ai-functions.md) | 13 AI functions, http_request, remote_query, read_files (all options) | User needs AI enrichment, API calls, federation, file ingestion |
+| [references/ai-functions.md](references/ai-functions.md) | 13 AI functions, http_request, remote_query | User needs AI enrichment, API calls, federation |
+| [references/read-files.md](references/read-files.md) | read_files (all options) | User needs file ingestion |
 | [references/best-practices.md](references/best-practices.md) | Data modeling, performance, Liquid Clustering, anti-patterns | User needs architecture guidance, optimization, or modeling advice |
 
 ---
