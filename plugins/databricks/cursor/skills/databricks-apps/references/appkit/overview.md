@@ -30,7 +30,7 @@ See [Genie Guide](genie.md) for space creation, plugin setup, and frontend compo
 
 ## Data Discovery (Before Writing SQL)
 
-**Use the parent `databricks-core` skill for data discovery** (table search, schema exploration, query execution).
+Before writing SQL, follow **Data Discovery** in [SKILL.md](../../SKILL.md).
 
 ## Scaffolding Rules Protocol
 

@@ -1,5 +1,6 @@
 {
   "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
+  "catalog_rules": "catalog/rules.md",
   "skills": {
     "databricks-ai-functions": {
       "description": "Use Databricks built-in AI Functions (ai_classify, ai_decide, ai_extract, ai_summarize, ai_mask, ai_translate, ai_fix_grammar, ai_gen, ai_analyze_sentiment, ai_similarity, ai_parse_document, ai_pre...",
@@ -88,7 +89,7 @@
         "references/testing.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.4"
+      "version": "0.1.6"
     },
     "databricks-apps-python": {
       "description": "Python backend for Databricks Apps \u2014 FastAPI (default), Flask, Dash, Streamlit, Gradio, Reflex. **Default for a new Databricks App is `databricks-apps` (AppKit \u2014 Node/TypeScript/React) \u2014 reach for...",
@@ -123,7 +124,7 @@
         "manual-data-exploration.md"
       ],
       "repo_dir": "skills",
-      "version": "0.2.1"
+      "version": "0.2.2"
     },
     "databricks-dabs": {
       "description": "Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles).",
@@ -150,7 +151,7 @@
         "assets/databricks.svg"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     "databricks-dbsql": {
       "description": "Databricks SQL (DBSQL) advanced features and SQL warehouse capabilities. This skill MUST be invoked when the user mentions: \"DBSQL\", \"Databricks SQL\", \"SQL warehouse\", \"SQL scripting\", \"stored proc...",
@@ -311,11 +312,13 @@
         "assets/databricks.png",
         "assets/databricks.svg",
         "references/create-patterns.md",
+        "references/governed-functions.md",
         "references/metric-view-advisor.md",
+        "references/overlap-check.md",
         "references/query-patterns.md"
       ],
       "repo_dir": "skills",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     "databricks-ml-training": {
       "description": "Train ML models on Databricks. Use for: classification/regression/deep-learning (XGBoost, scikit-learn, LightGBM, PyTorch) with Optuna, @prod/@challenger aliases, batch scoring (spark_udf for plain...",
@@ -646,7 +649,7 @@
         "references/8-connections-and-secrets.md"
       ],
       "repo_dir": "skills",
-      "version": "0.4.0"
+      "version": "0.4.2"
     },
     "databricks-unity-gateway": {
       "description": "Use when querying or calling pay-per-token foundation models, or when creating, updating, listing, or querying Unity Gateway (also called Unity AI Gateway) services, including model provider servic...",

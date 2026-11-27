@@ -698,6 +698,15 @@ ORDER BY query_count DESC;
 
 Metadata about Unity Catalog objects.
 
+`system.information_schema` spans every catalog in the metastore. On a large metastore its
+`tables`, `volumes`, `table_privileges` and `schema_privileges` views can take many minutes,
+even filtered to one catalog or one object. The `system.information_schema` queries below
+stayed fast on a metastore with thousands of catalogs, including the tag views filtered to a
+table. For everything else, use `SHOW`, `DESCRIBE`, the CLI, or `<catalog>.information_schema`
+filtered to one schema (fast for a typical schema; a schema with tens of thousands of tables can
+still take over 10 minutes). A foreign catalog's own `information_schema` comes from the source
+system, so use `SHOW GRANTS` for its grants.
+
 ```sql
 -- List all catalogs
 SELECT catalog_name, catalog_owner, comment, created, created_by
@@ -710,17 +719,8 @@ FROM system.information_schema.schemata
 WHERE catalog_name = 'analytics'
 ORDER BY schema_name;
 
--- List all tables
-SELECT
-    table_catalog,
-    table_schema,
-    table_name,
-    table_type,
-    comment
-FROM system.information_schema.tables
-WHERE table_catalog = 'analytics'
-  AND table_schema = 'gold'
-ORDER BY table_name;
+-- Tables in a schema (names only; the CLI below lists type and comment)
+SHOW TABLES IN analytics.gold;
 
 -- Column details for a table
 SELECT
@@ -735,58 +735,23 @@ WHERE table_catalog = 'analytics'
   AND table_name = 'customers'
 ORDER BY ordinal_position;
 
--- Find tables by column name (data discovery)
-SELECT DISTINCT
-    table_catalog,
-    table_schema,
-    table_name
-FROM system.information_schema.columns
-WHERE column_name LIKE '%email%'
-   OR column_name LIKE '%customer_id%';
+-- Tables in one schema that have a column matching a name
+SELECT table_name, column_name
+FROM analytics.information_schema.columns
+WHERE table_schema = 'gold'
+  AND column_name ILIKE '%email%';
 
--- Tables without comments (governance gap)
-SELECT
-    table_catalog,
-    table_schema,
-    table_name
-FROM system.information_schema.tables
-WHERE comment IS NULL
-  AND table_catalog NOT IN ('system', 'hive_metastore')
-ORDER BY table_catalog, table_schema, table_name;
+-- Permission audit for one schema. It lists only the grants you are allowed to see, and a user
+-- with MANAGE (but not ownership) may see only their own here; use SHOW GRANTS for that case
+SELECT grantee, table_name, privilege_type, inherited_from
+FROM analytics.information_schema.table_privileges
+WHERE table_schema = 'gold'
+ORDER BY table_name, grantee;
 
--- Permission audit: who has access to what
-SELECT
-    grantee,
-    table_catalog,
-    table_schema,
-    table_name,
-    privilege_type
-FROM system.information_schema.table_privileges
-WHERE table_catalog = 'analytics'
-ORDER BY table_schema, table_name, grantee;
+-- Volumes in a schema
+SHOW VOLUMES IN analytics.gold;
 
--- Schema privileges
-SELECT
-    grantee,
-    catalog_name,
-    schema_name,
-    privilege_type
-FROM system.information_schema.schema_privileges
-WHERE catalog_name = 'analytics'
-ORDER BY schema_name, grantee;
-
--- Find all volumes
-SELECT
-    volume_catalog,
-    volume_schema,
-    volume_name,
-    volume_type,
-    storage_location,
-    comment
-FROM system.information_schema.volumes
-WHERE volume_catalog = 'analytics';
-
--- Find all functions
+-- All functions in a catalog
 SELECT
     routine_catalog,
     routine_schema,
@@ -799,22 +764,29 @@ WHERE routine_catalog = 'analytics';
 -- Share details
 SELECT * FROM system.information_schema.shares;
 
--- Share objects
-SELECT
-    share_name,
-    name AS object_name,
-    data_object_type,
-    shared_as
-FROM system.information_schema.shared_data_objects
-WHERE share_name = 'customer_insights';
+-- Objects in a share (needs access to the share, for example as its owner or a metastore admin)
+SHOW ALL IN SHARE customer_insights;
 
--- Recipient grants
-SELECT
-    share_name,
-    recipient_name,
-    privilege
-FROM system.information_schema.share_recipients;
+-- Recipient grants (lists only the shares and recipients you can see)
+SELECT share_name, recipient_name, privilege_type
+FROM system.information_schema.share_recipient_privileges;
 ```
+
+Each table's type and comment come from the CLI. For example, the tables you can see in a
+schema that have no comment (a governance gap):
+
+```bash
+databricks tables list analytics gold --include-browse --omit-columns --omit-properties --profile <PROFILE> -o json \
+  | jq -r '.[] | select((.comment // "") == "") | "\(.full_name)\t\(.table_type)"'
+```
+
+For who has access to one table or schema, use `SHOW GRANTS`; see
+[1-access-control.md](1-access-control.md#inspecting-grants--show-grants) for what you need to
+see everyone's grants.
+
+To find a table when you don't know its catalog or schema, use the `databricks-data-discovery`
+skill (Genie One). Without it, follow Finding Tables in
+[Manual Data Exploration](../../databricks-core/manual-data-exploration.md).
 
 ---
 

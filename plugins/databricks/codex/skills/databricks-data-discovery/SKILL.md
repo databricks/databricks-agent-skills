@@ -3,7 +3,7 @@ name: databricks-data-discovery
 description: "Discover, explore, and query Databricks data via Genie — the CLI equivalent of the Genie One MCP. MUST be invoked whenever the user asks to find or locate data ('what tables are in X', 'where does X live', 'which catalog/schema has Y'), answer a natural-language question about the data, or write a SQL query."
 compatibility: Requires databricks CLI >= v1.9.0 for `databricks genie ask` (older CLIs fall back to the deprecated `databricks experimental genie ask` alias)
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 parent: databricks-core
 ---
 
@@ -12,7 +12,7 @@ parent: databricks-core
 This skill **routes data work** — decide first:
 - the request is about *the data* — finding it, asking questions of it, or
   generating SQL → delegate to **Genie One**:
-  `databricks genie ask -s <session-label> "..."` (see Routing below).
+  `databricks genie ask -s <session-label> "..." --profile <PROFILE>` (see Routing below).
 - writing files or anything else → use your own coding-agent tools.
 
 Genie One just needs an authenticated CLI profile (the parent `databricks-core`
@@ -64,20 +64,23 @@ exact fallback if `databricks genie ask` is not found.
 
 ```bash
 # Always pass a session label, and reuse the SAME one so follow-ups build on each other
-databricks genie ask -s trips "How many bookings were there last week?"
-databricks genie ask -s trips "Break that down by destination"
-databricks genie ask -s trips "Summarize all of the above"
+databricks genie ask -s trips "How many bookings were there last week?" --profile <PROFILE>
+databricks genie ask -s trips "Break that down by destination" --profile <PROFILE>
+databricks genie ask -s trips "Summarize all of the above" --profile <PROFILE>
 
 # --include-sql also prints the SQL Genie ran (use it to generate a query, too)
-databricks genie ask -s trips "Write SQL for the top 5 destinations by revenue" --include-sql
+databricks genie ask -s trips "Write SQL for the top 5 destinations by revenue" --include-sql --profile <PROFILE>
 
 # --output json gives a parseable result
-databricks genie ask -s trips "Top 5 destinations by revenue" --output json
+databricks genie ask -s trips "Top 5 destinations by revenue" --output json --profile <PROFILE>
 # → {"status":"completed","conversation_id":"…","text":"…","tool_calls":[{"name":"execute_sql","sql":"…","title":"…"}]}
 
 # Older CLI (< v1.9.0) — same command under the deprecated experimental alias:
-#   databricks experimental genie ask -s trips "How many bookings were there last week?"
+#   databricks experimental genie ask -s trips "How many bookings were there last week?" --profile <PROFILE>
 ```
+
+Pass the same `--profile` as the rest of the task, so Genie searches the workspace you are
+working in.
 
 Genie searches across all the data you can see, runs SQL, and streams a grounded
 answer — rendered with the executed SQL and, where it helps, a terminal chart. It
@@ -116,16 +119,16 @@ set up.
 
 ## If Genie One isn't available — manual fallback
 
-Only fall back if Genie One is genuinely unavailable — first **verify** with
-`databricks genie ask --help` (or `databricks experimental genie ask --help` on a
-CLI older than v1.9.0); don't assume the command is missing. When Genie One isn't
-enabled, the CLI is too old to have either form of `genie ask`,
-or Genie can't cover the question, do the discovery yourself with the parent skill's
-commands — see **[Manual Data Exploration](../databricks-core/manual-data-exploration.md)**
-(keyword search via `information_schema`, `discover-schema`, and `tools query`).
-Running known SQL or profiling a known table that way is perfectly fine on its own.
-Do **not** default to `databricks tables list` or raw UC REST for data-location
-questions — invoke this skill and ask Genie first.
+Fall back only when Genie One is unavailable (not enabled, or the CLI has neither form
+of `genie ask`) or can't find the data or answer the question. Before deciding it's unavailable, **verify**
+with `databricks genie ask --help` (or `databricks experimental genie ask --help` on a
+CLI older than v1.9.0); don't assume the command is missing. Then do the discovery
+yourself with the parent skill's commands: see
+**[Manual Data Exploration](../databricks-core/manual-data-exploration.md)** (a
+catalog-scoped table search, `discover-schema`, and `tools query`). Running known SQL or
+profiling a known table that way is perfectly fine on its own. Until Genie has had its
+chance, don't default to `databricks tables list` or raw UC REST for data-location
+questions.
 
 ## Relationship to the Genie One MCP
 

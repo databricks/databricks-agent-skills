@@ -160,24 +160,20 @@ print(f"Size: {metadata.content_length}, Modified: {metadata.last_modified}")
 ### Query Volume Metadata
 
 ```sql
--- List all volumes in a catalog
-SELECT
-    volume_catalog,
-    volume_schema,
-    volume_name,
-    volume_type,
-    storage_location,
-    comment,
-    created,
-    created_by
-FROM system.information_schema.volumes
-WHERE volume_catalog = 'analytics'
-ORDER BY volume_schema, volume_name;
+-- List the volumes in a schema
+SHOW VOLUMES IN analytics.gold;
 
--- Find volumes by type
-SELECT volume_name, storage_location
-FROM system.information_schema.volumes
-WHERE volume_type = 'EXTERNAL';
+-- Type, owner and storage location of one volume
+DESCRIBE VOLUME analytics.gold.raw_files;
+```
+
+`system.information_schema.volumes` can take many minutes on a large metastore, even
+filtered to one volume. To filter by type or storage location, list one schema with the CLI;
+for a whole catalog, repeat it for each schema from `databricks schemas list analytics --include-browse`:
+
+```bash
+databricks volumes list analytics gold --include-browse --profile <PROFILE> -o json \
+  | jq -r '.[] | select(.volume_type == "EXTERNAL") | "\(.full_name)\t\(.storage_location)"'
 ```
 
 ### Read Files from Volumes
@@ -260,15 +256,19 @@ REVOKE WRITE VOLUME ON VOLUME main.default.my_volume FROM `data_writers`;
 
 ### Python SDK Permissions
 
+The Python `w.grants` calls below need `databricks-sdk` ≥ v0.56.0, where `securable_type` is a
+string. On older SDKs, pass `SecurableType.VOLUME`, imported from `databricks.sdk.service.catalog`
+(see [1-access-control.md](1-access-control.md#python-sdk-wgrants)), or use the SQL above.
+
 ```python
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import SecurableType, PermissionsChange, Privilege
+from databricks.sdk.service.catalog import PermissionsChange, Privilege
 
 w = WorkspaceClient()
 
-# Grant permissions
+# Grant READ VOLUME (the grantee also needs USE CATALOG on main and USE SCHEMA on main.default)
 w.grants.update(
-    securable_type=SecurableType.VOLUME,
+    securable_type="volume",
     full_name="main.default.my_volume",
     changes=[
         PermissionsChange(
@@ -278,12 +278,12 @@ w.grants.update(
     ]
 )
 
-# Get current permissions
+# Get the grants made directly on the volume
 grants = w.grants.get(
-    securable_type=SecurableType.VOLUME,
+    securable_type="volume",
     full_name="main.default.my_volume"
 )
-for grant in grants.privilege_assignments:
+for grant in grants.privilege_assignments or []:
     print(f"{grant.principal}: {grant.privileges}")
 ```
 
@@ -358,22 +358,17 @@ for grant in grants.privilege_assignments:
 **1. Verify the volume exists:**
 
 ```sql
-SELECT * FROM system.information_schema.volumes
-WHERE volume_name = 'my_volume';
+-- UC_VOLUME_NOT_FOUND means no volume by that name is visible to you in that schema: check the
+-- schema in the path, then your permissions (step 2). Backtick-quote name parts with special
+-- characters; a PARSE_SYNTAX_ERROR is a quoting problem, not a missing volume
+DESCRIBE VOLUME <catalog>.<schema>.<volume>;
 ```
 
 **2. Check permissions:**
 
-```python
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import SecurableType
-
-w = WorkspaceClient()
-
-grants = w.grants.get(
-    securable_type=SecurableType.VOLUME,
-    full_name="catalog.schema.volume",
-)
+```sql
+-- Includes grants inherited from the schema, catalog and metastore (ObjectType names the source)
+SHOW GRANTS ON VOLUME <catalog>.<schema>.<volume>;
 ```
 
 **3. Verify the path format:**

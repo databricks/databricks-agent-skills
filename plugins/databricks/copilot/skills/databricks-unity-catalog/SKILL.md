@@ -3,7 +3,7 @@ name: databricks-unity-catalog
 description: "Unity Catalog governance, access control, and observability. Use to grant or revoke access (GRANT/REVOKE), reason about the privilege model and ownership, set up row-level security and column masks, create external locations and storage credentials, define catalogs/schemas/tables/volumes, answer \"who can read this table\", query system tables (audit, lineage, billing), work with volume files in /Volumes/, and set up connection passwords (secret scopes, Azure Key Vault, AWS Secrets Manager)."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.4.0"
+  version: "0.4.2"
 parent: databricks-core
 ---
 
@@ -49,7 +49,7 @@ Use this skill when:
 | **External Locations** | [references/2-external-locations.md](references/2-external-locations.md) | Storage credentials (AWS/Azure/GCP), external locations, validation |
 | **Securables DDL** | [references/3-securables-ddl.md](references/3-securables-ddl.md) | CREATE/ALTER/DROP catalogs/schemas/tables/views, comments, tags, ownership |
 | **Fine-Grained Access** | [references/4-fine-grained-access.md](references/4-fine-grained-access.md) | Row filters, column masks, dynamic views |
-| System Tables | [references/5-system-tables.md](references/5-system-tables.md) | Lineage, audit, billing, compute, jobs, query history |
+| System Tables | [references/5-system-tables.md](references/5-system-tables.md) | Lineage, audit, billing, compute, jobs, query history; which Information Schema lookups stay fast |
 | Volumes | [references/6-volumes.md](references/6-volumes.md) | Volume file operations, permissions, best practices |
 | Data Profiling | [references/7-data-profiling.md](references/7-data-profiling.md) | Data profiling, drift detection, profile metrics |
 | Connections & Secrets | [references/8-connections-and-secrets.md](references/8-connections-and-secrets.md) | A connection's password and its rotation; where the secret lives |
@@ -80,7 +80,7 @@ databricks volumes create --json '{
 # List catalogs, schemas, volumes (read commands take simple positional args)
 databricks catalogs list
 databricks schemas list my_catalog
-databricks volumes list my_catalog.my_schema
+databricks volumes list my_catalog my_schema
 ```
 
 Positional `create` args still work if you prefer them, but the order is **not** uniform

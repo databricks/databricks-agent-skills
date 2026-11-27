@@ -150,7 +150,8 @@ ALTER TABLE analytics.gold.customers ALTER COLUMN email SET TAGS ('classificatio
 -- Query tags via information_schema
 SELECT catalog_name, schema_name, table_name, tag_name, tag_value
 FROM system.information_schema.table_tags
-WHERE schema_name = 'gold';
+WHERE catalog_name = 'analytics'
+  AND schema_name = 'gold';
 ```
 
 ## Python SDK & CLI

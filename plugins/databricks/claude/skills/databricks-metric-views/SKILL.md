@@ -3,7 +3,7 @@ name: databricks-metric-views
 description: "Unity Catalog metric views: define, create, query, and manage governed business metrics in YAML. Use when building standardized KPIs, revenue metrics, order analytics, or any reusable business metrics that need consistent definitions across teams and tools."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 parent: databricks-core
 ---
 
@@ -31,7 +31,7 @@ Use this skill when:
 - **Iterative** — repeats until convergence (e.g. panel reweighting).
 - **Returns a bundle of tables**, not a single measure (e.g. a source×destination matrix plus per-row nets).
 
-A measure can be *mostly* a metric view with one part hoisted into a function (penetration = additive buyers ÷ base, divide last — but a short-window correction, or an arbitrary multi-attribute cross / per-entity threshold, goes in a function). **Pre-computing the awkward step into a base/helper view is only a fix for a *fixed* definition** — a performance choice, settled once for all slices. If the measure must respond to the user's runtime selection in Genie (arbitrary cross, a parameter, or a shifting denominator), it is computed *on the fly* and cannot be pre-computed — it needs a **parameterized** governed SQL function, not a pre-aggregated view. Full rule + two worked examples (penetration, brand-switching gains & loss): [metric-view-advisor.md §When a metric view is not the right tool](references/metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function). Before benchmarking Genie's routing to a function that reproduces an external methodology, validate it to N-decimal **parity** against its reference — see the `databricks-genie-agents` skill.
+A measure can be *mostly* a metric view with one part hoisted into a function (penetration = additive buyers ÷ base, divide last — but a short-window correction, or an arbitrary multi-attribute cross / per-entity threshold, goes in a function). **Pre-computing the awkward step into a base/helper view is only a fix for a *fixed* definition** — a performance choice, settled once for all slices. If the measure must respond to the user's runtime selection in Genie (arbitrary cross, a parameter, or a shifting denominator), it is computed *on the fly* and cannot be pre-computed — it needs a **parameterized** governed SQL function, not a pre-aggregated view. Full rule + two worked examples (penetration, brand-switching gains & loss): [governed-functions.md](references/governed-functions.md). Before benchmarking Genie's routing to a function that reproduces an external methodology, validate it to N-decimal **parity** against its reference — see the `databricks-genie-agents` skill.
 
 ## Prerequisites
 
@@ -44,9 +44,11 @@ A measure can be *mostly* a metric view with one part hoisted into a function (p
 | Task | Reference | Load when |
 |------|-----------|-----------|
 | **Create** | [metric-view-advisor.md](references/metric-view-advisor.md) | Any creation task — the advisor handles the full workflow (profile schema, analyze sources, suggest, deploy). Load [create-patterns.md](references/create-patterns.md) alongside as the YAML spec and pattern reference. |
-| **YAML spec / patterns** | [create-patterns.md](references/create-patterns.md) | Patterns 1–12, full YAML field reference, formatting gotchas, deployment errors, quick reference. Companion to the advisor; also load directly for pattern lookup. |
+| **Overlap check** | [overlap-check.md](references/overlap-check.md) | Advisor Step 3, when the target schema already has metric views: score each candidate against them and resolve the overlap before suggesting. |
+| **YAML spec / patterns** | [create-patterns.md](references/create-patterns.md) | Patterns 1–12, full YAML field reference, Genie Design Rules, formatting gotchas, deployment errors, quick reference. Companion to the advisor; also load directly for pattern lookup. |
 | **Query** | [query-patterns.md](references/query-patterns.md) | Writing SQL against a metric view — `MEASURE()` basics, filters, join rollups, window measures, Rules 1–3. |
-| **Genie integration** | [metric-view-advisor.md §Genie Design Rules](references/metric-view-advisor.md#genie-design-rules) | One-fact-source rule, base views, domain organization, naming. Agent metadata fields (`comment`, `synonyms`, `display_name`, `format`) are in [create-patterns.md §YAML Field Reference](references/create-patterns.md#yaml-field-reference). |
+| **Not a metric view** | [governed-functions.md](references/governed-functions.md) | A measure fails the additivity / single-pass test and belongs in a governed UC SQL function — the tests and two worked examples. |
+| **Genie integration** | [create-patterns.md §Genie Design Rules](references/create-patterns.md#genie-design-rules) | One-fact-source rule, base views, domain organization, naming. Agent metadata fields (`comment`, `synonyms`, `display_name`, `format`) are in [create-patterns.md §YAML Field Reference](references/create-patterns.md#yaml-field-reference). |
 
 Typical flow: **advisor → create → query/validate → Genie integration (if adding to a Genie Agent)**.
 
@@ -92,7 +94,7 @@ See the official [metric view bundle example](https://github.com/databricks/bund
 
 ## Related Skills
 
-- **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)** — create, manage, and validate Genie Agents that consume the metric views built here. Metric-view design rules for Genie are in the [advisor §Genie Design Rules](references/metric-view-advisor.md#genie-design-rules); query rules are in [query-patterns.md](references/query-patterns.md).
+- **[databricks-genie-agents](../databricks-genie-agents/SKILL.md)** — create, manage, and validate Genie Agents that consume the metric views built here. Metric-view design rules for Genie are in [create-patterns.md §Genie Design Rules](references/create-patterns.md#genie-design-rules); query rules are in [query-patterns.md](references/query-patterns.md).
 - **[databricks-aibi-dashboards](../databricks-aibi-dashboards/SKILL.md)** — build AI/BI dashboards on top of metric views.
 - **[databricks-data-discovery](../databricks-data-discovery/SKILL.md)** — explore data before creating metric views; answer questions across your workspace.
 - **[databricks-dabs](../databricks-dabs/SKILL.md)** — source-control and deploy metric view SQL definitions via bundle-managed jobs.

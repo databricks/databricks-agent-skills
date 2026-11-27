@@ -3,7 +3,7 @@ name: databricks-apps
 description: "Build apps on Databricks Apps platform. Use when asked to create data apps, analytics tools, or custom interactive visualizations. A plain \"create a dashboard\" request means a managed AI/BI (Lakeview) dashboard → use databricks-aibi-dashboards, not this skill. Evaluates data access patterns (analytics vs Lakebase synced tables) before scaffolding. Invoke BEFORE starting implementation."
 compatibility: Requires databricks CLI (>= v0.294.0)
 metadata:
-  version: "0.1.4"
+  version: "0.1.6"
 parent: databricks-core
 ---
 
@@ -78,7 +78,7 @@ Build apps that deploy to Databricks Apps platform.
 
 ## Data Discovery
 
-Before writing any SQL, use the parent `databricks-core` skill for data exploration — search `information_schema` by keyword, then batch `discover-schema` for the tables you need. Do NOT skip this step.
+Before writing any SQL, unless the user gave every table as `catalog.schema.table`, find the tables with the `databricks-data-discovery` skill, using the app's `--profile` (if that skill isn't installed, use the catalog-scoped search in the parent skill's [Manual Data Exploration](../databricks-core/manual-data-exploration.md)). Then batch `discover-schema` for the tables you need. Do NOT skip `discover-schema`.
 
 **State Storage Guidance (evaluate BEFORE the Decision Gate):**
 
