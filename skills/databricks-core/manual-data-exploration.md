@@ -4,28 +4,58 @@ Discover table schemas and run SQL **directly via the CLI**. These commands are
 first-class — running an ad-hoc query or profiling a known table with them needs
 nothing else.
 
-This is also the **manual fallback** for discovery when the Genie One skill
-(`databricks-data-discovery`) or a Genie MCP tool isn't available. When Genie One
-*is* available, prefer it for natural-language data questions, locating data you
-can't pin down, and query generation — it has governed access to the org's semantic
-context that this manual path doesn't.
+This is also the **manual fallback** for finding data when Genie One (the
+`databricks-data-discovery` skill, or a Genie MCP tool) isn't available, isn't
+installed, or can't find the data or answer the question. Otherwise prefer Genie One for natural-language
+data questions, locating data you can't pin down, and query generation: it has
+governed access to the org's semantic context that this manual path doesn't.
 
-## Finding Tables by Keyword
+## Finding Tables
 
-**⚠️ START HERE if you don't know which catalog/schema contains your data** (and
-Genie One isn't available — otherwise just ask Genie to find it).
+When searching by hand, pick a catalog first, then search it by table name. **Don't
+search `information_schema` to find tables:** `system.information_schema` spans every
+catalog in the metastore and can run for hours, and even one large catalog's
+`information_schema` can take many minutes.
 
-Use `information_schema` to search for tables by keyword — do NOT manually iterate through `catalogs list` → `schemas list` → `tables list`. Manual enumeration wastes 10+ steps.
+1. Take the catalog from the request. Otherwise run
+   `databricks catalogs list --limit 50 --profile <PROFILE>`. If it returns 50, the
+   metastore is large and the list is in no particular order, so ask the user which
+   catalog holds the data. Otherwise skip `system`, `samples` and catalogs whose names
+   start with `__` unless the request is about them. Search `hive_metastore` (step 3)
+   only if the request is about it or step 2 finds nothing. Search each remaining
+   catalog if there are 10 or fewer; if there are more and none is an obvious match, ask
+   the user instead of guessing.
+2. Search the candidate catalogs by table name, one call per catalog instead of walking
+   each schema by schema. It uses the Unity Catalog API, so it needs no SQL warehouse.
+   The pattern is case-sensitive and Unity Catalog stores names in lowercase, so use one
+   lowercase word from the request as the keyword. To list a whole catalog or schema
+   instead, leave out `--table-name-pattern`:
 
-```bash
-# Find tables matching a keyword
-databricks experimental aitools tools query \
-  "SELECT table_catalog, table_schema, table_name FROM system.information_schema.tables WHERE table_name LIKE '%keyword%'" \
-  --profile <PROFILE>
+   ```bash
+   # Tables whose name contains the keyword (add --schema-name-pattern if you know the schema)
+   for c in <CATALOG1> <CATALOG2>; do
+     databricks tables list-summaries "$c" --table-name-pattern '%<KEYWORD>%' --limit 50 --profile <PROFILE>
+   done
 
-# Then discover schema for the tables you found
-databricks experimental aitools tools discover-schema catalog.schema.table1 catalog.schema.table2 --profile <PROFILE>
-```
+   # Then discover schema for the tables you found
+   databricks experimental aitools tools discover-schema <CATALOG>.<SCHEMA>.<TABLE1> <CATALOG>.<SCHEMA>.<TABLE2> --profile <PROFILE>
+   ```
+
+   If 50 tables come back, the list is cut off: use a narrower keyword or add
+   `--schema-name-pattern`, and drop `--limit` only when the user asks for every match.
+   If nothing matches, try a shorter or different keyword before asking the user.
+   Objects you can only BROWSE don't appear in `list-summaries`. To look for them, add
+   `--include-browse` to `catalogs list`, list the catalog's schemas with
+   `databricks schemas list <CATALOG> --include-browse --profile <PROFILE>`, then run
+   `databricks tables list <CATALOG> <SCHEMA> --include-browse --profile <PROFILE>` on the
+   likely schemas.
+3. `list-summaries` doesn't cover `hive_metastore`. For it, list schemas and search the
+   likely ones by name:
+
+   ```bash
+   databricks experimental aitools tools query "SHOW SCHEMAS IN hive_metastore" --profile <PROFILE>
+   databricks experimental aitools tools query "SHOW TABLES IN hive_metastore.<SCHEMA> LIKE '*<KEYWORD>*'" --profile <PROFILE>
+   ```
 
 ## Identifier Names & Quoting — Read Before Writing Any Query
 

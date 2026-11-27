@@ -8,7 +8,11 @@ from pathlib import Path
 from skillsgen.common import META_FILE, load_meta
 from skillsgen.discovery import check_codex_metadata, ensure_codex_metadata
 from skillsgen.generate import generate_all
-from skillsgen.manifest import check_manifest_file_references, validate_manifest
+from skillsgen.manifest import (
+    check_catalog_rules,
+    check_manifest_file_references,
+    validate_manifest,
+)
 from skillsgen.plugins import (
     check_generated_plugins,
     check_meta_skill_coverage,
@@ -133,6 +137,13 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in reference_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            catalog_rules_errors = check_catalog_rules(repo_root)
+            if catalog_rules_errors:
+                print("ERROR: catalog rules file is invalid:", file=sys.stderr)
+                for err in catalog_rules_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 

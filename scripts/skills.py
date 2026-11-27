@@ -37,7 +37,7 @@ from skillsgen.discovery import (
     extract_version_from_skill,
     iter_skill_files,
     iter_all_skill_dirs,
-    _BLOCK_SCALAR_INDICATORS,
+    BLOCK_SCALAR_INDICATORS,
     extract_description_from_skill,
     _SHORT_DESC_MARKERS,
     synthesize_short_description,
@@ -52,8 +52,11 @@ from skillsgen.manifest import (
     _build_stable_entry,
     _build_experimental_entry,
     serialize_manifest,
+    check_catalog_rules,
     check_manifest_file_references,
     validate_manifest,
+    CATALOG_RULES_PATH,
+    CATALOG_RULES_MAX_CHARS,
 )
 from skillsgen.plugins import (
     _CLAUDE_MARKETPLACE_SCHEMA,

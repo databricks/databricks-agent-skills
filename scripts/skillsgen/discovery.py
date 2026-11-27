@@ -116,7 +116,7 @@ def iter_all_skill_dirs(repo_root: Path):
 # Manifest generation
 # ---------------------------------------------------------------------------
 
-_BLOCK_SCALAR_INDICATORS = {"|", "|-", "|+", ">", ">-", ">+"}
+BLOCK_SCALAR_INDICATORS = frozenset({"|", "|-", "|+", ">", ">-", ">+"})
 
 
 def extract_description_from_skill(skill_path: Path) -> str:
@@ -142,7 +142,7 @@ def extract_description_from_skill(skill_path: Path) -> str:
         if not m:
             continue
         value = m.group(1)
-        if value in _BLOCK_SCALAR_INDICATORS:
+        if value in BLOCK_SCALAR_INDICATORS:
             collected = []
             for cont in lines[i + 1:]:
                 if cont and not cont[0].isspace():

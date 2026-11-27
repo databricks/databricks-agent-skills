@@ -89,22 +89,22 @@ Principals are account-level users (`'alice@example.com'`), groups (backticked:
 ## Inspecting Grants — SHOW GRANTS
 
 ```sql
--- All grants on an object
+-- All grants on an object, including grants inherited from the schema and catalog
+-- (their ObjectType and ObjectKey name the parent). For "who can read this table?", also
+-- count the owner, and check USE CATALOG and USE SCHEMA, which can come from another group.
+-- Report the grants you checked rather than a complete list of users
 SHOW GRANTS ON TABLE analytics.gold.customers;
 SHOW GRANTS ON SCHEMA analytics.gold;
 SHOW GRANTS ON CATALOG analytics;
 
 -- What does a specific principal have on an object?
 SHOW GRANTS `data_readers` ON SCHEMA analytics.gold;
-
--- "Who can read this table?" — combine direct + inherited grants via information_schema
-SELECT grantee, privilege_type, inherited_from
-FROM system.information_schema.table_privileges
-WHERE table_catalog = 'analytics'
-  AND table_schema = 'gold'
-  AND table_name = 'customers'
-ORDER BY grantee;
 ```
+
+Listing everyone's grants requires owning the object (or its schema or catalog), being a
+metastore admin, or having `MANAGE` or `READ METADATA` on it or on its schema or catalog, plus
+`USE CATALOG` and `USE SCHEMA`. Without that, `SHOW GRANTS` quietly returns only your own grants, so don't report
+the list as complete. Anyone can list their own with `SHOW GRANTS <principal> ON <object>`.
 
 ## Ownership
 
@@ -131,8 +131,9 @@ the same applicable type:
 - `GRANT SELECT ON SCHEMA c.s TO g` → `g` can `SELECT` from every table/view in `c.s`.
 - `GRANT READ VOLUME ON SCHEMA c.s TO g` → `g` can read every volume in `c.s`.
 
-`SHOW GRANTS` and `information_schema.*_privileges` expose an `inherited_from` column so you
-can tell a direct grant from an inherited one. To lock down a single child while a broad
+`SHOW GRANTS` lists inherited grants under the parent's `ObjectType` and `ObjectKey`, and
+`information_schema.*_privileges` has an `inherited_from` column, so you can tell a direct
+grant from an inherited one. To lock down a single child while a broad
 parent grant exists, narrow the parent grant — there is no per-object "deny" that overrides
 inheritance (UC has no explicit DENY; absence of a grant is the deny).
 
@@ -140,19 +141,35 @@ inheritance (UC has no explicit DENY; absence of a grant is the deny).
 
 The SDK mirrors `GRANT`/`REVOKE` via `PermissionsChange` on a securable.
 
+> **SDK version.** These `w.grants` calls need `databricks-sdk` ≥ v0.56.0, where
+> `securable_type` is a case-insensitive string. Older SDKs, including the ones preinstalled on
+> DBR 17.3 LTS and earlier and on serverless environment versions 1 to 4, take the enum instead
+> (`securable_type=SecurableType.SCHEMA`, imported from `databricks.sdk.service.catalog`) and
+> raise `AttributeError: 'str' object has no attribute 'value'` on a string. Check the version in
+> the Python that runs the calls: `from databricks.sdk.version import __version__`. On an older
+> SDK, pass the enum or upgrade with `pip install -U "databricks-sdk>=0.56.0"` (in a notebook,
+> `%pip install` and then `dbutils.library.restartPython()`). Don't pass the enum on v0.56.0 or
+> later: it goes into the URL as `SecurableType.SCHEMA` and the call fails. The SQL and CLI forms
+> on this page work with any SDK.
+
 ```python
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import (
-    SecurableType,
     PermissionsChange,
     Privilege,
 )
 
 w = WorkspaceClient()
 
-# Grant SELECT on a schema to a group (and revoke MODIFY in the same call)
+# Let a group read a schema's tables: USE CATALOG on the catalog, then USE SCHEMA and SELECT
+# on the schema (revoking MODIFY in the same call)
 w.grants.update(
-    securable_type=SecurableType.SCHEMA,
+    securable_type="catalog",
+    full_name="analytics",
+    changes=[PermissionsChange(principal="data_readers", add=[Privilege.USE_CATALOG])],
+)
+w.grants.update(
+    securable_type="schema",
     full_name="analytics.gold",
     changes=[
         PermissionsChange(
@@ -163,9 +180,9 @@ w.grants.update(
     ],
 )
 
-# Read effective grants on the object
+# Read the grants made directly on the object (not inherited ones)
 grants = w.grants.get(
-    securable_type=SecurableType.SCHEMA,
+    securable_type="schema",
     full_name="analytics.gold",
 )
 for assignment in grants.privilege_assignments or []:
@@ -173,7 +190,7 @@ for assignment in grants.privilege_assignments or []:
 
 # Read the full effective permission set (including inherited)
 effective = w.grants.get_effective(
-    securable_type=SecurableType.TABLE,
+    securable_type="table",
     full_name="analytics.gold.customers",
 )
 for assignment in effective.privilege_assignments or []:
@@ -190,6 +207,12 @@ databricks grants get schema analytics.gold
 databricks grants get-effective table analytics.gold.customers
 
 # Update grants — use --json for the change set (order-independent, version-stable)
+# Reading the schema's tables also needs USE_CATALOG on its catalog
+databricks grants update catalog analytics --json '{
+  "changes": [
+    {"principal": "data_readers", "add": ["USE_CATALOG"]}
+  ]
+}'
 databricks grants update schema analytics.gold --json '{
   "changes": [
     {"principal": "data_readers", "add": ["USE_SCHEMA", "SELECT"]}
@@ -209,18 +232,18 @@ surprise rather than a bug — the table below maps the symptom to the cause.
 |---------|-------|-----|
 | `PERMISSION_DENIED` / "does not have USE SCHEMA" reaching a table you granted `SELECT` on | `SELECT` was granted, but the grantee lacks `USE CATALOG`/`USE SCHEMA` on the ancestors | Also `GRANT USE CATALOG` on the catalog **and** `USE SCHEMA` on the schema — data access needs traversal too |
 | Grantee sees the object in the explorer but cannot read it | They have `BROWSE` (metadata only), not `SELECT` | Grant the action privilege (`SELECT`/`MODIFY`/`READ VOLUME`, …) in addition to `BROWSE` |
-| `REVOKE` ran but the principal still has access | Access is **inherited** from a broader parent grant (catalog/schema), not the object | `SHOW GRANTS` and check `inherited_from`; narrow the **parent** grant (there is no per-object DENY) |
+| `REVOKE` ran but the principal still has access | Access is **inherited** from a broader parent grant (catalog/schema), not the object | `SHOW GRANTS ON <object>` and look for rows whose `ObjectType`/`ObjectKey` name a parent; narrow the **parent** grant (there is no per-object DENY) |
 | Grant appears to do nothing | Named a **workspace-local** group, or a group name typo | Use account groups; confirm the exact name + membership with `SHOW GRANTS` and `is_account_group_member('grp')` |
 | `User is not an owner of ...` when running GRANT/ALTER | Not the owner and lacking `MANAGE` | Have the owner grant you `MANAGE`, or transfer ownership with `ALTER … OWNER TO` |
 | Access breaks after an employee leaves | Object owned by an individual user, not a group | `ALTER … OWNER TO` a group; own securables with groups |
 
 ## Best Practices
 
-1. **Grant to groups, not users** — account groups keep access stable across staff changes.
-2. **Grant at the narrowest securable that works** — least privilege; prefer schema-level over catalog-level when a team only needs one schema.
-3. **Use inheritance deliberately** — a schema-level `SELECT` covers future tables; a table-level grant does not.
-4. **Own with groups** — `ALTER … OWNER TO` a group; delegate day-to-day grant admin with `MANAGE`.
-5. **Audit grants regularly** — query `system.information_schema.*_privileges` and watch `GRANT`/`REVOKE` events in [5-system-tables.md](5-system-tables.md).
+1. **Grant to groups, not users**: account groups keep access stable across staff changes.
+2. **Grant at the narrowest securable that works**: least privilege; prefer schema-level over catalog-level when a team only needs one schema.
+3. **Use inheritance deliberately**: a schema-level `SELECT` covers future tables; a table-level grant does not.
+4. **Own with groups**: `ALTER … OWNER TO` a group; delegate day-to-day grant admin with `MANAGE`.
+5. **Audit grants regularly**: run `SHOW GRANTS` on the securables you care about, or query `<catalog>.information_schema.table_privileges` one schema at a time (see its caveats in [5-system-tables.md](5-system-tables.md)), and watch `GRANT`/`REVOKE` events there too.
 
 ## Related
 
