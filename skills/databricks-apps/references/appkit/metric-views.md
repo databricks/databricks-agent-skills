@@ -41,8 +41,21 @@ one entry per metric view under `metricViews`:
   non-restricted data (queries as the app service principal, one shared cache). The field's
   own default is `"app_service_principal"`, so set `"user"` explicitly when you want OBO.
 
-**Do NOT guess the FQN.** Discover metric views with the parent `databricks-core` skill —
-they appear with `table_type = 'METRIC_VIEW'` in `information_schema`.
+**Do NOT guess the FQN.** Find metric views as in **Data Discovery** in [SKILL.md](../../SKILL.md).
+To list a schema's metric views by hand (see
+[Manual Data Exploration](../../../databricks-core/manual-data-exploration.md)), list that exact
+schema and keep the `METRIC_VIEW` rows. The first column is the full name to use as `source`:
+
+```bash
+databricks tables list <CATALOG> <SCHEMA> --include-browse --omit-columns --omit-properties --profile <PROFILE> -o json \
+  | jq -r '.[] | select(.table_type == "METRIC_VIEW") | "\(.full_name)\tbrowse_only=\(.browse_only // false)"'
+```
+
+If the CLI prints an error instead, the listing didn't run: report it rather than treating the
+schema as having no metric views. `browse_only=true` means your profile can see the view but
+can't query it. Either way, whoever the app queries as (the app service principal, or each end
+user with `executor: "user"`) needs `SELECT` on the view and `USE CATALOG` and `USE SCHEMA` on
+its catalog and schema.
 
 ## 2. Regenerate types
 

@@ -40,6 +40,8 @@ Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/
 
 **Referencing other files**: agents load skill files by path, so write a real path, never a bare file name. Markdown links resolve relative to the file they are in (`[x](references/x.md)` from `SKILL.md`, `[y](y.md)` between references). Backticked mentions of the skill's own files use the path from the skill root (`` `references/x.md` ``). `validate` rejects references that resolve to no file.
 
+**File size**: keep every text file of a skill, `SKILL.md` and each reference, to 40,000 characters or fewer. No file is exempt. An agent that loads a skill file through a tool gets the whole file back as one tool result, and agents cap the size of a tool result: Claude Code, for example, saves a tool result over 50,000 characters to a file instead of returning it, so the model does not read the content directly. When a file outgrows the limit, move a section into a reference file of its own and link to it from where the section was.
+
 **`agents/openai.yaml`** is Codex CLI's plugin-marketplace metadata format: `display_name`, `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt`. It controls how the skill renders in Codex's in-app marketplace. Other agents ignore this file. The repo ships it for every skill so the manifest is a single feed for all agents.
 
 **`assets/databricks.{svg,png}`** are the icons referenced by `agents/openai.yaml`'s `icon_small` / `icon_large`. Identical across all skills (the Databricks logo); `scripts/skills.py` copies them in from the repo-root `/assets/`.

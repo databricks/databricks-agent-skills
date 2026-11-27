@@ -17,6 +17,14 @@ from skillsgen.discovery import (
 )
 
 
+# Catalog rules: a short Markdown file the CLI shows above the skill catalog.
+# It lives outside skills/ and outside every plugin bundle, so it ships with
+# the release tag and never reaches an installed plugin. The manifest names it
+# in a top-level `catalog_rules` key, which CLIs that predate it ignore.
+CATALOG_RULES_PATH = "catalog/rules.md"
+CATALOG_RULES_MAX_CHARS = 700
+
+
 def generate_manifest(repo_root: Path) -> dict:
     """Generate manifest from skill directories.
 
@@ -33,9 +41,32 @@ def generate_manifest(repo_root: Path) -> dict:
 
     return {
         "//": "GENERATED FILE: DO NOT EDIT. Run `python3 scripts/skills.py generate` to regenerate.",
+        "catalog_rules": CATALOG_RULES_PATH,
         "version": "2",
         "skills": skills,
     }
+
+
+def check_catalog_rules(repo_root: Path) -> list[str]:
+    """Validate the catalog rules file that the manifest's `catalog_rules` names.
+
+    The file must exist and fit the character budget. Budget is counted in
+    Unicode characters, the unit the CLI prints.
+    """
+    rules_path = repo_root / CATALOG_RULES_PATH
+    if not rules_path.is_file():
+        return [
+            f"catalog rules file '{CATALOG_RULES_PATH}' does not exist. "
+            "Restore it or remove the catalog_rules key from the generator."
+        ]
+
+    text = rules_path.read_text(encoding="utf-8")
+    if len(text) > CATALOG_RULES_MAX_CHARS:
+        return [
+            f"catalog rules file '{CATALOG_RULES_PATH}' is {len(text)} characters; "
+            f"the budget is {CATALOG_RULES_MAX_CHARS}. Shorten the rules."
+        ]
+    return []
 
 
 def _add_skill(skills: dict, entry: tuple[str, dict]) -> None:
@@ -120,6 +151,18 @@ def check_manifest_file_references(repo_root: Path) -> list[str]:
         return ['manifest.json "skills" must be an object.']
 
     errors: list[str] = []
+    rules_rel = manifest.get("catalog_rules")
+    if rules_rel is not None:
+        if not isinstance(rules_rel, str) or not _is_safe_manifest_path(rules_rel):
+            errors.append(
+                f"manifest.json catalog_rules {rules_rel!r} is not a safe relative path."
+            )
+        elif not (repo_root / _norm_rel_path(rules_rel)).is_file():
+            errors.append(
+                f"manifest.json catalog_rules names '{rules_rel}', but that file "
+                "does not exist. Regenerate manifest.json or restore the file."
+            )
+
     for name, entry in sorted(skills.items()):
         if not isinstance(entry, dict):
             errors.append(f'manifest.json skills["{name}"] must be an object.')

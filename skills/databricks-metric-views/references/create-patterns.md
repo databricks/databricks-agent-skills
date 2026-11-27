@@ -1,8 +1,8 @@
 # Metric View Patterns & YAML Reference
 
-Patterns for **creating** metric views and the complete YAML field reference. For how to **query** them, see [query-patterns.md](query-patterns.md).
+Patterns for **creating** metric views, the complete YAML field reference, and the [Genie Design Rules](#genie-design-rules). For how to **query** them, see [query-patterns.md](query-patterns.md).
 
-> **Before authoring, confirm a metric view is the right tool.** If the measure is non-additive at the queried grain, computed per-entity then aggregated (with a non-sum/count/ratio step), selection-dependent, iterative, or returns a bundle of tables, it belongs in a **governed UC SQL function** (build with `databricks-dbsql`; expose to Genie as surface #11). Pre-aggregating a **fixed, enumerable** definition into a base view + metric view — including [Pattern 9 (SQL query as source)](#pattern-9-sql-query-as-source) — is a legitimate performance choice and stays supported. What you must **not** do is reach for a base view or Pattern 9 to force in a measure whose result is computed **on the fly** from the user's runtime selection (an arbitrary cross, a parameter, a shifting denominator): pre-computation can't answer a runtime slice, so that needs a *parameterized* function, not a pre-aggregated view. Full rule + worked examples: [metric-view-advisor.md §When a metric view is not the right tool](metric-view-advisor.md#when-a-metric-view-is-not-the-right-tool--governed-function).
+> **Before authoring, confirm a metric view is the right tool.** If the measure is non-additive at the queried grain, computed per-entity then aggregated (with a non-sum/count/ratio step), selection-dependent, iterative, or returns a bundle of tables, it belongs in a **governed UC SQL function** (build with `databricks-dbsql`; expose to Genie as surface #11). Pre-aggregating a **fixed, enumerable** definition into a base view + metric view — including [Pattern 9 (SQL query as source)](#pattern-9-sql-query-as-source) — is a legitimate performance choice and stays supported. What you must **not** do is reach for a base view or Pattern 9 to force in a measure whose result is computed **on the fly** from the user's runtime selection (an arbitrary cross, a parameter, a shifting denominator): pre-computation can't answer a runtime slice, so that needs a *parameterized* function, not a pre-aggregated view. Full rule + worked examples: [governed-functions.md](governed-functions.md).
 
 ## Creation Patterns
 
@@ -461,3 +461,48 @@ See [Pattern 7](#pattern-7-materialized-metric-view) for a code example. **Requi
 | **Sharing metric views** | Share them with OpenSharing (formerly Delta Sharing) to Databricks recipients only; recipients query them on serverless compute. See [Add metric views to a share](https://docs.databricks.com/opensharing/create-share#metric-views) |
 | **No data profiling** | Data profiling is not supported on metric views |
 | **`ALTER VIEW` removes UC comments** | Always include `comment` fields in the YAML to preserve them across replacements |
+
+---
+
+## Genie Design Rules
+
+> For building, sizing, validating, and benchmarking the Genie Agent itself, see the `databricks-genie-agents` skill. These rules govern the *structure* of the metric views you suggest and build.
+
+### Rule 1: One Fact Source per Metric View
+
+**Each metric view must have exactly ONE fact table, view, or metric view as its `source`.** This is the most important design constraint.
+
+- Set a single fact table directly as `source` — do NOT build a base view for a single fact table. Add dimension-table joins in the metric view's `joins` block.
+- A base view is needed **only** when a KPI must combine **multiple fact tables** or contains nested logic the metric view cannot express directly (see Rule 2).
+- Co-locate measures in the same metric view only if they share both the same source AND the same dimension tables.
+
+### Rule 2: Multi-Fact or Nested KPIs Need a Base View
+
+Build a base view **only** when a KPI spans multiple fact tables or contains nested logic. When needed:
+
+1. Create a SQL view joining the sources using CTEs (pre-aggregate to avoid fan-out — an order with multiple return rows would multiply fact columns if joined at row level).
+2. Build the metric view on top of the base view.
+3. **Remove the raw base view from the Genie Agent** once the metric view exists — keeping both exposes unaggregated rows and increases hallucination risk.
+
+### Rule 3: Prefer Separate Metric Views per KPI Group
+
+Even when KPIs share the same source, prefer one metric view per KPI group — complex combined views are harder to isolate when a measure fails.
+
+### Organize by Domain, Not by Report
+
+| Level | Maps To |
+|-------|---------|
+| **Domain** (e.g., "Marketing") | Genie Agent |
+| **Subdomain** (e.g., "Online Marketing") | Genie Agent (if domain is broad) |
+| **KPI group** (e.g., "Conversion Metrics") | One metric view |
+
+Use `{subdomain}_{kpi-group}` naming: `online_marketing_conversion_metrics`, `finance_revenue_metrics`.
+
+### Anti-Patterns
+
+| Anti-pattern | Why it fails | Fix |
+|--------------|--------------|-----|
+| Building a base view for a single fact table | Unnecessary object; can expose unaggregated rows | Set fact table as `source` directly; add dimension joins in `joins` block |
+| Multiple fact tables joined directly in the metric view | Violates one-fact-source rule | Build a base view first; metric view sources from it |
+| Metric view with no comment, dimensions with no comments | Genie has no semantic context | Comment at all three levels (view, dimension, measure) |
+| Mirroring report structure in metric views | Reports change; semantics shouldn't | Organize by business domain/subdomain |

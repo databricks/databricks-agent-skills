@@ -158,17 +158,21 @@ GRANT CREATE EXTERNAL TABLE ON EXTERNAL LOCATION my_s3_location TO `data_enginee
 GRANT CREATE EXTERNAL VOLUME ON EXTERNAL LOCATION my_s3_location TO `data_engineers`;
 ```
 
+The Python `w.grants.update` call below needs `databricks-sdk` ≥ v0.56.0, where
+`securable_type` is a string. On older SDKs, pass `SecurableType.EXTERNAL_LOCATION`, imported
+from `databricks.sdk.service.catalog` (see
+[1-access-control.md](1-access-control.md#python-sdk-wgrants)), or use the SQL above.
+
 ```python
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import (
-    SecurableType,
     PermissionsChange,
     Privilege,
 )
 
 w = WorkspaceClient()
 w.grants.update(
-    securable_type=SecurableType.EXTERNAL_LOCATION,
+    securable_type="external_location",
     full_name="my_s3_location",
     changes=[
         PermissionsChange(

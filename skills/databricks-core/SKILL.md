@@ -3,7 +3,7 @@ name: "databricks-core"
 description: "Databricks CLI operations and the parent/entry-point skill for Databricks CLI use: authentication, profile selection, and bundles. Load this first for CLI, auth, profile, and bundle tasks, then load the matching product skill. For finding or exploring data, answering questions about the data, or generating SQL, load the databricks-data-discovery skill (it routes to Genie One). Contains up-to-date guidelines for Databricks-related CLI tasks."
 compatibility: Requires databricks CLI (>= v1.0.0)
 metadata:
-  version: "0.2.1"
+  version: "0.2.2"
 ---
 
 # Databricks
@@ -20,11 +20,15 @@ For specific products, use dedicated skills:
 - **databricks-lakebase** - Lakebase Postgres Autoscaling project management
 - **databricks-model-serving** - Model Serving endpoint management and inference
 
+## Finding Data
+
 For **data discovery, exploration, and query generation** — finding tables,
 answering natural-language questions about the data, or generating SQL — use
 **databricks-data-discovery** (it asks Genie One first, then falls back to manual
-exploration). If it isn't installed, use the AI-tool commands below and
-[Manual Data Exploration](manual-data-exploration.md).
+exploration). Use the AI-tool commands below and
+[Manual Data Exploration](manual-data-exploration.md) for tables you already know and
+SQL you already have, or to find tables yourself when Genie One isn't available, that
+skill isn't installed, or Genie can't find the data or answer the question.
 
 ## Prerequisites
 
@@ -86,7 +90,7 @@ token from (for example Microsoft Entra ID). `DATABRICKS_CLI_DISABLE_TELEMETRY=1
 
 ## Data Exploration — Use AI Tools
 
-**Use these instead of manually navigating catalogs/schemas/tables:**
+**Use these to inspect tables and run SQL, instead of walking `schemas list` / `tables list` one schema at a time:**
 
 ```bash
 # discover table structure (columns, types, sample data, stats)
@@ -104,11 +108,9 @@ hyphen to an underscore or otherwise normalize them. In SQL, backtick-quote any 
 with special characters (e.g. `` `my-catalog`.schema.table ``); unquoted hyphens cause a
 parse error.
 
-These commands are first-class for running known SQL and profiling — Genie isn't
-required for that. For natural-language data questions, locating data you can't
-pin down, or generating a query from a question, prefer the `databricks-data-discovery`
-skill (above) if it's installed. See [Manual Data Exploration](manual-data-exploration.md) for the
-full command surface, quoting rules, and troubleshooting.
+To find tables, see **Finding Data** above. See
+[Manual Data Exploration](manual-data-exploration.md) for the full command surface,
+quoting rules, troubleshooting, and the fallback table search.
 
 ## Quick Reference
 
@@ -133,6 +135,9 @@ databricks catalogs list --profile <PROFILE>
 databricks schemas list <CATALOG> --profile <PROFILE>
 databricks tables list <CATALOG> <SCHEMA> --profile <PROFILE>
 databricks tables get <CATALOG>.<SCHEMA>.<TABLE> --profile <PROFILE>
+
+# Search one catalog by table name (case-sensitive; names are lowercase), no warehouse needed
+databricks tables list-summaries <CATALOG> --table-name-pattern '%<KEYWORD>%' --limit 50 --profile <PROFILE>
 
 # ❌ WRONG: these flags/commands DON'T EXIST
 # databricks schemas list --catalog-name <CATALOG>    ← WILL FAIL
@@ -171,7 +176,7 @@ databricks bundle run <RESOURCE> -t <TARGET> --profile <PROFILE>
 |------|------------------------|
 | First time setup | [CLI Installation](databricks-cli-install.md) |
 | Auth issues / new workspace | [CLI Authentication](databricks-cli-auth.md) |
-| Exploring tables/schemas | [Manual Data Exploration](manual-data-exploration.md) (or `databricks-data-discovery` if installed) |
+| Finding or exploring tables/schemas | `databricks-data-discovery` (see **Finding Data**); [Manual Data Exploration](manual-data-exploration.md) for known tables and SQL, or as its fallback |
 | Deploying jobs/pipelines | Use `/databricks-dabs` |
 
 ## Reference Guides
