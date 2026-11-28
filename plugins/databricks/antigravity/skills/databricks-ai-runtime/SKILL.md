@@ -4,6 +4,7 @@ description: "Databricks AI Runtime, the `databricks air` CLI commands for submi
 compatibility: Requires Databricks CLI 1.18.0 or newer for the air command. Flattened code_source, multi-container workloads, and workspace-validated dry runs require CLI 1.20.0 or newer; older CLIs can use the nested snapshot format documented below. Listing the accelerator types available in your workspace requires CLI 1.23.0 or newer. See the [AI Runtime CLI setup guide](https://docs.databricks.com/aws/en/machine-learning/ai-runtime/connecting/cli).
 metadata:
   version: "0.3.1"
+  cli_command_groups: "air"
 ---
 
 # Databricks AI Runtime (`databricks air`)

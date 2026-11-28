@@ -17,6 +17,9 @@
       "version": "0.3.0"
     },
     "databricks-ai-runtime": {
+      "commands": [
+        "air"
+      ],
       "description": "Databricks AI Runtime, the `databricks air` CLI commands for submitting and managing GPU training workloads on Databricks serverless compute. Use for: writing and submitting `databricks air` worklo...",
       "files": [
         "SKILL.md",
@@ -127,6 +130,9 @@
       "version": "0.2.2"
     },
     "databricks-dabs": {
+      "commands": [
+        "bundle"
+      ],
       "description": "Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles).",
       "files": [
         "SKILL.md",
@@ -569,6 +575,9 @@
       "version": "0.1.1"
     },
     "databricks-serverless-migration-api": {
+      "commands": [
+        "compute-migrations"
+      ],
       "description": "Migrate Databricks jobs to serverless through the Compute Migrations API and CLI, then track, review, and approve each migration. Use for automated job migrations managed by this service, scripts t...",
       "files": [
         "SKILL.md",
@@ -582,6 +591,9 @@
       "version": "0.1.0"
     },
     "databricks-setup-local": {
+      "commands": [
+        "environments"
+      ],
       "description": "Previews, provisions, or diagnoses a uv-managed local Python .venv with `databricks environments setup-local`.",
       "files": [
         "SKILL.md",

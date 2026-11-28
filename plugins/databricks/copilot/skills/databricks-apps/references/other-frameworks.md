@@ -132,7 +132,7 @@ targets:
 |------|-----|
 | Always provide BOTH `app.yaml` AND `databricks.yml` config | UI deployments use app.yaml; DABs uses databricks.yml |
 | Deploy apps with `databricks apps deploy` (one command) | It validates, uploads code, applies config, and **starts** the app. A bare `bundle deploy` leaves it stopped. |
-| Namespace `app_name` in shared development | App names are workspace-global and limited to 30 characters. Default to an app prefix plus `${workspace.current_user.domain_friendly_name}`; persist a local override if the value is too long, invalid, collides, or must distinguish multiple non-production targets in one workspace. |
+| Namespace `app_name` in shared development | App names are workspace-global and limited to 30 characters. Default to an app prefix plus `${workspace.current_user.domain_friendly_name}`. If the resolved name is longer than 30 characters, shorten the prefix in the committed default; never truncate or hardcode the developer's name. Use a local override only when no prefix fits, when two developers' names normalize to the same `domain_friendly_name`, or when several non-production targets of one app share a workspace. |
 | Never use `${var.xxx}` in config env values | Variables are NOT resolved in config — values appear literally |
 
 ## 3. Using OBO in Non-AppKit Apps

@@ -4,6 +4,7 @@ description: "Migrate Databricks jobs to serverless through the Compute Migratio
 compatibility: Requires databricks CLI (>= v1.24.0) with the compute-migrations command group
 metadata:
   version: "0.1.0"
+  cli_command_groups: "compute-migrations"
 parent: databricks-core
 ---
 

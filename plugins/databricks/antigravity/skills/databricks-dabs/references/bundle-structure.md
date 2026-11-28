@@ -211,19 +211,21 @@ resources:
 
 The default separates apps and developers that share a workspace. Production replaces it with a stable name that does not depend on the deployer.
 
-If the resolved name exceeds 30 characters or normalized developer names collide, persist a shorter developer-specific value locally. Also use a distinct value for each target when multiple non-production targets for the same app share a workspace. Do not commit this file:
+Keep the prefix short: the full name is the prefix, a hyphen, and the developer's `domain_friendly_name`. If the resolved name exceeds 30 characters, shorten the prefix in the committed default (`sales-dash-${workspace.current_user.domain_friendly_name}` becomes `sales-${workspace.current_user.domain_friendly_name}`). The length check covers only the developer who runs it. A teammate with a longer name sees the same overlength name and repairs the committed default the same way, so size the prefix for the longest teammate name you know. Never truncate, abbreviate, or hardcode the developer's name: two cut names can be the same, and a hardcoded name becomes every developer's name.
+
+Only when no prefix fits (the developer's name alone is 29 characters or more), when two developers' names normalize to the same `domain_friendly_name`, or when multiple non-production targets for the same app share a workspace, persist a distinct value locally. Do not commit this file:
 
 **`.databricks/bundle/<target>/variable-overrides.json`:**
 
 ```json
 {
-  "app_name": "myapp-gp-dev"
+  "app_name": "sales-stg-<distinct-id>"
 }
 ```
 
-For the `dev` target above, replace `<target>` with `dev`. Use the active target name for any other target.
+For the `dev` target above, replace `<target>` with `dev`. Use the active target name for any other target. Replace `<distinct-id>` with a short value that no teammate uses. Do not copy or cut your name into it.
 
-The persistent override applies to later validate, deploy, run, and lifecycle commands for that target. A one-off `--var='app_name=myapp-gp-dev'` takes precedence when needed.
+The persistent override applies to later validate, deploy, run, and lifecycle commands for that target. A one-off `--var='app_name=sales-stg-<distinct-id>'` takes precedence when needed.
 
 Keep the complete value within 30 characters. Do not use `${workspace.current_user.short_name}` because it can contain underscores, which App names do not allow. `${bundle.target}` alone does not separate developers using the same target. `databricks bundle validate` does not reject every invalid App name, including names with underscores, so successful validation does not prove that the name will deploy.
 

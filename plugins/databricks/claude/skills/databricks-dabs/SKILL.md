@@ -1,6 +1,8 @@
 ---
 name: databricks-dabs
-description: 'Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles). Use when working with Databricks resources via DABs including dashboards, jobs, pipelines, alerts, volumes, and apps.'
+description: 'Create, configure, validate, deploy, run, and manage Declarative Automation Bundles (DABs, formerly Databricks Asset Bundles). Use when working with Databricks resources via DABs including dashboards, jobs, pipelines, alerts, volumes, and apps. Use whenever you read or edit a databricks.yml, or fix bundle validate or deploy errors (for example resource name conflicts between users in a shared workspace).'
+metadata:
+  cli_command_groups: "bundle"
 ---
 
 # Declarative Automation Bundles (DABs)
@@ -37,7 +39,7 @@ Load this skill for any request involving:
 4. **Path resolution is critical** - Paths differ based on file location (see Bundle Structure reference)
 5. **Preserve existing structure** - Keep user comments and structure when editing YAML files
 6. **Use variables** - Parameterize catalog, schema, and warehouse for multi-environment support
-7. **Namespace App names** - App names are workspace-global and limited to 30 characters. With Databricks CLI 0.270.0 or later, shared-development defaults should include the app and `${workspace.current_user.domain_friendly_name}`; override production with a stable name, and persist an explicit local value when the default is invalid, collides, or must distinguish multiple non-production targets in one workspace. On older CLI versions, require an explicit `app_name` value instead
+7. **Namespace App names** - App names are workspace-global and limited to 30 characters. With Databricks CLI 0.270.0 or later, shared-development defaults should be a short app prefix plus the whole `${workspace.current_user.domain_friendly_name}`; override production with a stable name. When the name is too long, shorten the prefix, never the developer's name. On older CLI versions, require an explicit `app_name` value instead
 
 ## Required App Completion Contract
 
@@ -45,9 +47,13 @@ Before validating any bundle that creates or changes an App, re-read the final b
 
 - Each App resource uses a dedicated name variable, such as `name: ${var.app_name}`, while preserving an existing equivalent variable when present.
 - For Databricks CLI 0.270.0 or later, each App name variable defaults to a recognizable App prefix plus `${workspace.current_user.domain_friendly_name}` for development, and the production target overrides it with a stable name. On older CLI versions, App name variables have no default and each developer must provide values.
-- No development App name uses `${workspace.current_user.short_name}`, a bare `${bundle.target}`, or a hardcoded value.
+- No development App name uses `${workspace.current_user.short_name}`, `${workspace.current_user.id}`, `${workspace.current_user.userName}`, a bare `${bundle.target}`, or a hardcoded value.
 
-Only after this check, run `databricks bundle validate --strict --target <target> --output json` and inspect each resolved `resources.apps.<key>.name`. Each name must contain only lowercase letters, digits, and hyphens and be at most 30 characters. If a resolved name is invalid, collides after normalization, or multiple non-production targets share a workspace, persist a shorter, distinct value in the uncommitted `.databricks/bundle/<target>/variable-overrides.json` file and validate again. Successful validation alone does not satisfy this contract because validation does not catch every invalid or non-namespaced App name.
+Only after this check, run `databricks bundle validate --strict --target <target> --output json` and inspect each resolved `resources.apps.<key>.name`. Each name must contain only lowercase letters, digits, and hyphens and be at most 30 characters. Other developers' names can be longer than yours, so keep the prefix short (for example `sales-`, not `sales-dashboard-`).
+
+If a resolved name is longer than 30 characters, shorten the prefix in the committed default (for example `sales-dash-${workspace.current_user.domain_friendly_name}` becomes `sales-${workspace.current_user.domain_friendly_name}`) and validate again. The prefix, without its hyphen, can have at most 29 minus the length of the resolved `workspace.current_user.domain_friendly_name`. This budget covers only the developer who runs the check. A teammate whose name is longer repairs the committed default the same way, and the shorter prefix then applies to everyone. Never truncate, abbreviate, or hardcode the developer's name in the YAML: a cut name can match a teammate's cut name, so the collision comes back.
+
+Use the uncommitted `.databricks/bundle/<target>/variable-overrides.json` file only when no prefix fits (the developer's name alone is 29 characters or more), when two developers' names normalize to the same `domain_friendly_name`, or when multiple non-production targets of the same app share a workspace. In an override, use a short distinct value that does not copy or cut your name. Successful validation alone does not satisfy this contract because validation does not catch every invalid or non-namespaced App name.
 
 ## Documentation
 
