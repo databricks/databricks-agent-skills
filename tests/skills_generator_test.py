@@ -273,6 +273,43 @@ class ManifestFileReferenceTest(unittest.TestCase):
             errors = skills.check_manifest_file_references(root)
             self.assertTrue(any("unsafe file path" in e for e in errors), errors)
 
+    def test_committed_manifest_commands_are_checked(self):
+        # A hand-edited manifest must not carry a malformed `commands` value past
+        # the same gate that checks the files list.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-core")
+
+            def write(commands):
+                self._write_manifest(
+                    root,
+                    {
+                        "databricks-core": {
+                            "repo_dir": "skills",
+                            "files": ["SKILL.md"],
+                            "commands": commands,
+                        }
+                    },
+                )
+
+            write(["bundle", "air"])
+            self.assertEqual(skills.check_manifest_file_references(root), [])
+            bad_values = {
+                "not a list": "bundle",
+                "non-string entry": [1],
+                "uppercase": ["Bundle"],
+                "duplicate": ["bundle", "bundle"],
+                "trailing newline": ["bundle\n"],
+            }
+            for label, commands in bad_values.items():
+                with self.subTest(label=label):
+                    write(commands)
+                    errors = skills.check_manifest_file_references(root)
+                    self.assertTrue(
+                        any("databricks-core" in e and "commands" in e for e in errors),
+                        errors,
+                    )
+
 
 class SkillFrontmatterTest(unittest.TestCase):
     def _make_skill(self, root: Path, name: str, description: str) -> None:
@@ -873,6 +910,227 @@ class CatalogRulesTest(unittest.TestCase):
         )
         errors = skills.check_manifest_file_references(self.root)
         self.assertTrue(any("not a safe relative path" in e for e in errors), errors)
+
+
+class CliCommandsTest(unittest.TestCase):
+    """`metadata.cli_command_groups` maps a skill to CLI command groups.
+
+    The field is additive: the manifest copies it to `commands` only when it is
+    non-empty, so a skill without it has no `commands` key and existing entries
+    are unchanged.
+    """
+
+    def _make_skill(self, root: Path, name: str, metadata_lines: str) -> None:
+        skill_dir = root / "skills" / name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: Test skill.\nmetadata:\n"
+            f"  version: \"1.0.0\"\n{metadata_lines}---\n\n# {name}\n"
+        )
+
+    def test_field_becomes_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # A quoted string of comma-separated groups; the manifest emits a list.
+            self._make_skill(root, "databricks-bundle", '  cli_command_groups: "bundle, air"\n')
+            entry = skills.generate_manifest(root)["skills"]["databricks-bundle"]
+            self.assertEqual(entry["commands"], ["bundle", "air"])
+            self.assertEqual(entry["version"], "1.0.0")
+
+    def test_single_group_string_becomes_one_entry_list(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-dabs", '  cli_command_groups: "bundle"\n')
+            entry = skills.generate_manifest(root)["skills"]["databricks-dabs"]
+            self.assertEqual(entry["commands"], ["bundle"])
+
+    def test_skill_without_field_has_no_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-plain", "")
+            entry = skills.generate_manifest(root)["skills"]["databricks-plain"]
+            self.assertNotIn("commands", entry)
+            self.assertEqual(
+                set(entry),
+                {"version", "description", "repo_dir", "files"},
+            )
+
+    def test_empty_list_omits_commands_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-empty", '  cli_command_groups: ""\n')
+            entry = skills.generate_manifest(root)["skills"]["databricks-empty"]
+            self.assertNotIn("commands", entry)
+            self.assertEqual(skills.check_skill_cli_command_groups(root), [])
+
+    def test_group_claimed_by_two_skills_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-one", '  cli_command_groups: "bundle"\n')
+            self._make_skill(root, "databricks-two", '  cli_command_groups: "bundle, air"\n')
+            errors = skills.check_skill_cli_command_groups(root)
+            self.assertEqual(len(errors), 1, errors)
+            # Both skills are named, whichever one the directory walk reaches first.
+            self.assertIn("'bundle'", errors[0])
+            self.assertIn("databricks-one", errors[0])
+            self.assertIn("databricks-two", errors[0])
+
+    def test_invalid_values_are_rejected(self):
+        bad_values = {
+            "list form": "  cli_command_groups: [bundle]\n",
+            "unquoted": "  cli_command_groups: bundle\n",
+            "block list": "  cli_command_groups:\n    - bundle\n",
+            "uppercase": '  cli_command_groups: "Bundle"\n',
+            "duplicate": '  cli_command_groups: "bundle, bundle"\n',
+            "underscore": '  cli_command_groups: "my_group"\n',
+            "trailing comma": '  cli_command_groups: "bundle,"\n',
+            "mismatched quote": "  cli_command_groups: \"bundle'\n",
+        }
+        for label, metadata_lines in bad_values.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._make_skill(root, "databricks-bad", metadata_lines)
+                errors = skills.check_skill_cli_command_groups(root)
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("databricks-bad", errors[0])
+                with self.assertRaises(ValueError):
+                    skills.generate_manifest(root)
+
+    def test_unplaceable_key_fails_closed(self):
+        # A `cli_command_groups` key the reader cannot place under a plain `metadata:`
+        # must raise, not silently drop the mapping.
+        frontmatter = {
+            "top level": "cli_command_groups: [bundle]\n",
+            "flow mapping": "metadata: {cli_command_groups: [bundle]}\n",
+            "nested under a sub-key": (
+                "metadata:\n  version: \"1.0.0\"\n  extra:\n    cli_command_groups: [bundle]\n"
+            ),
+        }
+        for label, text in frontmatter.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                skill_dir = root / "skills" / "databricks-odd"
+                skill_dir.mkdir(parents=True)
+                (skill_dir / "SKILL.md").write_text(
+                    f"---\nname: databricks-odd\ndescription: Test skill.\n{text}---\n\n# x\n"
+                )
+                with self.assertRaises(ValueError):
+                    skills.read_cli_command_groups(skill_dir)
+
+        # A quoted `metadata` parent is valid YAML. It must still place the field, not
+        # read as no field at all, which would drop the mapping without an error.
+        with tempfile.TemporaryDirectory() as d:
+            skill_dir = Path(d) / "skills" / "databricks-quoted"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text(
+                "---\nname: databricks-quoted\ndescription: Test skill.\n"
+                '"metadata":\n  cli_command_groups: "bundle"\n---\n\n# x\n'
+            )
+            self.assertEqual(skills.read_cli_command_groups(skill_dir), ["bundle"])
+
+    def test_plain_yaml_forms_are_read(self):
+        # Comments and a trailing comment on `metadata:` do not hide the field.
+        text = (
+            "metadata:  # note\n"
+            "# a column-0 comment inside the block\n"
+            "  version: \"1.0.0\"\n"
+            "  cli_command_groups: 'bundle, air'\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill_dir = root / "skills" / "databricks-forms"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text(
+                f"---\nname: databricks-forms\ndescription: Test skill.\n{text}---\n\n# x\n"
+            )
+            self.assertEqual(skills.read_cli_command_groups(skill_dir), ["bundle", "air"])
+
+    def _read_metadata_block(self, metadata_lines: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill_dir = root / "skills" / "databricks-yaml"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text(
+                "---\nname: databricks-yaml\ndescription: Test skill.\n"
+                f"metadata:\n  version: \"1.0.0\"\n{metadata_lines}---\n\n# x\n"
+            )
+            return skills.read_cli_command_groups(skill_dir)
+
+    def test_quoted_key_is_read(self):
+        # A quoted key is valid YAML and must not be dropped with no error.
+        for key in ('"cli_command_groups"', "'cli_command_groups'"):
+            with self.subTest(key=key):
+                self.assertEqual(
+                    self._read_metadata_block(f'  {key}: "bundle"\n'), ["bundle"]
+                )
+
+    def test_quoted_key_with_bad_value_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self._read_metadata_block('  "cli_command_groups": [bundle]\n')
+
+    def test_trailing_comment_after_value_is_read(self):
+        # `"bundle"  # dabs` is valid YAML; the comment is not part of the value.
+        self.assertEqual(
+            self._read_metadata_block('  cli_command_groups: "bundle"  # dabs\n'),
+            ["bundle"],
+        )
+        with self.assertRaises(ValueError):
+            # A comment with no space before `#` is not a YAML comment.
+            self._read_metadata_block('  cli_command_groups: "bundle"# dabs\n')
+
+    def test_valid_value_passes_check(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-ok", '  cli_command_groups: "compute-migrations"\n')
+            self.assertEqual(skills.check_skill_cli_command_groups(root), [])
+
+    def test_repo_mapped_skills(self):
+        self.assertEqual(skills.check_skill_cli_command_groups(_REPO), [])
+        dabs = _REPO / "skills" / "databricks-dabs"
+        self.assertEqual(skills.read_cli_command_groups(dabs), ["bundle"])
+        core = _REPO / "skills" / "databricks-core"
+        self.assertEqual(skills.read_cli_command_groups(core), [])
+        manifest = skills.generate_manifest(_REPO)["skills"]
+        self.assertEqual(manifest["databricks-dabs"]["commands"], ["bundle"])
+        self.assertNotIn("commands", manifest["databricks-core"])
+
+    def test_key_text_in_prose_is_not_a_field(self):
+        # `cli_command_groups:` inside a description, plain or in a block scalar, is
+        # text. It must neither raise nor count as the field.
+        plain = (
+            "---\nname: databricks-prose\n"
+            "description: Use cli_command_groups: bundle to map a skill.\n"
+            "metadata:\n  version: \"1.0.0\"\n---\n\n# x\n"
+        )
+        block = (
+            "---\nname: databricks-prose\n"
+            "description: >-\n  Covers the field.\n  cli_command_groups: air\n"
+            "  \"cli_command_groups\": bundle\n"
+            "metadata:\n  version: \"1.0.0\"\n---\n\n# x\n"
+        )
+        for label, text in {"plain": plain, "block scalar": block}.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                skill_dir = root / "skills" / "databricks-prose"
+                skill_dir.mkdir(parents=True)
+                (skill_dir / "SKILL.md").write_text(text)
+                self.assertEqual(skills.read_cli_command_groups(skill_dir), [])
+                self.assertEqual(skills.check_skill_cli_command_groups(root), [])
+                entry = skills.generate_manifest(root)["skills"]["databricks-prose"]
+                self.assertNotIn("commands", entry)
+
+    def test_generate_writes_nothing_for_invalid_field(self):
+        # generate must reject the field before it writes any output, so a bad
+        # SKILL.md leaves no partial manifest, plugins or assets behind.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make_skill(root, "databricks-bad", '  cli_command_groups: "Bundle"\n')
+            with self.assertRaises(ValueError) as ctx:
+                skills.generate_all(root, version_override="9.9.9")
+            self.assertIn("databricks-bad", str(ctx.exception))
+            self.assertFalse((root / "manifest.json").exists())
+            self.assertFalse((root / "plugins").exists())
+            self.assertFalse((root / "skills" / "databricks-bad" / "assets").exists())
 
 
 if __name__ == "__main__":

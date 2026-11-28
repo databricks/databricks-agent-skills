@@ -4,6 +4,8 @@ import re
 import shutil
 from pathlib import Path
 
+from skillsgen.common import _read_frontmatter
+
 
 SHARED_ASSETS = [
     "assets/databricks.svg",
@@ -85,6 +87,111 @@ def extract_version_from_skill(skill_path: Path) -> str:
     # get 0.0.1 in the manifest. Avoids 0.0.0 which several install tools
     # treat as "unset" rather than "first release".
     return "0.0.1"
+
+
+# CLI command groups a skill covers, read from `metadata.cli_command_groups`. The value
+# is a quoted string of comma-separated groups (`cli_command_groups: "bundle, air"`),
+# because the Agent Skills spec gives `metadata` string values only.
+CLI_COMMAND_NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+_CLI_COMMAND_GROUPS_DIRECT_RE = re.compile(
+    r"(?:\"cli_command_groups\"|'cli_command_groups'|cli_command_groups)[ \t]*:(.*)"
+)
+# A line that starts with the key (quoted or not), so prose that merely mentions
+# `cli_command_groups:` in the middle of a line is not a key.
+_CLI_KEY_START_RE = re.compile(r"[\"']?cli_command_groups[\"']?[ \t]*:")
+# The key inside a flow mapping, such as `metadata: {cli_command_groups: bundle}`.
+_CLI_FLOW_KEY_RE = re.compile(r"[{,][ \t]*[\"']?cli_command_groups[\"']?[ \t]*:")
+# The top-level `metadata:` key, quoted or not, that the field must sit under.
+_CLI_METADATA_KEY_RE = re.compile(r"[\"']?metadata[\"']?[ \t]*:")
+# A `key: |` or `key: >-` line; the indented lines under it are text, not keys.
+_BLOCK_SCALAR_HEADER_RE = re.compile(r"[^\s#][^:]*:[ \t]*[|>][0-9+-]*(?:[ \t]+#.*)?")
+# A quoted value, with an optional YAML comment after the closing quote.
+_QUOTED_VALUE_RE = re.compile(r"([\"'])(.*?)\1(?:[ \t]+#.*)?")
+
+
+def cli_command_groups_error(names: object) -> str | None:
+    """Return why `names` is not a list of unique lowercase command group names.
+
+    Returns None when it is valid. The frontmatter reader and the committed-manifest
+    check both call this, so they share one rule.
+    """
+    if not isinstance(names, list):
+        return "must be a list of command group names."
+    for name in names:
+        if not isinstance(name, str) or not CLI_COMMAND_NAME_RE.fullmatch(name):
+            return (
+                f"entry {name!r} is not a lowercase command group name (letters, "
+                "digits and hyphens, starting with a letter)."
+            )
+    if len(set(names)) != len(names):
+        return f"lists a duplicate entry: {names!r}."
+    return None
+
+
+def _parse_cli_command_groups_value(raw: str) -> list[str]:
+    """Parse the quoted string value of `cli_command_groups` into command group names."""
+    quoted = _QUOTED_VALUE_RE.fullmatch(raw)
+    if quoted is None:
+        raise ValueError(
+            "metadata.cli_command_groups must be a quoted string of command group names, "
+            f'such as "bundle" or "bundle, air"; got {raw!r}.'
+        )
+    inner = quoted.group(2)
+    names = [part.strip() for part in inner.split(",")] if inner.strip() else []
+    error = cli_command_groups_error(names)
+    if error is not None:
+        raise ValueError(f"metadata.cli_command_groups {error}")
+    return names
+
+
+def read_cli_command_groups(skill_path: Path) -> list[str]:
+    """Return the CLI command groups in `metadata.cli_command_groups`, or [] if absent.
+
+    Raises ValueError when the field is present but is not a quoted string of
+    unique lowercase command group names, or sits anywhere other than a direct
+    child of a plain `metadata:` key. Fails closed: a `cli_command_groups` key the
+    reader cannot place is an error, never a silently missing mapping.
+    """
+    frontmatter = _read_frontmatter(skill_path / "SKILL.md")
+    if frontmatter is None:
+        return []
+    raw = None
+    in_metadata = False
+    child_indent = None
+    block_indent = None
+    for line in frontmatter.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if block_indent is not None:
+            if indent > block_indent:
+                continue  # text of a block scalar, such as a description
+            block_indent = None
+        if indent == 0:
+            in_metadata = _CLI_METADATA_KEY_RE.match(stripped) is not None
+            child_indent = None
+        elif in_metadata and child_indent is None:
+            child_indent = indent
+        if _BLOCK_SCALAR_HEADER_RE.fullmatch(stripped):
+            block_indent = indent
+        direct = None
+        if in_metadata and indent == child_indent:
+            direct = _CLI_COMMAND_GROUPS_DIRECT_RE.match(stripped)
+        misplaced_key = _CLI_KEY_START_RE.match(stripped) and (indent == 0 or in_metadata)
+        flow_key = in_metadata and _CLI_FLOW_KEY_RE.search(stripped)
+        if direct:
+            if raw is not None:
+                raise ValueError("metadata.cli_command_groups is set more than once.")
+            raw = direct.group(1).strip()
+        elif misplaced_key or flow_key:
+            raise ValueError(
+                "metadata.cli_command_groups must be a direct child of a plain `metadata:` "
+                "key, on its own line."
+            )
+    if raw is None:
+        return []
+    return _parse_cli_command_groups_value(raw)
 
 
 def iter_skill_files(skill_path: Path):

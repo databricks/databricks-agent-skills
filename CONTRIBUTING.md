@@ -36,7 +36,7 @@ Every skill — stable (`skills/<name>/`) or experimental (`experimental/<name>/
     └── databricks.png               # required: icon (Codex marketplace)
 ```
 
-**`SKILL.md`** is what every coding agent reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`.
+**`SKILL.md`** is what every coding agent reads. Frontmatter carries `name`, `description`, and optional `metadata.version` + `parent`. A skill that covers one Databricks CLI command group may also set `metadata.cli_command_groups` to a quoted string of comma-separated groups, such as `cli_command_groups: "bundle"`. The manifest copies it to the skill's `commands` list, which lets the CLI point agents from a command group's help to the skill. Omit the field for a skill that covers no command group; `validate` rejects a value that is not a quoted string of unique lowercase group names.
 
 **Referencing other files**: agents load skill files by path, so write a real path, never a bare file name. Markdown links resolve relative to the file they are in (`[x](references/x.md)` from `SKILL.md`, `[y](y.md)` between references). Backticked mentions of the skill's own files use the path from the skill root (`` `references/x.md` ``). `validate` rejects references that resolve to no file.
 

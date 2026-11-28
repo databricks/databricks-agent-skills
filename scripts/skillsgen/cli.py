@@ -35,6 +35,7 @@ from skillsgen.validators import (
     check_cursor_plugin,
     check_plugin_components,
     check_routing_tables,
+    check_skill_cli_command_groups,
     check_skill_file_references,
     check_skill_frontmatter,
 )
@@ -73,7 +74,11 @@ def main() -> None:
         case "generate":
             # The whole sequence (asset sync first, bundle last) lives in
             # generate_all so this CLI and the release bump cannot drift.
-            result = generate_all(repo_root)
+            try:
+                result = generate_all(repo_root)
+            except ValueError as exc:
+                print(f"ERROR: cannot generate: {exc}", file=sys.stderr)
+                sys.exit(1)
             manifest = result["manifest"]
             print(f"Wrote {result['assets']} Codex-metadata file(s)")
             print(f"Generated {repo_root / 'manifest.json'}")
@@ -127,6 +132,16 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 for err in frontmatter_errors:
+                    print(f"  - {err}", file=sys.stderr)
+                ok = False
+
+            cli_command_errors = check_skill_cli_command_groups(repo_root)
+            if cli_command_errors:
+                print(
+                    "ERROR: skill metadata.cli_command_groups is invalid:",
+                    file=sys.stderr,
+                )
+                for err in cli_command_errors:
                     print(f"  - {err}", file=sys.stderr)
                 ok = False
 
