@@ -36,6 +36,11 @@ def generate_all(repo_root: Path, version_override: str | None = None) -> dict:
     the file count for each step plus the manifest object, so callers can print
     their own progress without re-deriving anything.
     """
+    # Preflight: build the manifest once before writing anything. It rejects a
+    # skill's invalid frontmatter (ValueError, naming the skill), and that would
+    # otherwise fail after the assets, plugins, routing and hooks are written.
+    generate_manifest(repo_root)
+
     written_assets = ensure_codex_metadata(repo_root)
 
     meta = load_meta(repo_root)
